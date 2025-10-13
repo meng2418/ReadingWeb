@@ -113,8 +113,8 @@ defineProps({
   background-color: #fff;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-bottom: 40px;
+  box-shadow: 0 2px 8px rgba(150, 150, 150, 0.05);
+  margin-bottom: 50px;
 }
 
 /* 顶部标题栏 */

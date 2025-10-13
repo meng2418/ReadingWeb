@@ -1,27 +1,16 @@
 <script setup lang="ts">
 import NavBar from '../components/NavBar.vue'
-import BookCard from '../components/BookCardBig.vue'
+import GuessYouLike from '../components/GuessYouLike.vue'
 import BookRankList from '../components/BookRankList.vue'
 </script>
 
 <template>
   <div class="Home">
-    <div id="app">
+    <div class="app">
       <NavBar />
     </div>
-    <div class="book-list">
-      <BookCard
-        cover="../src/img/cover.jpg"
-        title="活着"
-        author="余华"
-        reason="一部关于生命与苦难的经典小说"
-      />
-      <BookCard
-        cover="../src/img/cover.jpg"
-        title="三体"
-        author="刘慈欣"
-        reason="中国本土的硬核科幻巅峰之作"
-      />
+    <div class="guss-you-like">
+      <GuessYouLike />
     </div>
     <div class="book-rank">
       <BookRankList ranktitle="周榜" desc="最近一周热读书籍" />
@@ -33,19 +22,21 @@ import BookRankList from '../components/BookRankList.vue'
 </template>
 
 <style scoped>
-#home {
-  background-color: rgb(255, 255, 255);
-}
-.book-list {
+.Home {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  background-color: rgb(241, 241, 241);
+  gap: 24px;
+}
+.guss-you-like {
+  display: flex;
   flex-wrap: wrap;
-  padding: 100px;
+  padding: 82px;
 }
 .book-rank {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 100px;
+  padding: 0 100px;
 }
 </style>
