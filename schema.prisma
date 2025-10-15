@@ -1,0 +1,241 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // 或 "mysql", "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  username    String    @unique
+  email       String?   @unique
+  phone       String?   @unique
+  password    String?
+  nickname    String
+  avatar      String?
+  bio         String?
+  isMember    Boolean   @default(false)
+  coins       Int       @default(0) // 书币
+  totalReadingTime Int  @default(0) // 总阅读时长(分钟)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // 关联关系
+  bookshelf   Bookshelf[]
+  readingProgress ReadingProgress[]
+  notes       Note[]
+  bookmarks   Bookmark[]
+  posts       Post[]
+  comments    Comment[]
+  likes       Like[]
+  follows     Follow[]   @relation("Follower")
+  followers   Follow[]   @relation("Following")
+  messages    Message[]
+  readingStats ReadingStat[]
+}
+
+model Book {
+  id          Int       @id @default(autoincrement())
+  title       String
+  author      String
+  cover       String?
+  description String?   @db.Text
+  categoryId  Int
+  publisher   String?
+  publishDate DateTime?
+  isbn        String?
+  wordCount   Int       // 字数
+  price       Int       @default(0) // 书币价格
+  isFree      Boolean   @default(false)
+  rating      Float     @default(0) // 推荐值
+  readCount   Int       @default(0) // 阅读人数
+  createdAt   DateTime  @default(now())
+  
+  // 关联关系
+  category    Category  @relation(fields: [categoryId], references: [id])
+  chapters    Chapter[]
+  bookshelf   Bookshelf[]
+  readingProgress ReadingProgress[]
+  notes       Note[]
+  bookmarks   Bookmark[]
+  posts       Post[]
+  comments    Comment[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  books Book[]
+}
+
+model Chapter {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
+  order     Int
+  bookId    Int
+  createdAt DateTime @default(now())
+  
+  book      Book     @relation(fields: [bookId], references: [id])
+  notes     Note[]
+  bookmarks Bookmark[]
+}
+
+model Bookshelf {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  status    String   @default("reading") // reading, unread, finished
+  addedAt   DateTime @default(now())
+  lastReadAt DateTime?
+  
+  user      User     @relation(fields: [userId], references: [id])
+  book      Book     @relation(fields: [bookId], references: [id])
+  
+  @@unique([userId, bookId])
+}
+
+model ReadingProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  bookId      Int
+  chapterId   Int?
+  currentPage Int      @default(1)
+  progress    Float    @default(0)  // 0-1
+  lastReadAt  DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
+  book        Book     @relation(fields: [bookId], references: [id])
+  chapter     Chapter? @relation(fields: [chapterId], references: [id])
+  
+  @@unique([userId, bookId])
+}
+
+model ReadingStat {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      DateTime @default(now()) // 统计日期
+  readingTime Int    @default(0) // 当日阅读时长(分钟)
+  
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Note {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  chapterId Int?
+  content   String
+  type      String    @default("highlight") // highlight, comment
+  color     String?   // 标注颜色
+  page      Int?
+  isPublic  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  
+  user      User      @relation(fields: [userId], references: [id])
+  book      Book      @relation(fields: [bookId], references: [id])
+  chapter   Chapter?  @relation(fields: [chapterId], references: [id])
+  likes     Like[]
+}
+
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  chapterId Int?
+  page      Int
+  note      String?
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+  book      Book     @relation(fields: [bookId], references: [id])
+  chapter   Chapter? @relation(fields: [chapterId], references: [id])
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  bookId    Int?
+  title     String
+  content   String    @db.Text
+  topic     String?   // 话题分类
+  isPublic  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  user      User      @relation(fields: [userId], references: [id])
+  book      Book?     @relation(fields: [bookId], references: [id])
+  comments  Comment[]
+  likes     Like[]
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  postId    Int?
+  noteId    Int?
+  parentId  Int?      // 回复的评论ID
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+  
+  user      User      @relation(fields: [userId], references: [id])
+  post      Post?     @relation(fields: [postId], references: [id])
+  note      Note?     @relation(fields: [noteId], references: [id])
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  likes     Like[]
+}
+
+model Like {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  postId    Int?
+  commentId Int?
+  noteId    Int?
+  createdAt DateTime  @default(now())
+  
+  user      User      @relation(fields: [userId], references: [id])
+  post      Post?     @relation(fields: [postId], references: [id])
+  comment   Comment?  @relation(fields: [commentId], references: [id])
+  note      Note?     @relation(fields: [noteId], references: [id])
+  
+  @@unique([userId, postId, commentId, noteId])
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int      // 关注者
+  followingId Int      // 被关注者
+  createdAt   DateTime @default(now())
+  
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  
+  @@unique([followerId, followingId])
+}
+
+model Message {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String    // system, like, comment, follow
+  title     String
+  content   String
+  isRead    Boolean   @default(false)
+  relatedId Int?      // 相关实体ID
+  createdAt DateTime  @default(now())
+  
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model VerificationCode {
+  id        Int      @id @default(autoincrement())
+  phone     String?
+  email     String?
+  code      String
+  type      String   // login, register, reset
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
