@@ -3,10 +3,14 @@
     <div class="nav-left">
       <h1 class="logo">微信读书</h1>
       <nav class="nav-links">
-        <a href="#" class="nav-item">首页</a>
-        <a href="#" class="nav-item">分类</a>
-        <a href="#" class="nav-item">书架</a>
-        <a href="#" class="nav-item">社区</a>
+        <router-link to="/">
+          <button class="nav-item">首页</button>
+        </router-link>
+        <button class="nav-item">分类</button>
+        <router-link to="/bookshelf">
+          <button class="nav-item">书架</button>
+        </router-link>
+        <button class="nav-item">社区</button>
       </nav>
     </div>
 
@@ -14,22 +18,28 @@
       <!-- 使用 Element Plus 图标 -->
       <div class="search-container">
         <input type="text" placeholder="搜索书名、作者" class="search-input" />
-        <!-- 使用 <el-icon> 和 Search 图标 -->
         <el-icon class="search-icon">
-          <Search />
+          <search></search>
         </el-icon>
       </div>
-      <button class="login-btn">登录</button>
-      <button class="register-btn">注册</button>
+      <router-link to="/login">
+        <button class="login-btn">登录</button>
+      </router-link>
+      <router-link to="/login?mode=signup">
+        <button class="register-btn">注册</button>
+      </router-link>
     </div>
   </header>
 </template>
 
-<script setup></script>
+<script setup>
+import { Search } from '@element-plus/icons'
+</script>
 
 <style scoped>
 .navbar {
   position: fixed;
+  contain: strict;
   top: 0;
   left: 0;
   width: 100%;
@@ -69,7 +79,10 @@
 .nav-item {
   text-decoration: none;
   color: #000;
+  border: none;
+  background-color: transparent;
   font-size: 18px;
+  cursor: pointer;
   transition: color 0.2s;
 }
 
@@ -87,15 +100,15 @@
 .search-container {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: center; /* 改为center而不是right */
 }
 
 .search-input {
   border: 1px solid #ccc;
   border-radius: 20px;
-  padding: 6px 12px 6px 36px;
+  padding: 6px 12px 6px 18px;
   outline: none;
-  width: 240px;
+  width: 280px;
   transition: border-color 0.2s;
 }
 
@@ -106,9 +119,10 @@
 /* 搜索图标样式 */
 .search-icon {
   position: absolute;
-  left: 12px;
-  color: #888;
+  right: 10px; /* 靠右显示 */
   font-size: 16px;
+  cursor: pointer;
+  color: #888; /* 增加颜色 */
 }
 
 .login-btn,

@@ -2,12 +2,17 @@
 import NavBar from '../components/NavBar.vue'
 import GuessYouLike from '../components/GuessYouLike.vue'
 import BookRankList from '../components/BookRankList.vue'
+import BackToTop from '@/components/BackToTop.vue'
+import ReadingTimeCard from '@/components/ReadingTimeCard.vue'
 </script>
 
 <template>
   <div class="Home">
     <div class="app">
       <NavBar />
+    </div>
+    <div class="reading-time-card">
+      <ReadingTimeCard />
     </div>
     <div class="guss-you-like">
       <GuessYouLike />
@@ -18,6 +23,7 @@ import BookRankList from '../components/BookRankList.vue'
       <BookRankList ranktitle="新书榜" desc="最新上架的优质书籍" />
       <BookRankList ranktitle="神作榜" desc="公认必读的高分神作" />
     </div>
+    <BackToTop />
   </div>
 </template>
 
@@ -28,10 +34,15 @@ import BookRankList from '../components/BookRankList.vue'
   background-color: rgb(241, 241, 241);
   gap: 24px;
 }
+.reading-time-card {
+  display: flex;
+  justify-content: left;
+  padding: 100px 100px 20px 100px;
+}
 .guss-you-like {
   display: flex;
   flex-wrap: wrap;
-  padding: 82px;
+  padding: 0 82px 82px 82px;
 }
 .book-rank {
   display: flex;
