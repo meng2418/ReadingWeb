@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import home from './pages/home.vue'
-import bookshelf from './pages/bookshelf.vue'
-import login from './pages/Login.vue'
+// 这里可以保留一些全局的逻辑
 </script>
 
 <template>
   <router-view></router-view>
 </template>
 
-<style scoped></style>
+<style>
+/* 全局样式 */
+</style>
