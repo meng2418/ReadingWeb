@@ -1,206 +1,247 @@
-openapi: 3.0.4
+openapi: 3.0.0
 info:
-  title: Reading Social Platform API
-  description: |-
-    这是一个阅读社交平台的API接口文档，基于OpenAPI 3.0规范开发。
-    提供用户管理、图书管理、书评、评分、书架、社交关注等功能。
-  termsOfService: https://example.com/terms/
-  contact:
-    email: api-support@example.com
-  license:
-    name: Apache 2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: 微信读书网页版 API
+  description: 微信读书网页版完整接口文档
   version: 1.0.0
-externalDocs:
-  description: API使用指南
-  url: https://docs.example.com
 servers:
-  - url: https://SSE23ReadingWeb.swagger.io/api/v3
-    description: 生产环境
-  - url: https://dev-SSE23ReadingWeb.swagger.io/api/v3
+  - url: http://localhost:3000/api
     description: 开发环境
 
-tags:
-  - name: user
-    description: 用户管理
-  - name: follow
-    description: 关注关系管理
-  - name: book
-    description: 图书信息管理
-  - name: category
-    description: 图书分类管理
-  - name: bookreview
-    description: 书评管理
-  - name: bookrating
-    description: 图书评分管理
-  - name: bookshelf
-    description: 个人书架管理
-  - name: ranking
-    description: 排行榜管理
-  - name: post
-    description: 帖子管理
-  - name: postcomment
-    description: 帖子评论管理
-  - name: postlike
-    description: 帖子点赞管理
-  - name: postrepost
-    description: 帖子转发管理
-  - name: popular
-    description: 热门榜管理
-  - name: commentlike
-    description: 评论点赞管理
-  - name: tag
-    description: 标签管理
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        nickname:
+          type: string
+        avatar:
+          type: string
+        bio:
+          type: string
+        isMember:
+          type: boolean
+        coins:
+          type: integer
+        totalReadingTime:
+          type: integer
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        cover:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: integer
+        isFree:
+          type: boolean
+        rating:
+          type: number
+          format: float
+        readCount:
+          type: integer
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        details:
+          type: string
+  responses:
+    Error:
+      description: 错误响应
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              details:
+                type: string
 
 paths:
-  # 用户相关接口
-  /user/register:
+  # ==================== 认证相关接口 ====================
+  /auth/phone-login:
     post:
-      tags:
-        - user
-      summary: 用户注册
-      description: 注册新用户到系统
-      operationId: registerUser
+      summary: 手机号登录
+      tags: [认证]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              type: object
+              properties:
+                phone:
+                  type: string
+                code:
+                  type: string
+              required: [phone, code]
       responses:
-        '200':
-          description: 注册成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '400':
-          description: 无效的输入参数
-        '409':
-          description: 用户已存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /user/login:
-    post:
-      tags:
-        - user
-      summary: 用户登录
-      description: 用户登录系统
-      operationId: loginUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        '200':
+        200:
           description: 登录成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '400':
-          description: 无效的用户名或密码
-        '401':
-          description: 认证失败
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /user/logout:
-    post:
-      tags:
-        - user
-      summary: 用户登出
-      description: 用户登出系统
-      operationId: logoutUser
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 登出成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  code:
-                    type: integer
-                    example: 200
-                  message:
+                  token:
                     type: string
-                    example: "成功登出"
-        '401':
-          description: 未认证或token无效
-        default:
-          description: 意外错误
+                  user:
+                    $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/Error'
+
+  /auth/email-login:
+    post:
+      summary: 邮箱密码登录
+      tags: [认证]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        200:
+          description: 登录成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
 
-  /user/profile/{userid}:
-    get:
-      tags:
-        - user
-      summary: 获取用户资料
-      description: 根据用户ID获取用户详细信息
-      operationId: getUserProfile
-      parameters:
-        - name: userid
-          in: path
-          description: 用户ID
-          required: true
-          schema:
-            type: string
-      security:
-        - BearerAuth: []
+  /auth/send-code:
+    post:
+      summary: 发送验证码
+      tags: [认证]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                type:
+                  type: string
+                  enum: [login, register, reset]
+              required: [phone, type]
       responses:
-        '200':
-          description: 成功获取用户资料
+        200:
+          description: 发送成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /auth/register:
+    post:
+      summary: 用户注册
+      tags: [认证]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                nickname:
+                  type: string
+              required: [username, password, nickname]
+      responses:
+        201:
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /auth/logout:
+    post:
+      summary: 退出登录
+      tags: [认证]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 退出成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  # ==================== 个人中心接口 ====================
+  /user/profile:
+    get:
+      summary: 获取个人资料
+      tags: [个人中心]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '400':
-          description: 无效的用户ID
-        '404':
-          description: 用户不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
     put:
-      tags:
-        - user
-      summary: 更新用户资料
-      description: 更新用户资料信息（支持部分更新）
-      operationId: updateUserProfile
-      parameters:
-        - name: userid
-          in: path
-          description: 用户ID
-          required: true
-          schema:
-            type: string
+      summary: 更新个人资料
+      tags: [个人中心]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -210,1045 +251,921 @@ paths:
               properties:
                 nickname:
                   type: string
-                  minLength: 1
-                  maxLength: 20
-                  description: 昵称
-                  example: "新的昵称"
                 avatar:
                   type: string
-                  format: uri
-                  description: 头像URL
-                  example: "https://example.com/new-avatar.jpg"
                 bio:
                   type: string
-                  maxLength: 200
-                  description: 个人简介
-                  example: "更新后的个人简介"
-                gender:
-                  type: string
-                  enum: [male, female, other, prefer_not_to_say]
-                  description: 性别
-                  example: "female"
-                birthday:
-                  type: string
-                  format: date
-                  description: 生日
-                  example: "1990-01-01"
-              additionalProperties: false
-      security:
-        - BearerAuth: []
       responses:
-        '200':
+        200:
           description: 更新成功
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '400':
-          description: 无效的输入参数
-        '404':
-          description: 用户不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /user/{userid}:
-    delete:
-      tags:
-        - user
-      summary: 注销用户
-      description: 注销指定用户账户
-      operationId: deleteUser
+
+  /user/reading-stats:
+    get:
+      summary: 获取阅读统计
+      tags: [个人中心]
+      security:
+        - bearerAuth: []
       parameters:
-        - name: userid
-          in: path
-          description: 要删除的用户ID
-          required: true
+        - name: range
+          in: query
           schema:
             type: string
-      security:
-        - BearerAuth: []
+            enum: [week, month, year]
       responses:
-        '200':
-          description: 用户删除成功
+        200:
+          description: 成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  code:
+                  totalReadingTime:
                     type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: "用户删除成功"
-        '400':
-          description: 无效的用户ID
-        '404':
-          description: 用户不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                  weeklyReadingTime:
+                    type: integer
+                  monthlyReadingTime:
+                    type: integer
+                  readingDays:
+                    type: integer
 
-  # 关注相关接口
-  /follow:
-    post:
-      tags:
-        - follow
-      summary: 关注用户
-      description: 关注指定用户
-      operationId: followUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - targetUserId
-              properties:
-                targetUserId:
-                  type: string
-                  description: 要关注的用户ID
-                  example: "user123"
+  /user/messages:
+    get:
+      summary: 获取消息列表
+      tags: [个人中心]
       security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 关注成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "关注成功"
-        '400':
-          description: 无效的用户ID或不能关注自己
-        '404':
-          description: 目标用户不存在
-        '409':
-          description: 已经关注该用户
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /follow/{userid}:
-    get:
-      tags:
-        - follow
-      summary: 获取关注关系
-      description: 获取指定用户的关注者和关注列表
-      operationId: getFollowRelations
+        - bearerAuth: []
       parameters:
-        - name: userid
-          in: path
-          description: 用户ID
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 成功获取关注关系
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Follow'
-        '400':
-          description: 无效的用户ID
-        '404':
-          description: 用户不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    delete:
-      tags:
-        - follow
-      summary: 取消关注
-      description: 取消关注指定用户
-      operationId: unfollowUser
-      parameters:
-        - name: userid
-          in: path
-          description: 要取消关注的用户ID
-          required: true
-          schema:
-            type: string
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 取消关注成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "取消关注成功"
-        '400':
-          description: 无效的用户ID
-        '404':
-          description: 用户不存在或未关注该用户
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  # 图书相关接口
-  /book/{bookid}:
-    get:
-      tags:
-        - book
-      summary: 获取图书详情
-      description: 根据图书ID获取图书详细信息
-      operationId: getBookById
-      parameters:
-        - name: bookid
-          in: path
-          description: 图书ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: 成功获取图书信息
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Book'
-        '400':
-          description: 无效的图书ID
-        '404':
-          description: 图书不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-                
-  /category/{categoryId}/books:
-    get:
-      tags:
-        - category
-      summary: 获取分类下的图书列表
-      description: 根据分类ID获取该分类下的所有图书，同时返回分类信息
-      operationId: getBooksByCategory
-      parameters:
-        - name: categoryId
-          in: path
-          description: 分类ID
-          required: true
-          schema:
-            type: integer
-            format: int64
         - name: page
           in: query
-          description: 页码
-          required: false
           schema:
             type: integer
-            minimum: 1
             default: 1
         - name: limit
           in: query
-          description: 每页数量
-          required: false
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
             default: 20
       responses:
-        '200':
-          description: 成功获取分类信息和图书列表
+        200:
+          description: 成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  category:
-                    $ref: '#/components/schemas/Category'
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        type:
+                          type: string
+                        title:
+                          type: string
+                        content:
+                          type: string
+                        isRead:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                  total:
+                    type: integer
+
+  /user/messages/unread-count:
+    get:
+      summary: 获取未读消息数量
+      tags: [个人中心]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unreadCount:
+                    type: integer
+
+  /user/messages/{id}/read:
+    put:
+      summary: 标记消息已读
+      tags: [个人中心]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /user/account:
+    get:
+      summary: 获取账户信息
+      tags: [个人中心]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isMember:
+                    type: boolean
+                  coins:
+                    type: integer
+                  memberExpireAt:
+                    type: string
+                    format: date-time
+
+  # ==================== 书城首页接口 ====================
+  /home:
+    get:
+      summary: 首页数据
+      tags: [书城]
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  banners:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        image:
+                          type: string
+                        link:
+                          type: string
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+                  rankings:
+                    type: object
+                    properties:
+                      weekly:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Book'
+                      monthly:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Book'
+
+  /books/search:
+    get:
+      summary: 搜索书籍
+      tags: [书城]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                   books:
                     type: array
                     items:
                       $ref: '#/components/schemas/Book'
-                  pagination:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                        example: 150
-                      page:
-                        type: integer
-                        example: 1
-                      limit:
-                        type: integer
-                        example: 20
-                      totalPages:
-                        type: integer
-                        example: 8
-        '400':
-          description: 无效的分类ID
-        '404':
-          description: 分类不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  # 书评相关接口
-  /book/review:
-    post:
-      tags:
-        - bookreview
-      summary: 发布书评
-      description: 为指定图书发布书评
-      operationId: createBookReview
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - bookId
-                - content
-              properties:
-                bookId:
-                  type: integer
-                  format: int64
-                  description: 图书ID
-                  example: 1
-                content:
-                  type: string
-                  description: 书评内容
-                  example: "这本书非常精彩，强烈推荐！"
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 书评发布成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Bookreview'
-        '400':
-          description: 无效的输入参数
-        '404':
-          description: 图书不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                  total:
+                    type: integer
+                  page:
+                    type: integer
 
-  /book/review/{reviewid}:
+  /books/recommendations:
     get:
-      tags:
-        - bookreview
-      summary: 获取书评详情
-      description: 根据书评ID获取书评详细信息
-      operationId: getBookReviewById
+      summary: 为你推荐
+      tags: [书城]
       parameters:
-        - name: reviewid
-          in: path
-          description: 书评ID
-          required: true
+        - name: refresh
+          in: query
           schema:
-            type: integer
-            format: int64
+            type: boolean
+            default: false
       responses:
-        '200':
-          description: 成功获取书评
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Bookreview'
-        '400':
-          description: 无效的书评ID
-        '404':
-          description: 书评不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    delete:
-      tags:
-        - bookreview
-      summary: 删除书评
-      description: 删除指定的书评
-      operationId: deleteBookReview
-      parameters:
-        - name: reviewid
-          in: path
-          description: 书评ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 书评删除成功
+        200:
+          description: 成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "书评删除成功"
-        '400':
-          description: 无效的书评ID
-        '403':
-          description: 没有权限删除此书评
-        '404':
-          description: 书评不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
 
-  # 图书评分接口
-  /book/rating:
-    post:
-      tags:
-        - bookrating
-      summary: 评分图书
-      description: 为指定图书进行评分
-      operationId: rateBook
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - bookId
-                - rating
-              properties:
-                bookId:
-                  type: integer
-                  format: int64
-                  description: 图书ID
-                  example: 1
-                rating:
-                  type: string
-                  enum: [recommend, average, not_recommend]
-                  description: "评价等级"
-                  example: "recommend"
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 评分成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Bookrating'
-        '400':
-          description: 无效的评分或图书ID
-        '404':
-          description: 图书不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /book/rating/{bookId}/stats:
+  /books/rankings:
     get:
-      tags:
-        - bookrating
-      summary: "获取图书评分统计"
-      description: "查看图书的评分人数、各星级分布和好评率"
-      operationId: getBookRatingStats
+      summary: 书籍榜单
+      tags: [书城]
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [weekly, monthly, new, bestseller]
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+                  title:
+                    type: string
+                  updateTime:
+                    type: string
+                    format: date-time
+
+  # ==================== 书籍详情接口 ====================
+  /books/{id}:
+    get:
+      summary: 获取书籍详情
+      tags: [书籍详情]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  book:
+                    $ref: '#/components/schemas/Book'
+                  chapters:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        order:
+                          type: integer
+                  isInBookshelf:
+                    type: boolean
+                  readingProgress:
+                    type: object
+                    properties:
+                      progress:
+                        type: number
+                        format: float
+                      lastReadAt:
+                        type: string
+                        format: date-time
+
+  /books/{id}/author:
+    get:
+      summary: 获取作者信息
+      tags: [书籍详情]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  author:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      bio:
+                        type: string
+                      achievement:
+                        type: string
+
+  /authors/{name}/books:
+    get:
+      summary: 获取作者的其他作品
+      tags: [书籍详情]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+
+  /books/{id}/comments:
+    get:
+      summary: 获取书友评论
+      tags: [书籍详情]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        user:
+                          $ref: '#/components/schemas/User'
+                        content:
+                          type: string
+                        rating:
+                          type: number
+                          format: float
+                        createdAt:
+                          type: string
+                          format: date-time
+                  total:
+                    type: integer
+
+  /books/{id}/related:
+    get:
+      summary: 相关推荐
+      tags: [书籍详情]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+
+  # ==================== 阅读器接口 ====================
+  /books/{bookId}/chapters/{chapterId}:
+    get:
+      summary: 获取章节内容
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
       parameters:
         - name: bookId
           in: path
-          description: 图书ID
           required: true
           schema:
             type: integer
-            format: int64
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
       responses:
-        '200':
-          description: 成功获取评分统计
+        200:
+          description: 成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  totalRatings:
-                    type: integer
-                    description: "总评分人数"
-                    example: 156
-                  ratingDistribution:
+                  chapter:
                     type: object
-                    description: "各星级评分人数"
                     properties:
-                      "recommend":
+                      id:
                         type: integer
-                        description: "推荐人数"
-                        example: 5
-                      "average":
+                      title:
+                        type: string
+                      content:
+                        type: string
+                      order:
                         type: integer
-                        description: "一般人数"
-                        example: 10
-                      "not_recommend":
+                  prevChapter:
+                    type: object
+                    properties:
+                      id:
                         type: integer
-                        description: "不行人数"
-                        example: 25
-                  positiveRate:
-                    type: number
-                    format: float
-                    description: "推荐值（推荐的比例）"
-                    example: 0.74
-        '404':
-          description: 图书不存在
+                      title:
+                        type: string
+                  nextChapter:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      title:
+                        type: string
 
-  # 书架管理接口
-  /bookshelf:
+  /reading/progress:
     post:
-      tags:
-        - bookshelf
-      summary: 添加图书到书架
-      description: 将图书添加到个人书架
-      operationId: addToBookshelf
+      summary: 保存阅读进度
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - bookId
-                - status
               properties:
                 bookId:
                   type: integer
-                  format: int64
-                  description: 图书ID
-                  example: 1
-                status:
-                  type: string
-                  enum: [notread, reading, read]
-                  description: 阅读状态
-                  example: "reading"
-      security:
-        - BearerAuth: []
+                chapterId:
+                  type: integer
+                currentPage:
+                  type: integer
+                progress:
+                  type: number
+                  format: float
+              required: [bookId, progress]
       responses:
-        '200':
+        200:
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /reading/progress/{bookId}:
+    get:
+      summary: 获取阅读进度
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  progress:
+                    type: object
+                    properties:
+                      bookId:
+                        type: integer
+                      chapterId:
+                        type: integer
+                      currentPage:
+                        type: integer
+                      progress:
+                        type: number
+                        format: float
+                      lastReadAt:
+                        type: string
+                        format: date-time
+
+  /reading/notes:
+    post:
+      summary: 添加标注/笔记
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  type: integer
+                chapterId:
+                  type: integer
+                content:
+                  type: string
+                type:
+                  type: string
+                  enum: [highlight, comment]
+                color:
+                  type: string
+                page:
+                  type: integer
+              required: [bookId, content, type]
+      responses:
+        201:
           description: 添加成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Bookshelf'
-        '400':
-          description: 无效的输入参数
-        '404':
-          description: 图书不存在
-        '409':
-          description: 图书已在书架中
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /bookshelf/{shelfid}:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  note:
+                    type: object
     get:
-      tags:
-        - bookshelf
-      summary: 获取书架项详情
-      description: 根据书架项ID获取详细信息
-      operationId: getBookshelfItem
+      summary: 获取笔记列表
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
       parameters:
-        - name: shelfid
-          in: path
-          description: 书架项ID
+        - name: bookId
+          in: query
           required: true
           schema:
             type: integer
-            format: int64
-      security:
-        - BearerAuth: []
       responses:
-        '200':
-          description: 成功获取书架项信息
+        200:
+          description: 成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Bookshelf'
-        '400':
-          description: 无效的书架项ID
-        '404':
-          description: 书架项不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      type: object
 
-    delete:
-      tags:
-        - bookshelf
-      summary: 从书架移除图书
-      description: 从个人书架中移除指定图书
-      operationId: removeFromBookshelf
+  /reading/bookmarks:
+    post:
+      summary: 添加书签
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  type: integer
+                chapterId:
+                  type: integer
+                page:
+                  type: integer
+                note:
+                  type: string
+              required: [bookId, page]
+      responses:
+        201:
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    get:
+      summary: 获取书签列表
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
       parameters:
-        - name: shelfid
-          in: path
-          description: 书架项ID
+        - name: bookId
+          in: query
           required: true
           schema:
             type: integer
-            format: int64
-      security:
-        - BearerAuth: []
       responses:
-        '200':
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookmarks:
+                    type: array
+                    items:
+                      type: object
+
+  # ==================== 书架接口 ====================
+  /bookshelf:
+    get:
+      summary: 获取书架
+      tags: [书架]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, unread, reading, finished]
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        book:
+                          $ref: '#/components/schemas/Book'
+                        status:
+                          type: string
+                        addedAt:
+                          type: string
+                          format: date-time
+                        lastReadAt:
+                          type: string
+                          format: date-time
+                        progress:
+                          type: number
+                          format: float
+    post:
+      summary: 添加到书架
+      tags: [书架]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  type: integer
+                status:
+                  type: string
+                  enum: [unread, reading, finished]
+              required: [bookId]
+      responses:
+        201:
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /bookshelf/{bookId}:
+    delete:
+      summary: 从书架移除
+      tags: [书架]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
           description: 移除成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    example: true
                   message:
                     type: string
-                    example: "图书已从书架移除"
-        '400':
-          description: 无效的书架项ID
-        '404':
-          description: 书架项不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  # 获取用户书架列表
-  /user/{userid}/bookshelf:
-    get:
-      tags:
-        - bookshelf
-      summary: 获取用户书架
-      description: 获取指定用户的所有书架项
-      operationId: getUserBookshelf
+    put:
+      summary: 更新阅读状态
+      tags: [书架]
+      security:
+        - bearerAuth: []
       parameters:
-        - name: userid
+        - name: bookId
           in: path
-          description: 用户ID
           required: true
           schema:
-            type: string
-        - name: status
-          in: query
-          description: 按状态筛选
-          required: false
-          schema:
-            type: string
-            enum: [notread, reading, read]
-        - name: page
-          in: query
-          description: 页码
-          required: false
-          schema:
             type: integer
-            default: 1
-        - name: limit
-          in: query
-          description: 每页数量
-          required: false
-          schema:
-            type: integer
-            default: 20
-      responses:
-        '200':
-          description: 成功获取书架列表
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Bookshelf'
-                  total:
-                    type: integer
-                    example: 50
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 20
-        '400':
-          description: 无效的用户ID
-        '404':
-          description: 用户不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  
-    # 排行榜接口
-  /ranking/daily50/books:
-    get:
-      tags:
-        - ranking
-      summary: "日榜前50"
-      description: "获取今日最热门的图书前50名"
-      operationId: getDailyRanking
-      parameters:
-        - name: limit
-          in: query
-          description: "返回数量"
-          required: false
-          schema:
-            type: integer
-            default: 50
-            maximum: 50
-      responses:
-        '200':
-          description: "成功获取日榜"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  rankingType:
-                    type: string
-                    example: "daily"
-                  updateTime:
-                    type: string
-                    format: date-time
-                    example: "2024-06-01T00:00:00+08:00"
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/RankingBook'
-
-  /ranking/weekly50/books:
-    get:
-      tags:
-        - ranking
-      summary: "周榜前50"
-      description: "获取本周最热门的图书前50名"
-      operationId: getWeeklyRanking
-      parameters:
-        - name: limit
-          in: query
-          description: "返回数量"
-          required: false
-          schema:
-            type: integer
-            default: 50
-            maximum: 50
-      responses:
-        '200':
-          description: "成功获取周榜"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RankingResponse'
-
-  /ranking/new50/books:
-    get:
-      tags:
-        - ranking
-      summary: "新书榜前50"
-      description: "获取最新上架的图书前50名"
-      operationId: getNewBooksRanking
-      parameters:
-        - name: limit
-          in: query
-          description: "返回数量"
-          required: false
-          schema:
-            type: integer
-            default: 50
-            maximum: 50
-        - name: days
-          in: query
-          description: "新书时间范围（天）"
-          required: false
-          schema:
-            type: integer
-            default: 30
-      responses:
-        '200':
-          description: "成功获取新书榜"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RankingResponse'
-
-  /ranking/masterpiece50/books:
-    get:
-      tags:
-        - ranking
-      summary: "神作榜前50"
-      description: "获取评分最高的经典图书前50名"
-      operationId: getMasterpieceRanking
-      parameters:
-        - name: limit
-          in: query
-          description: "返回数量"
-          required: false
-          schema:
-            type: integer
-            default: 50
-            maximum: 50
-        - name: minRatings
-          in: query
-          description: "最低评分人数"
-          required: false
-          schema:
-            type: integer
-            default: 100
-      responses:
-        '200':
-          description: "成功获取神作榜"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RankingResponse'              
-  
-  # 帖子管理接口
-  /post:
-    post:
-      tags:
-        - post
-      summary: 创建帖子
-      description: 创建新的帖子
-      operationId: createPost
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - title
-                - content
               properties:
-                title:
+                status:
                   type: string
-                  maxLength: 100
-                  description: 帖子标题
-                  example: "最近在读的几本好书推荐"
-                content:
+                  enum: [unread, reading, finished]
+                lastReadAt:
                   type: string
-                  description: 帖子内容
-                  example: "分享几本最近读过的觉得很不错的书籍..."
-                images:
-                  type: array
-                  description: 图片URL列表
-                  items:
+                  format: date-time
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
                     type: string
-                    format: uri
-                  example: ["https://example.com/images/1.jpg"]
-                tags:
-                  type: array
-                  description: 标签列表
-                  items:
-                    type: string
-                  example: ["读书分享", "推荐"]
+
+  /bookshelf/batch:
+    post:
+      summary: 批量操作
+      tags: [书架]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [delete, update-status]
                 bookIds:
                   type: array
-                  description: 关联的图书ID列表
                   items:
                     type: integer
-                    format: int64
-                  example: [1, 2, 3]
-      security:
-        - BearerAuth: []
+                status:
+                  type: string
+              required: [action, bookIds]
       responses:
-        '200':
-          description: 帖子创建成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Post'
-        '400':
-          description: 无效的输入参数
-        '401':
-          description: 未认证
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    get:
-      tags:
-        - post
-      summary: 获取帖子列表
-      description: 获取帖子列表，支持分页和筛选
-      operationId: getPosts
-      parameters:
-        - name: page
-          in: query
-          description: 页码
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          description: 每页数量
-          required: false
-          schema:
-            type: integer
-            default: 20
-        - name: userId
-          in: query
-          description: 用户ID筛选
-          required: false
-          schema:
-            type: string
-        - name: tag
-          in: query
-          description: 标签筛选
-          required: false
-          schema:
-            type: string
-        - name: keyword
-          in: query
-          description: 关键词搜索
-          required: false
-          schema:
-            type: string
-        - name: sort
-          in: query
-          description: 排序方式
-          required: false
-          schema:
-            type: string
-            enum: [latest, popular, trending]
-            default: latest
-      responses:
-        '200':
-          description: 成功获取帖子列表
+        200:
+          description: 操作成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  items:
+                  message:
+                    type: string
+
+  # ==================== 分类接口 ====================
+  /categories:
+    get:
+      summary: 分类列表
+      tags: [分类]
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Post'
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        bookCount:
+                          type: integer
+
+  /categories/{id}/books:
+    get:
+      summary: 分类下的书籍
+      tags: [分类]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
                   total:
                     type: integer
-                    example: 100
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 20
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
 
-  /post/{postid}:
-    get:
-      tags:
-        - post
-      summary: 获取帖子详情
-      description: 根据帖子ID获取帖子详细信息
-      operationId: getPostById
-      parameters:
-        - name: postid
-          in: path
-          description: 帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: 成功获取帖子信息
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Post'
-        '400':
-          description: 无效的帖子ID
-        '404':
-          description: 帖子不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    put:
-      tags:
-        - post
-      summary: 更新帖子
-      description: 更新指定帖子的内容（部分更新）
-      operationId: updatePost
-      parameters:
-        - name: postid
-          in: path
-          description: 帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
+  # ==================== 社区接口 ====================
+  /posts:
+    post:
+      summary: 发帖
+      tags: [社区]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1258,1656 +1175,319 @@ paths:
               properties:
                 title:
                   type: string
-                  maxLength: 100
-                  description: 帖子标题
-                  example: "更新后的帖子标题"
                 content:
                   type: string
-                  description: 帖子内容
-                  example: "更新后的帖子内容..."
-                images:
-                  type: array
-                  description: 图片URL列表
-                  items:
-                    type: string
-                    format: uri
-                  example: ["https://example.com/images/2.jpg"]
-                tags:
-                  type: array
-                  description: 标签列表
-                  items:
-                    type: string
-                  example: ["更新", "分享"]
-              # 添加这个属性，表示所有字段都是可选的
-              additionalProperties: false
-      security:
-        - BearerAuth: []
+                bookId:
+                  type: integer
+                topic:
+                  type: string
+              required: [title, content]
       responses:
-        '200':
-          description: 帖子更新成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Post'
-        '400':
-          description: 无效的输入参数
-        '403':
-          description: 没有权限修改此帖子
-        '404':
-          description: 帖子不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-    
-            
-                  
-
-    delete:
-      tags:
-        - post
-      summary: 删除帖子
-      description: 删除指定的帖子
-      operationId: deletePost
-      parameters:
-        - name: postid
-          in: path
-          description: 帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 帖子删除成功
+        201:
+          description: 发帖成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    example: true
                   message:
                     type: string
-                    example: "帖子删除成功"
-        '403':
-          description: 没有权限删除此帖子
-        '404':
-          description: 帖子不存在
-        default:
-          description: 意外错误
+                  post:
+                    type: object
+    get:
+      summary: 帖子列表
+      tags: [社区]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, following, mine]
+        - name: topic
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: 成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
 
-  # 帖子评论管理接口
-  /post/{postid}/comment:
-    post:
-      tags:
-        - postcomment
-      summary: 评论帖子
-      description: 对指定帖子发表评论
-      operationId: createPostComment
+  /posts/{id}:
+    get:
+      summary: 帖子详情
+      tags: [社区]
       parameters:
-        - name: postid
+        - name: id
           in: path
-          description: 帖子ID
           required: true
           schema:
             type: integer
-            format: int64
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  post:
+                    type: object
+
+  /likes:
+    post:
+      summary: 点赞
+      tags: [社区]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - content
               properties:
-                content:
-                  type: string
-                  description: 评论内容
-                  example: "这个帖子写得真好！"
+                postId:
+                  type: integer
+                commentId:
+                  type: integer
+                noteId:
+                  type: integer
+      responses:
+        200:
+          description: 点赞成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    delete:
+      summary: 取消点赞
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                postId:
+                  type: integer
+                commentId:
+                  type: integer
+                noteId:
+                  type: integer
+      responses:
+        200:
+          description: 取消成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /comments:
+    post:
+      summary: 评论
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                postId:
+                  type: integer
+                noteId:
+                  type: integer
                 parentId:
                   type: integer
-                  format: int64
-                  description: 父评论ID（回复评论时使用）
-                  example: 0
-      security:
-        - BearerAuth: []
+                content:
+                  type: string
+              required: [content]
       responses:
-        '200':
+        201:
           description: 评论成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Postcomment'
-        '400':
-          description: 无效的输入参数
-        '404':
-          description: 帖子不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    get:
-      tags:
-        - postcomment
-      summary: 获取帖子评论列表
-      description: 获取指定帖子的评论列表
-      operationId: getPostComments
-      parameters:
-        - name: postid
-          in: path
-          description: 帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: page
-          in: query
-          description: 页码
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          description: 每页数量
-          required: false
-          schema:
-            type: integer
-            default: 20
-        - name: sort
-          in: query
-          description: 排序方式
-          required: false
-          schema:
-            type: string
-            enum: [latest, popular]
-            default: latest
-      responses:
-        '200':
-          description: 成功获取评论列表
-          content:
-            application/json:
-              schema:
                 type: object
                 properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Postcomment'
-                  total:
-                    type: integer
-                    example: 50
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 20
-        '404':
-          description: 帖子不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                  message:
+                    type: string
+                  comment:
+                    type: object
 
-  /post/comment/{commentid}:
-    get:
-      tags:
-        - postcomment
-      summary: 获取评论详情
-      description: 根据评论ID获取评论详细信息
-      operationId: getCommentById
-      parameters:
-        - name: commentid
-          in: path
-          description: 评论ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: 成功获取评论信息
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Postcomment'
-        '400':
-          description: 无效的评论ID
-        '404':
-          description: 评论不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    put:
-      tags:
-        - postcomment
-      summary: 更新评论
-      description: 更新指定评论的内容
-      operationId: updateComment
-      parameters:
-        - name: commentid
-          in: path
-          description: 评论ID
-          required: true
-          schema:
-            type: integer
-            format: int64
+  /follows:
+    post:
+      summary: 关注用户
+      tags: [社区]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - content
               properties:
-                content:
-                  type: string
-                  description: 评论内容
-                  example: "更新后的评论内容"
-              additionalProperties: false
-      security:
-        - BearerAuth: []
+                followingId:
+                  type: integer
+              required: [followingId]
       responses:
-        '200':
-          description: 评论更新成功
+        200:
+          description: 关注成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Postcomment'
-        '400':
-          description: 无效的输入参数
-        '403':
-          description: 没有权限修改此评论
-        '404':
-          description: 评论不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  message:
+                    type: string
 
+  /follows/{followingId}:
     delete:
-      tags:
-        - postcomment
-      summary: 删除评论
-      description: 删除指定的评论
-      operationId: deleteComment
+      summary: 取消关注
+      tags: [社区]
+      security:
+        - bearerAuth: []
       parameters:
-        - name: commentid
+        - name: followingId
           in: path
-          description: 评论ID
           required: true
           schema:
             type: integer
-            format: int64
-      security:
-        - BearerAuth: []
       responses:
-        '200':
-          description: 评论删除成功
+        200:
+          description: 取消成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    example: true
                   message:
                     type: string
-                    example: "评论删除成功"
-        '403':
-          description: 没有权限删除此评论
-        '404':
-          description: 评论不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
 
-  # 帖子点赞管理接口
-  /post/{postid}/like:
-    post:
-      tags:
-        - postlike
-      summary: 点赞帖子
-      description: 对指定帖子进行点赞
-      operationId: likePost
-      parameters:
-        - name: postid
-          in: path
-          description: 帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 点赞成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "点赞成功"
-                  likeCount:
-                    type: integer
-                    example: 157
-        '400':
-          description: 无效的帖子ID
-        '404':
-          description: 帖子不存在
-        '409':
-          description: 已经点赞过此帖子
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    delete:
-      tags:
-        - postlike
-      summary: 取消点赞帖子
-      description: 取消对指定帖子的点赞
-      operationId: unlikePost
-      parameters:
-        - name: postid
-          in: path
-          description: 帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 取消点赞成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "取消点赞成功"
-                  likeCount:
-                    type: integer
-                    example: 156
-        '400':
-          description: 无效的帖子ID
-        '404':
-          description: 帖子不存在或未点赞
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
+  /follows/following:
     get:
-      tags:
-        - postlike
-      summary: 获取帖子点赞列表
-      description: 获取指定帖子的点赞用户列表
-      operationId: getPostLikes
-      parameters:
-        - name: postid
-          in: path
-          description: 帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: page
-          in: query
-          description: 页码
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          description: 每页数量
-          required: false
-          schema:
-            type: integer
-            default: 20
+      summary: 关注列表
+      tags: [社区]
+      security:
+        - bearerAuth: []
       responses:
-        '200':
-          description: 成功获取点赞列表
+        200:
+          description: 成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  items:
+                  following:
                     type: array
                     items:
                       $ref: '#/components/schemas/User'
-                  total:
-                    type: integer
-                    example: 156
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 20
-        '404':
-          description: 帖子不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
 
-  # 帖子转发管理接口
-  /post/{postid}/repost:
-    post:
-      tags:
-        - postrepost
-      summary: 转发帖子
-      description: 转发指定帖子
-      operationId: repostPost
-      parameters:
-        - name: postid
-          in: path
-          description: 原帖子ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                content:
-                  type: string
-                  description: 转发时添加的内容
-                  example: "这个帖子很有启发，分享给大家！"
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 转发成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Postrepost'
-        '400':
-          description: 无效的帖子ID
-        '404':
-          description: 原帖子不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
+  /follows/followers:
     get:
-      tags:
-        - postrepost
-      summary: 获取帖子转发列表
-      description: 获取指定帖子的转发列表
-      operationId: getPostReposts
+      summary: 粉丝列表
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  followers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /topics:
+    get:
+      summary: 话题列表
+      tags: [社区]
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  topics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        postCount:
+                          type: integer
+
+  /topics/{name}/posts:
+    get:
+      summary: 话题下的帖子
+      tags: [社区]
       parameters:
-        - name: postid
+        - name: name
           in: path
-          description: 帖子ID
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
         - name: page
           in: query
-          description: 页码
-          required: false
           schema:
             type: integer
             default: 1
         - name: limit
           in: query
-          description: 每页数量
-          required: false
           schema:
             type: integer
             default: 20
       responses:
-        '200':
-          description: 成功获取转发列表
+        200:
+          description: 成功
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  items:
+                  posts:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Postrepost'
+                      type: object
                   total:
                     type: integer
-                    example: 25
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 20
-        '404':
-          description: 帖子不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /popular/10/tag:
-    get:
-      tags:
-        - popular
-      summary: "热门标签前10"
-      description: "获取使用频率最高的前10个标签"
-      operationId: getPopularTags
-      parameters:
-        - name: limit
-          in: query
-          description: "返回数量"
-          required: false
-          schema:
-            type: integer
-            default: 10
-            maximum: 10
-        - name: type
-          in: query
-          description: "标签类型"
-          required: false
-          schema:
-            type: string
-            enum: [post, book, all]
-            default: all
-      responses:
-        '200':
-          description: "成功获取热门标签"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PopularTag'
-                  updateTime:
-                    type: string
 
-  # 评论点赞管理接口
-  /post/comment/{commentid}/like:
-    post:
-      tags:
-        - commentlike
-      summary: 点赞评论
-      description: 对指定评论进行点赞
-      operationId: likeComment
-      parameters:
-        - name: commentid
-          in: path
-          description: 评论ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 点赞成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "点赞成功"
-                  likeCount:
-                    type: integer
-                    example: 15
-        '400':
-          description: 无效的评论ID
-        '404':
-          description: 评论不存在
-        '409':
-          description: 已经点赞过此评论
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    delete:
-      tags:
-        - commentlike
-      summary: 取消点赞评论
-      description: 取消对指定评论的点赞
-      operationId: unlikeComment
-      parameters:
-        - name: commentid
-          in: path
-          description: 评论ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 取消点赞成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "取消点赞成功"
-                  likeCount:
-                    type: integer
-                    example: 14
-        '400':
-          description: 无效的评论ID
-        '404':
-          description: 评论不存在或未点赞
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  # 标签管理接口
-  /tag:
-    get:
-      tags:
-        - tag
-      summary: 获取标签列表
-      description: 获取热门标签列表
-      operationId: getTags
-      parameters:
-        - name: type
-          in: query
-          description: 标签类型
-          required: false
-          schema:
-            type: string
-            enum: [post, book, all]
-            default: all
-        - name: limit
-          in: query
-          description: 返回数量
-          required: false
-          schema:
-            type: integer
-            default: 50
-        - name: sort
-          in: query
-          description: 排序方式
-          required: false
-          schema:
-            type: string
-            enum: [popular, alphabet, recent]
-            default: popular
-      responses:
-        '200':
-          description: 成功获取标签列表
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tag'
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    post:
-      tags:
-        - tag
-      summary: 创建标签
-      description: 创建新的标签
-      operationId: createTag
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-              properties:
-                name:
-                  type: string
-                  description: 标签名称
-                  example: "科幻文学"
-                description:
-                  type: string
-                  description: 标签描述
-                  example: "关于科幻类文学作品的标签"
-                type:
-                  type: string
-                  enum: [post, book]
-                  description: 标签类型
-                  example: "book"
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 标签创建成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tag'
-        '400':
-          description: 无效的输入参数
-        '409':
-          description: 标签已存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /tag/{tagid}:
-    get:
-      tags:
-        - tag
-      summary: 获取标签详情
-      description: 根据标签ID获取标签详细信息
-      operationId: getTagById
-      parameters:
-        - name: tagid
-          in: path
-          description: 标签ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: 成功获取标签信息
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tag'
-        '400':
-          description: 无效的标签ID
-        '404':
-          description: 标签不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    put:
-      tags:
-        - tag
-      summary: 更新标签
-      description: 更新指定标签的信息
-      operationId: updateTag
-      parameters:
-        - name: tagid
-          in: path
-          description: 标签ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: 标签名称
-                  example: "更新后的标签名"
-                description:
-                  type: string
-                  description: 标签描述
-                  example: "更新后的标签描述"
-              additionalProperties: false
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 标签更新成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tag'
-        '400':
-          description: 无效的输入参数
-        '404':
-          description: 标签不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-    delete:
-      tags:
-        - tag
-      summary: 删除标签
-      description: 删除指定的标签
-      operationId: deleteTag
-      parameters:
-        - name: tagid
-          in: path
-          description: 标签ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 标签删除成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "标签删除成功"
-        '403':
-          description: 没有权限删除此标签
-        '404':
-          description: 标签不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /tag/{tagid}/posts:
-    get:
-      tags:
-        - tag
-      summary: 获取标签相关帖子
-      description: 获取使用指定标签的帖子列表
-      operationId: getTagPosts
-      parameters:
-        - name: tagid
-          in: path
-          description: 标签编号
-          required: true
-          schema:
-            type: integer
-        - name: page
-          in: query
-          description: 页码
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          description: 每页数量
-          required: false
-          schema:
-            type: integer
-            default: 20
-      responses:
-        '200':
-          description: 成功获取帖子列表
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Post'
-                  total:
-                    type: integer
-                    example: 100
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 20
-        '404':
-          description: 标签不存在
-        default:
-          description: 意外错误
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-   
-components:
-  schemas:
-    # 用户相关模型
-    User:
-      type: object
-      properties:
-        userid:
-          type: string
-          description: 用户ID
-          example: "user123"
-        nickname:
-          type: string
-          description: 昵称
-          example: "阅读爱好者"
-        email:
-          type: string
-          format: email
-          description: 邮箱
-          example: "user@example.com"
-        phone:
-          type: string
-          pattern: '^\+?[1-9]\d{1,14}$'
-          description: 手机号
-          example: "+8613682285703"
-        avatar:
-          type: string
-          format: uri
-          description: 头像URL
-          example: "https://example.com/avatars/user123.jpg"
-        bio:
-          type: string
-          description: 个人简介
-          example: "热爱阅读的程序员"
-        gender:
-          type: string
-          enum: [male, female, other, prefer_not_to_say]
-          description: 性别
-          example: "male"
-        birthday:
-          type: string
-          format: date
-          description: 生日
-          example: "1990-01-01"
-        registerTime:
-          type: string
-          format: date-time
-          description: 注册时间
-          example: "2024-06-01T14:00:00+08:00"
-        followingNumber:
-          type: integer
-          description: 关注人数
-          example: 156
-        followerNumber:
-          type: integer
-          description: 粉丝人数
-          example: 89
-        postNumber:
-          type: integer
-          description: 发帖数量
-          example: 23
-        dayReadingTime:
-          type: string
-          description: 今日阅读时长
-          example: "PT2H30M"
-        weekReadingTime:
-          type: string
-          description: 本周阅读时长
-          example: "PT15H45M"
-        totalReadingTime:
-          type: string
-          description: 总阅读时长
-          example: "PT150H30M"
-
-    RegisterRequest:
-      type: object
-      required:
-        - nickname
-        - password
-        - email
-      properties:
-        nickname:
-          type: string
-          minLength: 2
-          maxLength: 20
-          description: 昵称
-          example: "张三"
-        password:
-          type: string
-          format: password
-          minLength: 6
-          description: 密码
-          example: "123456"
-        email:
-          type: string
-          format: email
-          description: 邮箱
-          example: "zhangsan@example.com"
-        phone:
-          type: string
-          pattern: '^\+?[1-9]\d{1,14}$'
-          description: 手机号
-          example: "+8613682285703"
-
-    LoginRequest:
-      type: object
-      required:
-        - login
-        - password
-      properties:
-        login:
-          type: string
-          description: 登录名（邮箱或昵称）
-          example: "zhangsan@example.com"
-        password:
-          type: string
-          format: password
-          description: 密码
-          example: "123456"
-
-    AuthResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: "操作成功"
-        data:
-          $ref: '#/components/schemas/User'
-        token:
-          type: string
-          description: JWT认证令牌
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-    # 关注关系模型
-    Follow:
-      type: object
-      properties:
-        userId:
-          type: string
-          description: 用户ID
-          example: "user123"
-        followers:
-          type: array
-          description: 粉丝列表
-          items:
-            $ref: '#/components/schemas/User'
-        followings:
-          type: array
-          description: 关注列表
-          items:
-            $ref: '#/components/schemas/User'
-        stats:
-          type: object
-          description: 关注统计
-          properties:
-            followers_count:
-              type: integer
-              example: 1635
-              description: 粉丝数
-            followings_count:
-              type: integer
-              example: 16
-              description: 关注数
-
-    # 图书相关模型
-    Book:
-      type: object
-      properties:
-        bookid:
-          type: integer
-          format: int64
-          description: 图书ID
-          example: 1
-        isbn:
-          type: string
-          description: ISBN号
-          example: "978-7-02-015673-6"
-        title:
-          type: string
-          description: 图书标题
-          example: "三体"
-        author:
-          type: string
-          description: 作者
-          example: "刘慈欣"
-        publisher:
-          type: string
-          description: 出版社
-          example: "重庆出版社"
-        publishDate:
-          type: string
-          format: date
-          description: 出版日期
-          example: "2008-01-01"
-        coverImage:
-          type: string
-          format: uri
-          description: 封面图片URL
-          example: "https://example.com/covers/santi.jpg"
-        description:
-          type: string
-          description: 图书简介
-          example: "地球往事三部曲之一，科幻小说的经典之作"
-        pages:
-          type: integer
-          description: 页数
-          example: 302
-        language:
-          type: string
-          description: 语言
-          example: "中文"
-        categories:
-          type: array
-          description: 分类标签
-          items:
-            type: string
-          example: ["小说"]
-        averageRating:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 5
-          description: 平均评分
-          example: 4.5
-        ratingCount:
-          type: integer
-          description: 评分人数
-          example: 15678
-
-    # 书评模型
-    Bookreview:
-      type: object
-      properties:
-        reviewid:
-          type: integer
-          format: int64
-          description: 书评ID
-          example: 1
-        bookId:
-          type: integer
-          format: int64
-          description: 图书ID
-          example: 1
-        userId:
-          type: string
-          description: 用户ID
-          example: "user123"
-        content:
-          type: string
-          description: 书评内容
-          example: "这是一部震撼人心的科幻作品，对人性与文明的思考非常深刻。"
-        likes:
-          type: integer
-          description: 点赞数
-          example: 156
-        createTime:
-          type: string
-          format: date-time
-          description: 创建时间
-          example: "2024-06-01T14:30:00+08:00"
-        updateTime:
-          type: string
-          format: date-time
-          description: 更新时间
-          example: "2024-06-01T14:30:00+08:00"
-        userInfo:
-          $ref: '#/components/schemas/User'
-        bookInfo:
-          $ref: '#/components/schemas/Book'
-
-    # 图书评分模型
-    Bookrating:
-      type: object
-      properties:
-        ratingid:
-          type: integer
-          format: int64
-          description: 评分ID
-          example: 1
-        bookId:
-          type: integer
-          format: int64
-          description: 图书ID
-          example: 1
-        userId:
-          type: string
-          description: 用户ID
-          example: "user123"
-        rating:
-          type: string
-          enum: [recommend, average, not_recommend]
-          description: "评价等级"
-          example: "recommend"
-        createTime:
-          type: string
-          format: date-time
-          description: 创建时间
-          example: "2024-06-01T14:30:00+08:00"
-        updateTime:
-          type: string
-          format: date-time
-          description: 更新时间
-          example: "2024-06-01T14:30:00+08:00"
-
-    # 书架模型
-    Bookshelf:
-      type: object
-      properties:
-        shelfid:
-          type: integer
-          format: int64
-          description: 书架项ID
-          example: 1
-        userId:
-          type: string
-          description: 用户ID
-          example: "user123"
-        bookId:
-          type: integer
-          format: int64
-          description: 图书ID
-          example: 1
-        status:
-          type: string
-          enum: [notread, reading, read]
-          description: 阅读状态
-          example: "reading"
-        addTime:
-          type: string
-          format: date-time
-          description: 添加时间
-          example: "2024-06-01T14:30:00+08:00"
-        startTime:
-          type: string
-          format: date-time
-          description: 开始阅读时间
-          example: "2024-06-05T10:00:00+08:00"
-        finishTime:
-          type: string
-          format: date-time
-          description: 完成阅读时间
-          example: "2024-06-10T20:00:00+08:00"
-        progress:
-          type: integer
-          minimum: 0
-          maximum: 100
-          description: 阅读进度百分比
-          example: 65
-        rating:
-          type: integer
-          minimum: 1
-          maximum: 5
-          description: 个人评分
-          example: 4
-        bookInfo:
-          $ref: '#/components/schemas/Book'
-
-    RankingResponse:
-      type: object
-      properties:
-        rankingType:
-          type: string
-          enum: [daily, weekly, new, masterpiece]
-          example: "daily"
-        updateTime:
-          type: string
-          format: date-time
-          example: "2024-06-01T00:00:00+08:00"
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/RankingBook'
-
-    RankingBook:
-      type: object
-      properties:
-        rank:
-          type: integer
-          description: "排名"
-          example: 1
-        book:
-          $ref: '#/components/schemas/Book'
-        score:
-          type: number
-          description: "榜单得分"
-          example: 95.5
-        trend:
-          type: string
-          enum: [up, down, same, new]
-          description: "排名趋势"
-          example: "up"
-        change:
-          type: integer
-          description: "排名变化"
-          example: 2
-    
-    # 帖子相关模型
-    Post:
-      type: object
-      properties:
-        postid:
-          type: integer
-          format: int64
-          description: 帖子ID
-          example: 1
-        userId:
-          type: string
-          description: 用户ID
-          example: "user123"
-        title:
-          type: string
-          description: 帖子标题
-          example: "最近在读的几本好书推荐"
-        content:
-          type: string
-          description: 帖子内容
-          example: "分享几本最近读过的觉得很不错的书籍..."
-        images:
-          type: array
-          description: 图片列表
-          items:
-            type: string
-            format: uri
-          example: ["https://example.com/images/1.jpg"]
-        tags:
-          type: array
-          description: "帖子标签列表"
-          items:
-            type: string
-            example: ["读书分享", "科幻", "推荐"]
-        likeCount:
-          type: integer
-          description: 点赞数
-          example: 156
-        commentCount:
-          type: integer
-          description: 评论数
-          example: 23
-        repostCount:
-          type: integer
-          description: 转发数
-          example: 5
-        createTime:
-          type: string
-          format: date-time
-          description: 创建时间
-          example: "2024-06-01T14:30:00+08:00"
-        updateTime:
-          type: string
-          format: date-time
-          description: 更新时间
-          example: "2024-06-01T14:30:00+08:00"
-        userInfo:
-          $ref: '#/components/schemas/User'
-
-    Postcomment:
-      type: object
-      properties:
-        commentid:
-          type: integer
-          format: int64
-          description: 评论ID
-          example: 1
-        postId:
-          type: integer
-          format: int64
-          description: 帖子ID
-          example: 1
-        userId:
-          type: string
-          description: 用户ID
-          example: "user123"
-        content:
-          type: string
-          description: 评论内容
-          example: "谢谢分享，我也去读读看"
-        likeCount:
-          type: integer
-          description: 点赞数
-          example: 12
-        parentId:
-          type: integer
-          format: int64
-          description: 父评论ID
-          example: 0
-        createTime:
-          type: string
-          format: date-time
-          description: 创建时间
-          example: "2024-06-01T15:30:00+08:00"
-        userInfo:
-          $ref: '#/components/schemas/User'
-
-    # 补充帖子相关模型
-    Postrepost:
-      type: object
-      properties:
-        repostid:
-          type: integer
-          format: int64
-          description: 转发ID
-          example: 1
-        userId:
-          type: string
-          description: 转发用户ID
-          example: "user123"
-        originalPostId:
-          type: integer
-          format: int64
-          description: 原帖子ID
-          example: 1
-        content:
-          type: string
-          description: 转发时添加的内容
-          example: "这个帖子很有启发，分享给大家！"
-        createTime:
-          type: string
-          format: date-time
-          description: 转发时间
-          example: "2024-06-01T16:30:00+08:00"
-        userInfo:
-          $ref: '#/components/schemas/User'
-        originalPostInfo:
-          $ref: '#/components/schemas/Post'
-
-
-    # 更新Tag模型，添加更多属性
-    Tag:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: 标签ID
-          example: 1
-        name:
-          type: string
-          description: 标签名称
-          example: "科幻文学"
-        description:
-          type: string
-          description: 标签描述
-          example: "关于科幻类文学作品的标签"
-        usageCount:
-          type: integer
-          description: 使用次数
-          example: 156
-        createTime:
-          type: string
-          format: date-time
-          description: 创建时间
-          example: "2024-06-01T14:30:00+08:00"
-        updateTime:
-          type: string
-          format: date-time
-          description: 更新时间
-          example: "2024-06-01T14:30:00+08:00"
-      xml:
-        name: tag
-        
-    PopularTag:
-      type: object
-      properties:
-        name:
-          type: string
-          description: "标签名称"
-          example: "科幻"
-        count:
-          type: integer
-          description: "使用次数"
-          example: 156
-        trend:
-          type: string
-          enum: [up, down, same, new]
-          description: "热度趋势"
-          example: "up"
-        change:
-          type: integer
-          description: "变化幅度"
-          example: 15    
-        
-    Category:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 1
-        name:
-          type: string
-          example: "小说"
-        description:
-          type: string
-          description: 标签描述
-          example: "关于科幻类文学作品的标签"
-        bookCount:
-          type: integer
-          description: 包含书数
-          example: 156
-      xml:
-        name: category
-
-    # 错误响应模型
-    Error:
-      type: object
-      required:
-        - code
-        - message
-      properties:
-        code:
-          type: string
-          description: 错误代码
-          example: "VALIDATION_ERROR"
-        message:
-          type: string
-          description: 错误信息
-          example: "输入参数验证失败"
-        details:
-          type: array
-          description: 错误详情
-          items:
-            type: object
-            properties:
-              field:
-                type: string
-                description: 字段名
-              message:
-                type: string
-                description: 字段错误信息
-        timestamp:
-          type: string
-          format: date-time
-          description: 错误发生时间
-          example: "2024-06-01T14:30:00+08:00"
-
-  # 安全方案
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT令牌认证
-    readingweb_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://SSE23ReadingWeb.swagger.io/oauth/authorize
-          scopes:
-            "write:books": modify pets in your account
-            "read:books": read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
-      description: API密钥认证

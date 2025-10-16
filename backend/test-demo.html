@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信读书 - 核心技术演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-card h2 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-box {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e2e8f0;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .status-success {
+            border-left: 4px solid #48bb78;
+            background: #f0fff4;
+        }
+
+        .status-error {
+            border-left: 4px solid #f56565;
+            background: #fff5f5;
+        }
+
+        .status-loading {
+            border-left: 4px solid #ed8936;
+            background: #fffaf0;
+        }
+
+        .demo-area {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .reader-content {
+            line-height: 1.8;
+            font-size: 16px;
+            color: #2d3748;
+        }
+
+        .reader-content.dark {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .post-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #667eea;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .post-title {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .post-meta {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 微信读书核心技术演示</h1>
+            <p>验证核心功能模块的正确性和可视化效果</p>
+        </div>
+
+        <div class="feature-grid">
+            <!-- JWT认证系统 -->
+            <div class="feature-card">
+                <h2><span class="feature-icon">🔐</span> JWT认证系统</h2>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="testLogin()">
+                        <span>🚀</span> 测试登录
+                    </button>
+                    <button class="btn btn-secondary" onclick="testProtected()" id="protected-btn" disabled>
+                        <span>🛡️</span> 权限验证
+                    </button>
+                </div>
+                <div id="auth-status" class="status-box">点击测试按钮开始验证认证系统...</div>
+            </div>
+
+            <!-- 阅读器功能 -->
+            <div class="feature-card">
+                <h2><span class="feature-icon">📖</span> 阅读器功能</h2>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="loadBook()">
+                        <span>📚</span> 加载书籍
+                    </button>
+                    <button class="btn btn-secondary" onclick="changeFontSize(2)">
+                        <span>A+</span> 字体增大
+                    </button>
+                    <button class="btn btn-secondary" onclick="changeFontSize(-2)">
+                        <span>A-</span> 字体减小
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleTheme()">
+                        <span>🌙</span> 切换主题
+                    </button>
+                </div>
+                <div id="reader-status" class="status-box">阅读器功能待测试...</div>
+            </div>
+
+            <!-- 无限滚动 -->
+            <div class="feature-card">
+                <h2><span class="feature-icon">🔄</span> 无限滚动</h2>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="loadFeed(1)">
+                        <span>📱</span> 加载社区
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadMore()" id="more-btn" disabled>
+                        <span>⬇️</span> 加载更多
+                    </button>
+                </div>
+                <div id="feed-status" class="status-box">社区内容加载区域...</div>
+            </div>
+
+            <!-- API管理 -->
+            <div class="feature-card">
+                <h2><span class="feature-icon">🌐</span> API管理</h2>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="testAllFeatures()">
+                        <span>✅</span> 全面测试
+                    </button>
+                    <button class="btn btn-secondary" onclick="testErrorHandling()">
+                        <span>🐛</span> 错误处理
+                    </button>
+                </div>
+                <div id="api-status" class="status-box">API管理系统待验证...</div>
+            </div>
+        </div>
+
+        <!-- 阅读器演示区域 -->
+        <div class="demo-area" id="reader-demo" style="display: none;">
+            <div class="demo-header">
+                <h3>📖 阅读器演示</h3>
+                <div class="demo-controls">
+                    <span id="font-size-display">字体: 16px</span>
+                    <span id="theme-display">主题: 浅色</span>
+                </div>
+            </div>
+            <div id="reader-content" class="reader-content">
+                <!-- 阅读内容将在这里显示 -->
+            </div>
+        </div>
+
+        <!-- 社区内容区域 -->
+        <div class="demo-area" id="feed-demo" style="display: none;">
+            <div class="demo-header">
+                <h3>👥 社区动态</h3>
+                <span id="feed-count">0 条内容</span>
+            </div>
+            <div id="feed-container">
+                <!-- 社区内容将在这里显示 -->
+            </div>
+        </div>
+
+        <!-- 测试结果汇总 -->
+        <div class="demo-area">
+            <h3>📊 测试结果汇总</h3>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value" id="jwt-result">⏳</div>
+                    <div class="summary-label">JWT认证</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="reader-result">⏳</div>
+                    <div class="summary-label">阅读器功能</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="feed-result">⏳</div>
+                    <div class="summary-label">无限滚动</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="api-result">⏳</div>
+                    <div class="summary-label">API管理</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8080/api';
+        let token = null;
+        let currentPage = 1;
+        let readerSettings = {
+            fontSize: 16,
+            theme: 'light',
+            layout: 'scroll'
+        };
+
+        // 更新状态显示
+        function updateStatus(elementId, message, type = '') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status-box ${type}`;
+        }
+
+        // 显示加载动画
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="loading"></div> 请求中...`;
+            element.className = 'status-box status-loading';
+        }
+
+        // JWT认证测试
+        async function testLogin() {
+            showLoading('auth-status');
+            
+            try {
+                const response = await fetch(BASE_URL + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'test', password: '123' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    token = data.data.token;
+                    updateStatus('auth-status', 
+                        `✅ 登录成功！\n👤 用户: ${data.data.user.nickname}\n💰 书币: ${data.data.user.coins}\n🔑 Token: ${token.substring(0, 30)}...`, 
+                        'status-success'
+                    );
+                    document.getElementById('protected-btn').disabled = false;
+                    document.getElementById('jwt-result').textContent = '✅';
+                } else {
+                    updateStatus('auth-status', `❌ 登录失败: ${data.message}`, 'status-error');
+                }
+            } catch (error) {
+                updateStatus('auth-status', `❌ 请求失败: ${error.message}`, 'status-error');
+            }
+        }
+
+        async function testProtected() {
+            if (!token) return;
+            
+            showLoading('auth-status');
+            
+            try {
+                const response = await fetch(BASE_URL + '/test/protected', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                updateStatus('auth-status', 
+                    `✅ 权限验证成功！\n🛡️ 受保护数据访问正常\n⏰ 时间戳: ${new Date(data.data.timestamp).toLocaleString()}`, 
+                    'status-success'
+                );
+            } catch (error) {
+                updateStatus('auth-status', `❌ 权限验证失败: ${error.message}`, 'status-error');
+            }
+        }
+
+        // 阅读器功能测试
+        async function loadBook() {
+            showLoading('reader-status');
+            
+            try {
+                const response = await fetch(BASE_URL + '/reader/demo');
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    const book = data.data.book;
+                    const chapters = data.data.chapters;
+                    
+                    document.getElementById('reader-demo').style.display = 'block';
+                    document.getElementById('reader-content').innerHTML = `
+                        <h4 style="margin-bottom: 15px; color: #667eea;">${book.title}</h4>
+                        <p style="color: #718096; margin-bottom: 20px;">作者: ${book.author} | 阅读进度: ${(book.progress * 100).toFixed(1)}%</p>
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                            ${chapters.slice(0, 2).map(chapter => `
+                                <div style="margin-bottom: 20px; padding: 15px; background: #f7fafc; border-radius: 8px; border-left: 3px solid #667eea;">
+                                    <strong style="color: #2d3748;">${chapter.title}</strong>
+                                    <p style="margin: 10px 0; color: #4a5568; line-height: 1.6;">${chapter.content.substring(0, 150)}...</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    
+                    updateStatus('reader-status', `✅ 书籍加载成功！共 ${chapters.length} 个章节`, 'status-success');
+                    document.getElementById('reader-result').textContent = '✅';
+                }
+            } catch (error) {
+                updateStatus('reader-status', `❌ 加载失败: ${error.message}`, 'status-error');
+            }
+        }
+
+        function changeFontSize(delta) {
+            readerSettings.fontSize = Math.max(12, Math.min(24, readerSettings.fontSize + delta));
+            document.getElementById('reader-content').style.fontSize = readerSettings.fontSize + 'px';
+            document.getElementById('font-size-display').textContent = `字体: ${readerSettings.fontSize}px`;
+        }
+
+        function toggleTheme() {
+            readerSettings.theme = readerSettings.theme === 'light' ? 'dark' : 'light';
+            const content = document.getElementById('reader-content');
+            content.className = `reader-content ${readerSettings.theme}`;
+            document.getElementById('theme-display').textContent = `主题: ${readerSettings.theme === 'dark' ? '深色' : '浅色'}`;
+        }
+
+        // 无限滚动测试
+        async function loadFeed(page) {
+            showLoading('feed-status');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/community/feed?page=${page}&limit=3`);
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    const posts = data.data.posts;
+                    const pagination = data.data.pagination;
+                    
+                    document.getElementById('feed-demo').style.display = 'block';
+                    const container = document.getElementById('feed-container');
+                    
+                    if (page === 1) {
+                        container.innerHTML = '';
+                    }
+                    
+                    posts.forEach(post => {
+                        const postEl = document.createElement('div');
+                        postEl.className = 'post-item';
+                        postEl.innerHTML = `
+                            <div class="post-header">
+                                <div class="post-title">${post.title}</div>
+                                <div class="post-meta">👍 ${post.likes} | 💬 ${post.comments}</div>
+                            </div>
+                            <p style="color: #4a5568; margin-bottom: 10px;">${post.content}</p>
+                            <div style="color: #718096; font-size: 0.9rem;">
+                                👤 ${post.author} • ${new Date(post.timestamp).toLocaleString()}
+                            </div>
+                        `;
+                        container.appendChild(postEl);
+                    });
+                    
+                    document.getElementById('more-btn').disabled = !pagination.hasMore;
+                    document.getElementById('feed-count').textContent = `${posts.length} 条内容`;
+                    currentPage = page;
+                    
+                    updateStatus('feed-status', `✅ 加载成功！第 ${page} 页，${pagination.hasMore ? '可继续加载' : '已无更多内容'}`, 'status-success');
+                    document.getElementById('feed-result').textContent = '✅';
+                }
+            } catch (error) {
+                updateStatus('feed-status', `❌ 加载失败: ${error.message}`, 'status-error');
+            }
+        }
+
+        function loadMore() {
+            loadFeed(currentPage + 1);
+        }
+
+        // API管理测试
+        async function testAllFeatures() {
+            showLoading('api-status');
+            
+            try {
+                const response = await fetch(BASE_URL + '/test/features');
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    let featuresHtml = '✅ 所有核心功能正常运行：\n\n';
+                    for (const [feature, status] of Object.entries(data.data)) {
+                        featuresHtml += `• ${feature}: ${status}\n`;
+                    }
+                    updateStatus('api-status', featuresHtml, 'status-success');
+                    document.getElementById('api-result').textContent = '✅';
+                }
+            } catch (error) {
+                updateStatus('api-status', `❌ 功能测试失败: ${error.message}`, 'status-error');
+            }
+        }
+
+        async function testErrorHandling() {
+            showLoading('api-status');
+            
+            try {
+                const response = await fetch(BASE_URL + '/test/error');
+                const data = await response.json();
+                
+                if (data.code === 500) {
+                    updateStatus('api-status', 
+                        `✅ 错误处理正常！\n⚠️ 错误码: ${data.code}\n📝 错误信息: ${data.message}\n🔧 错误详情: ${data.error}`, 
+                        'status-success'
+                    );
+                }
+            } catch (error) {
+                updateStatus('api-status', `❌ 错误处理测试失败`, 'status-error');
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('微信读书测试页面已加载');
+        });
+    </script>
+</body>
+</html>
