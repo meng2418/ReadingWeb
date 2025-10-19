@@ -25,8 +25,15 @@ const router = createRouter({
       path: '/test',
       name: 'Test',
       component: () => import('../pages/Test.vue') // 使用相对路径更可靠
+    },
+    {
+      path: '/category',
+      name: 'Category',
+      component: () => import('../pages/Category.vue')
     }
   ]
+
+
 })
 
 export default router

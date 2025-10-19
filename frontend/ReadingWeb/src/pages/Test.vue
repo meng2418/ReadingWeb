@@ -25,6 +25,23 @@
         <HotTopics :topics="testTopics" @topic-click="handleTopicClick" />
       </div>
 
+
+     <!-- 用户中心卡片测试 -->
+  <div class="component-section full-width">
+    <h2>用户中心卡片</h2>
+    <UserCenterCard
+      :user="centerCardUser"
+      @edit-profile="handleEditProfile"
+      @change-background="handleChangeBackground"
+      @coin-recharge="handleCoinRecharge"
+      @vip-purchase="handleVipPurchase"
+      @follow-click="handleFollowClick"
+      @fans-click="handleFansClick"
+      @post-click="handlePostClick"
+
+    />
+  </div>
+
     </div> <!-- 这里添加了闭合标签 -->
 
     <!-- PostCard测试区域 -->
@@ -52,7 +69,6 @@
 
 <script setup lang="ts">
 import NavBar from '@/components/NavBar.vue'
-import BookCard from '@/components/BookCardBig.vue'
 import PostCard from '@/components/PostCard.vue'
 import { ref } from 'vue'
 import BookCardSuperBig from '@/components/BookCardSuperBig.vue'
@@ -60,10 +76,10 @@ import UserProfileCard from '@/components/UserProfileCard.vue'
 
 // 导入本地图片
 import localAvatar from '@/img/avatar.jpg'
-import coverImg1 from '@/img/cover.jpg'
-import coverImg2 from '@/img/cover.jpg' // 如果有不同的图片，请导入不同的文件
 import coverImg3 from '@/img/cover2.jpg'
 import HotTopics from '@/components/HotTopics.vue'
+import UserCenterCard from '@/components/UserCenterCard.vue'
+
 // 测试用户数据
 const testUser = ref({
   username: '读书大王',
@@ -82,6 +98,21 @@ const postData = ref({
   commentCount: 3,
   shareCount: 1
 })
+
+
+// 用户中心卡片测试数据 - 更新为包含统计数据
+const centerCardUser = ref({
+  username: '书海漫游者',
+  avatar: localAvatar,
+  bio: '每天阅读一小时，让心灵去旅行。专注于文学小说和心理学书籍。',
+  //level: 5,暂时不用等级吧，先删掉
+  isOnline: true,
+  followCount: 24,
+  fansCount: 1890,
+  postCount: 36,
+  coins: 128
+})
+
 
 // 测试热门话题数据 - 使用真实的话题名称
 const testTopics = ref([
@@ -122,6 +153,41 @@ const handleTopicClick = (topic: any) => {
   console.log('话题被点击:', topic)
   // 这里可以添加跳转到话题页面的逻辑
 }
+
+
+// 添加新的事件处理函数
+const handleCoinRecharge = () => {
+  console.log('充值币按钮点击')
+  // 这里可以添加充值逻辑
+}
+
+const handleVipPurchase = () => {
+  console.log('成为会员按钮点击')
+  // 这里可以添加会员购买逻辑
+}
+
+
+const handleChangeBackground = () => {
+  console.log('更换背景按钮点击')
+  // 这里可以添加更换背景逻辑
+}
+
+const handleFollowClick = () => {
+  console.log('关注按钮点击')
+
+}
+
+const handleFansClick = () => {
+  console.log('粉丝按钮点击')
+}
+
+
+const handlePostClick = () => {
+  console.log('发布按钮点击')
+}
+
+
+
 
 </script>
 
