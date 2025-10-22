@@ -1,3 +1,4 @@
+<!-- 猜你喜欢里的书籍卡片 -->
 <template>
   <div class="book-card">
     <img :src="cover" alt="book cover" class="book-cover" />

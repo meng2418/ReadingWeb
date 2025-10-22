@@ -10,7 +10,9 @@
         <router-link to="/bookshelf">
           <button class="nav-item">书架</button>
         </router-link>
-        <button class="nav-item">社区</button>
+        <router-link to="/community">
+          <button class="nav-item">社区</button>
+        </router-link>
       </nav>
     </div>
 

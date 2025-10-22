@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
-
 const route = useRoute()
 const isSignUp = ref(false)
+
+// 新增：验证码登录开关与表单字段
+const isCaptchaLogin = ref(false)
+const phone = ref('')
+const password = ref('')
+const code = ref('')
 
 // 根据路由参数初始化
 watchEffect(() => {
@@ -15,6 +20,25 @@ function handleSignUp() {
 }
 function handleLogin() {
   isSignUp.value = false
+}
+
+// 切换验证码登录 / 密码登录
+function toggleCaptchaLogin() {
+  isCaptchaLogin.value = !isCaptchaLogin.value
+  // 切换时清空输入
+  phone.value = ''
+  password.value = ''
+  code.value = ''
+}
+
+// 发送验证码（示例：这里只做模拟提示，替换为真实接口调用）
+function sendCode() {
+  if (!phone.value || phone.value.trim().length < 6) {
+    window.alert('请输入有效的手机号以接收验证码。')
+    return
+  }
+  // 真实场景应调用接口并处理倒计时等 UX
+  window.alert(`已向 ${phone.value} 发送验证码（模拟）。`)
 }
 </script>
 
@@ -49,22 +73,52 @@ function handleLogin() {
           <form class="forms_form">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
+                <!-- 根据 isCaptchaLogin 切换输入类型 / 占位 -->
                 <input
-                  type="email"
-                  placeholder="邮箱"
+                  v-model="phone"
+                  :type="isCaptchaLogin ? 'tel' : 'email'"
+                  :placeholder="isCaptchaLogin ? '手机号码' : '邮箱'"
                   class="forms_field-input"
                   required
                   autofocus
                 />
               </div>
-              <div class="forms_field">
-                <input type="password" placeholder="密码" class="forms_field-input" required />
+
+              <div class="forms_field" style="display:flex; align-items:center; gap:8px;">
+                <input
+                  v-if="!isCaptchaLogin"
+                  v-model="password"
+                  type="password"
+                  placeholder="密码"
+                  class="forms_field-input"
+                  required
+                />
+                <div v-else style="display:flex; gap:8px; align-items:center; width:100%;">
+                  <input
+                    v-model="code"
+                    type="text"
+                    placeholder="验证码"
+                    class="forms_field-input"
+                    required
+                    style="flex:1;"
+                  />
+                  <button type="button" class="forms_buttons-action" @click="sendCode" style="padding:6px 12px;">
+                    发送验证码
+                  </button>
+                </div>
               </div>
             </fieldset>
+
             <div class="forms_buttons">
-              <button type="button" class="forms_buttons-forgot">忘记密码？</button>
+              <div class="forms_buttons-left">
+                <button type="button" class="forms_buttons-forgot">忘记密码？</button>
+                <button type="button" class="forms_buttons-forgot" @click="toggleCaptchaLogin">
+                  {{ isCaptchaLogin ? '密码登录' : '验证码登录' }}
+                </button>
+              </div>
               <input type="submit" value="登录" class="forms_buttons-action" />
             </div>
+
           </form>
         </div>
         <div class="user_forms-signup">
@@ -72,7 +126,13 @@ function handleLogin() {
           <form class="forms_form">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
+                <input type="username" placeholder="用户名" class="forms_field-input" required />
+              </div>
+              <div class="forms_field">
                 <input type="text" placeholder="昵称" class="forms_field-input" required />
+              </div>
+              <div class="forms_field">
+                <input type="email" placeholder="手机号码" class="forms_field-input" required />
               </div>
               <div class="forms_field">
                 <input type="email" placeholder="邮箱" class="forms_field-input" required />
@@ -100,6 +160,14 @@ function handleLogin() {
  * */
 * {
   box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -223,8 +291,10 @@ input::placeholder {
   align-items: center;
   width: 100%;
   height: 100vh;
-  background: #ccc;
+  background: url('@/img/bg.jpg');
   background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .user_options-container {
   position: relative;
@@ -234,7 +304,7 @@ input::placeholder {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  background-color: rgba(34, 34, 34, 0.85);
+  background-color: rgba(241, 241, 241, 0.9);
   border-radius: 3px;
 }
 
@@ -245,7 +315,7 @@ input::placeholder {
 .user_options-unregistered {
   width: 50%;
   padding: 75px 45px;
-  color: #fff;
+  color: #333;
   font-weight: 300;
 }
 
@@ -265,10 +335,10 @@ input::placeholder {
 .user_registered-login,
 .user_unregistered-signup {
   margin-top: 30px;
-  border: 1px solid #ccc;
+  border: 1px solid #333;
   border-radius: 3px;
   padding: 10px 30px;
-  color: #fff;
+  color: #333;
   text-transform: uppercase;
   line-height: 1em;
   letter-spacing: 0.2rem;
@@ -278,8 +348,8 @@ input::placeholder {
 }
 .user_registered-login:hover,
 .user_unregistered-signup:hover {
-  color: rgba(34, 34, 34, 0.85);
-  background-color: #ccc;
+  color: #fff;
+  background-color: #333;
 }
 
 /**
@@ -290,7 +360,7 @@ input::placeholder {
   top: 50%;
   left: 30px;
   width: calc(50% - 30px);
-  min-height: 420px;
+  min-height: 480px;
   background-color: #fff;
   border-radius: 3px;
   box-shadow: 2px 0 15px rgba(0, 0, 0, 0.25);
@@ -304,12 +374,11 @@ input::placeholder {
     visibility 0.4s ease-in-out;
 }
 .user_options-forms .forms_title {
-  margin-bottom: 45px;
   font-size: 1.5rem;
   font-weight: 500;
   line-height: 1em;
   text-transform: uppercase;
-  color: #e8716d;
+  color: #007c27;
   letter-spacing: 0.1rem;
 }
 .user_options-forms .forms_field:not(:last-of-type) {
@@ -342,11 +411,24 @@ input::placeholder {
   text-decoration: underline;
   transition: color 0.2s ease-in-out;
 }
+
 .user_options-forms .forms_buttons-forgot:hover {
   color: #b3b3b3;
 }
+.forms_buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forms_buttons-left {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* 两个按钮的间距，可以改成8~20px按需求 */
+}
+
 .user_options-forms .forms_buttons-action {
-  background-color: #e8716d;
+  background-color: #007c27;
   border-radius: 3px;
   padding: 10px 35px;
   font-size: 1rem;
@@ -358,12 +440,12 @@ input::placeholder {
   transition: background-color 0.2s ease-in-out;
 }
 .user_options-forms .forms_buttons-action:hover {
-  background-color: #e14641;
+  background-color: #1ad6a1;
 }
 .user_options-forms .user_forms-signup,
 .user_options-forms .user_forms-login {
   position: absolute;
-  top: 70px;
+  top: 20px;
   left: 40px;
   width: calc(100% - 80px);
   opacity: 0;

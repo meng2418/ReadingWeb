@@ -1,3 +1,4 @@
+<!--书架里的书籍卡片-->
 <template>
   <div class="book-card">
     <div class="book-cover-container">
@@ -25,6 +26,7 @@ defineProps({
     type: Boolean,
     default: true,
   },
+  
 })
 </script>
 

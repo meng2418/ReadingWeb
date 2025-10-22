@@ -1,8 +1,9 @@
+<!-- 分类里的书籍卡片 -->
 <template>
   <div class="book-card-super-big">
     <!-- 图书封面 -->
     <div class="book-cover-container">
-      <img :src="cover" :alt="title" class="book-cover" v-if="cover">
+      <img :src="cover" :alt="title" class="book-cover" v-if="cover" />
       <div class="book-cover-placeholder" v-else>
         {{ title }}
       </div>
@@ -38,29 +39,30 @@ export default {
   props: {
     cover: {
       type: String,
-      default: ''
+      default: '',
     },
     title: {
       type: String,
-      required: true
+      required: true,
     },
     author: {
       type: String,
-      required: true
+      required: true,
     },
     readersCount: {
       type: [String, Number],
-      default: '1021'
+      default: '1021',
     },
     recommendationRate: {
       type: [String, Number],
-      default: '93.6'
+      default: '93.6',
     },
     description: {
       type: String,
-      default: '作品简介Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan et viverra justo commodo. Proin sodales pulvinar sic tempor. Sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nam fermentum, nulla luctus pharetra vulputate, felis tellus mollis orci, sed rhoncus pronin sapien nunc accuan eget.'
-    }
-  }
+      default:
+        '作品简介Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan et viverra justo commodo. Proin sodales pulvinar sic tempor. Sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nam fermentum, nulla luctus pharetra vulputate, felis tellus mollis orci, sed rhoncus pronin sapien nunc accuan eget.',
+    },
+  },
 }
 </script>
 
@@ -74,13 +76,10 @@ export default {
   max-width: 900px;
   margin: 20px auto;
   gap: 40px; /* 增加间距 */
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   align-items: flex-start; /* 确保顶部对齐 */
-}
-
-.book-card-super-big:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 /* 图书封面样式 */
@@ -146,7 +145,6 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 25px;
   padding-bottom: 20px;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -172,7 +170,7 @@ export default {
   flex: 1;
   /* 确保简介部分不会超过图片高度 */
   max-height: calc(300px - 120px); /* 图片高度减去标题和统计信息的高度 */
-  overflow-y: auto; /* 如果内容太多，显示滚动条 */
+  text-overflow: ellipsis; /*内容超出时显示省略号 */
 }
 
 .description-title {
@@ -180,8 +178,6 @@ export default {
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #4a6cf7;
   display: inline-block;
 }
 

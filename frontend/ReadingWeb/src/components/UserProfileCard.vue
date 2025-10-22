@@ -1,7 +1,7 @@
 <template>
   <div class="user-profile-card">
     <div class="user-avatar">
-      <img :src="user.avatar" alt="用户头像">
+      <img :src="user.avatar" alt="用户头像" />
     </div>
     <div class="user-info">
       <div class="username">{{ user.username }}</div>
@@ -46,7 +46,7 @@ const user = props.user || {
   avatar: '@/img/avatar.jpg',
   followCount: 16,
   fansCount: 1636,
-  postCount: 8
+  postCount: 8,
 }
 </script>
 
@@ -55,18 +55,15 @@ const user = props.user || {
   background: white;
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   max-width: 450px;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.user-profile-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .user-avatar {

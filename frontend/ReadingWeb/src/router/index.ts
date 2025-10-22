@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../pages/home.vue'
 import Bookshelf from '../pages/bookshelf.vue'
-import Login from '../pages/Login.vue'
+import Login from '../pages/login.vue'
+import Community from '../pages/community.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -9,24 +10,24 @@ const router = createRouter({
     {
       path: '/',
       name: 'Home',
-      component: Home
+      component: Home,
     },
     {
       path: '/login',
       name: 'Login',
-      component: Login
+      component: Login,
     },
     {
       path: '/bookshelf',
       name: 'Bookshelf',
-      component: Bookshelf
+      component: Bookshelf,
     },
     {
-      path: '/test',
-      name: 'Test',
-      component: () => import('../pages/Test.vue') // 使用相对路径更可靠
-    }
-  ]
+      path: '/community',
+      name: 'Community',
+      component: Community,
+    },
+  ],
 })
 
 export default router

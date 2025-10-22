@@ -4,6 +4,17 @@ import GuessYouLike from '../components/GuessYouLike.vue'
 import BookRankList from '../components/BookRankList.vue'
 import BackToTop from '@/components/BackToTop.vue'
 import ReadingTimeCard from '@/components/ReadingTimeCard.vue'
+import { onMounted } from 'vue'
+import axios from 'axios'
+
+onMounted(async () => {
+  try {
+    const res = await axios.get('http://localhost:3000/api/home')
+    console.log('首页接口响应：', res.data)
+  } catch (err) {
+    console.error('请求出错：', err)
+  }
+})
 </script>
 
 <template>
@@ -31,7 +42,7 @@ import ReadingTimeCard from '@/components/ReadingTimeCard.vue'
 .Home {
   display: flex;
   flex-direction: column;
-  background-color: rgb(241, 241, 241);
+  background-color:#f5f5f5; 
   gap: 24px;
 }
 .reading-time-card {

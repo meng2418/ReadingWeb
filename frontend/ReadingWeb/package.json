@@ -24,6 +24,7 @@
     "@element-plus/icons-vue": "^2.3.2",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/vue-fontawesome": "^3.1.2",
+    "axios": "^1.12.2",
     "element-plus": "^2.11.4",
     "pinia": "^3.0.3",
     "vue": "^3.5.22",
