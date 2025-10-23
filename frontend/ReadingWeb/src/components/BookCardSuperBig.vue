@@ -32,7 +32,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 export default {
   name: 'BookCardSuperBig',
   props: {
@@ -67,20 +67,21 @@ export default {
 <style scoped>
 .book-card-super-big {
   display: flex;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  padding: 30px;
-  max-width: 900px;
-  margin: 20px auto;
-  gap: 40px; /* 增加间距 */
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  align-items: flex-start; /* 确保顶部对齐 */
+  background: transparent; /* 改为透明背景 */
+  border-radius: 0; /* 移除圆角 */
+  box-shadow: none; /* 移除阴影 */
+  padding: 0; /* 移除内边距 */
+  max-width: 100%; /* 改为100%宽度 */
+  margin: 0; /* 移除外边距 */
+  gap: 40px;
+  transition: none; /* 移除过渡效果 */
+  align-items: center;
 }
 
+/* 移除悬停效果 */
 .book-card-super-big:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: none;
+  box-shadow: none;
 }
 
 /* 图书封面样式 */
@@ -97,26 +98,26 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  display: block; /* 确保图片正确显示 */
+  border-radius: 0; /* 移除圆角 */
+  box-shadow: none; /* 移除阴影 */
+  display: block;
 }
 
 .book-cover-placeholder {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  border-radius: 0; /* 移除圆角 */
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 18px; /* 稍微减小字体 */
+  font-size: 18px;
   font-weight: bold;
   text-align: center;
   padding: 15px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  word-break: break-word; /* 长标题换行 */
+  box-shadow: none; /* 移除阴影 */
+  word-break: break-word;
 }
 
 /* 图书信息样式 */
@@ -124,7 +125,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 300px; /* 与图片高度一致 */
+  min-height: 300px;
 }
 
 .book-title {
@@ -170,9 +171,8 @@ export default {
 /* 作品简介样式 */
 .book-description {
   flex: 1;
-  /* 确保简介部分不会超过图片高度 */
-  max-height: calc(300px - 120px); /* 图片高度减去标题和统计信息的高度 */
-  overflow-y: auto; /* 如果内容太多，显示滚动条 */
+  max-height: calc(300px - 120px);
+  overflow-y: auto;
 }
 
 .description-title {
@@ -216,20 +216,18 @@ export default {
 @media (max-width: 768px) {
   .book-card-super-big {
     flex-direction: column;
-    padding: 20px;
     gap: 25px;
-    max-width: 100%;
   }
 
   .book-cover-container {
     width: 100%;
-    max-width: 220px; /* 移动端也限制最大宽度 */
+    max-width: 220px;
     height: 300px;
-    margin: 0 auto; /* 居中显示 */
+    margin: 0 auto;
   }
 
   .book-info {
-    min-height: auto; /* 移动端取消最小高度 */
+    min-height: auto;
   }
 
   .book-title {
@@ -247,7 +245,7 @@ export default {
   }
 
   .book-description {
-    max-height: none; /* 移动端取消高度限制 */
+    max-height: none;
     overflow-y: visible;
   }
 }

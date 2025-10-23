@@ -27,18 +27,18 @@
 
     <!-- 中间：统计数据 -->
     <div class="user-stats">
-      <div class="stat-item">
+      <button class="stat-item" @click="handleFollowClick">
         <div class="stat-number">{{ user.followCount }}</div>
         <div class="stat-label">关注</div>
-      </div>
-      <div class="stat-item">
+      </button>
+      <button class="stat-item" @click="handleFansClick">
         <div class="stat-number">{{ user.fansCount }}</div>
         <div class="stat-label">粉丝</div>
-      </div>
-      <div class="stat-item">
+      </button>
+      <button class="stat-item" @click="handlePostClick">
         <div class="stat-number">{{ user.postCount }}</div>
         <div class="stat-label">发布</div>
-      </div>
+      </button>
     </div>
 
     <!-- 右侧：操作按钮 -->
@@ -78,6 +78,9 @@ const emit = defineEmits<{
   changeBackground: []
   coinRecharge: []
   vipPurchase: []
+  followClick: []
+  fansClick: []
+  postClick: []
 }>()
 
 // 事件处理函数
@@ -99,6 +102,21 @@ const handleCoinRecharge = () => {
 const handleVipPurchase = () => {
   console.log('成为会员点击')
   emit('vipPurchase')
+}
+
+const handleFollowClick = () => {
+  console.log('关注点击')
+  emit('followClick')
+}
+
+const handleFansClick = () => {
+  console.log('粉丝点击')
+  emit('fansClick')
+}
+
+const handlePostClick = () => {
+  console.log('发布点击')
+  emit('postClick')
 }
 </script>
 
@@ -236,18 +254,36 @@ const handleVipPurchase = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  min-width: 50px;
+  height: 50px; /* 添加固定高度 */
+  justify-content: center; /* 垂直居中 */
+
+}
+
+.stat-item:hover {
+  background: #f5f5f5;
 }
 
 .stat-number {
   font-size: 18px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 4px;
+  margin-bottom: 0px;
+  line-height: 1; /* 确保行高正常 */
+  align-items: center;
 }
 
 .stat-label {
   font-size: 12px;
   color: #666;
+  line-height: 1; /* 确保行高正常 */
+  align-items: center;
 }
 
 /* 右侧：操作按钮 */

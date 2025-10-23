@@ -154,6 +154,11 @@ const handleTopicClick = (topic: any) => {
   // 这里可以添加跳转到话题页面的逻辑
 }
 
+// 添加新的事件处理函数
+const handleEditProfile = () => {
+  console.log('编辑资料按钮点击')
+  // 这里可以添加编辑资料逻辑
+}
 
 // 添加新的事件处理函数
 const handleCoinRecharge = () => {
@@ -174,16 +179,18 @@ const handleChangeBackground = () => {
 
 const handleFollowClick = () => {
   console.log('关注按钮点击')
-
+ // 这里可以添加查看关注列表逻辑
 }
 
 const handleFansClick = () => {
   console.log('粉丝按钮点击')
+  // 这里可以添加查看粉丝列表逻辑
 }
 
 
 const handlePostClick = () => {
   console.log('发布按钮点击')
+  // 这里可以添加查看发布内容逻辑
 }
 
 
@@ -197,6 +204,7 @@ const handlePostClick = () => {
   flex-direction: column;
   gap: 16px;
   padding: 20px;
+  padding-top: 100px; /* 增加顶部内边距 */
 }
 
 .components-grid {

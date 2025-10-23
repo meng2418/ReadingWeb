@@ -20,7 +20,6 @@
       <div class="right-content">
         <div class="ranking-header">
           <h1 class="ranking-title">{{ currentTabName }}</h1>
-          <p class="ranking-desc">{{ currentTabDesc }}</p>
         </div>
 
         <!-- 书籍榜单 -->
@@ -47,20 +46,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import BookCardSuperBig from '@/components/BookCardSuperBig.vue'
 
+const route = useRoute()
+const router = useRouter()
+
 // 导航标签
 const tabs = [
-  { id: 'weekly', name: '周榜', desc: '最近一周热读书籍' },
-  { id: 'monthly', name: '月榜', desc: '最近一个月最受欢迎' },
-  { id: 'new', name: '新书榜', desc: '最新上架的优质书籍' },
-  { id: 'masterpiece', name: '神作榜', desc: '公认必读的高分神作' },
-  { id: 'category', name: '分类', desc: '按分类浏览书籍' }
+  { id: 'weekly', name: '周榜' },
+  { id: 'monthly', name: '月榜' },
+  { id: 'new', name: '新书榜' },
+  { id: 'masterpiece', name: '神作榜' },
+  { id: 'category', name: '分类' }
 ]
-
 const currentTab = ref('weekly')
+
+// 监听路由参数变化
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (newTab && tabs.some(tab => tab.id === newTab)) {
+      currentTab.value = newTab as string
+    }
+  }
+)
+
+// 组件挂载时检查参数
+onMounted(() => {
+  const tabParam = route.query.tab as string
+  if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+    currentTab.value = tabParam
+  }
+})
 
 // 计算属性
 const currentTabName = computed(() => {
@@ -68,10 +88,7 @@ const currentTabName = computed(() => {
   return tab?.name || '周榜'
 })
 
-const currentTabDesc = computed(() => {
-  const tab = tabs.find(t => t.id === currentTab.value)
-  return tab?.desc || '最近一周热读书籍'
-})
+
 
 // 模拟数据 - 这里需要替换为真实的API数据
 const rankings = {
@@ -79,7 +96,7 @@ const rankings = {
   monthly: generateRankingData('monthly'),
   new: generateRankingData('new'),
   masterpiece: generateRankingData('masterpiece'),
-  category: generateRankingData('category')
+ // category: generateRankingData('category')
 }
 
 const currentRanking = computed(() => rankings[currentTab.value])
@@ -87,6 +104,8 @@ const currentRanking = computed(() => rankings[currentTab.value])
 // 切换标签
 const switchTab = (tabId: string) => {
   currentTab.value = tabId
+  // 更新URL参数但不触发页面刷新
+  router.replace({ query: { tab: tabId } })
   // 这里可以添加加载对应榜单数据的逻辑
 }
 
@@ -124,36 +143,41 @@ function getTitleByType(type: string): string {
 .category-page {
   background-color: #f1f1f1;
   min-height: 100vh;
+  /* 导航栏高度64px + 额外的间距 = 80px */
+  padding-top: 56px;
 }
 
 .category-container {
   display: flex;
-  max-width: 1400px;
+  max-width: 2000px;
   margin: 0 auto;
-  padding: 20px;
-  gap: 30px;
+  padding: 0; /* 移除内边距 */
+  gap: 0;
+  background-color: white; /* 添加白色背景 */
 }
 
 /* 左侧导航 */
 .left-nav {
-  width: 200px;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 400px;
+  background: white; /* 改为白色背景 */
+  border-radius: 0;
+  padding: 40px;
   height: fit-content;
   position: sticky;
-  top: 20px;
+  top: 104px;
+  box-shadow: none; /* 确保没有阴影 */
+  border-right: 1px solid #e0e0e0; /* 添加细分割线 */
 }
 
 .nav-item {
-  padding: 12px 16px;
+  padding: 20px 25px;
   cursor: pointer;
   border-radius: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 8px; /* 恢复导航项之间的间距 */
   transition: all 0.2s;
-  font-size: 16px;
+  font-size: 20px;
   color: #333;
+  background: white;
 }
 
 .nav-item:hover {
@@ -169,14 +193,16 @@ function getTitleByType(type: string): string {
 /* 右侧内容 */
 .right-content {
   flex: 1;
+  background: white; /* 改为白色背景 */
 }
 
 .ranking-header {
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+  box-shadow: none; /* 移除阴影 */
+  border-bottom: 1px solid #e0e0e0; /* 添加底部细线 */
 }
 
 .ranking-title {
@@ -186,35 +212,42 @@ function getTitleByType(type: string): string {
   margin: 0 0 8px 0;
 }
 
-.ranking-desc {
-  font-size: 16px;
-  color: #666;
-  margin: 0;
-}
 
 /* 书籍榜单 */
 .book-ranking {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
 }
 
 .ranking-item {
   display: flex;
-  align-items: flex-start;
-  gap: 20px;
+  align-items: center;
+  gap: 40px;
   background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  padding: 30px;
+  box-shadow: none; /* 移除阴影 */
+  border-bottom: 1px solid #f0f0f0; /* 添加项之间的分割线 */
+  transition: background-color 0.2s ease;
+}
+
+.ranking-item:hover {
+  background-color: #f0f8ff; /* 浅蓝色背景 */
+}
+
+.ranking-item:last-child {
+  border-bottom: none; /* 最后一项不加底部分割线 */
 }
 
 .ranking-number {
-  font-size: 32px;
+  font-size: 48px;
   font-weight: bold;
-  color: #007fff;
-  min-width: 60px;
+  color: #000;
+  min-width: 80px;
   text-align: center;
-  margin-top: 10px;
+  justify-content: center;
+  margin-top: 0; /* 移除顶部边距 */
+  flex-shrink: 0; /* 防止数字区域被压缩 */
 }
 </style>

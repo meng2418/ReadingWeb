@@ -29,7 +29,8 @@ const router = createRouter({
     {
       path: '/category',
       name: 'Category',
-      component: () => import('../pages/Category.vue')
+      component: () => import('../pages/Category.vue'),
+      props: (route) => ({ tab: route.query.tab }) // 添加参数支持
     }
   ]
 
