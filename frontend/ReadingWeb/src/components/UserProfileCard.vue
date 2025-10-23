@@ -35,12 +35,12 @@ interface User {
 }
 
 // 定义props
-const { user } = defineProps<{
-  user: User
+const props = defineProps<{
+  user: User,
 }>()
 
 // 如果没有传入user，使用默认数据
-const user = props.user || {
+const defaultUser = props.user || {
   username: '昵称',
   bio: '个性签名',
   avatar: '@/img/avatar.jpg',

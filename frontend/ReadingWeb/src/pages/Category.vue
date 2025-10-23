@@ -23,13 +23,13 @@
         </div>
 
         <!-- 书籍榜单 -->
-        <div class="book-ranking">
+        <div class="book-ranking" >
           <div
             v-for="(book, index) in currentRanking"
             :key="book.id"
             class="ranking-item"
           >
-            <div class="ranking-number">{{ index + 1 }}</div>
+            <div class="ranking-number" >{{ index + 1 }}</div>
             <BookCardSuperBig
               :cover="book.cover"
               :title="book.title"
@@ -99,7 +99,7 @@ const rankings = {
  // category: generateRankingData('category')
 }
 
-const currentRanking = computed(() => rankings[currentTab.value])
+const currentRanking = computed(() => rankings[currentTab.value as keyof typeof rankings])
 
 // 切换标签
 const switchTab = (tabId: string) => {
@@ -148,8 +148,9 @@ function getTitleByType(type: string): string {
 }
 
 .category-container {
+  zoom: 0.75;
   display: flex;
-  max-width: 2000px;
+  max-width: 90%;
   margin: 0 auto;
   padding: 0; /* 移除内边距 */
   gap: 0;
@@ -158,13 +159,13 @@ function getTitleByType(type: string): string {
 
 /* 左侧导航 */
 .left-nav {
-  width: 400px;
+  width: 200px;
   background: white; /* 改为白色背景 */
   border-radius: 0;
-  padding: 40px;
+  padding: 0px 20px 40px 40px;
   height: fit-content;
   position: sticky;
-  top: 104px;
+  top: 100px;/* 距离顶部100px */
   box-shadow: none; /* 确保没有阴影 */
   border-right: 1px solid #e0e0e0; /* 添加细分割线 */
 }
@@ -226,7 +227,7 @@ function getTitleByType(type: string): string {
   gap: 40px;
   background: white;
   border-radius: 0;
-  padding: 30px;
+  padding: 20px;
   box-shadow: none; /* 移除阴影 */
   border-bottom: 1px solid #f0f0f0; /* 添加项之间的分割线 */
   transition: background-color 0.2s ease;
@@ -241,9 +242,10 @@ function getTitleByType(type: string): string {
 }
 
 .ranking-number {
-  font-size: 48px;
+  font-style: italic;
+  font-size: 60px;
   font-weight: bold;
-  color: #000;
+  color: #424242;
   min-width: 80px;
   text-align: center;
   justify-content: center;
