@@ -161,7 +161,6 @@ const handleTopicClick = (topic: any) => {
   grid-column: 1 / -1;
   display: flex;
   gap: 12px;
-  margin-bottom: 16px;
 }
 .tabs button {
   background: none;
@@ -198,7 +197,6 @@ const handleTopicClick = (topic: any) => {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 20px;
   justify-items: center;
-  margin-top: 10px;
 }
 
 .empty {

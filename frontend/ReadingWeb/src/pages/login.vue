@@ -77,7 +77,7 @@ function sendCode() {
                 <input
                   v-model="phone"
                   :type="isCaptchaLogin ? 'tel' : 'email'"
-                  :placeholder="isCaptchaLogin ? '手机号码' : '邮箱'"
+                  :placeholder="isCaptchaLogin ? '手机号码' : '邮箱/手机号码'"
                   class="forms_field-input"
                   required
                   autofocus
@@ -445,6 +445,7 @@ input::placeholder {
 .user_options-forms .user_forms-signup,
 .user_options-forms .user_forms-login {
   position: absolute;
+  align-items: center; /* 垂直居中 */
   top: 20px;
   left: 40px;
   width: calc(100% - 80px);
