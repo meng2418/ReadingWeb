@@ -6,7 +6,7 @@
         <h2 class="rank-title">{{ ranktitle }}</h2>
         <span class="rank-desc">{{ desc }}</span>
       </div>
-      <button class="view-all-btn">查看全部</button>
+      <button class="view-all-btn" @click="handleViewAll">查看全部</button>
     </div>
 
     <!-- 榜单内容部分 -->
@@ -28,7 +28,9 @@
 
 <script setup>
 import { defineProps } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 // 定义接收的属性
 defineProps({
   ranktitle: {
@@ -106,6 +108,11 @@ defineProps({
     ],
   },
 })
+
+// 查看全部点击事件
+const handleViewAll = () => {
+  router.push('/category')
+}
 </script>
 
 <style scoped>
