@@ -6,7 +6,9 @@
         <router-link to="/">
           <button class="nav-item">首页</button>
         </router-link>
-        <button class="nav-item">分类</button>
+        <router-link to="/category">
+          <button class="nav-item">分类</button>
+        </router-link>
         <router-link to="/bookshelf">
           <button class="nav-item">书架</button>
         </router-link>
@@ -19,7 +21,7 @@
       <div class="search-container">
         <input type="text" placeholder="搜索书名、作者" class="search-input" />
         <el-icon class="search-icon">
-          <search></search>
+          <Search />
         </el-icon>
       </div>
       <router-link to="/login">
@@ -33,13 +35,12 @@
 </template>
 
 <script setup>
-import { Search } from '@element-plus/icons'
+import { Search } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>
 .navbar {
   position: fixed;
-  contain: strict;
   top: 0;
   left: 0;
   width: 100%;
@@ -100,7 +101,7 @@ import { Search } from '@element-plus/icons'
 .search-container {
   position: relative;
   display: flex;
-  align-items: center; /* 改为center而不是right */
+  align-items: center;
 }
 
 .search-input {
@@ -119,10 +120,10 @@ import { Search } from '@element-plus/icons'
 /* 搜索图标样式 */
 .search-icon {
   position: absolute;
-  right: 10px; /* 靠右显示 */
+  right: 10px;
   font-size: 16px;
   cursor: pointer;
-  color: #888; /* 增加颜色 */
+  color: #888;
 }
 
 .login-btn,

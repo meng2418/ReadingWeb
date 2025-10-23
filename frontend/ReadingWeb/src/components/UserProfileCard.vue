@@ -7,15 +7,15 @@
       <div class="username">{{ user.username }}</div>
       <div class="bio">{{ user.bio }}</div>
       <div class="stats">
-        <div class="stat">
+        <div class="stat" @click="handleStatClick('follow')">
           <div class="number">{{ user.followCount }}</div>
           <div class="label">关注</div>
         </div>
-        <div class="stat">
+        <div class="stat" @click="handleStatClick('fans')">
           <div class="number">{{ user.fansCount }}</div>
           <div class="label">粉丝</div>
         </div>
-        <div class="stat">
+        <div class="stat" @click="handleStatClick('post')">
           <div class="number">{{ user.postCount }}</div>
           <div class="label">发布</div>
         </div>
@@ -35,18 +35,19 @@ interface User {
 }
 
 // 定义props
-const props = defineProps<{
+const { user } = defineProps<{
   user: User
 }>()
 
-// 如果没有传入user，使用默认数据
-const user = props.user || {
-  username: '昵称',
-  bio: '个性签名',
-  avatar: '@/img/avatar.jpg',
-  followCount: 16,
-  fansCount: 1636,
-  postCount: 8
+// 定义事件
+const emit = defineEmits<{
+  statClick: [type: 'follow' | 'fans' | 'post']
+}>()
+
+// 统计项点击处理
+const handleStatClick = (type: 'follow' | 'fans' | 'post') => {
+  console.log(`点击了${type}统计`)
+  emit('statClick', type)
 }
 </script>
 
@@ -114,6 +115,15 @@ const user = props.user || {
 .stat {
   text-align: center;
   flex: 1;
+  cursor: pointer; /* 添加手型光标 */
+  transition: all 0.2s; /* 添加过渡效果 */
+  padding: 8px 4px; /* 增加内边距，扩大点击区域 */
+  border-radius: 6px; /* 添加圆角 */
+}
+
+.stat:hover {
+  background: #f5f5f5; /* 悬停背景色 */
+  transform: translateY(-1px); /* 悬停轻微上移 */
 }
 
 .number {
