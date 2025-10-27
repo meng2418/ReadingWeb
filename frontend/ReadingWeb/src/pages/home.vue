@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import NavBar from '../components/NavBar.vue'
-import GuessYouLike from '../components/GuessYouLike.vue'
-import BookRankList from '../components/BookRankList.vue'
+import NavBar from '@/components/NavBar.vue'
+import GuessYouLike from '@/components/GuessYouLike.vue'
+import BookRankList from '@/components/BookRankList.vue'
 import BackToTop from '@/components/BackToTop.vue'
 import ReadingTimeCard from '@/components/ReadingTimeCard.vue'
 import RecentRead from '@/components/RecentRead.vue'

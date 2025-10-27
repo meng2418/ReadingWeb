@@ -46,7 +46,6 @@ onUnmounted(() => {
   right: 20px;
   width: 40px;
   height: 40px;
-
   /* 简化样式 */
   background: #007c27;
   color: white;
@@ -60,17 +59,15 @@ onUnmounted(() => {
   /* 默认隐藏 */
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s;
+  transition: background 0.3s, transform 0.2s;
 }
-
+.back-to-top:hover{
+  background: #1ad6a1;
+  transform: scale(1.05);
+}
 /* 显示状态 */
 .back-to-top.show {
   opacity: 1;
   visibility: visible;
-}
-
-/* 悬停效果 */
-.back-to-top:hover {
-  background: #333;
 }
 </style>
