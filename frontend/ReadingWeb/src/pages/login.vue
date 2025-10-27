@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
+const router = useRouter()
 const isSignUp = ref(false)
 
 // 新增：验证码登录开关与表单字段
@@ -39,6 +40,11 @@ function sendCode() {
   }
   // 真实场景应调用接口并处理倒计时等 UX
   window.alert(`已向 ${phone.value} 发送验证码（模拟）。`)
+}
+// 跳转到忘记密码页面
+function goForgetPassword() {
+  // 跳转到忘记密码页面
+  router.push('/forget-password')
 }
 </script>
 
@@ -111,8 +117,8 @@ function sendCode() {
 
             <div class="forms_buttons">
               <div class="forms_buttons-left">
-                <button type="button" class="forms_buttons-forgot">忘记密码？</button>
-                <button type="button" class="forms_buttons-forgot" @click="toggleCaptchaLogin">
+                <button type="button" class="forms_buttons-forgot" @click="goForgetPassword">忘记密码？</button>
+                <button type="button" class="forms_buttons-loginway" @click="toggleCaptchaLogin">
                   {{ isCaptchaLogin ? '密码登录' : '验证码登录' }}
                 </button>
               </div>
@@ -404,7 +410,8 @@ input::placeholder {
   align-items: center;
   margin-top: 35px;
 }
-.user_options-forms .forms_buttons-forgot {
+.user_options-forms .forms_buttons-forgot,
+.user_options-forms .forms_buttons-loginway {
   font-family: 'Montserrat', sans-serif;
   letter-spacing: 0.1rem;
   color: #ccc;
@@ -412,7 +419,8 @@ input::placeholder {
   transition: color 0.2s ease-in-out;
 }
 
-.user_options-forms .forms_buttons-forgot:hover {
+.user_options-forms .forms_buttons-forgot:hover,
+.user_options-forms .forms_buttons-loginway:hover {
   color: #b3b3b3;
 }
 .forms_buttons {

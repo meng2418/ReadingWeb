@@ -7,6 +7,7 @@ import HotTopics from '@/components/HotTopics.vue'
 import BackToTop from '@/components/BackToTop.vue'
 import Topic from '@/components/Topic.vue'
 import avatarImg from '@/img/avatar.jpg'
+import FloatingAddButton from '@/components/FloatingAddButton.vue'
 
 // 当前用户信息
 const currentUser = reactive({
@@ -99,6 +100,7 @@ const handleTopicClick = (topic: any) => {
   <div class="community">
     <NavBar />
     <BackToTop />
+    <FloatingAddButton />
     <div class="community-content">
       <div class="tabs">
         <button :class="{ active: currentTab === 'square' }" @click="changeTab('square')">广场</button>
