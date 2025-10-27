@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import NavBar from '@/components/NavBar.vue'
+import NavBar from '@/components/layout/NavBar.vue'
 import GuessYouLike from '@/components/GuessYouLike.vue'
 import BookRankList from '@/components/BookRankList.vue'
-import BackToTop from '@/components/BackToTop.vue'
+import BackToTop from '@/components/layout/BackToTop.vue'
 import ReadingTimeCard from '@/components/ReadingTimeCard.vue'
 import RecentRead from '@/components/RecentRead.vue'
 import { onMounted } from 'vue'

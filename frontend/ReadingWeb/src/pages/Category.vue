@@ -1,7 +1,7 @@
 <template>
   <div class="category-page">
     <NavBar />
-
+    <BackToTop />
     <div class="category-container">
       <!-- 左侧导航 -->
       <div class="left-nav">
@@ -48,8 +48,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import NavBar from '@/components/NavBar.vue'
-import BookCardSuperBig from '@/components/BookCardSuperBig.vue'
+import NavBar from '@/components/layout/NavBar.vue'
+import BookCardSuperBig from '@/components/bookcard/BookCardSuperBig.vue'
+import BackToTop from '@/components/layout/BackToTop.vue'
 
 const route = useRoute()
 const router = useRouter()

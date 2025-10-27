@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import NavBar from '@/components/NavBar.vue'
-import PostCard from '@/components/PostCard.vue'
-import UserProfileCard from '@/components/UserProfileCard.vue'
-import HotTopics from '@/components/HotTopics.vue'
-import BackToTop from '@/components/BackToTop.vue'
+import NavBar from '@/components/layout/NavBar.vue'
+import PostCard from '@/components/post/PostCard.vue'
+import UserProfileCard from '@/components/post/UserProfileCard.vue'
+import HotTopics from '@/components/post/HotTopics.vue'
+import BackToTop from '@/components/layout/BackToTop.vue'
 import Topic from '@/components/Topic.vue'
 import avatarImg from '@/img/avatar.jpg'
-import FloatingAddButton from '@/components/FloatingAddButton.vue'
+import FloatingAddButton from '@/components/post/FloatingAddButton.vue'
 
 // 当前用户信息
 const currentUser = reactive({
