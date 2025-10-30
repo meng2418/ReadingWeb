@@ -33,6 +33,19 @@ const router = createRouter({
       component: () => import('../pages/Category.vue'),
       props: (route) => ({ tab: route.query.tab }), // 添加参数支持
     },
+
+    {
+      path: '/book/:id',
+      name: 'BookDetail',
+      component: () => import('../pages/BookDetail.vue'),
+      props: true // 重要：将路由参数作为 props 传递
+    },
+    {
+      path: '/test/book-detail',
+      name: 'TestBookDetail',
+      component: () => import('../pages/TestBookDetail.vue') // 或 @/pages/TestBookDetail.vue
+
+    },
   ],
 })
 

@@ -46,7 +46,7 @@ onMounted(async () => {
 .home {
   display: flex;
   flex-direction: column;
-  background-color:#f5f5f5; 
+  background-color:#f5f5f5;
   gap: 24px;
 }
 .spacer {
