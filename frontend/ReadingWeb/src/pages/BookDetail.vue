@@ -1,6 +1,7 @@
 <template>
   <div class="book-detail-page">
-    <NavBar /> <!-- 添加导航栏 -->
+    <NavBar />
+    <!-- 添加导航栏 -->
     <div class="book-detail-layout">
       <!-- 左侧主要内容区域 -->
       <div class="main-content">
@@ -9,7 +10,7 @@
           title="少年Pi的奇幻漂流"
           author="扬·马特尔"
           :description="bookDescription"
-          cover-image='https://picsum.photos/200/280?random=25'
+          cover-image="https://picsum.photos/200/280?random=25"
           :initial-bookshelf-status="false"
           :stats="bookStats"
           @toggle-bookshelf="handleBookshelfToggle"
@@ -24,7 +25,7 @@
           :rating-stats="{
             recommend: 70,
             average: 20,
-            poor: 10
+            poor: 10,
           }"
           @view-reviews="handleViewReviews"
           @rate-book="handleRateBook"
@@ -61,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import NavBar from '@/components/NavBar.vue'
+import NavBar from '@/components/layout/NavBar.vue'
 import BookDetailHeader from '@/components/BookDetailHeader.vue'
 import BookRecommendationSection from '@/components/BookRecommendationSection.vue'
 import AuthorInfoSection from '@/components/AuthorInfoSection.vue'
@@ -71,29 +72,30 @@ import UserReviews from '@/components/UserReviews.vue'
 // 定义相关类型
 interface Work {
   id: number
-  title: string;
-  summary: string;
-  cover?: string;
+  title: string
+  summary: string
+  cover?: string
 }
 
 interface Book {
-  id: number;
-  title: string;
-  intro: string;
-  cover: string;
+  id: number
+  title: string
+  intro: string
+  cover: string
 }
 
 interface Review {
-  id: number;
-  userName: string;
-  content: string;
-  date: string;
+  id: number
+  userName: string
+  content: string
+  date: string
 }
 
 // 作者信息数据
 const authorInfo = {
   name: '扬·马特尔',
-  description: '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。'
+  description:
+    '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
 }
 
 const authorWorks = [
@@ -101,26 +103,26 @@ const authorWorks = [
     id: 1,
     title: '少年Pi的奇幻漂流',
     summary: '一名印度男孩与孟加拉虎在太平洋上的生存故事',
-    cover: 'https://picsum.photos/80/100?random=21'
+    cover: 'https://picsum.photos/80/100?random=21',
   },
   {
     id: 2,
     title: '标本师的魔幻剧本',
     summary: '关于大屠杀记忆与文学创作的深刻探讨',
-    cover: 'https://picsum.photos/80/100?random=22'
+    cover: 'https://picsum.photos/80/100?random=22',
   },
   {
     id: 3,
     title: '赫尔曼',
     summary: '关于友谊、艺术与人生选择的温暖故事',
-    cover: 'https://picsum.photos/80/100?random=23'
+    cover: 'https://picsum.photos/80/100?random=23',
   },
   {
     id: 4,
     title: '自我',
     summary: '探讨身份认同与存在意义的哲学小说',
-    cover: 'https://picsum.photos/80/100?random=24'
-  }
+    cover: 'https://picsum.photos/80/100?random=24',
+  },
 ]
 
 // 相关推荐作品数据
@@ -129,97 +131,97 @@ const relatedBooks = ref([
     id: 1,
     title: '时光旅行者的妻子',
     intro: '一段跨越时空的爱情故事，感人至深。',
-    cover: 'https://picsum.photos/80/100?random=1'
+    cover: 'https://picsum.photos/80/100?random=1',
   },
   {
     id: 2,
     title: '追风筝的人',
     intro: '关于友谊、背叛与救赎的动人故事。',
-    cover: 'https://picsum.photos/80/100?random=2'
+    cover: 'https://picsum.photos/80/100?random=2',
   },
   {
     id: 3,
     title: '解忧杂货店',
     intro: '穿越时空的信件，连接过去与未来。',
-    cover: 'https://picsum.photos/80/100?random=3'
+    cover: 'https://picsum.photos/80/100?random=3',
   },
   {
     id: 4,
     title: '挪威的森林',
     intro: '青春、爱情与死亡的经典之作。',
-    cover: 'https://picsum.photos/80/100?random=4'
+    cover: 'https://picsum.photos/80/100?random=4',
   },
   {
     id: 5,
     title: '百年孤独',
     intro: '魔幻现实主义文学的代表作品。',
-    cover: 'https://picsum.photos/80/100?random=5'
+    cover: 'https://picsum.photos/80/100?random=5',
   },
   {
     id: 6,
     title: '小王子',
     intro: '写给成年人的童话，寓意深远。',
-    cover: 'https://picsum.photos/80/100?random=6'
+    cover: 'https://picsum.photos/80/100?random=6',
   },
   {
     id: 7,
     title: '活着',
     intro: '讲述一个人与命运抗争的感人故事。',
-    cover: 'https://picsum.photos/80/100?random=7'
+    cover: 'https://picsum.photos/80/100?random=7',
   },
   {
     id: 8,
     title: '围城',
     intro: '现代中国文学中的经典讽刺小说。',
-    cover: 'https://picsum.photos/80/100?random=8'
+    cover: 'https://picsum.photos/80/100?random=8',
   },
   {
     id: 9,
     title: '三体',
     intro: '科幻小说的巅峰之作，探索宇宙与人性。',
-    cover: 'https://picsum.photos/80/100?random=9'
+    cover: 'https://picsum.photos/80/100?random=9',
   },
   {
     id: 10,
     title: '银河帝国',
     intro: '阿西莫夫经典科幻巨著，描绘宏大的银河帝国兴衰。',
-    cover: 'https://picsum.photos/80/100?random=10'
+    cover: 'https://picsum.photos/80/100?random=10',
   },
   {
     id: 11,
     title: '沙丘',
     intro: '科幻史上的里程碑，讲述沙漠星球的政治与宗教斗争。',
-    cover: 'https://picsum.photos/80/100?random=11'
+    cover: 'https://picsum.photos/80/100?random=11',
   },
   {
     id: 12,
     title: '神经漫游者',
     intro: '赛博朋克开山之作，描绘虚拟现实与人工智能的未来。',
-    cover: 'https://picsum.photos/80/100?random=12'
+    cover: 'https://picsum.photos/80/100?random=12',
   },
   {
     id: 13,
     title: '白夜行',
     intro: '东野圭吾代表作，一段跨越十九年的悬疑爱情故事。',
-    cover: 'https://picsum.photos/80/100?random=13'
+    cover: 'https://picsum.photos/80/100?random=13',
   },
   {
     id: 14,
     title: '达芬奇密码',
     intro: '宗教符号学与悬疑推理的完美结合。',
-    cover: 'https://picsum.photos/80/100?random=14'
+    cover: 'https://picsum.photos/80/100?random=14',
   },
   {
     id: 15,
     title: '福尔摩斯探案集',
     intro: '侦探小说的经典之作，展现逻辑推理的魅力。',
-    cover: 'https://picsum.photos/80/100?random=15'
+    cover: 'https://picsum.photos/80/100?random=15',
   },
   {
     id: 16,
     title: '明朝那些事儿',
     intro: '用现代语言讲述明朝历史的通俗读物。',
-    cover: 'https://picsum.photos/80/100?random=16'
+    cover: 'https://picsum.photos/80/100?random=16',
   },
 ])
 
@@ -235,7 +237,7 @@ const bookStats = {
   wordCount: '11.3万字',
   publishInfo: '2021年7月出版',
   experienceCardStatus: '体验卡可读',
-  priceInfo: '电子书价格49元'
+  priceInfo: '电子书价格49元',
 }
 
 // 用户点评数据
@@ -243,62 +245,72 @@ const reviewsData = ref([
   {
     id: 1,
     userName: '书虫小张',
-    content: '这本书真的让我爱不释手，故事情节紧凑，人物塑造生动。作者的文字功底深厚，能够将复杂的情感用简单的语言表达出来。特别是主角的成长历程，让我感同身受。',
-    date: '2023-10-15'
+    content:
+      '这本书真的让我爱不释手，故事情节紧凑，人物塑造生动。作者的文字功底深厚，能够将复杂的情感用简单的语言表达出来。特别是主角的成长历程，让我感同身受。',
+    date: '2023-10-15',
   },
   {
     id: 2,
     userName: '文学爱好者',
-    content: '一开始是被封面吸引的，读完后发现内容更加精彩。作者对细节的把握非常到位，每一个场景都描绘得栩栩如生。虽然有些情节略显拖沓，但整体来说是一部值得推荐的作品。',
-    date: '2023-10-12'
+    content:
+      '一开始是被封面吸引的，读完后发现内容更加精彩。作者对细节的把握非常到位，每一个场景都描绘得栩栩如生。虽然有些情节略显拖沓，但整体来说是一部值得推荐的作品。',
+    date: '2023-10-12',
   },
   {
     id: 3,
     userName: '深夜读书人',
-    content: '这本书让我重新找回了阅读的乐趣。故事情节虽然简单，但蕴含的哲理却很深刻。适合在安静的夜晚慢慢品味，每一章都能带来新的思考。',
-    date: '2023-10-08'
+    content:
+      '这本书让我重新找回了阅读的乐趣。故事情节虽然简单，但蕴含的哲理却很深刻。适合在安静的夜晚慢慢品味，每一章都能带来新的思考。',
+    date: '2023-10-08',
   },
   {
     id: 4,
     userName: '书海漫游',
-    content: '非常喜欢这本书的叙事风格，作者用独特的视角讲述了一个平凡而又不平凡的故事。读完之后久久不能平静，强烈推荐给喜欢文学的朋友。',
-    date: '2023-10-05'
+    content:
+      '非常喜欢这本书的叙事风格，作者用独特的视角讲述了一个平凡而又不平凡的故事。读完之后久久不能平静，强烈推荐给喜欢文学的朋友。',
+    date: '2023-10-05',
   },
   {
     id: 5,
     userName: '阅读时光',
-    content: '这本书的人物关系处理得非常巧妙，每个角色都有自己鲜明的个性。故事情节跌宕起伏，让人一旦开始阅读就停不下来。',
-    date: '2023-10-01'
+    content:
+      '这本书的人物关系处理得非常巧妙，每个角色都有自己鲜明的个性。故事情节跌宕起伏，让人一旦开始阅读就停不下来。',
+    date: '2023-10-01',
   },
   {
     id: 6,
     userName: '文学探索者',
-    content: '作者的文笔细腻，能够精准地捕捉人物内心的微妙变化。虽然故事背景设定在特定的时代，但其中蕴含的情感却是普世的，容易引起共鸣。',
-    date: '2023-09-28'
+    content:
+      '作者的文笔细腻，能够精准地捕捉人物内心的微妙变化。虽然故事背景设定在特定的时代，但其中蕴含的情感却是普世的，容易引起共鸣。',
+    date: '2023-09-28',
   },
   {
     id: 7,
     userName: '科幻迷小王',
-    content: '作为科幻爱好者，我认为这本书在科学设定上非常严谨，同时又没有忽视人文关怀。作者成功地在硬核科幻与情感表达之间找到了平衡点。',
-    date: '2023-09-25'
+    content:
+      '作为科幻爱好者，我认为这本书在科学设定上非常严谨，同时又没有忽视人文关怀。作者成功地在硬核科幻与情感表达之间找到了平衡点。',
+    date: '2023-09-25',
   },
   {
     id: 8,
     userName: '历史研究者',
-    content: '从历史研究的角度来看，这本书对时代背景的还原相当准确。作者显然做了大量的资料收集工作，让读者能够身临其境地感受那个时代的气息。',
-    date: '2023-09-22'
+    content:
+      '从历史研究的角度来看，这本书对时代背景的还原相当准确。作者显然做了大量的资料收集工作，让读者能够身临其境地感受那个时代的气息。',
+    date: '2023-09-22',
   },
   {
     id: 9,
     userName: '心理学学生',
-    content: '书中对人物心理的描写十分到位，特别是主角在面对困境时的心理变化过程，真实而细腻。这对我学习心理学很有启发。',
-    date: '2023-09-18'
+    content:
+      '书中对人物心理的描写十分到位，特别是主角在面对困境时的心理变化过程，真实而细腻。这对我学习心理学很有启发。',
+    date: '2023-09-18',
   },
   {
     id: 10,
     userName: '旅行作家',
-    content: '阅读这本书就像进行了一场心灵旅行。作者笔下的场景描写让我仿佛亲眼看到了那些风景，文字中充满了画面感。',
-    date: '2023-09-15'
+    content:
+      '阅读这本书就像进行了一场心灵旅行。作者笔下的场景描写让我仿佛亲眼看到了那些风景，文字中充满了画面感。',
+    date: '2023-09-15',
   },
 ])
 

@@ -1,6 +1,6 @@
 <!-- 猜你喜欢里的书籍卡片 -->
 <template>
-  <div class="book-card">
+  <div class="book-card" @click="goToBookDetail">
     <img :src="cover" alt="book cover" class="book-cover" />
     <div class="book-info">
       <h3 class="book-title">{{ title }}</h3>
@@ -17,6 +17,9 @@ defineProps({
   author: String, // 作者
   reason: String, // 推荐理由
 })
+const goToBookDetail = () => {
+  router.push('/bookdetail')
+}
 </script>
 
 <style scoped>

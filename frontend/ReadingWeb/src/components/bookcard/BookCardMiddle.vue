@@ -1,6 +1,6 @@
 <!--书架里的书籍卡片-->
 <template>
-  <div class="book-card">
+  <div class="book-card" @click="goToBookDetail">
     <div class="book-cover-container">
       <img :src="cover" alt="book cover" class="book-cover" />
       <!-- 读完标签 -->
@@ -26,8 +26,10 @@ defineProps({
     type: Boolean,
     default: true,
   },
-  
 })
+const goToBookDetail = () => {
+  router.push('/bookdetail')
+}
 </script>
 
 <style scoped>

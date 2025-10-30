@@ -1,8 +1,8 @@
 <template>
-  <div class="book-card-super-big">
+  <div class="book-card-super-big" @click="goToBookDetail">
     <!-- 图书封面 -->
     <div class="book-cover-container">
-      <img :src="cover" :alt="title" class="book-cover" v-if="cover">
+      <img :src="cover" :alt="title" class="book-cover" v-if="cover" />
       <div class="book-cover-placeholder" v-else>
         {{ title }}
       </div>
@@ -33,39 +33,48 @@
 </template>
 
 <script lang="ts">
+import { useRouter } from 'vue-router'
 export default {
   name: 'BookCardSuperBig',
   props: {
     cover: {
       type: String,
-      default: ''
+      default: '',
     },
     title: {
       type: String,
-      required: true
+      required: true,
     },
     author: {
       type: String,
-      required: true
+      required: true,
     },
     readersCount: {
       type: [String, Number],
-      default: '1021'
+      default: '1021',
     },
     recommendationRate: {
       type: [String, Number],
-      default: '93.6'
+      default: '93.6',
     },
     description: {
       type: String,
-      default: '作品简介Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan et viverra justo commodo. Proin sodales pulvinar sic tempor. Sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nam fermentum, nulla luctus pharetra vulputate, felis tellus mollis orci, sed rhoncus pronin sapien nunc accuan eget.'
+      default:
+        '作品简介Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan et viverra justo commodo. Proin sodales pulvinar sic tempor. Sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nam fermentum, nulla luctus pharetra vulputate, felis tellus mollis orci, sed rhoncus pronin sapien nunc accuan eget.',
     },
     scale: {
       type: Number,
-      default: 1  // 默认 1 = 原尺寸
+      default: 1, // 默认 1 = 原尺寸
     },
-
-  }
+  },
+  setup() {
+    const router = useRouter()
+    // 返回给模板使用
+    const goToBookDetail = () => {
+      router.push('/book')
+    }
+    return { goToBookDetail }
+  },
 }
 </script>
 
@@ -86,7 +95,7 @@ export default {
 /* 恢复悬停效果 */
 .book-card-super-big:hover {
   transform: none;
-  background-color: none
+  background-color: none;
 }
 
 /* 图书封面样式 */
