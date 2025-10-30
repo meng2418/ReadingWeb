@@ -24,7 +24,6 @@ defineProps({
   width: 180px;
   background-color: #fff;
   border-radius: 10px;
-  /*box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);*/
   overflow: hidden;
   text-align: center;
   padding: 12px;
@@ -35,9 +34,8 @@ defineProps({
 }
 
 .book-card:hover {
-  transform: translateY(-4px) scale(1.05);
+  transform: translateY(4px) scale(1.02);
   filter: brightness(1.05);
-  /*box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);*/
 }
 
 .book-cover {

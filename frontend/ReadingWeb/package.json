@@ -26,6 +26,8 @@
     "@fortawesome/vue-fontawesome": "^3.1.2",
     "axios": "^1.12.2",
     "element-plus": "^2.11.4",
+    "emoji-picker-element": "^1.27.0",
+    "lucide-vue-next": "^0.548.0",
     "pinia": "^3.0.3",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1"

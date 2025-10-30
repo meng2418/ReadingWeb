@@ -46,7 +46,7 @@ onMounted(async () => {
 .home {
   display: flex;
   flex-direction: column;
-  background-color:#f5f5f5; 
+  background-color: #f5f5f5;
   gap: 24px;
 }
 .spacer {
@@ -83,5 +83,4 @@ onMounted(async () => {
   gap: 12px;
   padding: 0 5vw;
 }
-
 </style>
