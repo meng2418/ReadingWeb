@@ -28,16 +28,19 @@
             v-for="(book, index) in currentRanking"
             :key="book.id"
             class="ranking-item"
-          >
+            @click="goToBookDetail(book.id)"
+            >
             <div class="ranking-number" >{{ index + 1 }}</div>
             <BookCardSuperBig
+              :book-id="book.id"
               :cover="book.cover"
               :title="book.title"
               :author="book.author"
               :readers-count="book.readersCount || '1021'"
               :recommendation-rate="book.recommendationRate || book.recommend"
               :description="book.description || `${book.title}是一本优秀的作品，值得一读。`"
-            />
+
+              />
           </div>
         </div>
       </div>
@@ -55,6 +58,10 @@ import BackToTop from '@/components/layout/BackToTop.vue'
 const route = useRoute()
 const router = useRouter()
 
+const goToBookDetail = (bookId: string | number) => {
+  console.log('跳转到书籍详情页，书籍ID:', bookId)
+  router.push(`/book/${bookId}`)
+}
 // 导航标签
 const tabs = [
   { id: 'weekly', name: '周榜' },
@@ -232,6 +239,7 @@ function getTitleByType(type: string): string {
   box-shadow: none; /* 移除阴影 */
   border-bottom: 1px solid #f0f0f0; /* 添加项之间的分割线 */
   transition: background-color 0.2s ease;
+  cursor: pointer; /* 添加指针样式 */
 }
 
 .ranking-item:hover {

@@ -63,7 +63,8 @@ export default {
     scale: {
       type: Number,
       default: 1  // 默认 1 = 原尺寸
-    }
+    },
+
   }
 }
 </script>
@@ -82,10 +83,10 @@ export default {
   align-items: center;
 }
 
-/* 移除悬停效果 */
+/* 恢复悬停效果 */
 .book-card-super-big:hover {
   transform: none;
-  box-shadow: none;
+  background-color: none
 }
 
 /* 图书封面样式 */
