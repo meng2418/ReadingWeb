@@ -46,6 +46,25 @@
         <version>0.11.5</version>
         <scope>runtime</scope>
         </dependency>
+        <dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-core</artifactId>
+    <version>5.6.14.Final</version> <!-- 可根据需要调整版本 -->
+</dependency>
+            <!-- JUnit 5 核心依赖 -->
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>5.9.2</version>
+        <scope>test</scope>
+    </dependency>
+    <!-- 运行测试的引擎 -->
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>5.9.2</version>
+        <scope>test</scope>
+    </dependency>
     </dependencies>
     
     <build>
