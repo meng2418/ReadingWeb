@@ -47,24 +47,43 @@
         <scope>runtime</scope>
         </dependency>
         <dependency>
-    <groupId>org.hibernate</groupId>
-    <artifactId>hibernate-core</artifactId>
-    <version>5.6.14.Final</version> <!-- 可根据需要调整版本 -->
-</dependency>
-            <!-- JUnit 5 核心依赖 -->
-    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>5.6.14.Final</version> <!-- 可根据需要调整版本 -->
+        </dependency>
+        <!-- JUnit 5 核心依赖 -->
+        <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
         <version>5.9.2</version>
         <scope>test</scope>
-    </dependency>
-    <!-- 运行测试的引擎 -->
-    <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-engine</artifactId>
-        <version>5.9.2</version>
+        </dependency>
+        <!-- 运行测试的引擎 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- 测试相关依赖 -->
+        <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
         <scope>test</scope>
-    </dependency>
+        </dependency>
+        <!-- 数据库H2 -->
+        <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.2.224</version> <!-- 可以使用最新稳定版本 -->
+        <scope>runtime</scope>
+        </dependency>
+        <!-- Spring Data JPA -->
+        <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
     </dependencies>
     
     <build>
