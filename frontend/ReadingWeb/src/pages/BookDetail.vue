@@ -63,11 +63,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
-import BookDetailHeader from '@/components/BookDetailHeader.vue'
-import BookRecommendationSection from '@/components/BookRecommendationSection.vue'
-import AuthorInfoSection from '@/components/AuthorInfoSection.vue'
-import RelatedRecommendations from '@/components/RelatedRecommendations.vue'
-import UserReviews from '@/components/UserReviews.vue'
+import BookDetailHeader from '@/components/bookdetail/BookDetailHeader.vue'
+import BookRecommendationSection from '@/components/bookdetail/BookRecommendationSection.vue'
+import AuthorInfoSection from '@/components/bookdetail/AuthorInfoSection.vue'
+import RelatedRecommendations from '@/components/bookdetail/RelatedRecommendations.vue'
+import UserReviews from '@/components/bookdetail/UserReviews.vue'
 
 // 定义相关类型
 interface Work {

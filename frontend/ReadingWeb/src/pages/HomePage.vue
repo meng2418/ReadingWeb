@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import NavBar from '@/components/layout/NavBar.vue'
-import GuessYouLike from '@/components/GuessYouLike.vue'
-import BookRankList from '@/components/BookRankList.vue'
+import GuessYouLike from '@/components/home/GuessYouLike.vue'
+import BookRankList from '@/components/home/BookRankList.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
-import ReadingTimeCard from '@/components/ReadingTimeCard.vue'
-import RecentRead from '@/components/RecentRead.vue'
+import ReadingTimeCard from '@/components/home/ReadingTimeCard.vue'
+import RecentRead from '@/components/home/RecentRead.vue'
 import { onMounted } from 'vue'
 import axios from 'axios'
 

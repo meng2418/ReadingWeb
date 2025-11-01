@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import BookCard from '@/components/bookcard/BookCardBig.vue'
+import BookCard from '@/components/home/BookCardBig.vue'
 
 // 模拟后端书籍库
 const allBooks = [

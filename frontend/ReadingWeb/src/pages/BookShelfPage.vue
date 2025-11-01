@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
-import BookCard from '@/components/bookcard/BookCardMiddle.vue'
+import BookCard from '@/components/bookshelf/BookCardMiddle.vue'
 
 // 模拟书籍数据（真实项目中可从接口获取）
 const books = ref([
