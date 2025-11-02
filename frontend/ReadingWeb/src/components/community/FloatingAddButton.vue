@@ -119,11 +119,30 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { ChatLineRound, Notebook, Search, Reading } from '@element-plus/icons-vue'
 import { Smile } from 'lucide-vue-next'
 import 'emoji-picker-element'
+
+// ==================== 【修改位置1】添加 TypeScript 接口定义 ====================
+interface Topic {
+  name: string
+  view: string
+  discuss: string
+}
+
+interface Book {
+  title: string
+  author: string
+}
+
+interface EmojiClickEvent extends CustomEvent {
+  detail: {
+    unicode: string
+  }
+}
+// ===========================================================================
 
 // 编辑器状态
 const showEditor = ref(false)
@@ -141,12 +160,13 @@ const showBookPanel = ref(false)
 const topicKeyword = ref('')
 const bookKeyword = ref('')
 
+// ==================== 【修改位置2】为响应式数据添加类型 ====================
 // 已选内容
-const selectedTopics = ref([])
-const selectedBooks = ref([])
+const selectedTopics = ref<string[]>([])  // 添加 string[] 类型
+const selectedBooks = ref<Book[]>([])     // 添加 Book[] 类型
 
 // 示例数据
-const topicList = ref([
+const topicList = ref<Topic[]>([          // 添加 Topic[] 类型
   { name: '小剧场过大年', view: '16.6亿', discuss: '133.7万' },
   { name: '巴黎最前线', view: '8亿', discuss: '95.1万' },
   { name: '三角洲破壁新赛季上线', view: '38.8亿', discuss: '567.5万' },
@@ -154,12 +174,13 @@ const topicList = ref([
   { name: '春节档爆款接力赛', view: '9.5亿', discuss: '70.2万' },
 ])
 
-const bookList = ref([
+const bookList = ref<Book[]>([            // 添加 Book[] 类型
   { title: '人类简史', author: '尤瓦尔·赫拉利' },
   { title: '小王子', author: '圣埃克苏佩里' },
   { title: '乌合之众', author: '古斯塔夫·勒庞' },
   { title: '沉默的大多数', author: '王小波' },
 ])
+// ===========================================================================
 
 // 搜索过滤
 const filteredTopics = computed(() =>
@@ -170,47 +191,80 @@ const filteredBooks = computed(() =>
 )
 
 // 操作逻辑
-const toggleEditor = () => (showEditor.value = !showEditor.value)
-const closeEditor = () => (showEditor.value = false)
+const toggleEditor = (): void => {
+  showEditor.value = !showEditor.value
+}
 
-const addEmoji = () => {
+const closeEditor = (): void => {
+  showEditor.value = false
+}
+
+const addEmoji = (): void => {
   showEmojiPicker.value = !showEmojiPicker.value
   nextTick(() => {
     const picker = document.querySelector('emoji-picker')
     if (picker) {
-      picker.addEventListener('emoji-click', (event) => {
-        postContent.value += event.detail.unicode
+      // ==================== 【修改位置3】添加事件类型 ====================
+      picker.addEventListener('emoji-click', (event: Event) => {
+        const emojiEvent = event as EmojiClickEvent
+        postContent.value += emojiEvent.detail.unicode
       })
+      // =================================================================
     }
   })
 }
-const addTopic = () => {
+
+const addTopic = (): void => {
   showTopicPanel.value = true
   showBookPanel.value = false
 }
 
-const addBook = () => {
+const addBook = (): void => {
   showBookPanel.value = true
   showTopicPanel.value = false
 }
 
-const selectTopic = (topic) => {
+// ==================== 【修改位置4】为函数参数添加类型 ====================
+const selectTopic = (topic: Topic): void => {
   if (!selectedTopics.value.includes(topic.name)) {
     selectedTopics.value.push(topic.name)
   }
   showTopicPanel.value = false
 }
 
-const selectBook = (book) => {
+const selectBook = (book: Book): void => {
   if (!selectedBooks.value.find((b) => b.title === book.title)) {
     selectedBooks.value.push(book)
   }
   showBookPanel.value = false
 }
 
-const removeTopic = (t) => (selectedTopics.value = selectedTopics.value.filter((i) => i !== t))
-const removeBook = (b) =>
-  (selectedBooks.value = selectedBooks.value.filter((i) => i.title !== b.title))
+const removeTopic = (t: string): void => {
+  selectedTopics.value = selectedTopics.value.filter((i) => i !== t)
+}
+
+const removeBook = (b: Book): void => {
+  selectedBooks.value = selectedBooks.value.filter((i) => i.title !== b.title)
+}
+// =========================================================================
+
+// ==================== 【修改位置5】添加缺失的发布函数 ====================
+const submitPost = (): void => {
+  console.log('发布帖子:', {
+    title: titleContent.value,
+    content: postContent.value,
+    topics: selectedTopics.value,
+    books: selectedBooks.value
+  })
+  // TODO: 这里添加实际的发布逻辑
+  closeEditor()
+  // 清空表单
+  titleContent.value = ''
+  postContent.value = ''
+  selectedTopics.value = []
+  selectedBooks.value = []
+}
+// =========================================================================
 </script>
 
 <style scoped>

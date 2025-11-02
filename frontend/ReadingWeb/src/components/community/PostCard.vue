@@ -1,4 +1,5 @@
 <template>
+  <!-- 模板部分完全不需要修改 -->
   <div class="post-card">
     <!-- 用户信息 -->
     <div class="post-header">
@@ -69,71 +70,93 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+import { ref, computed } from 'vue'
 import { Comment, Share, Star, StarFilled } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
 
-export default {
-  name: 'PostCard',
-  components: { Comment, Share, Star, StarFilled, LinkBookCard },
-  props: {
-    username: String,
-    avatar: String,
-    postTime: String,
-    title: String,
-    content: String,
-    likeCount: Number,
-    commentCount: Number,
-    shareCount: Number,
-    isFollowing: Boolean,
-    isLiked: Boolean,
-    book: { // 新增：书籍信息对象
-      type: Object,
-      default: null,
-    },
-  },
-  data() {
-    return {
-      showFull: false,
-      maxChars: 120, // 控制显示多少字
-      localIsLiked: this.isLiked,
-      localLikeCount: this.likeCount,
-      localIsFollowing: this.isFollowing,
-    }
-  },
-  computed: {
-    isTruncated() {
-      return this.content.length > this.maxChars
-    },
-    truncatedContent() {
-      return this.isTruncated
-        ? this.content.slice(0, this.maxChars) + '...'
-        : this.content
-    }
-  },
-  methods: {
-    toggleFollow() {
-      this.localIsFollowing = !this.localIsFollowing
-      this.$emit('follow-change', this.localIsFollowing)
-    },
-    handleLike() {
-      this.localIsLiked = !this.localIsLiked
-      this.localLikeCount += this.localIsLiked ? 1 : -1
-      this.$emit('like', this.localLikeCount, this.localIsLiked)
-    },
-    commentPost() {
-      this.$emit('comment')
-    },
-    sharePost() {
-      this.$emit('share')
-    },
-    toggleExpand() {
-      this.showFull = !this.showFull
-    },
-  },
+
+interface Book {
+  id: number
+  cover: string
+  title: string
+  author: string
+}
+
+interface Props {
+  username: string
+  avatar?: string
+  postTime: string
+  title?: string
+  content: string
+  likeCount: number
+  commentCount: number
+  shareCount: number
+  isFollowing: boolean
+  isLiked: boolean
+  book?: Book | null
+}
+
+
+const props = withDefaults(defineProps<Props>(), {
+  avatar: undefined,
+  title: undefined,
+  book: null
+})
+
+
+const emit = defineEmits<{
+  'follow-change': [isFollowing: boolean]
+  'like': [likeCount: number, isLiked: boolean]
+  'comment': []
+  'share': []
+}>()
+
+
+const showFull = ref<boolean>(false)
+const maxChars = 120 // 控制显示多少字
+
+// 从props初始化本地状态
+const localIsLiked = ref<boolean>(props.isLiked)
+const localLikeCount = ref<number>(props.likeCount)
+const localIsFollowing = ref<boolean>(props.isFollowing)
+
+
+const isTruncated = computed((): boolean => {
+  return props.content.length > maxChars
+})
+
+const truncatedContent = computed((): string => {
+  return isTruncated.value
+    ? props.content.slice(0, maxChars) + '...'
+    : props.content
+})
+
+
+const toggleFollow = (): void => {
+  localIsFollowing.value = !localIsFollowing.value
+  emit('follow-change', localIsFollowing.value)
+}
+
+const handleLike = (): void => {
+  localIsLiked.value = !localIsLiked.value
+  localLikeCount.value += localIsLiked.value ? 1 : -1
+  emit('like', localLikeCount.value, localIsLiked.value)
+}
+
+const commentPost = (): void => {
+  emit('comment')
+}
+
+const sharePost = (): void => {
+  emit('share')
+}
+
+const toggleExpand = (): void => {
+  showFull.value = !showFull.value
 }
 </script>
-
 
 <style scoped>
 .post-content {

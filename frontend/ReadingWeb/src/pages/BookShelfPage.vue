@@ -69,6 +69,7 @@ const setFilter = (status: string) => {
           :title="book.title"
           :cover="book.cover"
           :isRead="book.status === '读完'"
+          :book-id="book.id"
         />
       </div>
     </div>

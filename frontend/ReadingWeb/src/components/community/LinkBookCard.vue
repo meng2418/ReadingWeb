@@ -10,20 +10,25 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-defineProps({
-  cover: { type: String, required: true },
-  title: { type: String, required: true },
-  author: { type: String, required: true },
-  bookId: { type: [String, Number], required: true },
-})
+// 定义 Props 接口
+interface Props {
+  cover: string
+  title: string
+  author: string
+  bookId: string | number
+}
 
-const goToBook = () => {
-  router.push(`/book/${bookId}`)
+// 使用 TypeScript 方式定义 props
+const props = defineProps<Props>()
+
+// 跳转到书籍详情页
+const goToBook = (): void => {
+  router.push(`/bookdetail/${props.bookId}`)
 }
 </script>
 

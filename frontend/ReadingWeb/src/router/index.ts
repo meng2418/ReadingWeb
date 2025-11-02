@@ -41,10 +41,10 @@ const router = createRouter({
     },
 
     {
-      path: '/bookdetail',
+      path: '/bookdetail/:id?',  // 修改：添加动态参数，?表示可选
       name: 'BookDetail',
       component: BookDetail,
-       props: true // 重要：将路由参数作为 props 传递
+      props: true // 重要：将路由参数作为 props 传递
     },
   ],
 })
