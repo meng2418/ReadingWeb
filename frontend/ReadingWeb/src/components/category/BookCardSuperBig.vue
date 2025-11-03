@@ -1,3 +1,4 @@
+<!--分类排行榜里的书籍卡片-->
 <template>
   <div class="book-card-super-big" @click="goToBookDetail">
     <!-- 图书封面 -->

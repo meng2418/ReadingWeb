@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
-import PostCard from '@/components/post/PostCard.vue'
-import UserProfileCard from '@/components/post/UserProfileCard.vue'
-import HotTopics from '@/components/post/HotTopics.vue'
+import PostCard from '@/components/community/PostCard.vue'
+import UserProfileCard from '@/components/community/UserProfileCard.vue'
+import HotTopics from '@/components/community/HotTopics.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
-import Topic from '@/components/Topic.vue'
+import Topic from '@/components/community/TopicCard.vue'
 import avatarImg from '@/img/avatar.jpg'
-import FloatingAddButton from '@/components/post/FloatingAddButton.vue'
+import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 
 // 当前用户信息
 const currentUser = reactive({
@@ -165,6 +165,45 @@ const filteredPosts = computed(() => {
 const handleTopicClick = (topic: any) => {
   console.log('点击话题:', topic.name)
 }
+// TODO: 等待接口文档确认
+
+// 新增：PostCard 事件处理函数
+// ============================
+
+// 关注状态变化事件
+const handleFollowChange = (postId: number, isFollowing: boolean): void => {
+  // 更新对应帖子的关注状态
+  const post = posts.value.find(p => p.id === postId)
+  if (post) {
+    post.isFollowing = isFollowing
+  }
+}
+
+// 点赞事件
+const handleLike = (postId: number, likeCount: number, isLiked: boolean): void => {
+  // 更新对应帖子的点赞状态
+  const post = posts.value.find(p => p.id === postId)
+  if (post) {
+    post.likeCount = likeCount
+    post.isLiked = isLiked
+  }
+}
+
+// 评论事件
+const handleComment = (postId: number): void => {
+  // 这里可以添加跳转到评论页面或打开评论弹窗的逻辑
+  // 例如：router.push(`/post/${postId}/comments`)
+  void postId; // 明确表示此参数未使用
+  // TODO: 实现评论功能
+}
+
+// 转发事件
+const handleShare = (postId: number): void => {
+  // 这里可以添加分享逻辑
+  // 例如：showShareDialog(postId)
+  void postId; // 明确表示此参数未使用
+  // TODO: 实现转发功能
+}
 </script>
 
 <template>
@@ -197,6 +236,22 @@ const handleTopicClick = (topic: any) => {
             v-for="post in filteredPosts"
             :key="post.id"
             v-bind="post"
+            :username="post.username"
+            :avatar="post.avatar"
+            :post-time="post.postTime"
+            :title="post.title"
+            :content="post.content"
+            :like-count="post.likeCount"
+            :comment-count="post.commentCount"
+            :share-count="post.shareCount"
+            :is-following="post.isFollowing"
+            :is-liked="post.isLiked"
+            :book="post.book"
+            @follow-change="(isFollowing: boolean) => handleFollowChange(post.id, isFollowing)"
+            @like="(likeCount: number, isLiked: boolean) => handleLike(post.id, likeCount, isLiked)"
+            @comment="() => handleComment(post.id)"
+
+            @share="() => handleShare(post.id)"
           />
           <div v-if="filteredPosts.length === 0" class="empty">暂无内容</div>
         </div>

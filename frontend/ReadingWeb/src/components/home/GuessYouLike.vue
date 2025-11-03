@@ -13,6 +13,7 @@
         :title="book.title"
         :author="book.author"
         :reason="book.reason"
+        :book-id="book.id"
       />
     </div>
   </div>
@@ -20,10 +21,19 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import BookCard from '@/components/bookcard/BookCardBig.vue'
+import BookCard from '@/components/home/BookCardBig.vue'
+
+// 定义书籍接口
+interface Book {
+  id: number
+  cover: string
+  title: string
+  author: string
+  reason: string
+}
 
 // 模拟后端书籍库
-const allBooks = [
+const allBooks: Book[] = [
   { id: 1, cover: 'https://picsum.photos/200/300?1', title: 'Vue 3 实战', author: '张三', reason: '最近热门技术推荐' },
   { id: 2, cover: 'https://picsum.photos/200/300?2', title: '深入 TypeScript', author: '李四', reason: '类型安全最佳实践' },
   { id: 3, cover: 'https://picsum.photos/200/300?3', title: '前端工程化指南', author: '王五', reason: '构建现代化前端体系' },
@@ -46,16 +56,16 @@ const allBooks = [
   { id: 20, cover: 'https://picsum.photos/200/300?20', title: 'Kubernetes 入门', author: '李想', reason: '云原生时代的必修课' },
 ]
 
-// 当前显示的书籍
-const books = ref([])
+// 当前显示的书籍 - 明确指定类型
+const books = ref<Book[]>([])
 
 // 从 allBooks 中随机抽取 N 本
-function getRandomBooks(count = 6) {
+function getRandomBooks(count = 6): Book[] {
   return [...allBooks].sort(() => Math.random() - 0.5).slice(0, count)
 }
 
-// 模拟“换一批”
-function fetchBooks() {
+// 模拟"换一批"
+function fetchBooks(): void {
   books.value = getRandomBooks()
 }
 

@@ -10,15 +10,39 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  cover: String, // 封面图片链接
-  title: String, // 书名
-  author: String, // 作者
-  reason: String, // 推荐理由
+<script setup lang="ts">
+// 导入 useRouter
+import { useRouter } from 'vue-router'
+
+// 初始化 router
+const router = useRouter()
+
+// 定义 props - 添加 bookId 用于跳转
+interface Props {
+  cover?: string
+  title?: string
+  author?: string
+  reason?: string
+  bookId?: string | number  // 新增：书籍ID，用于路由跳转
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  cover: '',
+  title: '',
+  author: '',
+  reason: '',
+  bookId: ''  // 默认值
 })
-const goToBookDetail = () => {
-  router.push('/bookdetail')
+
+// 跳转到书籍详情页
+const goToBookDetail = (): void => {
+  if (props.bookId) {
+    // 使用书籍ID跳转到对应详情页
+    router.push(`/bookdetail/${props.bookId}`)
+  } else {
+    // 如果没有bookId，跳转到默认详情页（备用方案）
+    router.push('/bookdetail')
+  }
 }
 </script>
 

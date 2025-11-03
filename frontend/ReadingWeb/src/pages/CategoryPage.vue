@@ -52,7 +52,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
-import BookCardSuperBig from '@/components/bookcard/BookCardSuperBig.vue'
+import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 
 const route = useRoute()
@@ -60,7 +60,7 @@ const router = useRouter()
 
 const goToBookDetail = (bookId: string | number) => {
   console.log('跳转到书籍详情页，书籍ID:', bookId)
-  router.push(`/book/${bookId}`)
+  router.push(`/bookdetail?id=${bookId}`)
 }
 // 导航标签
 const tabs = [

@@ -11,7 +11,12 @@
 
     <!-- 榜单内容部分 -->
     <div class="book-rank-list">
-      <div class="book-rank-list-li" v-for="(book, index) in books" :key="index">
+      <div
+        class="book-rank-list-li"
+        v-for="(book, index) in books"
+        :key="book.id || index"
+        @click="handleBookClick(book.id)"
+      >
         <img :src="book.cover" alt="book cover" class="book-cover" />
         <div class="book-details">
           <i class="book-rank">{{ index + 1 }}</i>
@@ -26,92 +31,118 @@
   </div>
 </template>
 
-<script setup>
-import { defineProps } from 'vue'
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-// 定义接收的属性
-defineProps({
-  ranktitle: {
-    type: String,
-    default: '周榜',
-  },
-  desc: {
-    type: String,
-    default: '最近一周热读书籍',
-  },
-  books: {
-    type: Array,
-    default: () => [
-      // 默认10本书数据
-      {
-        cover: 'https://picsum.photos/seed/book1/200/300',
-        title: '书籍标题1',
-        author: '作者1',
-        recommend: '98%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book2/200/300',
-        title: '书籍标题2',
-        author: '作者2',
-        recommend: '97%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book3/200/300',
-        title: '书籍标题3',
-        author: '作者3',
-        recommend: '96%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book4/200/300',
-        title: '书籍标题4',
-        author: '作者4',
-        recommend: '95%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book5/200/300',
-        title: '书籍标题5',
-        author: '作者5',
-        recommend: '94%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book6/200/300',
-        title: '书籍标题6',
-        author: '作者6',
-        recommend: '93%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book7/200/300',
-        title: '书籍标题7',
-        author: '作者7',
-        recommend: '92%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book8/200/300',
-        title: '书籍标题8',
-        author: '作者8',
-        recommend: '91%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book9/200/300',
-        title: '书籍标题9',
-        author: '作者9',
-        recommend: '90%',
-      },
-      {
-        cover: 'https://picsum.photos/seed/book10/200/300',
-        title: '书籍标题10',
-        author: '作者10',
-        recommend: '89%',
-      },
-    ],
-  },
+
+// 定义书籍接口
+interface Book {
+  id?: number | string
+  cover: string
+  title: string
+  author: string
+  recommend: string
+}
+
+// 定义组件 Props 接口
+interface Props {
+  ranktitle?: string
+  desc?: string
+  books?: Book[]
+}
+
+
+// 使用解构，不定义 props 变量
+const { ranktitle, desc, books } = withDefaults(defineProps<Props>(), {
+  desc: '最近一周热读书籍',
+  books: () => [
+    // 默认10本书数据
+    {
+      id: 1,
+      cover: 'https://picsum.photos/seed/book1/200/300',
+      title: '书籍标题1',
+      author: '作者1',
+      recommend: '98%',
+    },
+    {
+      id: 2,
+      cover: 'https://picsum.photos/seed/book2/200/300',
+      title: '书籍标题2',
+      author: '作者2',
+      recommend: '97%',
+    },
+    {
+      id: 3,
+      cover: 'https://picsum.photos/seed/book3/200/300',
+      title: '书籍标题3',
+      author: '作者3',
+      recommend: '96%',
+    },
+    {
+      id: 4,
+      cover: 'https://picsum.photos/seed/book4/200/300',
+      title: '书籍标题4',
+      author: '作者4',
+      recommend: '95%',
+    },
+    {
+      id: 5,
+      cover: 'https://picsum.photos/seed/book5/200/300',
+      title: '书籍标题5',
+      author: '作者5',
+      recommend: '94%',
+    },
+    {
+      id: 6,
+      cover: 'https://picsum.photos/seed/book6/200/300',
+      title: '书籍标题6',
+      author: '作者6',
+      recommend: '93%',
+    },
+    {
+      id: 7,
+      cover: 'https://picsum.photos/seed/book7/200/300',
+      title: '书籍标题7',
+      author: '作者7',
+      recommend: '92%',
+    },
+    {
+      id: 8,
+      cover: 'https://picsum.photos/seed/book8/200/300',
+      title: '书籍标题8',
+      author: '作者8',
+      recommend: '91%',
+    },
+    {
+      id: 9,
+      cover: 'https://picsum.photos/seed/book9/200/300',
+      title: '书籍标题9',
+      author: '作者9',
+      recommend: '90%',
+    },
+    {
+      id: 10,
+      cover: 'https://picsum.photos/seed/book10/200/300',
+      title: '书籍标题10',
+      author: '作者10',
+      recommend: '89%',
+    },
+  ],
 })
 
 // 查看全部点击事件
-const handleViewAll = () => {
+const handleViewAll = (): void => {
   router.push('/category')
+}
+
+// 书籍点击事件 - 跳转到书籍详情页
+const handleBookClick = (bookId?: number | string): void => {
+  if (bookId) {
+    router.push(`/bookdetail/${bookId}`)
+  } else {
+    router.push('/bookdetail')
+  }
 }
 </script>
 
