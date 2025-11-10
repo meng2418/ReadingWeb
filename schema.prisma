@@ -9,12 +9,11 @@ datasource db {
 }
 
 model User {
-  id          Int       @id @default(autoincrement())
+  userId          Int       @id @default(autoincrement())
   username    String    @unique
   email       String?   @unique
   phone       String?   @unique
   password    String?
-  nickname    String
   avatar      String?
   bio         String?
   isMember    Boolean   @default(false)
@@ -38,7 +37,7 @@ model User {
 }
 
 model Book {
-  id          Int       @id @default(autoincrement())
+  bookId          Int       @id @default(autoincrement())
   title       String
   author      String
   cover       String?
@@ -66,13 +65,13 @@ model Book {
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
+  categoryId    Int    @id @default(autoincrement())
   name  String
   books Book[]
 }
 
 model Chapter {
-  id        Int      @id @default(autoincrement())
+  chapterId        Int      @id @default(autoincrement())
   title     String
   content   String   @db.Text
   order     Int
@@ -85,7 +84,7 @@ model Chapter {
 }
 
 model Bookshelf {
-  id        Int      @id @default(autoincrement())
+  bookshelfid        Int      @id @default(autoincrement())
   userId    Int
   bookId    Int
   status    String   @default("reading") // reading, unread, finished
@@ -99,7 +98,7 @@ model Bookshelf {
 }
 
 model ReadingProgress {
-  id          Int      @id @default(autoincrement())
+  readingprogressid          Int      @id @default(autoincrement())
   userId      Int
   bookId      Int
   chapterId   Int?
@@ -114,8 +113,8 @@ model ReadingProgress {
   @@unique([userId, bookId])
 }
 
-model ReadingStat {
-  id        Int      @id @default(autoincrement())
+model ReadingStatus {
+  readingstatusId        Int      @id @default(autoincrement())
   userId    Int
   date      DateTime @default(now()) // 统计日期
   readingTime Int    @default(0) // 当日阅读时长(分钟)
@@ -124,7 +123,7 @@ model ReadingStat {
 }
 
 model Note {
-  id        Int       @id @default(autoincrement())
+  noteId        Int       @id @default(autoincrement())
   userId    Int
   bookId    Int
   chapterId Int?
@@ -142,7 +141,7 @@ model Note {
 }
 
 model Bookmark {
-  id        Int      @id @default(autoincrement())
+  bookmarkId        Int      @id @default(autoincrement())
   userId    Int
   bookId    Int
   chapterId Int?
@@ -156,7 +155,7 @@ model Bookmark {
 }
 
 model Post {
-  id        Int       @id @default(autoincrement())
+  postId        Int       @id @default(autoincrement())
   userId    Int
   bookId    Int?
   title     String
@@ -173,7 +172,7 @@ model Post {
 }
 
 model Comment {
-  id        Int       @id @default(autoincrement())
+  commentId        Int       @id @default(autoincrement())
   userId    Int
   postId    Int?
   noteId    Int?
@@ -190,7 +189,7 @@ model Comment {
 }
 
 model Like {
-  id        Int       @id @default(autoincrement())
+  likeId        Int       @id @default(autoincrement())
   userId    Int
   postId    Int?
   commentId Int?
@@ -206,7 +205,7 @@ model Like {
 }
 
 model Follow {
-  id          Int      @id @default(autoincrement())
+  followId          Int      @id @default(autoincrement())
   followerId  Int      // 关注者
   followingId Int      // 被关注者
   createdAt   DateTime @default(now())
@@ -218,7 +217,7 @@ model Follow {
 }
 
 model Message {
-  id        Int       @id @default(autoincrement())
+  messageId        Int       @id @default(autoincrement())
   userId    Int
   type      String    // system, like, comment, follow
   title     String
@@ -231,7 +230,7 @@ model Message {
 }
 
 model VerificationCode {
-  id        Int      @id @default(autoincrement())
+  vertificationcodeId        Int      @id @default(autoincrement())
   phone     String?
   email     String?
   code      String
