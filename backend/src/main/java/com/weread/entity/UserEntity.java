@@ -22,7 +22,7 @@ public class UserEntity {
 
     @Column(unique = true, length = 50)
     private String username; // 用户名
-    
+
     @Column(unique = true, length = 100)
     private String email; // 邮箱（可选）
 
@@ -55,8 +55,4 @@ public class UserEntity {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt; // 更新时间
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upstream/main
