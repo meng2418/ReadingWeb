@@ -125,6 +125,8 @@ components:
           schema:
             type: object
             properties:
+              username:
+                type: string
               phone:
                 type: string
               password:
@@ -1601,4 +1603,5 @@ paths:
                       type: object
                   total:
                     type: integer
+
 
