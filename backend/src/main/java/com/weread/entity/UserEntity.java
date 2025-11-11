@@ -55,4 +55,8 @@ public class UserEntity {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt; // 更新时间
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> upstream/main
