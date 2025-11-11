@@ -8,294 +8,333 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ===============================================
+// 核心信息表 (Primary Entities)
+// ===============================================
+
 model User_info {
-  userId          Int       @id @default(autoincrement())
-  username    String    @unique
-  email       String?   @unique
-  phone       String?   @unique
-  password    String?
-  avatar      String?
-  bio         String?
-  isMember    Boolean   @default(false)
-  coins       Int       @default(0) // 书币
-  totalReadingTime Int  @default(0) // 总阅读时长(分钟)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // 关联关系
-  bookshelf   Bookshelf[]
-  readingProgress ReadingProgress[]
-  notes       Note[]
-  bookmarks   Bookmark[]
-  posts       Post[]
-  comments    Comment[]
-  likes       Like[]
-  follows     Follow[]   @relation("Follower")
-  followers   Follow[]   @relation("Following")
-  messages    Message[]
-  readingStats ReadingStatus[]
+  userId               Int      @id @default(autoincrement())
+  username             String   @unique
+  email                String?  @unique
+  phone                String?  @unique
+  password             String?
+  avatar               String?
+  bio                  String?
+  isMember             Boolean  @default(false)
+  coins                Int      @default(0) // 书币
+  totalReadingTime     Int      @default(0) // 总阅读时长(分钟)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // 关联关系：已修正为正确的模型名
+  bookshelf            Bookshelf_info[]
+  readingProgress      ReadingProgress_info[]
+  notes                Note_info[]
+  bookmarks            Bookmark_info[]
+  posts                Post_info[]
+  comments             Comment_info[]
+  likes                Like_info[]
+  follows              Follow_info[]            @relation("Follower")
+  followers            Follow_info[]            @relation("Following")
+  messages             Message_info[]
+  readingStats         ReadingStatus_info[]
   memberInfo           Member_info?
   trialCardIncentive   TrialCardIncentive_info?
+  activatedTrialCard   TrialCard_info?          @relation("UserActiveTrialCard") // 激活的体验卡
 }
 
-model Member_info {
-  memberId             Int               @id @default(autoincrement())
-  userId               Int               @unique
-  startDate            DateTime
-  endDate              DateTime
-  isAutoRenew          Boolean           @default(false)
-  createdAt            DateTime          @default(now())
+model Author_info {
+  authorId Int      @id @default(autoincrement())
+  name     String   @unique // 作者姓名，通常唯一
+  bio      String?  @db.Text // 作者简介
+  avatar   String?  // 作者头像
 
-  user                 User_info         @relation(fields: [userId], references: [userId])
+  // 关联关系：作者可以写多本书
+  books    Book_info[]
 }
 
 model Book_info {
-  bookId          Int       @id @default(autoincrement())
-  title       String
-  author      String
-  cover       String?
-  description String?   @db.Text
-  categoryId  Int
-  publisher   String?
-  publishDate DateTime?
-  isbn        String?
-  wordCount   Int       // 字数
-  price       Int       @default(0) // 书币价格
-  isFree      Boolean   @default(false)
-  rating      Float     @default(0) // 推荐值
-  readCount   Int       @default(0) // 阅读人数
-  createdAt   DateTime  @default(now())
-  
-  // 关联关系
-  category    Category  @relation(fields: [categoryId], references: [id])
-  chapters    Chapter[]
-  bookshelf   Bookshelf[]
-  readingProgress ReadingProgress[]
-  notes       Note[]
-  bookmarks   Bookmark[]
-  posts       Post[]
-  comments    Comment[]
+  bookId        Int           @id @default(autoincrement())
+  title         String
+  authorId      Int           // 外键，关联到作者表
+  cover         String?
+  description   String?       @db.Text
+  categoryId    Int
+  publisher     String?
+  publishDate   DateTime?
+  isbn          String?
+  wordCount     Int           // 字数
+  price         Int           @default(0) // 书币价格
+  isFree        Boolean       @default(false)
+  rating        Float         @default(0) // 推荐值
+  readCount     Int           @default(0) // 阅读人数
+  createdAt     DateTime      @default(now())
+
+  // 关联关系：已修正
+  category      Category_info @relation(fields: [categoryId], references: [categoryId])
+  author        Author_info   @relation(fields: [authorId], references: [authorId]) // 作者关联
+
+  chapters      Chapter_info[]
+  bookshelf     Bookshelf_info[]
+  readingProgress ReadingProgress_info[]
+  notes         Note_info[]
+  bookmarks     Bookmark_info[]
+  posts         Post_info[]
+  comments      Comment_info[]
 }
 
 model Category_info {
-  categoryId    Int    @id @default(autoincrement())
-  name  String
-  books Book[]
+  categoryId Int       @id @default(autoincrement())
+  name       String
+  books      Book_info[] // 修正模型名
 }
 
 model Chapter_info {
-  chapterId        Int      @id @default(autoincrement())
+  chapterId Int                 @id @default(autoincrement())
   title     String
-  content   String   @db.Text
+  content   String              @db.Text
   order     Int
   bookId    Int
-  createdAt DateTime @default(now())
+  createdAt DateTime            @default(now())
   access    ChapterAccess_info?
-  
-  book      Book     @relation(fields: [bookId], references: [id])
-  notes     Note[]
-  bookmarks Bookmark[]
+
+  // 修正引用字段
+  book      Book_info           @relation(fields: [bookId], references: [bookId])
+  notes     Note_info[]
+  bookmarks Bookmark_info[]
 }
 
-model ChapterAccess_info {
-  accessId             Int               @id @default(autoincrement())
-  chapterId            Int               @unique
-  
-  // 访问级别：free, trial, member (这里需要同时检查用户是否有有效的 trialEndDate 或 member.endDate)
-  accessLevel          String            @default("free") 
-  
-  chapter              Chapter_info      @relation(fields: [chapterId], references: [chapterId])
-}
+
+// ===============================================
+// 用户行为表 (User Activities)
+// ===============================================
 
 model Bookshelf_info {
-  bookshelfid        Int      @id @default(autoincrement())
-  userId    Int
-  bookId    Int
-  status    String   @default("reading") // reading, unread, finished
-  addedAt   DateTime @default(now())
-  lastReadAt DateTime?
-  
-  user      User     @relation(fields: [userId], references: [id])
-  book      Book     @relation(fields: [bookId], references: [id])
-  
+  bookshelfid Int       @id @default(autoincrement())
+  userId      Int
+  bookId      Int
+  status      String    @default("reading") // reading, unread, finished
+  addedAt     DateTime  @default(now())
+  lastReadAt  DateTime?
+
+  // 修正引用字段
+  user        User_info @relation(fields: [userId], references: [userId])
+  book        Book_info @relation(fields: [bookId], references: [bookId])
+
   @@unique([userId, bookId])
 }
 
 model ReadingProgress_info {
-  readingprogressid          Int      @id @default(autoincrement())
-  userId      Int
-  bookId      Int
-  chapterId   Int?
-  currentPage Int      @default(1)
-  progress    Float    @default(0)  // 0-1
-  lastReadAt  DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id])
-  book        Book     @relation(fields: [bookId], references: [id])
-  chapter     Chapter? @relation(fields: [chapterId], references: [id])
-  
+  readingprogressid Int       @id @default(autoincrement())
+  userId            Int
+  bookId            Int
+  chapterId         Int?
+  currentPage       Int       @default(1)
+  progress          Float     @default(0)  // 0-1
+  lastReadAt        DateTime  @default(now())
+
+  // 修正引用字段
+  user              User_info      @relation(fields: [userId], references: [userId])
+  book              Book_info      @relation(fields: [bookId], references: [bookId])
+  chapter           Chapter_info?  @relation(fields: [chapterId], references: [chapterId])
+
   @@unique([userId, bookId])
 }
 
 model ReadingStatus_info {
-  readingstatusId        Int      @id @default(autoincrement())
-  userId    Int
-  date      DateTime @default(now()) // 统计日期
-  readingTime Int    @default(0) // 当日阅读时长(分钟)
-  
-  user      User     @relation(fields: [userId], references: [id])
-}
+  readingstatusId Int       @id @default(autoincrement())
+  userId          Int
+  date            DateTime  @default(now()) // 统计日期
+  readingTime     Int       @default(0) // 当日阅读时长(分钟)
 
-model TrialCardIncentive_info {
-  incentiveId          Int               @id @default(autoincrement())
-  userId               Int               @unique // 确保每个用户最多只有一条记录
-  isEligible           Boolean           @default(true) // 是否满足条件
-  
-  // 实际发放的体验卡 ID，用于追踪
-  grantedCardId        Int?              @unique 
-  grantedAt            DateTime          @default(now())
-
-  user                 User_info         @relation(fields: [userId], references: [userId])
-  grantedCard          TrialCard_info?   @relation(fields: [grantedCardId], references: [cardId])
-}
-
-model TrialCard_info {
-  cardId               Int               @id @default(autoincrement())
-  code                 String            @unique // 兑换码或系统生成码
-  durationDays         Int               // 体验时长（天）
-  
-  // 激活信息
-  isActivated          Boolean           @default(false)
-  activatedAt          DateTime?
-  
-  activatedByUserId    Int?              @unique 
-  trialEndDate         DateTime?         // 体验卡权益截止日期
-
-  createdAt            DateTime          @default(now())
-
-  // 关联到激活该卡的用户
-  activatedByUser      User_info?        @relation("UserActiveTrialCard", fields: [activatedByUserId], references: [userId])
-  
-  // 关联到激励记录（表明该卡是因激励而发的）
-  incentiveRecord      TrialCardIncentive_info? @relation("IncentiveCard")
-
-  // 关联激励记录
-  incentiveRecord      TrialCardIncentive_info?
+  // 修正引用字段
+  user            User_info @relation(fields: [userId], references: [userId])
 }
 
 model Note_info {
-  noteId        Int       @id @default(autoincrement())
+  noteId    Int          @id @default(autoincrement())
   userId    Int
   bookId    Int
   chapterId Int?
   content   String
-  type      String    @default("highlight") // highlight, comment
-  color     String?   // 标注颜色
+  type      String       @default("highlight") // highlight, comment
+  color     String?      // 标注颜色
   page      Int?
-  isPublic  Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  
-  user      User      @relation(fields: [userId], references: [id])
-  book      Book      @relation(fields: [bookId], references: [id])
-  chapter   Chapter?  @relation(fields: [chapterId], references: [id])
-  likes     Like[]
+  isPublic  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+
+  // 修正引用字段
+  user      User_info    @relation(fields: [userId], references: [userId])
+  book      Book_info    @relation(fields: [bookId], references: [bookId])
+  chapter   Chapter_info? @relation(fields: [chapterId], references: [chapterId])
+  likes     Like_info[]
 }
 
 model Bookmark_info {
-  bookmarkId        Int      @id @default(autoincrement())
-  userId    Int
-  bookId    Int
-  chapterId Int?
-  page      Int
-  note      String?
-  createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
-  book      Book     @relation(fields: [bookId], references: [id])
-  chapter   Chapter? @relation(fields: [chapterId], references: [id])
+  bookmarkId Int          @id @default(autoincrement())
+  userId     Int
+  bookId     Int
+  chapterId  Int?
+  page       Int
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  // 修正引用字段
+  user       User_info     @relation(fields: [userId], references: [userId])
+  book       Book_info     @relation(fields: [bookId], references: [bookId])
+  chapter    Chapter_info? @relation(fields: [chapterId], references: [chapterId])
 }
 
 model Post_info {
-  postId        Int       @id @default(autoincrement())
+  postId    Int          @id @default(autoincrement())
   userId    Int
   bookId    Int?
   title     String
-  content   String    @db.Text
-  topic     String?   // 话题分类
-  isPublic  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  
-  user      User      @relation(fields: [userId], references: [id])
-  book      Book?     @relation(fields: [bookId], references: [id])
-  comments  Comment[]
-  likes     Like[]
+  content   String       @db.Text
+  topic     String?      // 话题分类
+  isPublic  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // 修正引用字段
+  user      User_info    @relation(fields: [userId], references: [userId])
+  book      Book_info?   @relation(fields: [bookId], references: [bookId])
+  comments  Comment_info[]
+  likes     Like_info[]
 }
 
 model Comment_info {
-  commentId        Int       @id @default(autoincrement())
+  commentId Int          @id @default(autoincrement())
   userId    Int
   postId    Int?
   noteId    Int?
-  parentId  Int?      // 回复的评论ID
-  content   String    @db.Text
-  createdAt DateTime  @default(now())
+  parentId  Int?         // 回复的评论ID
+  content   String       @db.Text
+  createdAt DateTime     @default(now())
+
+  // 修正引用字段
+  user      User_info    @relation(fields: [userId], references: [userId])
+  post      Post_info?   @relation(fields: [postId], references: [postId])
+  note      Note_info?   @relation(fields: [noteId], references: [noteId])
   
-  user      User      @relation(fields: [userId], references: [id])
-  post      Post?     @relation(fields: [postId], references: [id])
-  note      Note?     @relation(fields: [noteId], references: [id])
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies   Comment[] @relation("CommentReplies")
-  likes     Like[]
+  // 修正引用字段
+  parent    Comment_info? @relation("CommentReplies", fields: [parentId], references: [commentId])
+  replies   Comment_info[] @relation("CommentReplies")
+  likes     Like_info[]
 }
 
 model Like_info {
-  likeId        Int       @id @default(autoincrement())
+  likeId    Int          @id @default(autoincrement())
   userId    Int
   postId    Int?
   commentId Int?
   noteId    Int?
-  createdAt DateTime  @default(now())
-  
-  user      User      @relation(fields: [userId], references: [id])
-  post      Post?     @relation(fields: [postId], references: [id])
-  comment   Comment?  @relation(fields: [commentId], references: [id])
-  note      Note?     @relation(fields: [noteId], references: [id])
-  
+  createdAt DateTime     @default(now())
+
+  // 修正引用字段
+  user      User_info    @relation(fields: [userId], references: [userId])
+  post      Post_info?   @relation(fields: [postId], references: [postId])
+  comment   Comment_info? @relation(fields: [commentId], references: [commentId])
+  note      Note_info?   @relation(fields: [noteId], references: [noteId])
+
   @@unique([userId, postId, commentId, noteId])
 }
 
 model Follow_info {
-  followId          Int      @id @default(autoincrement())
+  followId    Int      @id @default(autoincrement())
   followerId  Int      // 关注者
   followingId Int      // 被关注者
   createdAt   DateTime @default(now())
-  
-  follower    User     @relation("Follower", fields: [followerId], references: [id])
-  following   User     @relation("Following", fields: [followingId], references: [id])
-  
+
+  // 修正引用字段
+  follower    User_info @relation("Follower", fields: [followerId], references: [userId])
+  following   User_info @relation("Following", fields: [followingId], references: [userId])
+
   @@unique([followerId, followingId])
 }
 
 model Message_info {
-  messageId        Int       @id @default(autoincrement())
+  messageId Int      @id @default(autoincrement())
   userId    Int
-  type      String    // system, like, comment, follow
+  type      String   // system, like, comment, follow
   title     String
   content   String
-  isRead    Boolean   @default(false)
-  relatedId Int?      // 相关实体ID
-  createdAt DateTime  @default(now())
+  isRead    Boolean  @default(false)
+  relatedId Int?     // 相关实体ID
+  createdAt DateTime @default(now())
+
+  // 修正引用字段
+  user      User_info @relation(fields: [userId], references: [userId])
+}
+
+// ===============================================
+// 会员和体验卡表 (Membership & Trial)
+// ===============================================
+
+model Member_info {
+  memberId    Int      @id @default(autoincrement())
+  userId      Int      @unique
+  startDate   DateTime
+  endDate     DateTime
+  isAutoRenew Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // 修正引用字段
+  user        User_info @relation(fields: [userId], references: [userId])
+}
+
+model TrialCardIncentive_info {
+  incentiveId     Int            @id @default(autoincrement())
+  userId          Int            @unique // 确保每个用户最多只有一条记录
+  isEligible      Boolean        @default(true) // 是否满足条件
   
-  user      User      @relation(fields: [userId], references: [id])
+  // 实际发放的体验卡 ID，用于追踪
+  grantedCardId   Int?           @unique
+  grantedAt       DateTime       @default(now())
+
+  // 修正引用字段
+  user            User_info      @relation(fields: [userId], references: [userId])
+  grantedCard     TrialCard_info? @relation(fields: [grantedCardId], references: [cardId])
+}
+
+model TrialCard_info {
+  cardId            Int                       @id @default(autoincrement())
+  code              String                    @unique // 兑换码或系统生成码
+  durationDays      Int                       // 体验时长（天）
+  
+  // 激活信息
+  isActivated       Boolean                   @default(false)
+  activatedAt       DateTime?
+  
+  activatedByUserId Int?                      @unique
+  trialEndDate      DateTime?                 // 体验卡权益截止日期
+
+  createdAt         DateTime                  @default(now())
+
+  // 修正引用字段
+  activatedByUser   User_info?                @relation("UserActiveTrialCard", fields: [activatedByUserId], references: [userId])
+  
+  // 关联激励记录 (已移除重复字段)
+  incentiveRecord   TrialCardIncentive_info? @relation("IncentiveCard")
+}
+
+model ChapterAccess_info {
+  accessId      Int           @id @default(autoincrement())
+  chapterId     Int           @unique
+  
+  // 访问级别：free, trial, member
+  accessLevel   String        @default("free")
+
+  // 修正引用字段
+  chapter       Chapter_info @relation(fields: [chapterId], references: [chapterId])
 }
 
 model VerificationCode_info {
-  vertificationcodeId        Int      @id @default(autoincrement())
-  phone     String?
-  email     String?
-  code      String
-  type      String   // login, register, reset
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  vertificationcodeId Int      @id @default(autoincrement())
+  phone               String?
+  email               String?
+  code                String
+  type                String   // login, register, reset
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
 }
