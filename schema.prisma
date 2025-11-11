@@ -8,7 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model User_info {
   userId          Int       @id @default(autoincrement())
   username    String    @unique
   email       String?   @unique
@@ -33,10 +33,23 @@ model User {
   follows     Follow[]   @relation("Follower")
   followers   Follow[]   @relation("Following")
   messages    Message[]
-  readingStats ReadingStat[]
+  readingStats ReadingStatus[]
+  memberInfo           Member_info?
+  trialCardIncentive   TrialCardIncentive_info?
 }
 
-model Book {
+model Member_info {
+  memberId             Int               @id @default(autoincrement())
+  userId               Int               @unique
+  startDate            DateTime
+  endDate              DateTime
+  isAutoRenew          Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+
+  user                 User_info         @relation(fields: [userId], references: [userId])
+}
+
+model Book_info {
   bookId          Int       @id @default(autoincrement())
   title       String
   author      String
@@ -64,26 +77,37 @@ model Book {
   comments    Comment[]
 }
 
-model Category {
+model Category_info {
   categoryId    Int    @id @default(autoincrement())
   name  String
   books Book[]
 }
 
-model Chapter {
+model Chapter_info {
   chapterId        Int      @id @default(autoincrement())
   title     String
   content   String   @db.Text
   order     Int
   bookId    Int
   createdAt DateTime @default(now())
+  access    ChapterAccess_info?
   
   book      Book     @relation(fields: [bookId], references: [id])
   notes     Note[]
   bookmarks Bookmark[]
 }
 
-model Bookshelf {
+model ChapterAccess_info {
+  accessId             Int               @id @default(autoincrement())
+  chapterId            Int               @unique
+  
+  // 访问级别：free, trial, member (这里需要同时检查用户是否有有效的 trialEndDate 或 member.endDate)
+  accessLevel          String            @default("free") 
+  
+  chapter              Chapter_info      @relation(fields: [chapterId], references: [chapterId])
+}
+
+model Bookshelf_info {
   bookshelfid        Int      @id @default(autoincrement())
   userId    Int
   bookId    Int
@@ -97,7 +121,7 @@ model Bookshelf {
   @@unique([userId, bookId])
 }
 
-model ReadingProgress {
+model ReadingProgress_info {
   readingprogressid          Int      @id @default(autoincrement())
   userId      Int
   bookId      Int
@@ -113,7 +137,7 @@ model ReadingProgress {
   @@unique([userId, bookId])
 }
 
-model ReadingStatus {
+model ReadingStatus_info {
   readingstatusId        Int      @id @default(autoincrement())
   userId    Int
   date      DateTime @default(now()) // 统计日期
@@ -122,7 +146,44 @@ model ReadingStatus {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-model Note {
+model TrialCardIncentive_info {
+  incentiveId          Int               @id @default(autoincrement())
+  userId               Int               @unique // 确保每个用户最多只有一条记录
+  isEligible           Boolean           @default(true) // 是否满足条件
+  
+  // 实际发放的体验卡 ID，用于追踪
+  grantedCardId        Int?              @unique 
+  grantedAt            DateTime          @default(now())
+
+  user                 User_info         @relation(fields: [userId], references: [userId])
+  grantedCard          TrialCard_info?   @relation(fields: [grantedCardId], references: [cardId])
+}
+
+model TrialCard_info {
+  cardId               Int               @id @default(autoincrement())
+  code                 String            @unique // 兑换码或系统生成码
+  durationDays         Int               // 体验时长（天）
+  
+  // 激活信息
+  isActivated          Boolean           @default(false)
+  activatedAt          DateTime?
+  
+  activatedByUserId    Int?              @unique 
+  trialEndDate         DateTime?         // 体验卡权益截止日期
+
+  createdAt            DateTime          @default(now())
+
+  // 关联到激活该卡的用户
+  activatedByUser      User_info?        @relation("UserActiveTrialCard", fields: [activatedByUserId], references: [userId])
+  
+  // 关联到激励记录（表明该卡是因激励而发的）
+  incentiveRecord      TrialCardIncentive_info? @relation("IncentiveCard")
+
+  // 关联激励记录
+  incentiveRecord      TrialCardIncentive_info?
+}
+
+model Note_info {
   noteId        Int       @id @default(autoincrement())
   userId    Int
   bookId    Int
@@ -140,7 +201,7 @@ model Note {
   likes     Like[]
 }
 
-model Bookmark {
+model Bookmark_info {
   bookmarkId        Int      @id @default(autoincrement())
   userId    Int
   bookId    Int
@@ -154,7 +215,7 @@ model Bookmark {
   chapter   Chapter? @relation(fields: [chapterId], references: [id])
 }
 
-model Post {
+model Post_info {
   postId        Int       @id @default(autoincrement())
   userId    Int
   bookId    Int?
@@ -171,7 +232,7 @@ model Post {
   likes     Like[]
 }
 
-model Comment {
+model Comment_info {
   commentId        Int       @id @default(autoincrement())
   userId    Int
   postId    Int?
@@ -188,7 +249,7 @@ model Comment {
   likes     Like[]
 }
 
-model Like {
+model Like_info {
   likeId        Int       @id @default(autoincrement())
   userId    Int
   postId    Int?
@@ -204,7 +265,7 @@ model Like {
   @@unique([userId, postId, commentId, noteId])
 }
 
-model Follow {
+model Follow_info {
   followId          Int      @id @default(autoincrement())
   followerId  Int      // 关注者
   followingId Int      // 被关注者
@@ -216,7 +277,7 @@ model Follow {
   @@unique([followerId, followingId])
 }
 
-model Message {
+model Message_info {
   messageId        Int       @id @default(autoincrement())
   userId    Int
   type      String    // system, like, comment, follow
@@ -229,7 +290,7 @@ model Message {
   user      User      @relation(fields: [userId], references: [id])
 }
 
-model VerificationCode {
+model VerificationCode_info {
   vertificationcodeId        Int      @id @default(autoincrement())
   phone     String?
   email     String?
