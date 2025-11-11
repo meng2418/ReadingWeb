@@ -1,0 +1,57 @@
+# =========================================
+# 核心配置
+# =========================================
+server:
+  port: 8080
+
+spring:
+  # -------------------------------------
+  # 数据源配置 (H2 数据库，文件模式)
+  # -------------------------------------
+  datasource:
+    url: jdbc:h2:file:./data/reading_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  
+  # -------------------------------------
+  # JPA / Hibernate 配置
+  # -------------------------------------
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update # 实体模型发生变化时自动更新数据库结构
+    show-sql: true # 打印 SQL 语句到控制台
+  
+  # -------------------------------------
+  # Redis 配置 (从前一个配置中保留)
+  # -------------------------------------
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
+# =========================================
+# 自定义属性配置
+# =========================================
+
+# JWT 配置
+jwt:
+  secret: your-secret-key-here # 建议替换为至少 32 字符的安全密钥
+  expiration: 86400000 # Token 有效期（毫秒），此处为 24 小时
+
+# CORS 配置 (通常用于配置一个 WebMvcConfigurer 或 CorsFilter)
+cors:
+  allowed-origins:
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+
+# 阿里云短信配置 (从前一个配置中保留)
+aliyun:
+  sms:
+    region-id: cn-hangzhou
+    access-key-id: YOUR_ALIYUN_ACCESS_KEY_ID
+    access-key-secret: YOUR_ALIYUN_ACCESS_KEY_SECRET
+    sign-name: 您的短信签名
+    template-code: SMS_000000000
