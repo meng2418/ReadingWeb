@@ -7,6 +7,9 @@ import com.weread.dto.LoginResponse;
 import com.weread.entity.UserEntity;
 import com.weread.service.AuthService;
 import com.weread.util.JwtUtil;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +41,7 @@ public class AuthController {
      * POST /api/auth/register
      */
     @PostMapping("/passwordRegister")
-    public ResponseEntity<LoginResponse> register(@RequestBody RegisterDTO dto) {
+    public ResponseEntity<LoginResponse> register(@Valid@RequestBody RegisterDTO dto) {
         UserEntity newUser = authService.phoneRegister(dto); 
         // 注册成功后直接登录并返回 Token
         return ResponseEntity.status(HttpStatus.CREATED).body(createLoginResponse(newUser));
@@ -49,7 +52,7 @@ public class AuthController {
      * POST /api/auth/login/password
      */
     @PostMapping("/password/login")
-    public ResponseEntity<LoginResponse> passwordLogin(@RequestBody LoginDTO dto) {
+    public ResponseEntity<LoginResponse> passwordLogin(@Valid @RequestBody LoginDTO dto) {
         UserEntity user = authService.phonePasswordLogin(dto);
         return ResponseEntity.ok(createLoginResponse(user));
     }
@@ -59,7 +62,7 @@ public class AuthController {
      * POST /api/auth/code/send
      */
     @PostMapping("/sendvertificationcode")
-    public ResponseEntity<String> sendCode(@RequestBody SmsCodeDTO dto) {
+    public ResponseEntity<String> sendCode(@Valid@RequestBody SmsCodeDTO dto) {
         authService.sendVerificationCode(dto.getPhone());
         return ResponseEntity.ok("验证码发送成功，请注意查收。");
     }
@@ -69,7 +72,7 @@ public class AuthController {
      * POST /api/auth/login/code
      */
     @PostMapping("/vertificationcodeLogin")
-    public ResponseEntity<LoginResponse> codeLogin(@RequestBody LoginDTO dto) {
+    public ResponseEntity<LoginResponse> codeLogin(@Valid@RequestBody LoginDTO dto) {
         UserEntity user = authService.codeLogin(dto);
         return ResponseEntity.ok(createLoginResponse(user));
     }

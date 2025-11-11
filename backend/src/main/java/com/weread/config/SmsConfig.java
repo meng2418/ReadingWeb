@@ -8,7 +8,7 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "aliyun.sms")
 @Data
 public class SmsConfig {
-    // 对应 application.yml 中的配置
+    // 对应 application.yml/properties 中的配置
     private String regionId;
     private String accessKeyId;
     private String accessKeySecret;

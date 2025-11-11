@@ -22,7 +22,7 @@ public class UserEntity {
 
     @Column(unique = true, length = 50)
     private String username; // 用户名
-    
+
     @Column(unique = true, length = 100)
     private String email; // 邮箱（可选）
 
