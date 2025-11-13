@@ -22,4 +22,5 @@ public class BookStatusUpdateDTO {
      */
     @NotBlank(message = "阅读状态不能为空")
     private String status;
+    private String lastReadAt; // 最后阅读时间（格式：yyyy-MM-dd HH:mm:ss）
 }
