@@ -2,7 +2,6 @@ package com.weread.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.util.List;
 
 /**
  * 作者实体类（对应数据库表 author_info）
