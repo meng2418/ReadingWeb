@@ -1,4 +1,4 @@
-package com.weread.dto;
+package com.weread.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

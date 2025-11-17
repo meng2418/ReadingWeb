@@ -1,10 +1,10 @@
 package com.weread.service;
 
 import com.weread.config.SmsConfig;
-import com.weread.dto.LoginDTO;
-import com.weread.dto.RegisterDTO;
-import com.weread.entity.UserEntity;
-import com.weread.repository.UserRepository;
+import com.weread.dto.auth.LoginDTO;
+import com.weread.dto.auth.RegisterDTO;
+import com.weread.entity.user.UserEntity;
+import com.weread.repository.user.UserRepository;
 import com.weread.util.JwtUtil;
 import com.aliyun.dysmsapi20170525.Client;
 import com.aliyun.dysmsapi20170525.models.SendSmsRequest;

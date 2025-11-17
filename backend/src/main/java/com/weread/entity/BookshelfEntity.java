@@ -4,60 +4,62 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+import com.weread.entity.user.UserEntity;
+
 /**
- * Êé¼ÜÊµÌåÀà£¨¶ÔÓ¦Êý¾Ý¿â±í bookshelf_info£©
- * ÓÃÓÚ¼ÇÂ¼ÓÃ»§ÓëÊé¼®µÄ¹ØÁª¹ØÏµ£¬°üº¬ÔÄ¶Á×´Ì¬¡¢Ê±¼äµÈÐÅÏ¢
+ * ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½à£¨ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ bookshelf_infoï¿½ï¿½
+ * ï¿½ï¿½ï¿½Ú¼ï¿½Â¼ï¿½Ã»ï¿½ï¿½ï¿½ï¿½é¼®ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½×´Ì¬ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
  */
 @Data
 @Entity
 @Table(name = "bookshelf_info",
-        // Î¨Ò»Ô¼Êø£ºÍ¬Ò»ÓÃ»§²»ÄÜÖØ¸´Ìí¼ÓÍ¬Ò»±¾Êé£¨Æ¥ÅäÊý¾Ý¿âµÄ @@unique([userId, bookId])£©
+        // Î¨Ò»Ô¼ï¿½ï¿½ï¿½ï¿½Í¬Ò»ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿½Í¬Ò»ï¿½ï¿½ï¿½é£¨Æ¥ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ @@unique([userId, bookId])ï¿½ï¿½
         uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "book_id" }))
 public class BookshelfEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "bookshelfid")
-    private Integer bookshelfId; // Êé¼Ü¼ÇÂ¼ID£¨Ö÷¼ü£¬×ÔÔö£©
+    private Integer bookshelfId; // ï¿½ï¿½Ü¼ï¿½Â¼IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId; // ¹ØÁªÓÃ»§ID£¨Íâ¼ü£©
+    private Integer userId; // ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     @Column(name = "book_id", nullable = false)
-    private Integer bookId; // ¹ØÁªÊé¼®ID£¨Íâ¼ü£©
+    private Integer bookId; // ï¿½ï¿½ï¿½ï¿½ï¿½é¼®IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     @Column(nullable = false)
-    private String status; // ÔÄ¶Á×´Ì¬£ºreading£¨ÔÄ¶ÁÖÐ£©¡¢unread£¨Î´¶Á£©¡¢finished£¨ÒÑÍê³É£©£¬Ä¬ÈÏreading
+    private String status; // ï¿½Ä¶ï¿½×´Ì¬ï¿½ï¿½readingï¿½ï¿½ï¿½Ä¶ï¿½ï¿½Ð£ï¿½ï¿½ï¿½unreadï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½finishedï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½reading
 
     @Column(name = "added_at", nullable = false, updatable = false)
-    private LocalDateTime addedAt; // Ìí¼Óµ½Êé¼ÜµÄÊ±¼ä£¬Ä¬ÈÏµ±Ç°Ê±¼ä
+    private LocalDateTime addedAt; // ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½Üµï¿½Ê±ï¿½ä£¬Ä¬ï¿½Ïµï¿½Ç°Ê±ï¿½ï¿½
 
     @Column(name = "last_read_at")
-    private LocalDateTime lastReadAt; // ×îºóÔÄ¶ÁÊ±¼ä£¬¿ÉÎªnull
+    private LocalDateTime lastReadAt; // ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½Ê±ï¿½ä£¬ï¿½ï¿½Îªnull
 
-    // ¹ØÁª¹ØÏµ£¨°´ÐèÌí¼Ó£¬½¨ÒéÀÁ¼ÓÔØ£©
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø£ï¿½
     /**
-     * ÓëÓÃ»§±íµÄ¹ØÁª£¨¶à¶ÔÒ»£º¶à¸öÊé¼Ü¼ÇÂ¼ÊôÓÚÒ»¸öÓÃ»§£©
+     * ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private UserEntity user; // ¹ØÁªµÄÓÃ»§ÊµÌå
+    private UserEntity user; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Êµï¿½ï¿½
 
     /**
-     * ÓëÊé¼®±íµÄ¹ØÁª£¨¶à¶ÔÒ»£º¶à¸öÊé¼Ü¼ÇÂ¼¹ØÁªÍ¬Ò»±¾Êé£©
+     * ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½Í¬Ò»ï¿½ï¿½ï¿½é£©
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id", insertable = false, updatable = false)
-    private BookEntity book; // ¹ØÁªµÄÊé¼®ÊµÌå
+    private BookEntity book; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é¼®Êµï¿½ï¿½
 
-    // ×Ô¶¯Ìî³äÄ¬ÈÏÖµ
+    // ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Öµ
     @PrePersist
     protected void onCreate() {
-        // ÉèÖÃÌí¼ÓÊ±¼äÎªµ±Ç°Ê±¼ä£¨ÈôÎ´ÊÖ¶¯ÉèÖÃ£©
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½Îªï¿½ï¿½Ç°Ê±ï¿½ä£¨ï¿½ï¿½Î´ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½Ã£ï¿½
         if (addedAt == null) {
             addedAt = LocalDateTime.now();
         }
-        // ÉèÖÃÄ¬ÈÏÔÄ¶Á×´Ì¬Îªreading
+        // ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½ï¿½Ä¶ï¿½×´Ì¬Îªreading
         if (status == null || status.trim().isEmpty()) {
             status = "reading";
         }

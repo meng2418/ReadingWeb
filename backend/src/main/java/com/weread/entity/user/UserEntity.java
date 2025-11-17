@@ -1,4 +1,4 @@
-package com.weread.entity;
+package com.weread.entity.user;
 
 import java.time.LocalDateTime;
 

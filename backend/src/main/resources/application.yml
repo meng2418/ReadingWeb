@@ -31,6 +31,18 @@ spring:
       host: localhost
       port: 6379
 
+  #邮件
+  mail:
+    host: smtp.exmail.qq.com # 邮件服务器地址（示例为腾讯企业邮）
+    port: 465 # SMTP 端口 (SSL通常是465)
+    username: your_service_email@example.com # 发件邮箱
+    password: YOUR_PASSWORD_OR_APP_KEY # 授权码或密码
+    protocol: smtps
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.ssl.enable: true
+      mail.smtp.auth: true
+      mail.smtp.timeout: 5000
 
 # =========================================
 # 自定义属性配置
@@ -55,3 +67,20 @@ aliyun:
     access-key-secret: YOUR_ALIYUN_ACCESS_KEY_SECRET
     sign-name: 您的短信签名
     template-code: SMS_000000000
+
+payment:
+  # 统一的回调通知地址 (Notify URL)
+  base-notify-url: https://api.weread.com/payment/callback/
+
+  wechat:
+    app-id: wx1234567890abcdef # 微信支付应用ID
+    merchant-id: 1900000100 # 微信支付商户号
+    api-secret: 32位API密钥字符串 # API密钥 V2版本 (V3使用证书和私钥)
+    create-order-url: https://api.mch.weixin.qq.com/pay/unifiedorder # 微信支付 V2 统一下单接口
+    query-order-url: https://api.mch.weixin.qq.com/pay/orderquery
+    
+  alipay:
+    app-id: 20140723000xxxxxxx # 支付宝应用ID
+    gateway-url: https://openapi.alipay.com/gateway.do # 支付宝网关地址
+    private-key: MIIEvQIBADANBgkqhkiG9w... # 您的应用私钥 (PEM格式)
+    public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCg... # 支付宝公钥

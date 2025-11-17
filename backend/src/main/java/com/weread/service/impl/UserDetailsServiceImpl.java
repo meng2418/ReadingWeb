@@ -1,7 +1,8 @@
 package com.weread.service.impl;
 
-import com.weread.entity.UserEntity;
-import com.weread.repository.UserRepository;
+import com.weread.entity.user.UserEntity;
+import com.weread.repository.user.UserRepository;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

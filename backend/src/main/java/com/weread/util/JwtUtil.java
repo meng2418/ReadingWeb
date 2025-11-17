@@ -12,35 +12,74 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class JwtUtil {
 
+    // Access Token 过期时间：默认 7 天
+    @Value("${jwt.expiration:604800000}") 
+    private long expiration; 
+
+    // Refresh Token 过期时间：默认 30 天
+    @Value("${jwt.refreshExpiration:2592000000}") // 30 days in milliseconds
+    private long refreshExpiration;
+
     @Value("${jwt.secret:default-secret-key-that-is-very-long-and-secure-and-must-be-changed-in-production}")
     private String secret;
-
-    @Value("${jwt.expiration:604800000}") // 7 days in milliseconds
-    private long expiration;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateToken(String phone, Long userId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("phone", phone);
+    /**
+     * 【内部使用】创建不同过期时间的基础 JWT Token。
+     * @param subject Token的主体（通常是手机号）
+     * @param userId 用户ID
+     * @param claims 附加信息
+     * @param expirationMillis Token过期时间（毫秒）
+     * @return JWT String
+     */
+    private String createToken(String subject, Long userId, Map<String, Object> claims, long expirationMillis) {
+        if (claims == null) {
+            claims = new HashMap<>();
+        }
         claims.put("userId", userId);
         
         Date now = new Date();
-        Date validity = new Date(now.getTime() + expiration);
+        Date validity = new Date(now.getTime() + expirationMillis);
 
         return Jwts.builder()
             .setClaims(claims)
-            .setSubject(phone)
+            .setSubject(subject)
             .setIssuedAt(now)
             .setExpiration(validity)
             .signWith(getSigningKey(), SignatureAlgorithm.HS256)
             .compact();
+    }
+
+    /**
+     * 【对外接口】生成 Access Token 和 Refresh Token，并封装为 TokenInfo。
+     * @param phone 手机号
+     * @param userId 用户ID
+     * @return 包含双 Token 和过期时间的 TokenInfo
+     */
+    public TokenInfo generateTokenInfo(String phone, Long userId) {
+        
+        // 1. 生成 Access Token (包含类型标记)
+        Map<String, Object> accessClaims = new HashMap<>();
+        accessClaims.put("type", "ACCESS");
+        String accessToken = createToken(phone, userId, accessClaims, expiration);
+
+        // 2. 生成 Refresh Token (包含类型标记)
+        Map<String, Object> refreshClaims = new HashMap<>();
+        refreshClaims.put("type", "REFRESH");
+        String refreshToken = createToken(phone, userId, refreshClaims, refreshExpiration);
+
+        // 3. 计算 AccessToken 的有效期（秒）
+        Long expiresInSeconds = TimeUnit.MILLISECONDS.toSeconds(expiration);
+
+        return new TokenInfo(accessToken, refreshToken, expiresInSeconds);
     }
 
     private Claims extractAllClaims(String token) {
@@ -57,7 +96,7 @@ public class JwtUtil {
     public String extractPhone(String token) {
         return extractAllClaims(token).getSubject();
     }
-
+    
     /**
      * 检查 Token 是否过期
      */

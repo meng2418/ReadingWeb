@@ -21,6 +21,8 @@ components:
           type: integer
         username:
           type: string
+        phone:
+          type: string
         email:
           type: string
         avatar:
@@ -80,7 +82,7 @@ components:
         details:
           type: string
   requestBodies:
-    SendVertificationcodeRequest:
+    SendPhoneVertificationcodeRequest:
       description: 手机号验证码发送请求体
       required: true
       content:
@@ -91,6 +93,17 @@ components:
               phone:
                 type: string
             required: [phone]
+    SendEmailVertificationcodeRequest:
+      description: 邮箱验证码发送请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+            required: [email]
     VertificationcodeLoginRequest:
       description: 手机号验证码登录请求体
       required: true
@@ -147,6 +160,35 @@ components:
               avatar:
                 type: string
               bio:
+                type: string
+    UpdatePasswordRequest:
+      description: 更改密码请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              oldPassword:
+                type: string
+              newPassword:
+                type: string
+              confirmNewPassword:
+                type: string
+            required: [oldPassword, newPassword, confirmNewPassword]
+    BindRequest:
+      description: 更改密码请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+              email:
+                type: string
+              vertificationcode:
                 type: string
   responses:
     LoginResponse:
@@ -235,6 +277,64 @@ components:
                 example: "Userprofile updated successfully"
               data:
                 $ref: '#/components/schemas/UserProfile'     
+    UpdatePasswordResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Password updated successfully"
+    BindResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Bind successfully"
+    UnbindResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Unbind successfully"
+    LoginLogResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              loginId:
+                type: integer
+                example: 1
+              loginTime:
+                type: string
+                format: date-time
+              ipAddress:
+                type: string
+                example: 192.168.1.1
+              device:
+                type: string
+                example: Chrome on Windows 10
     Error:
       description: 错误响应
       content:
@@ -299,7 +399,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/requestBodies/SendVertificationcodeRequest'
+              $ref: '#/components/requestBodies/SendPhoneVertificationcodeRequest'
       responses:
         200:
           description: 发送成功
@@ -375,6 +475,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/responses/UpdateUserProfileResponse'
+  /user/password:
+    put:
+      tags:
+        - 个人信息管理
+      summary: 修改登录密码
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/UpdatePasswordRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/UpdatePasswordResponse'
 
   /user/reading-status:
     get:
@@ -404,6 +524,54 @@ paths:
                     type: integer
                   readingDays:
                     type: integer
+
+  /user/security/bind:
+    post:
+      tags:
+        - 账号安全
+      summary: 绑定手机号或邮箱
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/BindRequest'
+      responses:
+        '200':
+          description: 绑定成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/BindResponse'
+  /user/security/login-logs:
+    get:
+      tags:
+        - 账号安全
+      summary: 查询登录历史记录
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 成功返回登录记录列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/responses/LoginLogResponse'
 
   /user/messages:
     get:
