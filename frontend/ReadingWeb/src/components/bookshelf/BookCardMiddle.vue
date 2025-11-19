@@ -24,18 +24,22 @@ interface Props {
   cover?: string
   title?: string
   isRead?: boolean
-  bookId?: string | number  // 新增：书籍ID，用于路由跳转
+  bookId?: string | number // 新增：书籍ID，用于路由跳转
+  disableJump?: boolean // 新增：禁用跳转prop
 }
 
 const props = withDefaults(defineProps<Props>(), {
   cover: 'https://picsum.photos/200/300?grayscale',
   title: 'Vue 组件设计指南与精品开发',
   isRead: true,
-  bookId: ''  // 默认值
+  bookId: '', // 默认值
+  disableJump: false, // 默认不禁用
 })
 
 // 跳转到书籍详情页
 const goToBookDetail = (): void => {
+  // 关键：如果disableJump为true，不执行跳转
+  if (props.disableJump) return
   if (props.bookId) {
     // 使用书籍ID跳转到对应详情页
     router.push(`/bookdetail/${props.bookId}`)
@@ -44,7 +48,6 @@ const goToBookDetail = (): void => {
     router.push('/bookdetail')
   }
 }
-
 </script>
 
 <style scoped>

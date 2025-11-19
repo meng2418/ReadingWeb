@@ -38,6 +38,11 @@
 
 <script setup lang="ts">
 import { Search } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user.js'
+const userStore = useUserStore()
+const handleLogout = () => {
+  userStore.logout()
+}
 </script>
 
 <style scoped>

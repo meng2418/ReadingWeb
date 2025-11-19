@@ -1,5 +1,4 @@
 <template>
-  <!-- 模板部分完全不需要修改 -->
   <div class="post-card">
     <!-- 用户信息 -->
     <div class="post-header">
@@ -13,24 +12,18 @@
         <div class="post-time">{{ postTime }}</div>
       </div>
 
-      <button
-        class="follow-btn"
-        :class="{ following: localIsFollowing }"
-        @click="toggleFollow"
-      >
+      <button class="follow-btn" :class="{ following: localIsFollowing }" @click="toggleFollow">
         {{ localIsFollowing ? '已关注' : '+ 关注' }}
       </button>
     </div>
 
     <!-- 帖子内容 -->
     <div class="post-body">
-      <h3 class="post-title" v-if="title">{{ title }}</h3>
-      <div class="post-content-section">
+      <h3 class="post-title" v-if="title" @click="handleCardClick">{{ title }}</h3>
+      <div class="post-content-section" @click="handleCardClick">
         <p class="post-content">
           {{ showFull ? content : truncatedContent }}
-          <span v-if="isTruncated" class="expand-btn" @click="toggleExpand">
-            {{ showFull ? ' 收起' : ' 展开' }}
-          </span>
+          <span v-if="isTruncated" class="expand-btn" @click.stop="toggleExpand"> 展开 </span>
         </p>
       </div>
       <!-- 如果有书籍，展示 mini bookcard -->
@@ -55,15 +48,15 @@
         <span v-if="commentCount > 0">{{ commentCount }}</span>
       </div>
 
-      <div
-        class="action-item"
-        @click="handleLike"
-        :class="{ liked: localIsLiked }"
-      >
-        <el-icon>
-          <StarFilled v-if="localIsLiked" />
-          <Star v-else />
-        </el-icon>
+      <div class="action-item" @click="handleLike" :class="{ liked: localIsLiked }">
+        <Heart
+          :fill="localIsLiked ? '#ff6b6b' : 'transparent'"
+          :stroke="localIsLiked ? '#ff6b6b' : '#666'"
+          width="18px"
+          height="18px"
+          stroke-width="1.5"
+          class="heart-icon"
+        />
         <span v-if="localLikeCount > 0">{{ localLikeCount }}</span>
       </div>
     </div>
@@ -71,11 +64,11 @@
 </template>
 
 <script setup lang="ts">
-
+import router from '@/router'
 import { ref, computed } from 'vue'
-import { Comment, Share, Star, StarFilled } from '@element-plus/icons-vue'
+import { Comment, Share } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
-
+import { Heart } from 'lucide-vue-next'
 
 interface Book {
   id: number
@@ -96,55 +89,54 @@ interface Props {
   isFollowing: boolean
   isLiked: boolean
   book?: Book | null
+  postId?: number // 补充postId类型定义，修复跳转TS警告
 }
-
 
 const props = withDefaults(defineProps<Props>(), {
   avatar: undefined,
   title: undefined,
-  book: null
+  book: null,
+  postId: undefined,
 })
-
 
 const emit = defineEmits<{
   'follow-change': [isFollowing: boolean]
-  'like': [likeCount: number, isLiked: boolean]
-  'comment': []
-  'share': []
+  like: [likeCount: number, isLiked: boolean]
+  comment: []
+  share: []
 }>()
-
 
 const showFull = ref<boolean>(false)
 const maxChars = 120 // 控制显示多少字
 
-// 从props初始化本地状态
+// 本地状态分离：关注/点赞互不干扰
 const localIsLiked = ref<boolean>(props.isLiked)
 const localLikeCount = ref<number>(props.likeCount)
 const localIsFollowing = ref<boolean>(props.isFollowing)
 
-
+// 内容截断计算
 const isTruncated = computed((): boolean => {
-  return props.content.length > maxChars
+  return props.content.length > maxChars && !showFull.value
 })
 
 const truncatedContent = computed((): string => {
-  return isTruncated.value
-    ? props.content.slice(0, maxChars) + '...'
-    : props.content
+  return isTruncated.value ? props.content.slice(0, maxChars) + '...' : props.content
 })
 
-
+// 关注切换：仅处理关注状态，与点赞完全分离
 const toggleFollow = (): void => {
   localIsFollowing.value = !localIsFollowing.value
   emit('follow-change', localIsFollowing.value)
 }
 
+// 点赞切换：仅处理点赞状态，逻辑清晰
 const handleLike = (): void => {
   localIsLiked.value = !localIsLiked.value
   localLikeCount.value += localIsLiked.value ? 1 : -1
   emit('like', localLikeCount.value, localIsLiked.value)
 }
 
+// 其他操作事件保持不变
 const commentPost = (): void => {
   emit('comment')
 }
@@ -155,6 +147,15 @@ const sharePost = (): void => {
 
 const toggleExpand = (): void => {
   showFull.value = !showFull.value
+}
+
+// 点击卡片跳转：修复postId判断逻辑
+const handleCardClick = () => {
+  if (props.postId) {
+    router.push(`/bookdetail/${props.postId}`)
+  } else {
+    router.push('/postdetail')
+  }
 }
 </script>
 
@@ -175,6 +176,7 @@ const toggleExpand = (): void => {
 .expand-btn:hover {
   text-decoration: underline;
 }
+
 .post-card {
   background: #fff;
   border-radius: 16px;
@@ -229,6 +231,7 @@ const toggleExpand = (): void => {
   color: #999;
 }
 
+/* 关注按钮样式：仅用于关注功能，不与点赞混淆 */
 .follow-btn {
   border: 1px solid #ff6b6b;
   background: #fff;
@@ -263,8 +266,14 @@ const toggleExpand = (): void => {
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 8px;
+  cursor: pointer;
 }
 
+.post-content-section {
+  cursor: pointer;
+}
+
+/* 操作区：统一三个图标样式 */
 .post-actions {
   display: flex;
   justify-content: space-around;
@@ -287,7 +296,23 @@ const toggleExpand = (): void => {
   transform: scale(1.05);
 }
 
+/* 点赞选中状态：仅控制点赞区域 */
 .action-item.liked {
   color: #ff6b6b;
+}
+
+/* 爱心图标统一样式：与转发/评论图标尺寸、对齐一致 */
+.heart-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+/* 确保Element图标与自定义爱心图标垂直对齐 */
+.el-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

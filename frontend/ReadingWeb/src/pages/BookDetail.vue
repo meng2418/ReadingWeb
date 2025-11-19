@@ -366,6 +366,7 @@ const handleLoadMoreReviews = () => {
 .book-detail-page {
   /* 确保页面内容在导航栏下方 */
   padding-top: 64px; /* 根据导航栏高度调整 */
+  background-color: #f8f9fa;
 }
 
 .book-detail-layout {
@@ -375,7 +376,6 @@ const handleLoadMoreReviews = () => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   gap: 30px;
-  background-color: #f8f9fa;
   min-height: 100vh;
 }
 

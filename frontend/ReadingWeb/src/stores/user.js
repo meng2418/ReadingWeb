@@ -17,5 +17,13 @@ export const useUserStore = defineStore('user', {
       this.isLoggedIn = false
       this.userInfo = { name: '', avatar: '' }
     },
+    restoreSession() {
+      const token = localStorage.getItem('token')
+      const userInfo = localStorage.getItem('userInfo')
+      if (token && userInfo) {
+        this.token = token
+        this.userInfo = JSON.parse(userInfo)
+      }
+    },
   },
 })
