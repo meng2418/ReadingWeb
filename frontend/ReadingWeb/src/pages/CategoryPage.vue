@@ -165,6 +165,9 @@ onMounted(() => {
   } else if (isCategoryTab.value) {
     currentCategory.value = 'all'
   }
+
+  // 添加：页面加载时滚动到顶部
+  window.scrollTo(0, 0)
 })
 
 // 计算属性
