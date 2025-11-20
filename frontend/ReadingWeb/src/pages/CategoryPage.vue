@@ -23,14 +23,14 @@
         </div>
 
         <!-- 书籍榜单 -->
-        <div class="book-ranking" >
+        <div class="book-ranking">
           <div
             v-for="(book, index) in currentRanking"
             :key="book.id"
             class="ranking-item"
             @click="goToBookDetail(book.id)"
-            >
-            <div class="ranking-number" >{{ index + 1 }}</div>
+          >
+            <div class="ranking-number">{{ index + 1 }}</div>
             <BookCardSuperBig
               :book-id="book.id"
               :cover="book.cover"
@@ -39,8 +39,7 @@
               :readers-count="book.readersCount || '1021'"
               :recommendation-rate="book.recommendationRate || book.recommend"
               :description="book.description || `${book.title}是一本优秀的作品，值得一读。`"
-
-              />
+            />
           </div>
         </div>
       </div>
@@ -68,7 +67,7 @@ const tabs = [
   { id: 'monthly', name: '月榜' },
   { id: 'new', name: '新书榜' },
   { id: 'masterpiece', name: '神作榜' },
-  { id: 'category', name: '分类' }
+  { id: 'category', name: '分类' },
 ]
 const currentTab = ref('weekly')
 
@@ -76,27 +75,25 @@ const currentTab = ref('weekly')
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && tabs.some(tab => tab.id === newTab)) {
+    if (newTab && tabs.some((tab) => tab.id === newTab)) {
       currentTab.value = newTab as string
     }
-  }
+  },
 )
 
 // 组件挂载时检查参数
 onMounted(() => {
   const tabParam = route.query.tab as string
-  if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+  if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
     currentTab.value = tabParam
   }
 })
 
 // 计算属性
 const currentTabName = computed(() => {
-  const tab = tabs.find(t => t.id === currentTab.value)
+  const tab = tabs.find((t) => t.id === currentTab.value)
   return tab?.name || '周榜'
 })
-
-
 
 // 模拟数据 - 这里需要替换为真实的API数据
 const rankings = {
@@ -104,7 +101,7 @@ const rankings = {
   monthly: generateRankingData('monthly'),
   new: generateRankingData('new'),
   masterpiece: generateRankingData('masterpiece'),
- // category: generateRankingData('category')
+  // category: generateRankingData('category')
 }
 
 const currentRanking = computed(() => rankings[currentTab.value as keyof typeof rankings])
@@ -129,7 +126,7 @@ function generateRankingData(type: string) {
       recommend: `${95 - i * 0.1}%`,
       readersCount: (10000 - i * 100).toString(),
       recommendationRate: 95 - i * 0.1,
-      description: `这是${getTitleByType(type)}第${i}本书的详细描述。这是一本非常优秀的作品，故事情节引人入胜，人物形象鲜明，值得每一位读者细细品味。`
+      description: `这是${getTitleByType(type)}第${i}本书的详细描述。这是一本非常优秀的作品，故事情节引人入胜，人物形象鲜明，值得每一位读者细细品味。`,
     })
   }
   return data
@@ -141,7 +138,7 @@ function getTitleByType(type: string): string {
     monthly: '月榜精选书籍',
     new: '新书推荐',
     masterpiece: '经典神作',
-    category: '分类书籍'
+    category: '分类书籍',
   }
   return titles[type as keyof typeof titles] || '书籍'
 }
@@ -173,7 +170,7 @@ function getTitleByType(type: string): string {
   padding: 0px 20px 40px 40px;
   height: fit-content;
   position: sticky;
-  top: 100px;/* 距离顶部100px */
+  top: 100px; /* 距离顶部100px */
   box-shadow: none; /* 确保没有阴影 */
   border-right: 1px solid #e0e0e0; /* 添加细分割线 */
 }
@@ -194,7 +191,7 @@ function getTitleByType(type: string): string {
 }
 
 .nav-item.active {
-  background: #007fff;
+  background: var(--primary-green);
   color: white;
   font-weight: 500;
 }
@@ -220,7 +217,6 @@ function getTitleByType(type: string): string {
   color: #333;
   margin: 0 0 8px 0;
 }
-
 
 /* 书籍榜单 */
 .book-ranking {

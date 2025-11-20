@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@element-plus/icons": "^0.0.11",
-    "@element-plus/icons-vue": "^2.3.2"
+    "@element-plus/icons-vue": "^2.3.2",
+    "emoji-picker-element": "^1.27.0"
   }
 }

@@ -5,6 +5,8 @@ import App from './App.vue'
 import router from './router'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+// 全局引入 global.css（关键）
+import '@/assets/styles/global.css'
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)

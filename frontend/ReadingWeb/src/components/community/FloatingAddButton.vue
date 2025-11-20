@@ -162,11 +162,12 @@ const bookKeyword = ref('')
 
 // ==================== 【修改位置2】为响应式数据添加类型 ====================
 // 已选内容
-const selectedTopics = ref<string[]>([])  // 添加 string[] 类型
-const selectedBooks = ref<Book[]>([])     // 添加 Book[] 类型
+const selectedTopics = ref<string[]>([]) // 添加 string[] 类型
+const selectedBooks = ref<Book[]>([]) // 添加 Book[] 类型
 
 // 示例数据
-const topicList = ref<Topic[]>([          // 添加 Topic[] 类型
+const topicList = ref<Topic[]>([
+  // 添加 Topic[] 类型
   { name: '小剧场过大年', view: '16.6亿', discuss: '133.7万' },
   { name: '巴黎最前线', view: '8亿', discuss: '95.1万' },
   { name: '三角洲破壁新赛季上线', view: '38.8亿', discuss: '567.5万' },
@@ -174,7 +175,8 @@ const topicList = ref<Topic[]>([          // 添加 Topic[] 类型
   { name: '春节档爆款接力赛', view: '9.5亿', discuss: '70.2万' },
 ])
 
-const bookList = ref<Book[]>([            // 添加 Book[] 类型
+const bookList = ref<Book[]>([
+  // 添加 Book[] 类型
   { title: '人类简史', author: '尤瓦尔·赫拉利' },
   { title: '小王子', author: '圣埃克苏佩里' },
   { title: '乌合之众', author: '古斯塔夫·勒庞' },
@@ -254,7 +256,7 @@ const submitPost = (): void => {
     title: titleContent.value,
     content: postContent.value,
     topics: selectedTopics.value,
-    books: selectedBooks.value
+    books: selectedBooks.value,
   })
   // TODO: 这里添加实际的发布逻辑
   closeEditor()
@@ -277,7 +279,7 @@ const submitPost = (): void => {
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: #007c27;
+  background: var(--primary-green);
   color: white;
   font-size: 24px;
   cursor: pointer;
@@ -287,7 +289,7 @@ const submitPost = (): void => {
 }
 
 .floating-add-btn:hover {
-  background: #1ad6a1;
+  background: var(--secondary-green);
   transform: scale(1.05);
 }
 
@@ -300,7 +302,8 @@ const submitPost = (): void => {
   align-items: center;
   justify-content: center;
   z-index: 999;
-  margin-top: 50px;
+  padding: 20px; /* 增加屏幕内边距，避免贴边遮挡 */
+  box-sizing: border-box;
 }
 
 /* --- 发帖窗口 --- */
@@ -308,43 +311,50 @@ const submitPost = (): void => {
   background: white;
   border-radius: 12px;
   padding: 20px;
-  width: 900px;
+  max-width: 90%; /* 最大宽度不超过屏幕90%，小屏幕自动缩小 */
+  width: 100%; /* 宽度自适应父容器 */
+  max-width: 900px; /* 大屏幕最大宽度限制，保持原有视觉 */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.2s ease;
+  box-sizing: border-box; /* 让padding不影响总宽度 */
 }
 
 .editor-window h3 {
   margin-top: 0;
   margin-bottom: 12px;
-  color: #007c27;
+  color: var(--primary-green);
   font-weight: 600;
 }
 .title-input {
-  width: 880px;
-  height: 20px;
+  width: 100%; /* 改为100%自适应 */
+  height: 40px; /* 调整为合适高度，原20px太窄 */
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 8px;
+  padding: 8px 12px;
   font-size: 16px;
-  margin-bottom: 6px;
-  resize: none;
+  margin-bottom: 12px;
   outline: none;
   transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 .editor-textarea {
-  width: 880px;
-  height: 500px;
+  width: 100%; /* 改为100%自适应 */
+  min-height: 300px; /* 最小高度，保证基础输入空间 */
+  max-height: 40vh; /* 最大高度不超过屏幕40%，小屏幕不溢出 */
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 8px;
+  padding: 8px 12px;
   font-size: 15px;
-  resize: none;
+  resize: vertical; /* 允许垂直拉伸，不允许水平拉伸 */
   outline: none;
   transition: border-color 0.2s;
+  box-sizing: border-box;
+  overflow-y: auto; /* 内容超出时显示滚动条 */
 }
+
 .editor-textarea:focus,
 .title-input:focus {
-  border-color: #1ad6a1;
+  border-color: var(--secondary-green);
 }
 
 /* --- 底部操作按钮 --- */
@@ -371,16 +381,16 @@ const submitPost = (): void => {
 }
 
 .cancel-btn:hover {
-  background: #999;
+  background: var(--text-placeholder);
 }
 
 .submit-btn {
-  background: #007c27;
+  background: var(--primary-green);
   color: white;
 }
 
 .submit-btn:hover {
-  background: #1ad6a1;
+  background: var(--secondary-green);
 }
 /* 工具栏：左下角 */
 .editor-tools {
@@ -391,7 +401,7 @@ const submitPost = (): void => {
 }
 .tool-icon {
   font-size: 22px;
-  color: #007c27;
+  color: var(--primary-green);
   cursor: pointer;
   transition:
     color 0.2s,
@@ -399,7 +409,7 @@ const submitPost = (): void => {
 }
 
 .tool-icon:hover {
-  color: #1ad6a1;
+  color: var(--secondary-green);
   transform: scale(1.1);
 }
 /* 动画 */
@@ -425,7 +435,7 @@ const submitPost = (): void => {
 }
 .group-label {
   font-weight: bold;
-  color: #007c27;
+  color: var(--primary-green);
 }
 .select-emoji {
   position: fixed;
@@ -439,26 +449,28 @@ const submitPost = (): void => {
 .select-panel {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1001;
 }
+/* --- 浮层优化（话题/书籍选择面板）--- */
 .panel-content {
-  width: 420px;
+  width: 90%; /* 自适应屏幕宽度 */
+  max-width: 420px; /* 大屏幕最大宽度限制 */
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px var(--shadow-color);
   display: flex;
   flex-direction: column;
-  max-height: 500px;
+  max-height: 70vh; /* 最大高度不超过屏幕70% */
 }
 .search-bar {
   display: flex;
   align-items: center;
-  background: #f4f4f4;
+  background: var(--background-color);
   padding: 8px 12px;
 }
 .search-bar input {
@@ -485,7 +497,7 @@ const submitPost = (): void => {
   background: #f5f5f5;
 }
 .hash {
-  color: #007c27;
+  color: var(--primary-green);
   font-size: 18px;
   margin-right: 10px;
 }
@@ -494,6 +506,6 @@ const submitPost = (): void => {
 }
 .info .meta {
   font-size: 12px;
-  color: #888;
+  color: var(--text-secondary);
 }
 </style>

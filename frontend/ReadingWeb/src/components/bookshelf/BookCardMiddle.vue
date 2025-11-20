@@ -4,7 +4,7 @@
     <div class="book-cover-container">
       <img :src="cover" alt="book cover" class="book-cover" />
       <!-- 读完标签 -->
-      <div v-if="isRead" class="read-tag">读完</div>
+      <div v-if="isRead && !disableJump" class="read-tag">读完</div>
     </div>
     <div class="book-info">
       <h3 class="book-title">{{ title }}</h3>

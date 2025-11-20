@@ -97,7 +97,7 @@ const deleteSelectedBooks = async () => {
             @click="toggleDeleteMode"
             :class="{ active: isDeleteMode }"
           >
-            <el-icon><Delete /></el-icon>
+            <el-icon v-if="!isDeleteMode"><Delete /></el-icon>
             <span v-if="isDeleteMode">取消删除</span>
             <span v-else>批量删除</span>
           </button>
@@ -107,6 +107,7 @@ const deleteSelectedBooks = async () => {
             @click="deleteSelectedBooks"
             v-if="isDeleteMode && selectedBookIds.length > 0"
           >
+            <el-icon><Delete /></el-icon>
             删除选中 ({{ selectedBookIds.length }})
           </button>
         </div>
@@ -181,14 +182,14 @@ const deleteSelectedBooks = async () => {
 }
 
 .filter-btn:hover {
-  border-color: #333;
+  border-color: var(--dark-back);
   color: #000;
 }
 
 .filter-btn.active {
-  background-color: #333;
-  color: #fff;
-  border-color: #333;
+  background-color: var(--dark-back);
+  color: var(--sun-back);
+  border-color: var(--dark-back);
 }
 
 .delete-mode-controls {
@@ -201,9 +202,9 @@ const deleteSelectedBooks = async () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #fff;
-  border: 1px solid #ff6b6b;
-  color: #ff6b6b;
+  background-color: var(--sun-back);
+  border: 1px solid var(--primary-green);
+  color: var(--primary-green);
   border-radius: 10px;
   padding: 6px 16px;
   font-size: 14px;
@@ -212,21 +213,24 @@ const deleteSelectedBooks = async () => {
 }
 
 .delete-mode-btn:hover {
-  background-color: #fff5f5;
+  background-color: var(--shadow-green);
 }
 
 .delete-mode-btn.active {
-  background-color: #ff6b6b;
-  color: #fff;
+  background-color: var(--primary-green);
+  color: var(--sun-back);
 }
 
 .delete-mode-btn.active:hover {
-  background-color: #ff4d4f;
+  background-color: var(--primary-green);
 }
 
 .delete-selected-btn {
-  background-color: #ff6b6b;
-  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--primary-green);
+  color: var(--sun-back);
   border: none;
   border-radius: 10px;
   padding: 6px 16px;
@@ -236,7 +240,7 @@ const deleteSelectedBooks = async () => {
 }
 
 .delete-selected-btn:hover {
-  background-color: #ff4d4f;
+  background-color: var(--primary-green);
   transform: scale(1.05);
 }
 
@@ -249,6 +253,7 @@ const deleteSelectedBooks = async () => {
 
 .book-item {
   position: relative;
+  box-sizing: border-box;
 }
 
 .book-checkbox {
@@ -257,23 +262,25 @@ const deleteSelectedBooks = async () => {
   right: 8px;
   width: 18px;
   height: 18px;
-  accent-color: #ff6b6b;
+  accent-color: var(--thrid-green);
   cursor: pointer;
   z-index: 20;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .book-checkbox:hover {
-  border-color: #ff6b6b;
-  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.1);
+  border-color: var(--thrid-green);
+  box-shadow: 0 0 0 2px var(--shadow-green);
 }
 
 .book-item:has(.book-checkbox:checked) .book-card {
-  border: 2px solid #ff6b6b;
-  border-radius: 8px;
-  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+  /* 将边框改为内部阴影，避免改变元素尺寸 */
+  box-shadow:
+    0 0 0 2px var(--shadow-green),
+    inset 0 0 0 1px var(--thrid-green);
+  border: none; /* 移除边框 */
   overflow: visible;
 }
 
