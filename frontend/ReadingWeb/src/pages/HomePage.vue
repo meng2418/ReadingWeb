@@ -32,10 +32,33 @@ onMounted(async () => {
         <GuessYouLike />
       </div>
       <div class="book-rank">
-        <BookRankList ranktitle="周榜" desc="最近一周热读书籍" />
-        <BookRankList ranktitle="月榜" desc="最近一个月最受欢迎" />
-        <BookRankList ranktitle="新书榜" desc="最新上架的优质书籍" />
-        <BookRankList ranktitle="神作榜" desc="公认必读的高分神作" />
+        <!-- 周榜 -->
+        <BookRankList
+          ranktitle="周榜"
+          desc="最近一周热读书籍"
+          tabId="weekly"
+        />
+
+        <!-- 月榜 -->
+        <BookRankList
+          ranktitle="月榜"
+          desc="最近一月热读书籍"
+          tabId="monthly"
+        />
+
+        <!-- 新书榜 -->
+        <BookRankList
+          ranktitle="新书榜"
+          desc="最新上架书籍"
+          tabId="new"
+        />
+
+<!-- 神作榜 -->
+<BookRankList
+  ranktitle="神作榜"
+  desc="经典神作书籍"
+  tabId="masterpiece"
+/>
       </div>
     </div>
     <BackToTop />

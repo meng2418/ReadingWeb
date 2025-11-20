@@ -15,7 +15,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
 // 模拟从数据库获取的阅读时长数据，实际开发中替换为从数据库查询的逻辑
@@ -41,7 +41,7 @@ onMounted(async () => {
 })
 
 // 处理卡片点击，跳转到个人中心（预留接口）
-const handleCardClick = (type) => {
+const handleCardClick = (type:string) => {
   // 这里是跳转到个人中心的逻辑，例如使用路由跳转
   // 示例：router.push({ path: '/personal-center', query: { type } });
   console.log(`准备跳转到个人中心，卡片类型：${type}`)

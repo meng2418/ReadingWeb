@@ -61,13 +61,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookDetailHeader from '@/components/bookdetail/BookDetailHeader.vue'
 import BookRecommendationSection from '@/components/bookdetail/BookRecommendationSection.vue'
 import AuthorInfoSection from '@/components/bookdetail/AuthorInfoSection.vue'
 import RelatedRecommendations from '@/components/bookdetail/RelatedRecommendations.vue'
 import UserReviews from '@/components/bookdetail/UserReviews.vue'
+
+
+// 在组件挂载时滚动到顶部
+onMounted(() => {
+  // 页面加载时滚动到顶部
+  window.scrollTo({
+    top: 0,
+   // behavior: 'smooth' // 可选：平滑滚动
+  })
+})
+
 
 // 定义相关类型
 interface Work {

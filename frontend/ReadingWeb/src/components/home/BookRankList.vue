@@ -50,11 +50,12 @@ interface Props {
   ranktitle?: string
   desc?: string
   books?: Book[]
+  tabId?: string  // 新增：用于指定跳转到哪个榜单
 }
 
 
 // 使用解构，不定义 props 变量
-const { ranktitle, desc, books } = withDefaults(defineProps<Props>(), {
+const { ranktitle, desc, books,tabId } = withDefaults(defineProps<Props>(), {
   desc: '最近一周热读书籍',
   books: () => [
     // 默认10本书数据
@@ -133,7 +134,7 @@ const { ranktitle, desc, books } = withDefaults(defineProps<Props>(), {
 
 // 查看全部点击事件
 const handleViewAll = (): void => {
-  router.push('/category')
+  router.push(`/category?tab=${tabId}`)
 }
 
 // 书籍点击事件 - 跳转到书籍详情页
