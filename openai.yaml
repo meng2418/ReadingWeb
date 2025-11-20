@@ -14,14 +14,16 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    User:
+    UserProfile:
       type: object
       properties:
-        id:
+        userid:
           type: integer
         username:
           type: string
-        nickname:
+        phone:
+          type: string
+        email:
           type: string
         avatar:
           type: string
@@ -33,6 +35,19 @@ components:
           type: integer
         totalReadingTime:
           type: integer
+        createdAt:
+          type: string
+    PublicUser:
+      type: object
+      properties:
+        userId:
+          type: integer
+        username:
+          type: string
+        avatar:
+          type: string
+        bio:
+          type: string
     Book:
       type: object
       properties:
@@ -66,7 +81,260 @@ components:
           type: string
         details:
           type: string
+  requestBodies:
+    SendPhoneVertificationcodeRequest:
+      description: 手机号验证码发送请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+            required: [phone]
+    SendEmailVertificationcodeRequest:
+      description: 邮箱验证码发送请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+            required: [email]
+    VertificationcodeLoginRequest:
+      description: 手机号验证码登录请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+              vertificationcode:
+                type: string
+            required: [phone, vertificationcode]
+    PasswordLoginRequest:
+      description: 手机号密码登录请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+              password:
+                type: string
+            required: [phone, password]
+    PasswordRegisterRequest:
+      description: 手机号密码注册请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              phone:
+                type: string
+              password:
+                type: string
+              confirmPassword:
+                type: string
+            required: [phone, password, confirmPassword]
+    UpdateUserProfileRequest:
+      description: 个人资料更新请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              avatar:
+                type: string
+              bio:
+                type: string
+    UpdatePasswordRequest:
+      description: 更改密码请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              oldPassword:
+                type: string
+              newPassword:
+                type: string
+              confirmNewPassword:
+                type: string
+            required: [oldPassword, newPassword, confirmNewPassword]
+    BindRequest:
+      description: 更改密码请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+              email:
+                type: string
+              vertificationcode:
+                type: string
   responses:
+    LoginResponse:
+      description: Login response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Login successful"
+              data:
+                type: object
+                properties:
+                  userId:
+                    type: integer
+                    example: 123
+                  username:
+                    type: string
+                    example: "gqwtb"
+                  token:
+                    type: string
+                    example: "JWT..."
+                  expiresIn:
+                    type: integer
+                    example: 3600
+    RegisterResponse:
+      description: Register response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 201
+              message:
+                example: "Register successfully"
+              userId:
+                type: integer
+                example: 123
+    SendVertificationcodeResponse:
+      description: Vertification response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Vertification code sent successfully"
+    GetUserProfileResponse:
+      description: get userprofile response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Userprofile get successfully"
+              data:
+                $ref: '#/components/schemas/UserProfile'   
+    UpdateUserProfileResponse:
+      description: update userprofile response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Userprofile updated successfully"
+              data:
+                $ref: '#/components/schemas/UserProfile'     
+    UpdatePasswordResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Password updated successfully"
+    BindResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Bind successfully"
+    UnbindResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Unbind successfully"
+    LoginLogResponse:
+      description: Update password response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              loginId:
+                type: integer
+                example: 1
+              loginTime:
+                type: string
+                format: date-time
+              ipAddress:
+                type: string
+                example: 192.168.1.1
+              device:
+                type: string
+                example: Chrome on Windows 10
     Error:
       description: 错误响应
       content:
@@ -83,67 +351,46 @@ components:
 
 paths:
   # ==================== 认证相关接口 ====================
-  /auth/phone-login:
+  /auth/vertificationcodeLogin:
     post:
-      summary: 手机号登录
+      summary: 手机号验证码登录
       tags: [认证]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                phone:
-                  type: string
-                code:
-                  type: string
-              required: [phone, code]
+              $ref: '#/components/requestBodies/VertificationcodeLoginRequest'
       responses:
         200:
           description: 登录成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  user:
-                    $ref: '#/components/schemas/User'
+                $ref: '#/components/responses/LoginResponse'
+        400:
+          $ref: '#/components/responses/Error'
+  /auth/passwordLogin:
+    post:
+      summary: 手机号密码登录
+      tags: [认证]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/PasswordLoginRequest'
+      responses:
+        200:
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/LoginResponse'
         400:
           $ref: '#/components/responses/Error'
 
-  /auth/email-login:
-    post:
-      summary: 邮箱密码登录
-      tags: [认证]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                password:
-                  type: string
-              required: [email, password]
-      responses:
-        200:
-          description: 登录成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  user:
-                    $ref: '#/components/schemas/User'
-
-  /auth/send-code:
+  /auth/sendVertificationcode:
     post:
       summary: 发送验证码
       tags: [认证]
@@ -152,26 +399,16 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                phone:
-                  type: string
-                type:
-                  type: string
-                  enum: [login, register, reset]
-              required: [phone, type]
+              $ref: '#/components/requestBodies/SendPhoneVertificationcodeRequest'
       responses:
         200:
           description: 发送成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/responses/SendVertificationcodeResponse'
 
-  /auth/register:
+  /auth/passwordRegister:
     post:
       summary: 用户注册
       tags: [认证]
@@ -180,31 +417,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-                phone:
-                  type: string
-                email:
-                  type: string
-                nickname:
-                  type: string
-              required: [username, password, nickname]
+              $ref: '#/components/requestBodies/PasswordRegisterRequest'
       responses:
         201:
           description: 注册成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  user:
-                    $ref: '#/components/schemas/User'
+                    $ref: '#/components/responses/RegisterResponse'
 
   /auth/logout:
     post:
@@ -236,7 +456,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/responses/GetUserProfileResponse'
     put:
       summary: 更新个人资料
       tags: [个人中心]
@@ -247,23 +467,36 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                nickname:
-                  type: string
-                avatar:
-                  type: string
-                bio:
-                  type: string
+              $ref: '#/components/requestBodies/UpdateUserProfileRequest'
       responses:
         200:
           description: 更新成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/responses/UpdateUserProfileResponse'
+  /user/password:
+    put:
+      tags:
+        - 个人信息管理
+      summary: 修改登录密码
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/UpdatePasswordRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/UpdatePasswordResponse'
 
-  /user/reading-stats:
+  /user/reading-status:
     get:
       summary: 获取阅读统计
       tags: [个人中心]
@@ -291,6 +524,54 @@ paths:
                     type: integer
                   readingDays:
                     type: integer
+
+  /user/security/bind:
+    post:
+      tags:
+        - 账号安全
+      summary: 绑定手机号或邮箱
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/BindRequest'
+      responses:
+        '200':
+          description: 绑定成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/BindResponse'
+  /user/security/login-logs:
+    get:
+      tags:
+        - 账号安全
+      summary: 查询登录历史记录
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 成功返回登录记录列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/responses/LoginLogResponse'
 
   /user/messages:
     get:
@@ -663,8 +944,8 @@ paths:
                       properties:
                         id:
                           type: integer
-                        user:
-                          $ref: '#/components/schemas/User'
+                        userid:
+                          type: integer
                         content:
                           type: string
                         rating:
@@ -1413,7 +1694,7 @@ paths:
                   following:
                     type: array
                     items:
-                      $ref: '#/components/schemas/User'
+                      $ref: '#/components/schemas/PublicUser'
 
   /follows/followers:
     get:
@@ -1432,7 +1713,7 @@ paths:
                   followers:
                     type: array
                     items:
-                      $ref: '#/components/schemas/User'
+                      $ref: '#/components/schemas/PublicUser'
 
   /topics:
     get:
@@ -1490,4 +1771,5 @@ paths:
                       type: object
                   total:
                     type: integer
+
 
