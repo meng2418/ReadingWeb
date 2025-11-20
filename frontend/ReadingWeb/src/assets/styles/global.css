@@ -1,0 +1,19 @@
+:root {
+  --primary-green: #007c27;
+  --secondary-green: #1ad6a1;
+  --thrid-green: #00a735;
+  --shadow-green: rgb(230, 233, 231);
+
+  --primary-pink: #ff6b6b;
+  --primary-pink-hover: #ff4d4f;
+  --primary-pink-active: #ff3333;
+
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-placeholder: #999999;
+  --border-color: #f0f0f0;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+
+  --sun-back: #fff;
+  --dark-back: #333;
+}

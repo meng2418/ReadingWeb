@@ -1,49 +1,72 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import axios from 'axios'
+
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+
+// 登录 / 注册模式切换
 const isSignUp = ref(false)
 
-// 新增：验证码登录开关与表单字段
+// 登录表单字段
 const isCaptchaLogin = ref(false)
 const phone = ref('')
+const username = ref('') // 你原本缺了 username 声明
 const password = ref('')
 const code = ref('')
 
-// 根据路由参数初始化
+// 根据路由参数决定显示登录或注册界面
 watchEffect(() => {
   isSignUp.value = route.query.mode === 'signup'
 })
 
+// 点击 “注册” 按钮
 function handleSignUp() {
   isSignUp.value = true
 }
-function handleLogin() {
-  isSignUp.value = false
+
+// 点击 “登录” 按钮（异步函数）
+async function handleLogin() {
+  try {
+    const res = await axios.post('/api/login', {
+      username: username.value,
+      password: password.value,
+    })
+
+    userStore.login({
+      token: res.data.token,
+      userInfo: res.data.user, // { name, avatar }
+    })
+
+    router.push('/')
+  } catch (err) {
+    console.error(err)
+    window.alert('登录失败，请检查用户名或密码')
+  }
 }
 
-// 切换验证码登录 / 密码登录
+// 切换验证码 / 密码登录
 function toggleCaptchaLogin() {
   isCaptchaLogin.value = !isCaptchaLogin.value
-  // 切换时清空输入
   phone.value = ''
   password.value = ''
   code.value = ''
 }
 
-// 发送验证码（示例：这里只做模拟提示，替换为真实接口调用）
+// 发送验证码（示例）
 function sendCode() {
   if (!phone.value || phone.value.trim().length < 6) {
-    window.alert('请输入有效的手机号以接收验证码。')
+    window.alert('请输入有效的手机号')
     return
   }
-  // 真实场景应调用接口并处理倒计时等 UX
-  window.alert(`已向 ${phone.value} 发送验证码（模拟）。`)
+  window.alert(`已向 ${phone.value} 发送验证码（模拟）`)
 }
-// 跳转到忘记密码页面
+
+// 忘记密码跳转
 function goForgetPassword() {
-  // 跳转到忘记密码页面
   router.push('/forget-password')
 }
 </script>
@@ -90,7 +113,7 @@ function goForgetPassword() {
                 />
               </div>
 
-              <div class="forms_field" style="display:flex; align-items:center; gap:8px;">
+              <div class="forms_field" style="display: flex; align-items: center; gap: 8px">
                 <input
                   v-if="!isCaptchaLogin"
                   v-model="password"
@@ -99,16 +122,21 @@ function goForgetPassword() {
                   class="forms_field-input"
                   required
                 />
-                <div v-else style="display:flex; gap:8px; align-items:center; width:100%;">
+                <div v-else style="display: flex; gap: 8px; align-items: center; width: 100%">
                   <input
                     v-model="code"
                     type="text"
                     placeholder="验证码"
                     class="forms_field-input"
                     required
-                    style="flex:1;"
+                    style="flex: 1"
                   />
-                  <button type="button" class="forms_buttons-action" @click="sendCode" style="padding:6px 12px;">
+                  <button
+                    type="button"
+                    class="forms_buttons-action"
+                    @click="sendCode"
+                    style="padding: 6px 12px"
+                  >
                     发送验证码
                   </button>
                 </div>
@@ -117,14 +145,15 @@ function goForgetPassword() {
 
             <div class="forms_buttons">
               <div class="forms_buttons-left">
-                <button type="button" class="forms_buttons-forgot" @click="goForgetPassword">忘记密码？</button>
+                <button type="button" class="forms_buttons-forgot" @click="goForgetPassword">
+                  忘记密码？
+                </button>
                 <button type="button" class="forms_buttons-loginway" @click="toggleCaptchaLogin">
                   {{ isCaptchaLogin ? '密码登录' : '验证码登录' }}
                 </button>
               </div>
               <input type="submit" value="登录" class="forms_buttons-action" />
             </div>
-
           </form>
         </div>
         <div class="user_forms-signup">
@@ -168,7 +197,8 @@ function goForgetPassword() {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;

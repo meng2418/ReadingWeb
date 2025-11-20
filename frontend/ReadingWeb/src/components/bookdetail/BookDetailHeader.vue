@@ -4,7 +4,7 @@
     <div class="top-section">
       <!-- 左侧：书籍封面 -->
       <div class="book-cover">
-        <img :src="coverImage" :alt="title" class="cover-image" @error="handleImageError">
+        <img :src="coverImage" :alt="title" class="cover-image" @error="handleImageError" />
         <div v-if="!coverImage" class="cover-placeholder">
           <span>暂无封面</span>
         </div>
@@ -12,25 +12,22 @@
 
       <!-- 右侧：书籍信息 -->
       <div class="book-info">
+        <!-- 书名和作者 -->
+        <h1 class="book-title">{{ title }}</h1>
+        <div class="book-author">{{ author }}</div>
+
         <!-- 右上角：操作按钮 -->
         <div class="action-buttons">
           <button
             class="bookshelf-button"
-            :class="{ 'added': isInBookshelf }"
+            :class="{ added: isInBookshelf }"
             @click="handleBookshelfToggle"
           >
             {{ isInBookshelf ? '✔已在书架' : '加入书架' }}
           </button>
 
-          <button class="read-button" @click="handleStartReading">
-            开始阅读
-          </button>
+          <button class="read-button" @click="handleStartReading">开始阅读</button>
         </div>
-
-        <!-- 书名和作者 -->
-        <h1 class="book-title">{{ title }}</h1>
-        <div class="book-author">{{ author }}</div>
-
         <!-- 统计卡片 -->
         <div class="stats-cards">
           <div class="stat-card" @click="handleStatClick('reading')">
@@ -102,8 +99,8 @@ const props = withDefaults(defineProps<Props>(), {
     wordCount: '11.3万字',
     publishInfo: '2021年7月出版',
     experienceCardStatus: '体验卡可读',
-    priceInfo: '电子书价格49元'
-  })
+    priceInfo: '电子书价格49元',
+  }),
 })
 
 // 定义事件
@@ -194,8 +191,7 @@ const handleStatClick = (statType: string) => {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  margin-top: -20px;
-  gap: 0px;
+  margin-top: 15px;
 }
 
 /* 按钮区域样式 - 放在右上角 */
@@ -203,7 +199,7 @@ const handleStatClick = (statType: string) => {
   display: flex;
   gap: 20px;
   justify-content: flex-end;
-  margin-bottom: 15px;
+  margin-bottom: 25px;
 }
 
 .bookshelf-button,
@@ -275,12 +271,11 @@ const handleStatClick = (statType: string) => {
   overflow: hidden;
   align-items: center;
   align-items: stretch;
-
 }
 
 .stat-card {
   background: #f0f0f0;
-  padding: 20px;
+  padding: 4px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -297,7 +292,6 @@ const handleStatClick = (statType: string) => {
   font-size: 24px;
   color: #007cba;
   margin-bottom: 8px;
-
 }
 
 .stat-card:hover {
@@ -306,13 +300,13 @@ const handleStatClick = (statType: string) => {
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
   margin-bottom: 8px;
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   color: #333;
   margin-bottom: 4px;

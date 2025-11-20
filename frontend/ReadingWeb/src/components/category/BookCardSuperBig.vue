@@ -121,7 +121,7 @@ export default {
 .book-cover-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-green);
   border-radius: 0; /* 移除圆角 */
   display: flex;
   align-items: center;
@@ -146,14 +146,14 @@ export default {
 .book-title {
   font-size: 32px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin-bottom: 12px;
   line-height: 1.2;
 }
 
 .book-author {
   font-size: 18px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 20px;
   font-weight: 500;
 }
@@ -163,22 +163,22 @@ export default {
   align-items: center;
   gap: 12px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .readers-count {
   font-size: 16px;
-  color: #ff6b6b;
+  color: var(--secondary-green);
   font-weight: 600;
 }
 
 .separator {
-  color: #ddd;
+  color: var(--border-color);
 }
 
 .recommendation {
   font-size: 16px;
-  color: #4a6cf7;
+  color: var(--primary-green);
   font-weight: 600;
 }
 
@@ -192,17 +192,17 @@ export default {
 .description-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin-bottom: 15px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #4a6cf7;
+  border-bottom: 2px solid var(--primary-green);
   display: inline-block;
 }
 
 .description-content {
   font-size: 16px;
   line-height: 1.7;
-  color: #444;
+  color: var(--text-secondary);
   text-align: justify;
   margin: 0;
 }
@@ -213,7 +213,7 @@ export default {
 }
 
 .book-description::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--background-color);
   border-radius: 3px;
 }
 

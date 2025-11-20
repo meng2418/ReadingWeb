@@ -24,7 +24,7 @@
     "@element-plus/icons-vue": "^2.3.2",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/vue-fontawesome": "^3.1.2",
-    "axios": "^1.12.2",
+    "axios": "^1.13.2",
     "element-plus": "^2.11.4",
     "emoji-picker-element": "^1.27.0",
     "lucide-vue-next": "^0.548.0",

@@ -47,7 +47,7 @@ onUnmounted(() => {
   width: 40px;
   height: 40px;
   /* 简化样式 */
-  background: #007c27;
+  background: var(--primary-green);
   color: white;
   border: none;
   border-radius: 90px;
@@ -59,10 +59,12 @@ onUnmounted(() => {
   /* 默认隐藏 */
   opacity: 0;
   visibility: hidden;
-  transition: background 0.3s, transform 0.2s;
+  transition:
+    background 0.3s,
+    transform 0.2s;
 }
-.back-to-top:hover{
-  background: #1ad6a1;
+.back-to-top:hover {
+  background: var(--secondary-green);
   transform: scale(1.05);
 }
 /* 显示状态 */

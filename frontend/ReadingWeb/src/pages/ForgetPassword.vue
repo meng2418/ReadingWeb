@@ -6,9 +6,13 @@
 
       <!-- 步骤指示器 -->
       <div class="fp-steps">
-        <span :class="{'fp-step': true, 'fp-step--active': step === 1, 'fp-step--done': step > 1}">1. 验证邮箱</span>
-        <span :class="{'fp-step': true, 'fp-step--active': step === 2, 'fp-step--done': step > 2}">2. 验证码</span>
-        <span :class="{'fp-step': true, 'fp-step--active': step === 3}">3. 重置密码</span>
+        <span :class="{ 'fp-step': true, 'fp-step--active': step === 1, 'fp-step--done': step > 1 }"
+          >1. 验证邮箱</span
+        >
+        <span :class="{ 'fp-step': true, 'fp-step--active': step === 2, 'fp-step--done': step > 2 }"
+          >2. 验证码</span
+        >
+        <span :class="{ 'fp-step': true, 'fp-step--active': step === 3 }">3. 重置密码</span>
       </div>
 
       <!-- 步骤1：输入邮箱 -->
@@ -19,8 +23,8 @@
             type="email"
             v-model="email"
             placeholder="请输入注册邮箱"
-            :class="{'fp-input': true, 'fp-input--error': errors.email}"
-          >
+            :class="{ 'fp-input': true, 'fp-input--error': errors.email }"
+          />
           <p class="fp-error" v-if="errors.email">{{ errors.email }}</p>
         </div>
         <button class="fp-btn" @click="nextStep">发送验证码</button>
@@ -34,16 +38,12 @@
             type="text"
             v-model="code"
             placeholder="请输入6位验证码"
-            :class="{'fp-input': true, 'fp-input--error': errors.code}"
-          >
+            :class="{ 'fp-input': true, 'fp-input--error': errors.code }"
+          />
           <p class="fp-error" v-if="errors.code">{{ errors.code }}</p>
           <div class="fp-code-info">
             <span>验证码已发送至 {{ email }}</span>
-            <button
-              @click="resendCode"
-              :disabled="resendDisabled"
-              class="fp-resend"
-            >
+            <button @click="resendCode" :disabled="resendDisabled" class="fp-resend">
               {{ resendText }}
             </button>
           </div>
@@ -62,8 +62,8 @@
             :type="showPwd ? 'text' : 'password'"
             v-model="newPwd"
             placeholder="请设置新密码"
-            :class="{'fp-input': true, 'fp-input--error': errors.newPwd}"
-          >
+            :class="{ 'fp-input': true, 'fp-input--error': errors.newPwd }"
+          />
           <p class="fp-error" v-if="errors.newPwd">{{ errors.newPwd }}</p>
         </div>
 
@@ -73,8 +73,8 @@
             :type="showPwd ? 'text' : 'password'"
             v-model="confirmPwd"
             placeholder="请再次输入密码"
-            :class="{'fp-input': true, 'fp-input--error': errors.confirmPwd}"
-          >
+            :class="{ 'fp-input': true, 'fp-input--error': errors.confirmPwd }"
+          />
           <p class="fp-error" v-if="errors.confirmPwd">{{ errors.confirmPwd }}</p>
         </div>
 
@@ -94,12 +94,12 @@
 
     <div class="fp-footer">
       <a @click="toLogin" class="fp-link">想起密码了？返回登录</a>
-      <p class="fp-support">客服支持：649609693@qq.com</p>
+      <p class="fp-support">客服支持：1234567890</p>
     </div>
   </div>
 </template>
 
-<script setup lang='ts'>
+<script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -121,7 +121,7 @@ const errors = reactive({
   email: '',
   code: '',
   newPwd: '',
-  confirmPwd: ''
+  confirmPwd: '',
 })
 
 // 计算属性
@@ -129,15 +129,13 @@ const stepDesc = computed(() => {
   const descs = [
     '请输入您注册的邮箱，我们将发送验证码',
     '请输入收到的验证码进行验证',
-    '请设置您的新密码'
+    '请设置您的新密码',
   ]
   return descs[step.value - 1]
 })
 
 const resendText = computed(() => {
-  return resendDisabled.value
-    ? `重新发送(${resendSeconds.value}s)`
-    : '重新发送'
+  return resendDisabled.value ? `重新发送(${resendSeconds.value}s)` : '重新发送'
 })
 
 // 方法
@@ -247,7 +245,7 @@ const toLogin = () => {
   background: white;
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 标题区域 */

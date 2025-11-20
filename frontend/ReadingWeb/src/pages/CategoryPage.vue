@@ -129,7 +129,7 @@ const currentCategory = ref('all') // 当前选中的分类
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && tabs.some(tab => tab.id === newTab)) {
+    if (newTab && tabs.some((tab) => tab.id === newTab)) {
       currentTab.value = newTab as string
       // 切换到分类时，重置当前分类为"全部"
       if (isCategoryTab.value) {
@@ -148,7 +148,7 @@ watch(
     } else if (isCategoryTab.value) {
       currentCategory.value = 'all' // 修复：当没有category参数时，设置为默认值
     }
-  }
+  },
 )
 
 // 组件挂载时检查参数
@@ -172,7 +172,7 @@ onMounted(() => {
 
 // 计算属性
 const currentTabName = computed(() => {
-  const tab = tabs.find(t => t.id === currentTab.value)
+  const tab = tabs.find((t) => t.id === currentTab.value)
   return tab?.name || '周榜'
 })
 
@@ -493,7 +493,7 @@ function generateRankingData(type: string): Book[] {
       recommend: `${(95 - i * 0.1).toFixed(1)}%`,
       readersCount: (10000 - i * 100).toString(),
       recommendationRate: 95 - i * 0.1,
-      description: `这是${getTitleByType(type)}第${i}本书的详细描述。这是一本非常优秀的作品，故事情节引人入胜，人物形象鲜明，值得每一位读者细细品味。`
+      description: `这是${getTitleByType(type)}第${i}本书的详细描述。这是一本非常优秀的作品，故事情节引人入胜，人物形象鲜明，值得每一位读者细细品味。`,
     })
   }
   return data
@@ -670,7 +670,7 @@ function stringToHash(str: string): number {
 }
 
 .nav-item.active {
-  background: #007fff;
+  background: var(--primary-green);
   color: white;
   font-weight: 600;
 }
