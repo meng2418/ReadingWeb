@@ -50,15 +50,15 @@ interface Props {
   ranktitle?: string
   desc?: string
   books?: Book[]
-  tabId?: string  // 新增：用于指定跳转到哪个榜单
+  tabId?: string // 新增：用于指定跳转到哪个榜单
 }
-
-
-// 使用解构，不定义 props 变量
-const { ranktitle, desc, books,tabId } = withDefaults(defineProps<Props>(), {
-  desc: '最近一周热读书籍',
-  books: () => [
-    // 默认10本书数据
+// 使用解构，直接在解构中定义默认值
+const {
+  ranktitle,
+  desc = '最近一周热读书籍', // 直接赋值默认字符串
+  tabId,
+  books = [
+    // 直接赋值默认数组，不需要 () => [] 工厂函数，Vue 编译器会自动处理引用问题
     {
       id: 1,
       cover: 'https://picsum.photos/seed/book1/200/300',
@@ -130,7 +130,7 @@ const { ranktitle, desc, books,tabId } = withDefaults(defineProps<Props>(), {
       recommend: '89%',
     },
   ],
-})
+} = defineProps<Props>()
 
 // 查看全部点击事件
 const handleViewAll = (): void => {
