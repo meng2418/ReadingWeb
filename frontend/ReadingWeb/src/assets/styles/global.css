@@ -17,3 +17,27 @@
   --sun-back: #fff;
   --dark-back: #333;
 }
+* {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI',
+    'Helvetica Neue', Arial, sans-serif;
+}
+.profile-page {
+  --primary-green: #007c27;
+  --secondary-green: #1ad6a1;
+  --third-green: #00a735;
+  --bg-gray: #f4f6f8;
+  --card-bg: #ffffff;
+  --text-main: #333333;
+  --text-light: #888888;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  background-color: var(--bg-gray);
+  min-height: 100vh;
+  padding: 20px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
+    'Helvetica Neue', sans-serif;
+  color: var(--text-main);
+}
