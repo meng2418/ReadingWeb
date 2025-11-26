@@ -8,14 +8,14 @@ import RecentRead from '@/components/home/RecentRead.vue'
 import { onMounted } from 'vue'
 import axios from 'axios'
 
-onMounted(async () => {
+/*onMounted(async () => {
   try {
     const res = await axios.get('http://localhost:3000/api/home')
     console.log('首页接口响应：', res.data)
   } catch (err) {
     console.error('请求出错：', err)
   }
-})
+})*/
 </script>
 
 <template>

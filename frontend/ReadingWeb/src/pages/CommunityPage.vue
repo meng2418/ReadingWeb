@@ -274,6 +274,7 @@ const handleShare = (postId: number): void => {
         <div v-if="currentTab === 'topics'" class="topics-grid">
           <Topic
             v-for="topic in topicsList"
+            :id="topic.id"
             :key="topic.id"
             :cover="topic.cover"
             :title="topic.title"

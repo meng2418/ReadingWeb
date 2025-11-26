@@ -38,11 +38,6 @@
 
     <!-- 操作区 -->
     <div class="post-actions">
-      <div class="action-item" @click="sharePost">
-        <el-icon><Share /></el-icon>
-        <span v-if="shareCount > 0">{{ shareCount }}</span>
-      </div>
-
       <div class="action-item" @click="commentPost">
         <el-icon><Comment /></el-icon>
         <span v-if="commentCount > 0">{{ commentCount }}</span>
@@ -66,7 +61,7 @@
 <script setup lang="ts">
 import router from '@/router'
 import { ref, computed } from 'vue'
-import { Comment, Share } from '@element-plus/icons-vue'
+import { Comment } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
 import { Heart } from 'lucide-vue-next'
 
@@ -85,7 +80,6 @@ interface Props {
   content: string
   likeCount: number
   commentCount: number
-  shareCount: number
   isFollowing: boolean
   isLiked: boolean
   book?: Book | null
@@ -103,7 +97,6 @@ const emit = defineEmits<{
   'follow-change': [isFollowing: boolean]
   like: [likeCount: number, isLiked: boolean]
   comment: []
-  share: []
 }>()
 
 const showFull = ref<boolean>(false)
@@ -141,9 +134,6 @@ const commentPost = (): void => {
   emit('comment')
 }
 
-const sharePost = (): void => {
-  emit('share')
-}
 
 const toggleExpand = (): void => {
   showFull.value = !showFull.value
@@ -276,10 +266,14 @@ const handleCardClick = () => {
 /* 操作区：统一三个图标样式 */
 .post-actions {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
+  align-items: center;
   border-top: 1px solid #f5f5f5;
   padding-top: 10px;
+  gap: 250px; /* 控制两个按钮之间的距离 */
 }
+
+
 
 .action-item {
   display: flex;
@@ -289,6 +283,8 @@ const handleCardClick = () => {
   color: #666;
   cursor: pointer;
   transition: all 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 6px;
 }
 
 .action-item:hover {
@@ -301,7 +297,7 @@ const handleCardClick = () => {
   color: #ff6b6b;
 }
 
-/* 爱心图标统一样式：与转发/评论图标尺寸、对齐一致 */
+/* 爱心图标统一样式：与评论图标尺寸、对齐一致 */
 .heart-icon {
   display: inline-flex;
   align-items: center;

@@ -1,5 +1,5 @@
 <template>
-  <div class="topic-card">
+  <div class="topic-card" @click="goToTopicDetail">
     <div class="topic-cover-container">
       <img :src="cover" alt="topic cover" class="topic-cover" />
     </div>
@@ -11,7 +11,14 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
+import { useRouter } from 'vue-router'
+const router = useRouter()
+
+const props = defineProps({
+  id: {
+    type: [String, Number],
+    required: true
+  },
   cover: {
     type: String,
     default: 'https://picsum.photos/200/300',
@@ -25,6 +32,10 @@ defineProps({
     default: 200,
   },
 })
+
+const goToTopicDetail = () => {
+  router.push(`/topicdetail/${props.id}`)
+}
 </script>
 
 <style scoped>
