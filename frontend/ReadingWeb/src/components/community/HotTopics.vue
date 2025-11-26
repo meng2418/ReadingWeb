@@ -16,6 +16,10 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+// 获取路由实例
+const router = useRouter()
+
 interface Topic {
   id: number
   name: string
@@ -45,7 +49,13 @@ const topics = props.topics || defaultTopics
 const handleTopicClick = (topic: Topic) => {
   console.log('点击话题:', topic.name)
   // 这里可以触发事件或跳转
+  goToTopicDetail(topic.id)  // 添加跳转
   emit('topicClick', topic)
+}
+
+// 添加跳转函数
+const goToTopicDetail = (topicId: number) => {
+  router.push(`/topicdetail/${topicId}`)
 }
 
 // 定义事件
