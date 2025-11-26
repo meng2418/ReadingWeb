@@ -633,7 +633,7 @@ function stringToHash(str: string): number {
 
 /* 左侧导航 */
 .left-nav {
-  width: 250px;
+  width: 160px;
   background: white;
   border-radius: 0;
   padding: 0;
@@ -653,12 +653,12 @@ function stringToHash(str: string): number {
 }
 
 .nav-item {
-  padding: 25px 30px;
+  padding: 16px 20px;
   cursor: pointer;
   border-radius: 8px;
   margin-bottom: 8px;
   transition: all 0.2s;
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 400;
   color: #0e1017;
   background: white;
@@ -692,10 +692,10 @@ function stringToHash(str: string): number {
 }
 
 .ranking-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 8px 0;
+  margin: 16px 0 4px 0;
 }
 
 /* 分类标签栏样式 */
@@ -711,7 +711,7 @@ function stringToHash(str: string): number {
   padding: 16px 8px;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 400;
   color: #333;
   text-align: center;
@@ -740,10 +740,10 @@ function stringToHash(str: string): number {
 .ranking-item {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 20px;
   background: white;
   border-radius: 0;
-  padding: 20px;
+  padding: 10px;
   box-shadow: none;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s ease;
@@ -760,10 +760,10 @@ function stringToHash(str: string): number {
 
 .ranking-number {
   font-style: italic;
-  font-size: 60px;
+  font-size: 20px;
   font-weight: bold;
   color: #424242;
-  min-width: 80px;
+  min-width: 60px;
   text-align: center;
   justify-content: center;
   margin-top: 0;
@@ -790,8 +790,8 @@ function stringToHash(str: string): number {
     font-size: 22px;
   }
   .ranking-number {
-    font-size: 50px;
-    min-width: 70px;
+    font-size: 25px;
+    min-width: 40px;
   }
 }
 
@@ -817,8 +817,8 @@ function stringToHash(str: string): number {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
   .ranking-number {
-    font-size: 45px;
-    min-width: 60px;
+    font-size: 30px;
+    min-width: 40px;
   }
 }
 
@@ -860,12 +860,12 @@ function stringToHash(str: string): number {
     padding: 14px 8px;
   }
   .ranking-item {
-    padding: 15px;
+    padding: 10px;
     gap: 20px;
   }
   .ranking-number {
-    font-size: 40px;
-    min-width: 50px;
+    font-size: 25px;
+    min-width: 35px;
   }
 }
 

@@ -82,28 +82,22 @@ export default {
 <style scoped>
 .book-card-super-big {
   display: flex;
-  background: transparent; /* 改为透明背景 */
-  border-radius: 0; /* 移除圆角 */
-  box-shadow: none; /* 移除阴影 */
-  padding: 0; /* 移除内边距 */
-  max-width: 100%; /* 改为100%宽度 */
-  margin: 0; /* 移除外边距 */
-  gap: 20px;
-  transition: none; /* 移除过渡效果 */
-  align-items: center;
-}
-
-/* 恢复悬停效果 */
-.book-card-super-big:hover {
-  transform: none;
-  background-color: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+  gap: 16px;
+  transition: none;
+  align-items: flex-start; /* 改为顶部对齐 */
 }
 
 /* 图书封面样式 */
 .book-cover-container {
   flex-shrink: 0;
-  width: 220px;
-  height: 300px;
+  width: 120px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,8 +107,8 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 0; /* 移除圆角 */
-  box-shadow: none; /* 移除阴影 */
+  border-radius: 0;
+  box-shadow: none;
   display: block;
 }
 
@@ -122,16 +116,16 @@ export default {
   width: 100%;
   height: 100%;
   background: var(--primary-green);
-  border-radius: 0; /* 移除圆角 */
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
   text-align: center;
-  padding: 15px;
-  box-shadow: none; /* 移除阴影 */
+  padding: 10px;
+  box-shadow: none;
   word-break: break-word;
 }
 
@@ -140,34 +134,39 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 300px;
+  height: 190px; /* 固定高度与封面相同 */
+  overflow: hidden; /* 防止内容超出 */
 }
 
 .book-title {
-  font-size: 32px;
+  font-size: 22px; /* 稍微增大字体 */
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* 标题单行显示 */
 }
 
 .book-author {
-  font-size: 18px;
+  font-size: 14px;
   color: var(--text-secondary);
-  margin-bottom: 20px;
+  margin-bottom: 10px; /* 减小间距 */
   font-weight: 500;
 }
 
 .book-stats {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 20px;
+  gap: 8px;
+  padding-bottom: 0px; /* 减小内边距 */
   border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px; /* 减小与作品简介的间距 */
 }
 
 .readers-count {
-  font-size: 16px;
+  font-size: 12px;
   color: var(--secondary-green);
   font-weight: 600;
 }
@@ -177,7 +176,7 @@ export default {
 }
 
 .recommendation {
-  font-size: 16px;
+  font-size: 12px;
   color: var(--primary-green);
   font-weight: 600;
 }
@@ -185,41 +184,46 @@ export default {
 /* 作品简介样式 */
 .book-description {
   flex: 1;
-  max-height: calc(300px - 120px);
   overflow-y: auto;
+  padding-top: 0; /* 移除上边距 */
 }
 
 .description-title {
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 15px;
-  padding-bottom: 8px;
+  margin-bottom: 6px; /* 减小间距 */
+  padding-bottom: 4px;
   border-bottom: 2px solid var(--primary-green);
   display: inline-block;
 }
 
 .description-content {
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.4; /* 稍微减小行高 */
   color: var(--text-secondary);
   text-align: justify;
   margin: 0;
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3; /* 限制显示3行 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* 自定义滚动条样式 */
 .book-description::-webkit-scrollbar {
-  width: 6px;
+  width: 4px; /* 减小滚动条宽度 */
 }
 
 .book-description::-webkit-scrollbar-track {
   background: var(--background-color);
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 .book-description::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 .book-description::-webkit-scrollbar-thumb:hover {
@@ -230,37 +234,45 @@ export default {
 @media (max-width: 768px) {
   .book-card-super-big {
     flex-direction: column;
-    gap: 25px;
+    gap: 16px;
+    align-items: center; /* 居中对齐 */
   }
 
   .book-cover-container {
     width: 100%;
-    max-width: 220px;
-    height: 300px;
+    max-width: 140px;
+    height: 190px;
     margin: 0 auto;
   }
 
   .book-info {
-    min-height: auto;
+    height: auto; /* 移动端取消固定高度 */
+    min-height: 160px;
   }
 
   .book-title {
-    font-size: 26px;
+    font-size: 20px;
+    white-space: normal; /* 移动端允许标题换行 */
   }
 
   .book-author {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .book-stats {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 4px;
   }
 
   .book-description {
     max-height: none;
     overflow-y: visible;
+  }
+
+  .description-content {
+    line-clamp: unset;
+    -webkit-line-clamp: unset; /* 移动端取消行数限制 */
   }
 }
 </style>
