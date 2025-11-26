@@ -45,16 +45,12 @@
     <!-- 底部卡片操作 -->
     <div class="card-actions">
       <div class="balance-box">
-        <span>赠币</span>
-        <span class="balance-num">{{ user.giftCoin }}</span>
+        <span>体验卡</span>
+        <span class="balance-num">{{ user.giftVIP }} 天</span>
       </div>
       <div class="balance-box">
         <span>充值币</span>
         <span class="balance-num">{{ user.payCoin }}</span>
-      </div>
-      <div class="balance-box">
-        <span>体验卡</span>
-        <span class="balance-num">{{ user.giftVIP }} 天</span>
       </div>
       <button class="vip-btn">成为会员</button>
     </div>
@@ -77,7 +73,6 @@ const user = ref({
     posts: 5,
   },
   payCoin: 180,
-  giftCoin: 45,
   giftVIP: 12,
 })
 </script>

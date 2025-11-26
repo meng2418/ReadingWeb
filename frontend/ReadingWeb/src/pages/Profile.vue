@@ -1,3 +1,4 @@
+<!-- Profile.vue -->
 <template>
   <NavBar />
   <div class="profile-page">
@@ -11,19 +12,13 @@
       </aside>
 
       <main class="right-dashboard">
-        <ReadingDashboard />
+        <ReadingDashboard :initialTab="$route.query.tab" />
       </main>
     </section>
   </div>
 </template>
 
 <script setup>
-/**
- * 假设你的组件目录结构如下：
- * src/components/user/UserProfile.vue
- * src/components/user/SidebarRankings.vue
- * src/components/user/ReadingDashboard.vue
- */
 import NavBar from '@/components/layout/NavBar.vue'
 import UserProfile from '@/components/user/UserProfile.vue'
 import SidebarRankings from '@/components/user/SidebarRankings.vue'

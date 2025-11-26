@@ -1,3 +1,4 @@
+<!-- ReadingDashboard.vue -->
 <template>
   <div class="dashboard-card">
     <div class="nav-tabs">
@@ -28,12 +29,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import HistoryView from '@/components/user/HistoryView.vue'
 import ReadingStats from '@/components/user/ReadingStats.vue'
 import StatsView from '@/components/user/StatsView.vue'
 
-const currentTab = ref('week') // 默认显示月度统计
+const props = defineProps({
+  initialTab: {
+    type: String,
+    default: 'week',
+  },
+})
+
+const currentTab = ref(props.initialTab)
 
 const tabs = [
   { label: '周', key: 'week' },
@@ -62,6 +70,14 @@ const historyRecords = ref([
       '尼采略略地笑着，“我知道她如何在这点上反应。她对传统婚姻显得并不宽容，她认为它是女性卖身契的一种委婉说法。”“就是她跟我说的话！”',
   },
 ])
+
+// 允许用户在个人中心内切换 tab，同时当路由变化时也跟着变
+watch(
+  () => props.initialTab,
+  (newTab) => {
+    if (newTab) currentTab.value = newTab
+  },
+)
 </script>
 
 <style scoped>

@@ -9,6 +9,7 @@ import Topic from '@/components/community/TopicCard.vue'
 import avatarImg from '@/img/avatar.jpg'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import CommentItem from '@/components/community/Mine/CommentItem.vue'
+import LikeItem from '@/components/community/Mine/LikeItem.vue'
 // 当前用户信息
 const currentUser = reactive({
   username: '阅读爱好者',
@@ -128,8 +129,8 @@ const commentList = [
     user: {
       avatar: 'https://picsum.photos/id/1005/200', // 占位头像（随机图片）
       username: '吴克天行者',
-      rightCardText: '我操，V他乡遇故知，注那年夏天你啊啊啊啊啊啊啊没形状是一', // 长文本
     },
+    rightCardText: '我操，V他乡遇故知，注那年夏天你啊啊啊啊啊啊啊没形状是一', // 长文本
     content: '最后一句出处是支线任务 意见领袖',
     time: '2025年8月31日 08:25',
   },
@@ -137,8 +138,8 @@ const commentList = [
     user: {
       avatar: 'https://picsum.photos/id/1012/200',
       username: '摸鱼达人',
-      rightCardText: '短文本测试', // 短文本（不省略）
     },
+    rightCardText: '短文本测试', // 短文本（不省略）
     content: '这个支线任务还挺有意思的，推荐大家做',
     time: '2025年8月30日 15:42',
   },
@@ -146,8 +147,8 @@ const commentList = [
     user: {
       avatar: 'https://picsum.photos/id/1027/200',
       username: '游戏宅',
-      rightCardText: '当年玩的时候卡了好久，后来查攻略才知道这里有隐藏剧情，现在想起来还是很怀念', // 超长文本
     },
+    rightCardText: '当年玩的时候卡了好久，后来查攻略才知道这里有隐藏剧情，现在想起来还是很怀念', // 超长文本
     content: '赞同！这段台词我记了好久',
     time: '2025年8月29日 09:18',
   },
@@ -155,8 +156,8 @@ const commentList = [
     user: {
       avatar: 'https://picsum.photos/id/1074/200',
       username: '剧情党',
-      rightCardText: '支线比主线还精彩系列，开发商太良心了', // 中等长度
     },
+    rightCardText: '支线比主线还精彩系列，开发商太良心了', // 中等长度
     content: '有没有类似的支线推荐？求安利',
     time: '2025年8月28日 22:05',
   },
@@ -164,15 +165,35 @@ const commentList = [
     user: {
       avatar: 'https://picsum.photos/id/1084/200',
       username: '路过打酱油',
-      rightCardText: '123456789012345678901234567890', // 纯数字长文本
     },
+    rightCardText: '123456789012345678901234567890', // 纯数字长文本
     content: '打卡，顺便问下楼主这游戏现在还能玩吗？',
     time: '2025年8月27日 16:30',
   },
 ]
-
+const likeList = [
+  {
+    user: {
+      avatar: 'https://picsum.photos/id/1084/200', // 占位头像（随机
+      username: '书评达人',
+    },
+    rightCardText:
+      '支线比主线还精彩系列，开发商太良心了.当年玩的时候卡了好久，后来查攻略才知道这里有隐藏剧情，现在想起来还是很怀念', // 长文本
+    time: '2025年8月31日 10:15',
+  },
+  {
+    user: {
+      avatar: 'https://picsum.photos/id/1074/200',
+      username: '文学爱好者',
+    },
+    rightCardText: '短文本测试',
+    time: '2025年8月30日 14:50',
+  },
+]
 const currentTab = ref<'square' | 'following' | 'topics' | 'mine'>('square')
 const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => (currentTab.value = tab)
+// “我的”内部的二级 Tab
+const mineTab = ref<'like' | 'comment'>('comment')
 
 const filteredPosts = computed(() => {
   switch (currentTab.value) {
@@ -260,10 +281,26 @@ const handleShare = (postId: number): void => {
             :number="topic.number"
           />
         </div>
+        <!--我的-->
         <div v-else-if="currentTab === 'mine'" class="mine-grid">
-          <!-- 循环5个评论组件 -->
-          <CommentItem v-for="(item, index) in commentList" :key="index" :comment="item" />
+          <div class="mine-tabs">
+            <button :class="{ active: mineTab === 'comment' }" @click="mineTab = 'comment'">
+              评论
+            </button>
+            <button :class="{ active: mineTab === 'like' }" @click="mineTab = 'like'">赞</button>
+          </div>
+
+          <!-- 评论 -->
+          <div v-if="mineTab === 'comment'">
+            <CommentItem v-for="(item, index) in commentList" :key="index" :comment="item" />
+          </div>
+
+          <!-- 赞 -->
+          <div v-else>
+            <LikeItem v-for="(item, index) in likeList" :key="index" :like="item" />
+          </div>
         </div>
+        <!-- 帖子列表 -->
         <div v-else class="posts-list">
           <PostCard
             v-for="post in filteredPosts"
@@ -318,16 +355,58 @@ const handleShare = (postId: number): void => {
 .tabs {
   grid-column: 1 / -1;
   display: flex;
-  gap: 12px;
+  /* 关键：为父容器添加整体的白色背景、边框和圆角 */
+  background-color: #fff;
+  border: 1px solid #e5e7eb; /* 淡灰色边框 */
+  border-radius: 12px; /* 圆润的 corners */
+  overflow: hidden; /* 确保内部按钮的圆角不会溢出 */
+  width: 800px;
 }
+
 .tabs button {
+  /* 关键：让按钮填满父容器的空间，并去掉边框和背景 */
+  flex: 1; /* 四个按钮平分宽度 */
   background: none;
   border: none;
+  outline: none;
+
+  /* 内边距和字体 */
+  padding: 10px 0; /* 上下 padding，左右由 flex 自动分配 */
   cursor: pointer;
-  font-size: 20px;
-  color: #888;
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280; /* 灰色文字 */
+
+  /* 过渡效果 */
+  transition: all 0.2s ease;
 }
+
+/* Hover 状态 */
+.tabs button:hover {
+  color: #1f2937; /* 深灰色文字 */
+  background-color: var(--shadow-green);
+}
+
+/* Active 激活状态 */
 .tabs button.active {
+  color: var(--primary-green);
+  font-weight: 600;
+}
+.mine-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.mine-tabs button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #888;
+  cursor: pointer;
+}
+
+.mine-tabs button.active {
   font-weight: 600;
   color: #333;
 }
