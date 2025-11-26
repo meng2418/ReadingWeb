@@ -2,6 +2,7 @@
   <div class="user-posts-page">
     <NavBar title="我的发布" />
     <BackToTop />
+    <FloatingAddButton/>
     <div class="page-content">
       <!-- 返回按钮 -->
       <div class="back-button-container">
@@ -118,6 +119,7 @@ import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import { Heart } from 'lucide-vue-next'
+import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 
 // 定义 props 接收路由参数
 interface Props {
@@ -292,7 +294,7 @@ const handleDeletePost = async (postId: number) => {
   border-color: #cbd5e0;
 }
 
-/* 美化版个人资料卡片 */
+/* 个人资料卡片 */
 .profile-card {
   background: white;
   border-radius: 12px;
@@ -306,7 +308,6 @@ const handleDeletePost = async (postId: number) => {
 
 .profile-bg {
   height: 80px;
-  background: #f8fafc;
   position: relative;
 }
 
@@ -373,14 +374,17 @@ const handleDeletePost = async (postId: number) => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #f8fafc;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-  cursor: pointer;
+  /* 移除背景色和圆角 */
+  background: transparent;
+  border-radius: 0;
+  /* 移除指针样式和过渡效果 */
+  cursor: default;
+  transition: none;
 }
 
+/* 移除悬停效果 */
 .stat-item:hover {
-  background: #edf2f7;
+  background: transparent;
 }
 
 .stat-icon {
@@ -392,22 +396,26 @@ const handleDeletePost = async (postId: number) => {
 }
 
 .stat-icon .heart-icon {
-  transition: all 0.2s ease;
+  /* 移除过渡效果 */
+  transition: none;
 }
 
+/* 移除悬停效果 */
 .stat-item:hover .stat-icon .heart-icon {
-  stroke: #ff6b6b;
-  transform: scale(1.1);
+  stroke: #666;
+  transform: none;
 }
 
 .stat-icon .el-icon {
   color: #666;
-  transition: all 0.2s ease;
+  /* 移除过渡效果 */
+  transition: none;
 }
 
+/* 移除悬停效果 */
 .stat-item:hover .stat-icon .el-icon {
-  color: #64adf7;
-  transform: scale(1.1);
+  color: #666;
+  transform: none;
 }
 
 .stat-content {
