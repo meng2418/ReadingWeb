@@ -25,6 +25,11 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+
 interface User {
   username: string
   bio: string
@@ -57,6 +62,14 @@ const emit = defineEmits<{
 const handleStatClick = (type: 'follow' | 'fans' | 'post') => {
   console.log(`点击了${type}统计`)
   emit('statClick', type)
+
+  if (type === 'post') {
+    // 跳转到个人发布页面
+    router.push('/userposts')
+  } else {
+    emit('statClick', type)
+  }
+
 }
 </script>
 

@@ -12,7 +12,13 @@
         <div class="post-time">{{ postTime }}</div>
       </div>
 
-      <button class="follow-btn" :class="{ following: localIsFollowing }" @click="toggleFollow">
+      <!-- 条件渲染关注按钮 -->
+      <button
+        v-if="showFollowButton"
+        class="follow-btn"
+        :class="{ following: localIsFollowing }"
+        @click="toggleFollow"
+      >
         {{ localIsFollowing ? '已关注' : '+ 关注' }}
       </button>
     </div>
@@ -84,6 +90,7 @@ interface Props {
   isLiked: boolean
   book?: Book | null
   postId?: number // 补充postId类型定义，修复跳转TS警告
+  showFollowButton?: boolean  // 新增：控制是否显示关注按钮
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -91,6 +98,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: undefined,
   book: null,
   postId: undefined,
+  showFollowButton: true  // 默认显示关注按钮
 })
 
 const emit = defineEmits<{
@@ -172,7 +180,7 @@ const handleCardClick = () => {
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /*box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);*/
   border: 1px solid #f0f0f0;
 }
 
