@@ -1,7 +1,5 @@
 <template>
   <section class="comment-section">
-    <h3 class="section-title">评论区 ({{ comments.length }})</h3>
-
     <!-- Input Area -->
     <div class="comment-input-area">
       <img :src="currentUser.avatar" :alt="currentUser.name" class="user-avatar" />
@@ -192,20 +190,11 @@ const handleAddReply = (payload: { parentId: number; content: string }) => {
   border: 1px solid #f1f5f9; /* slate-100 */
   padding: 1.5rem; /* 24px */
 }
-
-/* 区域标题 */
-.section-title {
-  font-size: 1.25rem; /* 20px */
-  font-weight: 700;
-  color: #0f172a; /* slate-900 */
-  margin-bottom: 1.5rem; /* 24px */
-}
-
 /* 评论输入区域 */
 .comment-input-area {
   display: flex;
   gap: 1rem; /* 16px */
-  margin-bottom: 2.5rem; /* 40px */
+  margin-bottom: 10px;
   align-items: flex-start;
 }
 
