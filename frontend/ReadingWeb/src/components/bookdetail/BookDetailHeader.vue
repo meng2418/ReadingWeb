@@ -68,7 +68,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ShoppingCart } from '@element-plus/icons-vue'
-
+import router from '@/router'
 // 定义props
 interface Props {
   title: string
@@ -129,6 +129,7 @@ const handleBookshelfToggle = () => {
 // 开始阅读
 const handleStartReading = () => {
   emit('startReading')
+  router.push('/reader')
   console.log('开始阅读')
 }
 
