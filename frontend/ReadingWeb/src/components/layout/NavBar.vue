@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { Search } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user.js'
+import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
 const userStore = useUserStore()
 const defaultAvatar = 'https://picsum.photos/id/1027/200'
 

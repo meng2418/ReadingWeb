@@ -61,16 +61,25 @@ const emit = defineEmits<{
 // 统计项点击处理
 const handleStatClick = (type: 'follow' | 'fans' | 'post') => {
   console.log(`点击了${type}统计`)
-  emit('statClick', type)
 
-  if (type === 'post') {
-    // 跳转到个人发布页面
-    router.push('/userposts')
-  } else {
-    emit('statClick', type)
+  // 跳转到个人发布页面，并传递tab参数
+  switch (type) {
+    case 'post':
+      // 跳转到发布页面
+      router.push('/userposts?tab=posts')
+      break
+    case 'follow':
+      // 跳转到关注页面
+      router.push('/userposts?tab=following')
+      break
+    case 'fans':
+      // 跳转到粉丝页面
+      router.push('/userposts?tab=followers')
+      break
   }
-
 }
+
+
 </script>
 
 <style scoped>

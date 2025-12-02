@@ -47,50 +47,74 @@
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      todayRead: 46, // 用户今日阅读分钟数（示例）
-      streak: 3, // 连续阅读天数（示例）
+<script setup>
+import { ref } from 'vue'
+import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
+import { ElMessage } from 'element-plus' // 假设用Element Plus的提示组件（可选）
 
-      dailyTasks: [
-        { minutes: 5, claimed: false },
-        { minutes: 30, claimed: false },
-        { minutes: 60, claimed: false },
-        { minutes: 180, claimed: false },
-        { minutes: 300, claimed: false },
-      ],
+// 1. 响应式数据定义
+const todayRead = ref(46) // 用户今日阅读分钟数
+const streak = ref(3) // 连续阅读天数
+const dailyTasks = ref([
+  { minutes: 5, claimed: false },
+  { minutes: 30, claimed: false },
+  { minutes: 60, claimed: false },
+  { minutes: 180, claimed: false },
+  { minutes: 300, claimed: false },
+])
+const streakTasks = ref([
+  { days: 2, claimed: false },
+  { days: 4, claimed: false },
+  { days: 7, claimed: false },
+])
 
-      streakTasks: [
-        { days: 2, claimed: false },
-        { days: 4, claimed: false },
-        { days: 7, claimed: false },
-      ],
-    }
-  },
+// 2. Pinia store（用于组件间共享giftVIP数据）
+const userStore = useUserStore()
 
-  methods: {
-    formatMinutes(m) {
-      if (m < 60) return `${m} 分钟`
-      const h = m / 60
-      return `${h} 小时`
-    },
-
-    getDailyProgress(task) {
-      const val = Math.min((this.todayRead / task.minutes) * 100, 100)
-      return val.toFixed(2)
-    },
-
-    claimDaily(task) {
-      if (this.todayRead >= task.minutes) task.claimed = true
-    },
-
-    claimStreak(task) {
-      if (this.streak >= task.days) task.claimed = true
-    },
-  },
+// 3. 工具方法
+const formatMinutes = (m) => {
+  if (m < 60) return `${m} 分钟`
+  const h = m / 60
+  return `${h} 小时`
 }
+
+const getDailyProgress = (task) => {
+  const val = Math.min((todayRead.value / task.minutes) * 100, 100)
+  return val.toFixed(2)
+}
+
+// 4. 领取奖励的核心逻辑
+const claimReward = async (task, type) => {
+  try {
+    // 4.1 调用后端接口（提交领取请求，防止重复领取）
+    const res = await fetch('/api/claim-reward', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, param: type === 'daily' ? task.minutes : task.days }),
+    })
+    const data = await res.json()
+
+    if (data.success) {
+      // 4.2 更新本地任务状态（标记为已领取，避免UI重复交互）
+      task.claimed = true
+
+      // 4.3 更新用户体验卡数据（同步到UserProfile.vue的giftVIP）
+      userStore.giftVIP += 2 // 奖励2天体验卡
+
+      // 4.4 前端提示反馈
+      ElMessage.success('领取成功！获得2天体验卡')
+    } else {
+      ElMessage.error(data.message || '领取失败，请稍后重试')
+    }
+  } catch (err) {
+    ElMessage.error('网络异常，领取失败')
+    console.error('领取奖励失败：', err)
+  }
+}
+
+// 4.5 分类型领取方法
+const claimDaily = (task) => claimReward(task, 'daily')
+const claimStreak = (task) => claimReward(task, 'streak')
 </script>
 
 <style scoped>
