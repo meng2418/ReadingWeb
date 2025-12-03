@@ -44,7 +44,6 @@ import { ref } from 'vue'
 // 引入 Check 图标用于“已加入”状态
 import { BookOpen, Library, User, Check } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
-// ❌ 删除: import { userInfo } from 'os' (这是服务端代码，浏览器运行会报错)
 
 interface Props {
   title: string
@@ -60,7 +59,6 @@ const userStore = useUserStore()
 userStore.login('TestUser', 'https://picsum.photos/id/1027/200')
 
 // --- 书架功能逻辑 ---
-
 // 状态：是否已在书架（实际项目中这里应该根据 API 返回的初始化数据来设定）
 const isAdded = ref(false)
 

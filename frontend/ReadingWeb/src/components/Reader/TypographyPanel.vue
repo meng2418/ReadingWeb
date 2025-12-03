@@ -1,12 +1,13 @@
+<!--TypographyPanel.vue-->
 <template>
   <!-- 排版设置面板 -->
   <div class="typography-panel" :class="isDarkMode ? 'dark-mode' : ''">
-    <h3 class="panel-title">Typography</h3>
+    <h3 class="panel-title">字体</h3>
 
     <!-- 字体大小设置 -->
     <div class="setting-group">
       <div class="setting-header">
-        <span class="setting-label">Size</span>
+        <span class="setting-label">大小</span>
         <span class="setting-value">{{ settings.fontSize }}px</span>
       </div>
 
@@ -24,7 +25,7 @@
     <!-- 行高设置 -->
     <div class="setting-group">
       <div class="setting-header">
-        <span class="setting-label">Spacing</span>
+        <span class="setting-label">间距</span>
         <span class="setting-value">{{ settings.lineHeight }}</span>
       </div>
 

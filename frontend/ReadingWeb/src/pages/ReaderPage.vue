@@ -1,7 +1,87 @@
-<script setup lang="ts">
-import { ref, reactive } from 'vue'
+<!-- ReaderPage.vue -->
+<template>
+  <div :class="['app-container', isDarkMode ? 'dark-mode' : '']">
+    <TopNavigation title="她既想死，又想去巴黎" :isDarkMode="isDarkMode" />
 
-// 组件路径
+    <!-- 侧边面板组件 -->
+    <NotesPanel
+      :isOpen="activePanel === 'notes'"
+      :onClose="closePanels"
+      :notes="mockNotes"
+      :isDarkMode="isDarkMode"
+    />
+
+    <TableOfContents
+      :isOpen="activePanel === 'toc'"
+      :onClose="closePanels"
+      :chapters="chapters"
+      :currentChapterId="currentChapterId"
+      :onSelectChapter="handleChapterSelect"
+      :isDarkMode="isDarkMode"
+    />
+
+    <!-- 主要内容区域 -->
+    <div class="content-wrapper">
+      <!-- 
+        核心修改：ReaderViewport
+        1. 设定固定高度 (calc(100vh - 120px))
+        2. 设定最大宽度
+        3. 内部元素没有任何 padding，全部交给 ReaderContent 处理
+      -->
+      <div class="reader-viewport">
+        <ReaderContent
+          class="reader-content-root"
+          :pageData="samplePageData"
+          :isDarkMode="isDarkMode"
+          :typography="typography"
+          :annotationMode="isAnnotationMode"
+          :showThoughts="showThoughts"
+          :readingMode="readingMode"
+          @onActiveThought="handleActiveThought"
+          :onActiveThought="handleActiveThought"
+          :onTextSelection="() => {}"
+        />
+      </div>
+
+      <!-- 浮动菜单 -->
+      <FloatingMenu
+        :isDarkMode="isDarkMode"
+        :toggleTheme="toggleTheme"
+        :onToggleTOC="() => togglePanel('toc')"
+        :onToggleTypography="() => togglePanel('typography')"
+        :onToggleAnnotation="() => togglePanel('notes')"
+        :onToggleThoughts="handleToggleThoughts"
+        :onToggleReadingMode="handleToggleReadingMode"
+        :activePanel="activePanel"
+        :isAnnotationMode="activePanel === 'notes'"
+        :showThoughts="showThoughts"
+        :readingMode="readingMode"
+      />
+
+      <!-- 字体设置面板 -->
+      <TypographyPanel
+        v-if="activePanel === 'typography'"
+        :settings="typography"
+        :updateSettings="updateTypography"
+        :isDarkMode="isDarkMode"
+      />
+
+      <!-- 想法气泡 -->
+      <ThoughtsBubble
+        :isOpen="!!activeThought"
+        :onClose="() => (activeThought = null)"
+        :comments="mockComments"
+        :isDarkMode="isDarkMode"
+        :quoteText="activeThought?.text || ''"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+
+// 组件路径 - 请根据实际项目路径确认
 import TopNavigation from '@/components/Reader/TopNavigation.vue'
 import FloatingMenu from '@/components/Reader/FloatingMenu.vue'
 import ReaderContent from '@/components/Reader/ReaderContent.vue'
@@ -35,7 +115,6 @@ const chapters = [
   { id: '5', title: '第四章：别离之苦', page: 45 },
 ]
 
-// ==== 整合增添的代码 - START (新增数据) ====
 const mockNotes = [
   {
     id: 'n1',
@@ -85,7 +164,6 @@ const mockComments = [
 
 // 响应式状态
 const isDarkMode = ref(false)
-// activePanel 增加 'notes' 类型
 const activePanel = ref<'none' | 'toc' | 'typography' | 'notes'>('none')
 const isAnnotationMode = ref(false)
 const showThoughts = ref(false)
@@ -100,13 +178,12 @@ const activeThought = ref<{ index: number; text: string } | null>(null)
 // 方法
 function toggleTheme() {
   isDarkMode.value = !isDarkMode.value
-
   if (isDarkMode.value) {
     document.body.classList.add('dark-mode')
-    document.body.style.backgroundColor = '#18181b' // 确保 body 背景色同步
+    document.body.style.backgroundColor = '#18181b'
   } else {
     document.body.classList.remove('dark-mode')
-    document.body.style.backgroundColor = '#f3f4f6' // 确保 body 背景色同步
+    document.body.style.backgroundColor = '#f3f4f6'
   }
 }
 
@@ -117,7 +194,7 @@ function closePanels() {
 
 function togglePanel(panel: 'toc' | 'typography' | 'notes') {
   activePanel.value = activePanel.value === panel ? 'none' : panel
-  activeThought.value = null // 打开面板时关闭想法气泡
+  activeThought.value = null
 }
 
 function handleChapterSelect(id: string) {
@@ -147,80 +224,18 @@ function handleActiveThought(index: number, text: string) {
 }
 </script>
 
-<template>
-  <div :class="['app-container', isDarkMode ? 'dark-mode' : '']">
-    <TopNavigation title="她既想死，又想去巴黎" :isDarkMode="isDarkMode" />
-
-    <NotesPanel
-      :isOpen="activePanel === 'notes'"
-      :onClose="closePanels"
-      :notes="mockNotes"
-      :isDarkMode="isDarkMode"
-    />
-
-    <TableOfContents
-      :isOpen="activePanel === 'toc'"
-      :onClose="closePanels"
-      :chapters="chapters"
-      :currentChapterId="currentChapterId"
-      :onSelectChapter="handleChapterSelect"
-      :isDarkMode="isDarkMode"
-    />
-
-    <div class="content-wrapper">
-      <ReaderContent
-        :pageData="samplePageData"
-        :isDarkMode="isDarkMode"
-        :typography="typography"
-        :annotationMode="isAnnotationMode"
-        :showThoughts="showThoughts"
-        :readingMode="readingMode"
-        @onActiveThought="handleActiveThought"
-        :onActiveThought="handleActiveThought"
-        :onTextSelection="() => {}"
-      />
-
-      <FloatingMenu
-        :isDarkMode="isDarkMode"
-        :toggleTheme="toggleTheme"
-        :onToggleTOC="() => togglePanel('toc')"
-        :onToggleTypography="() => togglePanel('typography')"
-        :onToggleAnnotation="() => togglePanel('notes')"
-        :onToggleThoughts="handleToggleThoughts"
-        :onToggleReadingMode="handleToggleReadingMode"
-        :activePanel="activePanel"
-        :isAnnotationMode="activePanel === 'notes'"
-        :showThoughts="showThoughts"
-        :readingMode="readingMode"
-      />
-
-      <TypographyPanel
-        v-if="activePanel === 'typography'"
-        :settings="typography"
-        :updateSettings="updateTypography"
-        :isDarkMode="isDarkMode"
-      />
-
-      <ThoughtsBubble
-        :isOpen="!!activeThought"
-        :onClose="() => (activeThought = null)"
-        :comments="mockComments"
-        :isDarkMode="isDarkMode"
-        :quoteText="activeThought?.text || ''"
-      />
-    </div>
-  </div>
-</template>
-
 <style scoped>
 /* 应用容器样式 */
 .app-container {
-  min-height: 100vh;
+  height: 100vh; /* 强制占满一屏 */
+  overflow: hidden; /* 防止外层出现双重滚动条 */
   transition:
     color 300ms,
     background-color 300ms;
   background-color: #f3f4f6;
   color: #1f2937;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 深色模式样式 */
@@ -229,9 +244,42 @@ function handleActiveThought(index: number, text: string) {
   color: #d4d4d8;
 }
 
-/* 内容包装器 */
+/* 内容包装器：负责居中和分配剩余空间 */
 .content-wrapper {
+  flex: 1; /* 占满除了 TopNavigation 之外的空间 */
   position: relative;
-  min-height: calc(100vh - 80px);
+  display: flex;
+  justify-content: center;
+  align-items: center; /* 垂直居中 */
+  overflow: hidden;
+  padding: 0 1rem; /* 左右留一点空隙 */
+}
+
+/* 
+  === 核心容器限制 === 
+  这个类控制阅读器在屏幕上的物理尺寸
+*/
+.reader-viewport {
+  width: 100%;
+  max-width: 1200px; /* 限制最大宽度，避免在宽屏上太长 */
+
+  /* 
+    高度计算：
+    100vh - (导航栏高度 + 上下边距)
+    假设导航栏约 60px，这里预留 120px 足够宽松
+  */
+  height: calc(100vh - 120px);
+
+  position: relative;
+  /* 
+    注意：这里不要加 padding 或 overflow
+    把布局控制权完全交给内部的 ReaderContent
+  */
+}
+
+/* 确保内部根节点填满视口 */
+:deep(.reader-content-root) {
+  width: 100%;
+  height: 100%;
 }
 </style>
