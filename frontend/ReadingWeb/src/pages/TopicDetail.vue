@@ -2,7 +2,7 @@
   <div class="topic-detail">
     <NavBar />
     <FloatingAddButton :current-topic="topic" />  <!-- 添加发布按钮 -->
-
+    <BackToTop />
     <!-- 话题头部 -->
     <div class="topic-header">
       <div class="topic-cover" :style="{ backgroundImage: `url(${topic.cover})` }">
@@ -134,6 +134,9 @@ import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import { watch } from 'vue'
+import BackToTop from '@/components/layout/BackToTop.vue'
+
+
 const route = useRoute()
 const router = useRouter()
 const topicId = route.params.id as string
