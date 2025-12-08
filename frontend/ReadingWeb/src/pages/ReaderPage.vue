@@ -261,14 +261,14 @@ function handleActiveThought(index: number, text: string) {
 */
 .reader-viewport {
   width: 100%;
-  max-width: 1200px; /* 限制最大宽度，避免在宽屏上太长 */
+  max-width: 1400px; /* 限制最大宽度，避免在宽屏上太长 */
 
   /* 
     高度计算：
     100vh - (导航栏高度 + 上下边距)
     假设导航栏约 60px，这里预留 120px 足够宽松
   */
-  height: calc(100vh - 120px);
+  height: calc(100vh - 90px);
 
   position: relative;
   /* 

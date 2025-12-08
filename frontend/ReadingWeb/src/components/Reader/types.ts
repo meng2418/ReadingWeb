@@ -21,4 +21,32 @@ export interface Chapter {
   page: number
 }
 
+export interface Note {
+  id: string
+  chapterId: string
+  quote: string
+  note: string
+  date: string
+}
+
+export interface Comment {
+  id: string
+  username: string
+  avatar: string
+  content: string
+  likes: number
+  date: string
+}
+
+export interface Annotation {
+  id: string
+  chapterId: string
+  pIndex: number
+  start: number
+  end: number
+  type: 'marker' | 'wave' | 'line' | 'thought'
+  noteId?: string // Optional link to a note
+  data?: any
+}
+
 export type ReadingMode = 'paged' | 'scroll'
