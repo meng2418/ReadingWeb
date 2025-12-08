@@ -1,6 +1,6 @@
 package com.weread.service.external;
 
-import com.weread.dto.asset.PaymentPreOrderVO;
+import com.weread.vo.asset.PaymentPreOrderVO;
 
 /**
  * PaymentGatewayService - 外部支付网关集成服务

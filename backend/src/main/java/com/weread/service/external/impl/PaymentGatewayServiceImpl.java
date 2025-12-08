@@ -1,7 +1,7 @@
 package com.weread.service.external.impl;
 
 import com.weread.service.external.PaymentGatewayService;
-import com.weread.dto.asset.PaymentPreOrderVO;
+import com.weread.vo.asset.PaymentPreOrderVO;
 import com.weread.payment.client.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

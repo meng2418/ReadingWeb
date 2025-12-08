@@ -12,7 +12,7 @@ public class LoginLogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long loginLogId;
 
     private Long userId; // 关联的用户ID
     
@@ -20,6 +20,8 @@ public class LoginLogEntity {
     
     @Column(length = 64)
     private String ipAddress; // 登录IP地址
+
+    private String loginLocation; // 登录地点
     
     @Column(length = 255)
     private String device; // 设备信息 (User-Agent)

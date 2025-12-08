@@ -1,5 +1,4 @@
 package com.weread.dto.asset;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -25,7 +24,4 @@ public class RechargeOrderDTO {
      */
     private String clientIp;
     
-    // 如果没有套餐ID，而是自定义金额，则需要以下字段：
-    // @Min(value = 100, message = "充值金额不能低于1元")
-    // private Integer amountCents;
 }

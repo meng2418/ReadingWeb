@@ -5,62 +5,65 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * Êé¼®ÊµÌåÀà£¨¶ÔÓ¦Êý¾Ý¿â±í book_info£©
+ * ï¿½é¼®Êµï¿½ï¿½ï¿½à£¨ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ book_infoï¿½ï¿½
  */
 @Data
 @Entity
-@Table(name = "book_info") // ÓëÊý¾Ý¿â±íÃû±£³ÖÒ»ÖÂ
+@Table(name = "Book_info") // ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
 public class BookEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // ×ÔÔöÖ÷¼ü
-    @Column(name = "book_id") // Ó³ÉäÊý¾Ý¿â×Ö¶Î bookId
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    @Column(name = "book_id") // Ó³ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ö¶ï¿½ bookId
     private Integer bookId;
 
-    @Column(nullable = false) // ·Ç¿Õ×Ö¶Î
-    private String title; // Êé¼®±êÌâ
+    @Column(nullable = false) // ï¿½Ç¿ï¿½ï¿½Ö¶ï¿½
+    private String title; // ï¿½é¼®ï¿½ï¿½ï¿½ï¿½
 
-    @Column(name = "author_id", nullable = false) // Íâ¼ü×Ö¶Î£¬¹ØÁª×÷Õß±í
+    @Column(name = "author_id", nullable = false) // ï¿½ï¿½ï¿½ï¿½Ö¶Î£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß±ï¿½
     private Integer authorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "authorId", insertable = false, updatable = false) // ä½¿ç”¨ authorId ä½œä¸ºå¤–é”®
+    private AuthorEntity author;
 
-    private String cover; // ·âÃæÍ¼Æ¬£¨ÔÊÐíÎªnull£©
+    private String cover; // ï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªnullï¿½ï¿½
 
-    @Column(columnDefinition = "TEXT") // ³¤ÎÄ±¾ÀàÐÍ£¬¶ÔÓ¦Êý¾Ý¿âµÄ@db.Text
-    private String description; // Êé¼®¼ò½é£¨ÔÊÐíÎªnull£©
+    @Column(columnDefinition = "TEXT") // ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½@db.Text
+    private String description; // ï¿½é¼®ï¿½ï¿½é£¨ï¿½ï¿½ï¿½ï¿½Îªnullï¿½ï¿½
 
-    @Column(name = "category_id", nullable = false) // Íâ¼ü×Ö¶Î£¬¹ØÁª·ÖÀà±í
+    @Column(name = "category_id", nullable = false) // ï¿½ï¿½ï¿½ï¿½Ö¶Î£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private Integer categoryId;
 
-    private String publisher; // ³ö°æÉç£¨ÔÊÐíÎªnull£©
+    private String publisher; // ï¿½ï¿½ï¿½ï¿½ï¿½ç£¨ï¿½ï¿½ï¿½ï¿½Îªnullï¿½ï¿½
 
     @Column(name = "publish_date")
-    private LocalDateTime publishDate; // ³ö°æÈÕÆÚ£¨ÔÊÐíÎªnull£©
+    private LocalDateTime publishDate; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½ï¿½ï¿½ï¿½ï¿½Îªnullï¿½ï¿½
 
-    private String isbn; // ISBN±àºÅ£¨ÔÊÐíÎªnull£©
+    private String isbn; // ISBNï¿½ï¿½Å£ï¿½ï¿½ï¿½ï¿½ï¿½Îªnullï¿½ï¿½
 
     @Column(name = "word_count")
-    private Integer wordCount; // ×ÖÊý
+    private Integer wordCount; // ï¿½ï¿½ï¿½ï¿½
 
-    private Integer price; // Êé±Ò¼Û¸ñ£¬Ä¬ÈÏ0
+    private Integer price; // ï¿½ï¿½Ò¼Û¸ï¿½Ä¬ï¿½ï¿½0
 
     @Column(name = "is_free")
-    private Boolean isFree; // ÊÇ·ñÃâ·Ñ£¬Ä¬ÈÏfalse
+    private Boolean isFree; // ï¿½Ç·ï¿½ï¿½ï¿½Ñ£ï¿½Ä¬ï¿½ï¿½false
 
-    private Float rating; // ÍÆ¼öÖµ£¬Ä¬ÈÏ0
+    private Float rating; // ï¿½Æ¼ï¿½Öµï¿½ï¿½Ä¬ï¿½ï¿½0
 
     @Column(name = "read_count")
-    private Integer readCount; // ÔÄ¶ÁÈËÊý£¬Ä¬ÈÏ0
+    private Integer readCount; // ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½0
 
-    @Column(name = "created_at", updatable = false) // ²»ÔÊÐí¸üÐÂ
-    private LocalDateTime createdAt; // ´´½¨Ê±¼ä£¬Ä¬ÈÏµ±Ç°Ê±¼ä
+    @Column(name = "created_at", updatable = false) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    private LocalDateTime createdAt; // ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä£¬Ä¬ï¿½Ïµï¿½Ç°Ê±ï¿½ï¿½
 
-    // ×Ô¶¯Ìî³ä´´½¨Ê±¼ä£¨Èç¹ûÊý¾Ý¿âÎ´ÉèÖÃÄ¬ÈÏÖµ£©
+    // ï¿½Ô¶ï¿½ï¿½ï¿½ä´´ï¿½ï¿½Ê±ï¿½ä£¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Î´ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Öµï¿½ï¿½
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        // ³õÊ¼»¯Ä¬ÈÏÖµ£¨Èç¹ûÊý¾Ý¿âÎ´ÉèÖÃÄ¬ÈÏÖµ£©
+        // ï¿½ï¿½Ê¼ï¿½ï¿½Ä¬ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Î´ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Öµï¿½ï¿½
         if (price == null) {
             price = 0;
         }

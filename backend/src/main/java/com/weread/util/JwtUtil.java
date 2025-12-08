@@ -107,8 +107,8 @@ public class JwtUtil {
     /**
      * 验证 Token 是否有效
      */
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String phone = extractPhone(token);
+    public boolean validateToken(String token, UserDetails userDetails) {
+        String phone = extractPhone(token);
         // 1. 手机号是否匹配 2. Token 是否过期
         return (phone.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }

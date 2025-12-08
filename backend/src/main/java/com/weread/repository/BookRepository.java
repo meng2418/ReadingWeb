@@ -6,19 +6,19 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * Êé¼®Êý¾Ý·ÃÎÊ½Ó¿Ú
+ * ï¿½é¼®ï¿½ï¿½ï¿½Ý·ï¿½ï¿½Ê½Ó¿ï¿½
  */
 @Repository
 public interface BookRepository extends JpaRepository<BookEntity, Integer> {
 
     /**
-     * ¸ù¾ÝÊé¼®ID²éÑ¯Êé¼®
-     * £¨Êé¼ÜÄ£¿éºËÐÄ·½·¨£ºÌí¼Ó/²éÑ¯Êé¼®Ê±ÐèÑéÖ¤Êé¼®ÊÇ·ñ´æÔÚ£©
+     * ï¿½ï¿½ï¿½ï¿½ï¿½é¼®IDï¿½ï¿½Ñ¯ï¿½é¼®
+     * ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½Ñ¯ï¿½é¼®Ê±ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½é¼®ï¿½Ç·ï¿½ï¿½ï¿½Ú£ï¿½
      */
     Optional<BookEntity> findByBookId(Integer bookId);
 
     /**
-     * ¸ù¾ÝISBN²éÑ¯Êé¼®£¨ÓÃÓÚÐ£ÑéÊé¼®Î¨Ò»ÐÔ£©
+     * ï¿½ï¿½ï¿½ï¿½ISBNï¿½ï¿½Ñ¯ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½é¼®Î¨Ò»ï¿½Ô£ï¿½
      */
     Optional<BookEntity> findByIsbn(String isbn);
 }
