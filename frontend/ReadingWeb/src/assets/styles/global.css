@@ -41,3 +41,11 @@
     'Helvetica Neue', sans-serif;
   color: var(--text-main);
 }
+/* 确保在全局 CSS 文件中添加以下代码 */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%; /* 确保高度计算正确 */
+  width: 100%;
+}

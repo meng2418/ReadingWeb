@@ -216,7 +216,7 @@ const handleSend = () => {
 }
 
 .dark-mode .icon-btn {
-  color: #9ca3af;
+  color: #374151;
 }
 
 .icon-btn:hover {
@@ -284,6 +284,7 @@ const handleSend = () => {
   line-height: 1.625;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -478,7 +479,6 @@ const handleSend = () => {
 
 .send-btn.disabled {
   background-color: #f3f4f6;
-  color: #9ca3af;
   cursor: not-allowed;
 }
 .dark-mode .send-btn.disabled {

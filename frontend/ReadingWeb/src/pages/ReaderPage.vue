@@ -1,80 +1,82 @@
 <!-- ReaderPage.vue -->
 <template>
-  <div :class="['app-container', isDarkMode ? 'dark-mode' : '']">
-    <TopNavigation title="她既想死，又想去巴黎" :isDarkMode="isDarkMode" />
+  <div class="app-container" :class="{ 'dark-mode': isDarkMode }">
+    <TopNavigation title="她既想死，又想去巴黎" :isVisible="true" :isDarkMode="isDarkMode" />
 
-    <!-- 侧边面板组件 -->
-    <NotesPanel
-      :isOpen="activePanel === 'notes'"
-      :onClose="closePanels"
-      :notes="mockNotes"
-      :isDarkMode="isDarkMode"
-    />
+    <!-- SideMenu 已移除，如需恢复请 import 并注册组件 -->
 
     <TableOfContents
       :isOpen="activePanel === 'toc'"
-      :onClose="closePanels"
+      @close="closePanels"
       :chapters="chapters"
       :currentChapterId="currentChapterId"
-      :onSelectChapter="handleChapterSelect"
+      @select="handleChapterSelect"
       :isDarkMode="isDarkMode"
     />
 
-    <!-- 主要内容区域 -->
+    <NotesPanel
+      :isOpen="activePanel === 'notes'"
+      @close="closePanels"
+      :notes="notes"
+      :isDarkMode="isDarkMode"
+    />
+
     <div class="content-wrapper">
-      <!-- 
-        核心修改：ReaderViewport
-        1. 设定固定高度 (calc(100vh - 120px))
-        2. 设定最大宽度
-        3. 内部元素没有任何 padding，全部交给 ReaderContent 处理
-      -->
-      <div class="reader-viewport">
-        <ReaderContent
-          class="reader-content-root"
-          :pageData="samplePageData"
-          :isDarkMode="isDarkMode"
-          :typography="typography"
-          :annotationMode="isAnnotationMode"
-          :showThoughts="showThoughts"
-          :readingMode="readingMode"
-          @onActiveThought="handleActiveThought"
-          :onActiveThought="handleActiveThought"
-          :onTextSelection="() => {}"
-        />
-      </div>
-
-      <!-- 浮动菜单 -->
-      <FloatingMenu
+      <ReaderContent
+        :pageData="samplePageData"
         :isDarkMode="isDarkMode"
-        :toggleTheme="toggleTheme"
-        :onToggleTOC="() => togglePanel('toc')"
-        :onToggleTypography="() => togglePanel('typography')"
-        :onToggleAnnotation="() => togglePanel('notes')"
-        :onToggleThoughts="handleToggleThoughts"
-        :onToggleReadingMode="handleToggleReadingMode"
-        :activePanel="activePanel"
-        :isAnnotationMode="activePanel === 'notes'"
-        :showThoughts="showThoughts"
+        :typography="typography"
         :readingMode="readingMode"
-      />
-
-      <!-- 字体设置面板 -->
-      <TypographyPanel
-        v-if="activePanel === 'typography'"
-        :settings="typography"
-        :updateSettings="updateTypography"
-        :isDarkMode="isDarkMode"
-      />
-
-      <!-- 想法气泡 -->
-      <ThoughtsBubble
-        :isOpen="!!activeThought"
-        :onClose="() => (activeThought = null)"
-        :comments="mockComments"
-        :isDarkMode="isDarkMode"
-        :quoteText="activeThought?.text || ''"
+        :annotations="showThoughts ? annotations : annotations.filter((a) => a.type !== 'thought')"
+        @addAnnotation="handleAddAnnotation"
+        @activeThought="handleActiveThought"
+        @aiQuery="
+          (text) => {
+            aiSelectedText = text
+            aiPanelOpen = true
+          }
+        "
+        @textAction="handleTextAction"
       />
     </div>
+
+    <FloatingMenu
+      :isDarkMode="isDarkMode"
+      @toggleTheme="toggleTheme"
+      @toggleTOC="togglePanel('toc')"
+      @toggleTypography="togglePanel('typography')"
+      @toggleAnnotation="togglePanel('notes')"
+      @toggleThoughts="showThoughts = !showThoughts"
+      @toggleReadingMode="readingMode = readingMode === 'paged' ? 'scroll' : 'paged'"
+      :activePanel="activePanel"
+      :isAnnotationMode="activePanel === 'notes'"
+      :showThoughts="showThoughts"
+      :readingMode="readingMode"
+    />
+
+    <TypographyPanel
+      v-if="activePanel === 'typography'"
+      :settings="typography"
+      @update="(newSettings) => (typography = newSettings)"
+      :isDarkMode="isDarkMode"
+    />
+
+    <ThoughtsBubble
+      :isOpen="!!activeContext"
+      @close="activeContext = null"
+      :comments="activeContext?.type === 'view' ? mockComments : []"
+      :isDarkMode="isDarkMode"
+      :quoteText="activeContext?.text || ''"
+      @action="handleThoughtsBubbleAction"
+      @submit="submitNote"
+    />
+
+    <AIAnalysisPanel
+      :isOpen="aiPanelOpen"
+      @close="aiPanelOpen = false"
+      :selectedText="aiSelectedText"
+      :isDarkMode="isDarkMode"
+    />
   </div>
 </template>
 
@@ -90,8 +92,17 @@ import TableOfContents from '@/components/Reader/TableOfContents.vue'
 import NotesPanel from '@/components/Reader/NotesPanel.vue'
 import ThoughtsBubble from '@/components/Reader/ThoughtsBubble.vue'
 
-type ReadingMode = 'paged' | 'scroll'
+import type {
+  BookPage,
+  TypographySettings,
+  Chapter,
+  ReadingMode,
+  Note,
+  Comment,
+  Annotation,
+} from '@/components/Reader/types'
 
+type ReadingMode = 'paged' | 'scroll'
 // --------------------------
 // 示例数据
 // --------------------------
@@ -162,65 +173,138 @@ const mockComments = [
   },
 ]
 
-// 响应式状态
+const initialAnnotations: Annotation[] = [
+  {
+    id: 'init-1',
+    chapterId: '1',
+    pIndex: 5,
+    start: 33,
+    end: 80,
+    type: 'thought',
+    noteId: 'c1',
+  },
+]
+
+// State
 const isDarkMode = ref(false)
 const activePanel = ref<'none' | 'toc' | 'typography' | 'notes'>('none')
-const isAnnotationMode = ref(false)
-const showThoughts = ref(false)
+const showThoughts = ref(true)
 const readingMode = ref<ReadingMode>('paged')
-const typography = ref({
-  fontSize: 18,
-  lineHeight: 1.8,
-})
+const notes = ref<Note[]>(mockNotes) // 修复：mockNotes 不是 ref
+const annotations = ref<Annotation[]>(initialAnnotations)
+const aiPanelOpen = ref(false)
+const aiSelectedText = ref('')
+const typography = ref<TypographySettings>({ fontSize: 18, lineHeight: 1.8 })
 const currentChapterId = ref('1')
-const activeThought = ref<{ index: number; text: string } | null>(null)
 
-// 方法
-function toggleTheme() {
+interface ActiveContext {
+  type: 'view' | 'create'
+  range?: { pIndex: number; start: number; end: number }
+  text: string
+  noteId?: string
+}
+const activeContext = ref<ActiveContext | null>(null)
+
+// Methods
+const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
-  if (isDarkMode.value) {
-    document.body.classList.add('dark-mode')
-    document.body.style.backgroundColor = '#18181b'
-  } else {
-    document.body.classList.remove('dark-mode')
-    document.body.style.backgroundColor = '#f3f4f6'
-  }
+  // Body background handled by CSS in App or Global styles usually,
+  // but here we might toggle a class on body or just rely on the main div
+  document.body.style.backgroundColor = !isDarkMode.value ? '#18181b' : '#f3f4f6'
 }
 
-function closePanels() {
+const closePanels = () => {
   activePanel.value = 'none'
-  activeThought.value = null
+  activeContext.value = null
+  aiPanelOpen.value = false
 }
 
-function togglePanel(panel: 'toc' | 'typography' | 'notes') {
+const togglePanel = (panel: 'toc' | 'typography' | 'notes') => {
   activePanel.value = activePanel.value === panel ? 'none' : panel
-  activeThought.value = null
+  activeContext.value = null
 }
 
-function handleChapterSelect(id: string) {
+const handleChapterSelect = (id: string) => {
   currentChapterId.value = id
   closePanels()
 }
 
-function handleToggleAnnotation() {
-  isAnnotationMode.value = !isAnnotationMode.value
-  closePanels()
+const handleActiveThought = (noteId: string, text: string) => {
+  activeContext.value = { type: 'view', noteId, text }
 }
 
-function handleToggleReadingMode() {
-  readingMode.value = readingMode.value === 'paged' ? 'scroll' : 'paged'
+const handleAddAnnotation = (newAnn: Omit<Annotation, 'id'>) => {
+  const id = Date.now().toString()
+  const annotation = { ...newAnn, id }
+  annotations.value.push(annotation)
+
+  if (['marker', 'wave', 'line'].includes(newAnn.type)) {
+    const newNote: Note = {
+      id: `note-${id}`,
+      chapterId: currentChapterId.value,
+      quote: samplePageData.content[newAnn.pIndex].substring(newAnn.start, newAnn.end),
+      note: `[Highlight: ${newAnn.type}]`,
+      date: new Date().toLocaleDateString(),
+    }
+    notes.value.unshift(newNote)
+  }
 }
 
-function handleToggleThoughts() {
-  showThoughts.value = !showThoughts.value
+const handleTextAction = (
+  text: string,
+  action: string,
+  range?: { pIndex: number; start: number; end: number },
+) => {
+  if (action === 'thought' && range) {
+    activeContext.value = { type: 'create', range, text }
+  }
 }
 
-function updateTypography(newSettings: any) {
-  typography.value = { ...typography.value, ...newSettings }
+const handleThoughtsBubbleAction = (action: string) => {
+  if (!activeContext.value) return
+
+  if (action === 'copy') {
+    navigator.clipboard.writeText(activeContext.value.text)
+    return
+  }
+
+  if (['marker', 'wave', 'line'].includes(action) && activeContext.value.range) {
+    handleAddAnnotation({
+      chapterId: currentChapterId.value,
+      pIndex: activeContext.value.range.pIndex,
+      start: activeContext.value.range.start,
+      end: activeContext.value.range.end,
+      type: action as any,
+    })
+  }
 }
 
-function handleActiveThought(index: number, text: string) {
-  activeThought.value = { index, text }
+const submitNote = (noteContent: string) => {
+  if (activeContext.value && activeContext.value.range) {
+    const noteId = Date.now().toString()
+    const newNote: Note = {
+      id: noteId,
+      chapterId: currentChapterId.value,
+      quote: activeContext.value.text,
+      note: noteContent,
+      date: new Date().toLocaleDateString(),
+    }
+    notes.value.unshift(newNote)
+
+    const newAnn: Annotation = {
+      id: `ann-${noteId}`,
+      chapterId: currentChapterId.value,
+      pIndex: activeContext.value.range.pIndex,
+      start: activeContext.value.range.start,
+      end: activeContext.value.range.end,
+      type: 'thought',
+      noteId: noteId,
+    }
+    annotations.value.push(newAnn)
+
+    activePanel.value = 'notes'
+  }
+  activeContext.value = null
 }
 </script>
 
@@ -252,7 +336,6 @@ function handleActiveThought(index: number, text: string) {
   justify-content: center;
   align-items: center; /* 垂直居中 */
   overflow: hidden;
-  padding: 0 1rem; /* 左右留一点空隙 */
 }
 
 /* 
@@ -262,19 +345,8 @@ function handleActiveThought(index: number, text: string) {
 .reader-viewport {
   width: 100%;
   max-width: 1400px; /* 限制最大宽度，避免在宽屏上太长 */
-
-  /* 
-    高度计算：
-    100vh - (导航栏高度 + 上下边距)
-    假设导航栏约 60px，这里预留 120px 足够宽松
-  */
   height: calc(100vh - 90px);
-
   position: relative;
-  /* 
-    注意：这里不要加 padding 或 overflow
-    把布局控制权完全交给内部的 ReaderContent
-  */
 }
 
 /* 确保内部根节点填满视口 */

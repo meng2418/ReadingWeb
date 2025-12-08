@@ -1,352 +1,334 @@
 <!-- ReaderContent.vue -->
-<template>
-  <main class="main-container">
-    <div :class="['content-card', isDarkMode ? 'dark' : '']">
-      <!-- 
-        1. 头部：flex-shrink: 0 
-        防止被挤压
-      -->
-      <header class="page-header">
-        <p class="chapter-label">{{ pageData.chapter }}</p>
-      </header>
-
-      <!-- 
-        2. 内容区域：flex: 1
-        自动占据剩余高度。如果内容超出，由 CSS 控制是隐藏还是滚动
-      -->
-      <article
-        ref="articleRef"
-        :class="['page-content', annotationMode ? 'annotation-mode' : '', `mode-${readingMode}`]"
-        :style="{
-          fontSize: typography.fontSize + 'px',
-          lineHeight: typography.lineHeight,
-        }"
-        @mouseup="handleTextSelection"
-        @mousedown="clearSelectionMenu"
-      >
-        <p
-          v-for="(paragraph, index) in pageData.content"
-          :key="index"
-          class="paragraph"
-          :data-paragraph-id="index"
-        >
-          <template v-if="showThoughts && index === 4">
-            <span class="indent-reset">
-              <span
-                @click="(e) => handleActiveThought(index, paragraph.substring(0, 52), e)"
-                class="thought-text-segment"
-              >
-                {{ paragraph.substring(0, 52) }}
-                <span class="thought-bubble-wrapper">
-                  <span class="thought-bubble">
-                    <MessageSquare :size="8" fill="currentColor" class="message-icon-small" />
-                    <span>12</span>
-                  </span>
-                </span>
-              </span>
-              {{ paragraph.substring(52) }}
-            </span>
-          </template>
-          <template v-else> {{ paragraph }} </template>
-        </p>
-
-        <div
-          v-if="annotationMode && selectedText"
-          :style="annotationPosition"
-          class="annotation-menu"
-          :class="{ dark: isDarkMode }"
-        >
-          <button class="annotation-btn" @click="addAnnotation" title="添加批注">
-            <PenLine :size="16" />
-          </button>
-
-          <button class="annotation-btn" @click="highlightText" title="高亮">
-            <Highlighter :size="16" />
-          </button>
-        </div>
-
-        <div v-if="showThoughts && highlights.length > 0" class="highlights-list">
-          <div v-for="(highlight, idx) in highlights" :key="idx" class="highlight-item">
-            <span class="highlight-text">{{ highlight.text }}</span>
-            <span v-if="highlight.note" class="highlight-note">{{ highlight.note }}</span>
-          </div>
-        </div>
-      </article>
-
-      <!-- 
-        3. 底部按钮：flex-shrink: 0
-        永远保持固定高度，不会被文字挤没
-      -->
-      <div v-if="readingMode === 'paged'" class="pagination">
-        <button class="page-btn" @click="previousPage" :disabled="currentPage <= 1">
-          <ChevronLeft :size="16" class="chevron-left" />
-          <span class="btn-text">上一页</span>
-        </button>
-
-        <span class="pagination-text"> - {{ currentPage }} / {{ totalPages }} - </span>
-
-        <button class="page-btn" @click="nextPage" :disabled="currentPage >= totalPages">
-          <span class="btn-text">下一页</span>
-          <ChevronRight :size="16" class="chevron-right" />
-        </button>
-      </div>
-    </div>
-
-    <SelectionMenu :position="selection?.position || null" :onAction="handleMenuAction" />
-  </main>
-</template>
-
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ChevronLeft, ChevronRight, MessageSquare } from 'lucide-vue-next'
 import SelectionMenu from './SelectionMenu.vue'
-import {
-  ChevronLeft,
-  ChevronRight,
-  PenLine,
-  Highlighter,
-  MessageSquare,
-  Copy,
-} from 'lucide-vue-next'
-import type { BookPage, TypographySettings } from './types'
+import type { BookPage, TypographySettings, ReadingMode, Annotation } from '../types'
 
-type ReadingMode = 'paged' | 'scroll'
-
-interface Highlight {
-  id: string
-  text: string
-  note?: string
-  paragraphId: number
-  type: 'highlight' | 'annotation'
-}
-
-// Props 定义
 const props = defineProps<{
   pageData: BookPage
   isDarkMode: boolean
   typography: TypographySettings
-  annotationMode: boolean
-  showThoughts: boolean
   readingMode: ReadingMode
-  onTextSelection: (text: string) => void
-  onActiveThought: (index: number, text: string) => void
+  annotations: Annotation[]
 }>()
 
-// 响应式状态
-const currentPage = ref(1)
-const totalPages = ref(248)
-const selectedText = ref('')
-const selectedRange = ref<Range | null>(null)
-const annotationPosition = reactive({ top: '0px', left: '0px' })
-const highlights = ref<Highlight[]>([])
-const articleRef = ref<HTMLElement | null>(null)
+const emit = defineEmits<{
+  (e: 'addAnnotation', annotation: Omit<Annotation, 'id'>): void
+  (e: 'activeThought', noteId: string, text: string): void
+  (e: 'aiQuery', text: string): void
+  (
+    e: 'textAction',
+    text: string,
+    action: string,
+    range?: { pIndex: number; start: number; end: number },
+  ): void
+}>()
 
-// 文本选中状态
 const selection = ref<{
   text: string
   position: { top: number; left: number }
+  pIndex: number
+  startOffset: number
+  endOffset: number
 } | null>(null)
 
-// 模拟的点击事件处理
-const handleActiveThought = (index: number, text: string, event: MouseEvent) => {
-  event.stopPropagation()
-  props.onActiveThought(index, text)
-}
+const articleRef = ref<HTMLElement | null>(null)
 
-// 隐藏 Selection Menu
-const clearSelectionMenu = () => {
-  selection.value = null
-}
-
-// 处理 Selection Menu 的操作
-const handleMenuAction = (action: string) => {
-  console.log(`Action: ${action} on text: "${selection.value?.text}"`)
-  if (action === 'copy') {
-    navigator.clipboard.writeText(selection.value?.text || '')
-  }
-  if (selection.value?.text) {
-    props.onTextSelection(selection.value.text)
-  }
-  // selection.value = null
-}
-
-// 滚动清除 Selection Menu
-const handleScrollClear = () => {
-  if (selection.value) {
-    selection.value = null
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('scroll', handleScrollClear, { passive: true })
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScrollClear)
-})
-
-// 处理文本选中
-const handleTextSelection = () => {
+// ... (Selection Logic - same as before) ...
+const handleMouseUp = () => {
   const selectionObj = window.getSelection()
-  if (!selectionObj || selectionObj.isCollapsed) {
-    clearAnnotationMenu()
-    clearSelectionMenu()
+  if (!selectionObj || selectionObj.isCollapsed || selectionObj.rangeCount === 0) {
+    selection.value = null
     return
   }
   const text = selectionObj.toString().trim()
   if (!text) {
-    clearAnnotationMenu()
-    clearSelectionMenu()
+    selection.value = null
     return
   }
+  if (articleRef.value && !articleRef.value.contains(selectionObj.anchorNode)) {
+    selection.value = null
+    return
+  }
+  let anchorNode = selectionObj.anchorNode
+  let focusNode = selectionObj.focusNode
 
-  const range = selectionObj.getRangeAt(0)
-  const rect = range.getBoundingClientRect()
-
-  if (articleRef.value && articleRef.value.contains(selectionObj.anchorNode)) {
-    selection.value = {
-      text,
-      position: {
-        top: rect.top,
-        left: rect.left + rect.width / 2,
-      },
+  const findParentP = (node: Node | null): HTMLElement | null => {
+    let current = node
+    while (current && current !== articleRef.value) {
+      if (current.nodeName === 'P' && current.parentElement === articleRef.value) {
+        return current as HTMLElement
+      }
+      current = current.parentNode
     }
-  } else {
-    clearSelectionMenu()
+    return null
   }
 
-  if (props.annotationMode) {
-    selectedText.value = text
-    selectedRange.value = range
-    annotationPosition.top = rect.bottom + 10 + 'px'
-    annotationPosition.left = rect.left + 'px'
-  } else {
-    clearAnnotationMenu()
+  const pElement = findParentP(anchorNode)
+  if (!pElement) {
+    selection.value = null
+    return
   }
-}
-
-const clearAnnotationMenu = () => {
-  selectedText.value = ''
-  selectedRange.value = null
-}
-
-const wrapSelection = (range: Range, id: string, type: 'highlight' | 'annotation') => {
-  const span = document.createElement('span')
-  span.className = type === 'annotation' ? 'highlighted has-note' : 'highlighted'
-  span.dataset.highlightId = id
-  span.textContent = range.toString()
-
-  span.onclick = (e) => {
-    e.stopPropagation()
-    const highlightData = highlights.value.find((h) => h.id === id)
-    if (highlightData?.note) {
-      alert(`批注内容: ${highlightData.note}`)
-    }
+  const endPElement = findParentP(focusNode)
+  if (pElement !== endPElement) {
+    selection.value = null
+    return
   }
+  const pIndex = parseInt(pElement.getAttribute('data-index') || '-1')
+  if (pIndex === -1) return
 
   try {
-    range.deleteContents()
-    range.insertNode(span)
+    const range = selectionObj.getRangeAt(0)
+    const preCaretRange = range.cloneRange()
+    preCaretRange.selectNodeContents(pElement)
+    preCaretRange.setEnd(range.startContainer, range.startOffset)
+    const startOffset = preCaretRange.toString().length
+    const endOffset = startOffset + range.toString().length
+    const rect = range.getBoundingClientRect()
+    selection.value = {
+      text,
+      position: { top: rect.top, left: rect.left + rect.width / 2 },
+      pIndex,
+      startOffset,
+      endOffset,
+    }
   } catch (e) {
-    console.error('DOM操作失败:', e)
+    console.error('Selection calculation failed', e)
+    selection.value = null
   }
 }
 
-const addAnnotation = () => {
-  const note = prompt('添加批注：')
-  if (note && selectedText.value && selectedRange.value) {
-    const id = Date.now().toString()
-    const paragraphId = 0
-    highlights.value.push({
-      id,
-      text: selectedText.value,
-      note,
-      paragraphId,
-      type: 'annotation',
+const handleScroll = () => {
+  if (selection.value) selection.value = null
+}
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
+
+const handleMenuAction = (action: string) => {
+  if (!selection.value) return
+  if (action === 'copy') {
+    navigator.clipboard.writeText(selection.value.text)
+    selection.value = null
+    return
+  }
+  if (['marker', 'wave', 'line'].includes(action)) {
+    emit('addAnnotation', {
+      chapterId: props.pageData.chapter,
+      pIndex: selection.value.pIndex,
+      start: selection.value.startOffset,
+      end: selection.value.endOffset,
+      type: action as any,
     })
-    wrapSelection(selectedRange.value, id, 'annotation')
-    clearSelection()
-  }
-}
-
-const highlightText = () => {
-  if (selectedText.value && selectedRange.value) {
-    const id = Date.now().toString()
-    const paragraphId = 0
-    highlights.value.push({
-      id,
-      text: selectedText.value,
-      paragraphId,
-      type: 'highlight',
+    selection.value = null
+  } else if (action === 'thought') {
+    emit('textAction', selection.value.text, 'thought', {
+      pIndex: selection.value.pIndex,
+      start: selection.value.startOffset,
+      end: selection.value.endOffset,
     })
-    wrapSelection(selectedRange.value, id, 'highlight')
-    clearSelection()
+    selection.value = null
+  } else if (action === 'ai') {
+    emit('aiQuery', selection.value.text)
+    selection.value = null
   }
 }
 
-const clearSelection = () => {
-  clearAnnotationMenu()
-  clearSelectionMenu()
-  window.getSelection()?.removeAllRanges()
+interface TextSegment {
+  key: string
+  text: string
+  classes: string[] // Changed from 'class' string to array for easier handling
+  isThought: boolean
+  noteId?: string
+  hasAction: boolean
 }
 
-const previousPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
+// Refactored logic to use semantic class names instead of Tailwind
+const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
+  const relevant = props.annotations
+    .filter((a) => a.pIndex === pIndex)
+    .sort((a, b) => a.start - b.start)
+
+  if (relevant.length === 0)
+    return [
+      {
+        key: `${pIndex}-full`,
+        text,
+        classes: [],
+        isThought: false,
+        hasAction: false,
+      },
+    ]
+
+  const boundaries = new Set<number>([0, text.length])
+  relevant.forEach((a) => {
+    boundaries.add(Math.max(0, Math.min(a.start, text.length)))
+    boundaries.add(Math.max(0, Math.min(a.end, text.length)))
+  })
+
+  const sortedBoundaries = Array.from(boundaries).sort((a, b) => a - b)
+  const segments: TextSegment[] = []
+
+  for (let i = 0; i < sortedBoundaries.length - 1; i++) {
+    const start = sortedBoundaries[i]
+    const end = sortedBoundaries[i + 1]
+    const segmentText = text.slice(start, end)
+
+    const activeAnns = relevant.filter((a) => a.start <= start && a.end >= end)
+
+    let classes: string[] = ['segment-transition']
+    let hasAction = false
+    let noteId = undefined
+    let isThought = false
+
+    if (activeAnns.length > 0) {
+      if (activeAnns.some((a) => a.type === 'marker')) {
+        classes.push('highlight-marker')
+      }
+      if (activeAnns.some((a) => a.type === 'wave')) {
+        classes.push('highlight-wave')
+      }
+      if (activeAnns.some((a) => a.type === 'line')) {
+        classes.push('highlight-line')
+      }
+
+      const thoughtAnn = activeAnns.find((a) => a.type === 'thought')
+      if (thoughtAnn) {
+        classes.push('highlight-thought')
+        hasAction = true
+        noteId = thoughtAnn.noteId
+        isThought = true
+      }
+    }
+
+    segments.push({
+      key: `${pIndex}-${start}`,
+      text: segmentText,
+      classes,
+      isThought,
+      noteId,
+      hasAction,
+    })
   }
+  return segments
 }
 
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
+const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
+  if (seg.hasAction) {
+    e.stopPropagation()
+    emit('activeThought', seg.noteId || 'default', seg.text)
   }
 }
 </script>
 
-<style scoped>
-/* 
-  === 布局核心修正 === 
-  目标：让 Card 占满父容器，内部采用 Flex 垂直布局
-*/
+<template>
+  <main class="reader-wrapper">
+    <div
+      class="reader-card"
+      :class="{
+        'dark-mode': isDarkMode,
+        'mode-paged': readingMode === 'paged',
+        'mode-scroll': readingMode !== 'paged',
+      }"
+    >
+      <header class="reader-header">
+        <p class="chapter-title">
+          {{ pageData.chapter }}
+        </p>
+      </header>
 
-.main-container {
+      <article
+        ref="articleRef"
+        @mouseup="handleMouseUp"
+        @mousedown="selection = null"
+        class="reader-article"
+        :class="{ 'columns-layout': readingMode === 'paged' }"
+        :style="{
+          fontSize: `${typography.fontSize}px`,
+          lineHeight: typography.lineHeight,
+        }"
+      >
+        <p
+          v-for="(paragraph, index) in pageData.content"
+          :key="index"
+          :data-index="index"
+          class="paragraph"
+        >
+          <span
+            v-for="seg in getParagraphSegments(paragraph, index)"
+            :key="seg.key"
+            :class="seg.classes"
+            @click="(e) => handleSegmentClick(e, seg)"
+          >
+            {{ seg.text }}
+            <span v-if="seg.isThought" class="thought-icon-wrapper">
+              <span class="thought-icon-badge">
+                <MessageSquare :size="8" fill="currentColor" />
+              </span>
+            </span>
+          </span>
+        </p>
+      </article>
+
+      <div class="reader-footer">
+        <button class="nav-button prev-button group">
+          <ChevronLeft :size="16" class="nav-icon" />
+          <span class="text-sm">上一页</span>
+        </button>
+
+        <div class="page-number">- 12 / 248 -</div>
+
+        <button class="nav-button next-button group">
+          <span class="text-sm">下一页</span>
+          <ChevronRight :size="16" class="nav-icon" />
+        </button>
+      </div>
+    </div>
+
+    <SelectionMenu :position="selection?.position || null" @action="handleMenuAction" />
+  </main>
+</template>
+
+<style scoped>
+.reader-wrapper {
   width: 100%;
-  height: 100%; /* 继承 ReaderPage 给的高度 */
+  max-width: 1400px;
+  height: 100%;
   display: flex;
   justify-content: center;
   box-sizing: border-box;
-  padding: 0; /* 去除 padding，外层已处理 */
+  padding: 0;
+  margin-top: 16px;
 }
 
-.content-card {
+.reader-card {
   width: 100%;
-  /* 高度强制占满 */
-  height: 100%;
-
-  /* Flexbox 布局：垂直排列 */
+  height: 95%;
   display: flex;
   flex-direction: column;
-
-  /* 原有样式保留 */
-  padding: 2.5rem 3rem;
+  padding: 2rem 3rem;
   border-radius: 1rem;
   box-sizing: border-box;
   transition: max-width 300ms ease;
 }
 
 @media (max-width: 768px) {
-  .content-card {
+  .reader-card {
     padding: 1.5rem 1.75rem;
   }
 }
 
-/* 深色/浅色模式 */
-.content-card.dark {
+.reader-card.dark-mode {
   background-color: #18181b;
   color: #d4d4d8;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
 }
 
-.content-card:not(.dark) {
+.reader-card:not(.dark-mode) {
   background-color: #ffffff;
   color: #1f2937;
   box-shadow:
@@ -354,45 +336,34 @@ const nextPage = () => {
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* 页面头部：固定高度，不被压缩 */
-.page-header {
+.reader-header {
   margin-bottom: 2rem;
   border-bottom: 1px solid transparent;
   text-align: left;
-  flex-shrink: 0; /* 关键 */
+  flex-shrink: 0;
 }
 
-.chapter-label {
+.chapter-title {
   font-size: 0.875rem;
   color: #9ca3af;
   margin-bottom: 1rem;
   font-family: sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin: 0; /* 修正 margin */
 }
 
-/* 
-  === 核心内容区域 === 
-  变化最大：flex: 1 自动占满
-*/
-.page-content {
+.reader-article {
   font-family: serif;
   text-align: justify;
-  transition:
-    color 300ms,
-    background-color 300ms; /* 移除高度动画 */
+  transition: all 0.3s;
   position: relative;
 
-  flex: 1; /* 占据剩余空间 */
-  min-height: 0; /* 允许 flex 容器溢出处理 */
+  flex: 1;
+  min-height: 0;
 }
 
-/* 翻页模式：内容溢出则隐藏 */
-.page-content.mode-paged {
+.reader-card.mode-paged .reader-article {
   overflow: hidden;
-
-  /* 分栏逻辑 */
   columns: 2;
   column-gap: 2.5rem;
   column-rule-color: transparent;
@@ -400,58 +371,41 @@ const nextPage = () => {
 }
 
 @media (max-width: 768px) {
-  .page-content.mode-paged {
+  .reader-card.mode-paged .reader-article {
     columns: 1;
   }
 }
 
-/* 滚动模式：内容溢出容器内部滚动 */
-.page-content.mode-scroll {
+.reader-card.mode-scroll .reader-article {
   overflow-y: auto;
   overflow-x: hidden;
   columns: 1;
-  padding-right: 12px; /* 防止滚动条遮挡文字 */
+  padding-right: 12px;
 }
 
-/* 滚动条美化 */
-.page-content.mode-scroll::-webkit-scrollbar {
+.reader-card.mode-scroll .reader-article::-webkit-scrollbar {
   width: 6px;
 }
-.page-content.mode-scroll::-webkit-scrollbar-thumb {
+.reader-card.mode-scroll .reader-article::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
-.content-card.dark .page-content.mode-scroll::-webkit-scrollbar-thumb {
+.reader-card.dark-mode .reader-card.mode-scroll .reader-article::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* 批注模式 */
-.page-content.annotation-mode {
-  cursor: text;
-}
-.page-content.annotation-mode::selection {
-  background-color: #fef3c7;
-}
-.content-card.dark .page-content.annotation-mode::selection {
-  background-color: rgba(120, 53, 15, 0.4);
-}
-
-/* 段落 */
 .paragraph {
   margin-bottom: 1.2rem;
   text-indent: 1.5rem;
   break-inside: avoid-column;
+  position: relative;
 }
-.page-content.mode-scroll .paragraph {
+.reader-card.mode-scroll .paragraph {
   break-inside: auto;
 }
 
-/* 
-  === 底部按钮 === 
-  flex-shrink: 0 保证永远可见
-*/
-.pagination {
-  margin-top: auto; /* 将按钮推到底部 */
+.reader-footer {
+  margin-top: auto;
   padding-top: 1.5rem;
   border-top: 1px solid #f3f4f6;
 
@@ -459,15 +413,14 @@ const nextPage = () => {
   align-items: center;
   justify-content: space-between;
 
-  flex-shrink: 0; /* 关键：禁止被压缩 */
+  flex-shrink: 0;
 }
 
-.content-card.dark .pagination {
+.reader-card.dark-mode .reader-footer {
   border-top-color: #27272a;
 }
 
-/* 按钮样式保持不变 */
-.page-btn {
+.nav-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -480,176 +433,115 @@ const nextPage = () => {
   transition: all 300ms;
   font-size: 0.8rem;
 }
-.content-card.dark .page-btn {
+.reader-card.dark-mode .nav-button {
   border-color: #3f3f46;
   color: #a1a1aa;
 }
-.page-btn:hover:not(:disabled) {
+.nav-button:hover:not(:disabled) {
   background-color: #f9fafb;
 }
-.content-card.dark .page-btn:hover:not(:disabled) {
+.reader-card.dark-mode .nav-button:hover:not(:disabled) {
   background-color: #27272a;
 }
-.page-btn:disabled {
+.nav-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.btn-text {
+
+.nav-button span {
   font-size: 0.8rem;
 }
-.chevron-left,
-.chevron-right {
+.nav-icon {
   transition: transform 300ms;
 }
-.page-btn:hover:not(:disabled) .chevron-left {
+.prev-button:hover .nav-icon {
   transform: translateX(-0.125rem);
 }
-.page-btn:hover:not(:disabled) .chevron-right {
+.next-button:hover .nav-icon {
   transform: translateX(0.125rem);
 }
-.pagination-text {
+
+.page-number {
   font-size: 0.7rem;
   color: #e5e7eb;
   font-family: sans-serif;
   letter-spacing: 0.1em;
 }
-.content-card.dark .pagination-text {
+.reader-card.dark-mode .page-number {
   color: #444448;
 }
 
-/* 高亮和批注样式保持不变 */
-.highlighted {
+.segment-transition {
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    text-decoration-color 0.3s;
+}
+
+.highlight-marker {
   background-color: #fef3c7;
+  color: inherit;
   padding: 0.1rem 0;
   border-radius: 0.2rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
-.highlighted.has-note {
-  border-bottom: 2px solid #f59e0b;
-  background-color: rgba(254, 243, 199, 0.5);
+.dark-mode .highlight-marker {
+  background-color: rgba(120, 53, 15, 0.4);
+  color: inherit;
 }
-.highlighted:hover {
+.highlight-marker:hover {
   background-color: #fde68a;
 }
-.content-card.dark .highlighted {
-  background-color: rgba(120, 53, 15, 0.4);
-}
 
-/* 批注菜单 */
-.annotation-menu {
-  position: fixed;
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-}
-.annotation-menu.dark {
-  background-color: #27272a;
-}
-.annotation-btn {
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f3f4f6;
-  color: #1f2937;
-  transition: all 0.2s;
-}
-.annotation-menu.dark .annotation-btn {
-  background-color: #3f3f46;
-  color: #d4d4d8;
-}
-.annotation-btn:hover {
-  background-color: #e5e7eb;
-}
-.annotation-menu.dark .annotation-btn:hover {
-  background-color: #52525b;
-}
-
-/* 高亮列表 */
-.highlights-list {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-.content-card.dark .highlights-list {
-  border-top-color: #27272a;
-}
-.highlight-item {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-}
-.content-card.dark .highlight-item {
-  background-color: #27272a;
-}
-.highlight-text {
-  font-weight: 600;
-  color: #1f2937;
-  flex: 1;
-}
-.content-card.dark .highlight-text {
-  color: #d4d4d8;
-}
-.highlight-note {
-  color: #6b7280;
-  font-style: italic;
-  font-size: 0.875rem;
-}
-.content-card.dark .highlight-note {
-  color: #a1a1aa;
-}
-
-/* Thoughts 模拟批注样式 */
-.indent-reset {
-  display: block;
-  text-indent: 0;
-  margin-top: 0;
-  margin-bottom: 0;
-  line-height: inherit;
-}
-.thought-text-segment {
-  border-bottom: 2px dashed #d1d5db;
+.highlight-thought {
+  border-bottom: 2px dashed #f59e0b;
   padding-bottom: 0.125rem;
   cursor: pointer;
   transition: all 0.2s;
   border-radius: 0.25rem;
   box-decoration-break: clone;
-  position: relative;
+  -webkit-box-decoration-break: clone;
 }
-.content-card.dark .thought-text-segment {
-  border-bottom-color: #4b5563;
+.dark-mode .highlight-thought {
+  border-bottom-color: #f59e0b;
 }
-.thought-text-segment:hover {
+.highlight-thought:hover {
   background-color: #f3f4f6;
-  border-bottom-color: #60a5fa;
+  border-bottom-color: #f97316;
 }
-.content-card.dark .thought-text-segment:hover {
+.dark-mode .highlight-thought:hover {
   background-color: #27272a;
-  border-bottom-color: #3b82f6;
+  border-bottom-color: #f97316;
 }
-.thought-bubble-wrapper {
+
+.highlight-wave {
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-thickness: 2px;
+  text-decoration-color: #fb7185;
+  text-underline-offset: 4px;
+}
+
+.highlight-line {
+  text-decoration: underline;
+  text-decoration-style: solid;
+  text-decoration-thickness: 2px;
+  text-decoration-color: #38bdf8;
+  text-underline-offset: 4px;
+}
+
+.thought-icon-wrapper {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-left: 0.25rem;
   vertical-align: super;
 }
-.thought-bubble {
+
+.thought-icon-badge {
   background-color: #dbeafe;
-  color: #2563eb;
   font-size: 0.625rem;
   padding: 0.15rem 0.35rem;
   border-radius: 9999px;
@@ -657,18 +549,13 @@ const nextPage = () => {
   align-items: center;
   gap: 0.125rem;
   font-family: sans-serif;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   line-height: 1;
+  user-select: none;
 }
-.content-card.dark .thought-bubble {
+
+.dark-mode .thought-icon-badge {
   background-color: #1e3a8a;
   color: #93c5fd;
-}
-.message-icon-small {
-  width: 0.75em;
-  height: 0.75em;
-  min-width: 8px;
-  min-height: 8px;
-  transform: translateY(0.5px);
 }
 </style>

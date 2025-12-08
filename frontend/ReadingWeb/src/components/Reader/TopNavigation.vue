@@ -66,10 +66,8 @@ const isAdded = ref(false)
 const mockApiRequest = (type: 'add' | 'remove') => {
   return new Promise<void>((resolve) => {
     console.log(`正在请求接口: ${type === 'add' ? '加入书架' : '移出书架'}...`)
-    setTimeout(() => {
-      console.log(`接口请求成功: ${type === 'add' ? '已加入' : '已移出'}`)
-      resolve()
-    }, 500) // 模拟 0.5秒 网络延迟
+    console.log(`接口请求成功: ${type === 'add' ? '已加入' : '已移出'}`)
+    resolve()
   })
 }
 
