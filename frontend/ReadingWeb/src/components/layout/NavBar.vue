@@ -22,10 +22,14 @@
     <div class="nav-right">
       <!-- 搜索框保持不变 -->
       <div class="search-container">
-        <input type="text" placeholder="搜索书名、作者" class="search-input" />
-        <el-icon class="search-icon">
-          <Search />
-        </el-icon>
+        <input
+          type="text"
+          placeholder="搜索书名、作者"
+          class="search-input"
+          v-model="searchInput"
+          @keyup.enter="handleSearch"
+        />
+        <el-icon class="search-icon" @click="handleSearch"> <Search /> </el-icon>
       </div>
 
       <!-- 根据登录状态显示不同内容 -->
@@ -66,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -74,6 +79,21 @@ import { Search, ArrowDown, User, SwitchButton } from '@element-plus/icons-vue'
 const router = useRouter()
 const userStore = useUserStore()
 const defaultAvatar = 'https://picsum.photos/id/1027/200'
+
+const searchInput = ref('')
+
+function handleSearch() {
+  if (searchInput.value.trim() === '') {
+    return
+  }
+
+  router.push({
+    path: '/search',
+    query: {
+      q: searchInput.value,
+    },
+  })
+}
 
 // 下拉菜单命令处理
 const handleCommand = async (command: string) => {
