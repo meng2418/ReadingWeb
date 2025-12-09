@@ -22,25 +22,35 @@
     <div class="nav-right">
       <!-- 搜索框保持不变 -->
       <div class="search-container">
-        <input
-          type="text"
-          placeholder="搜索书名、作者"
-          class="search-input"
-          v-model="searchInput"
-          @keyup.enter="handleSearch"
-        />
-        <el-icon class="search-icon" @click="handleSearch"> <Search /> </el-icon>
+        <input type="text" placeholder="搜索书名、作者" class="search-input" />
+        <el-icon class="search-icon">
+          <Search />
+        </el-icon>
       </div>
 
       <!-- 根据登录状态显示不同内容 -->
       <template v-if="userStore.isLoggedIn">
-        <!-- 登录状态：显示个人中心和退出按钮 -->
-        <router-link to="/profile" class="user-center">
-          <div class="user-profile">
+        <!-- 登录状态：使用下拉菜单 -->
+        <el-dropdown @command="handleCommand">
+          <div class="user-dropdown-trigger">
             <img class="avatar" :src="userStore.userInfo.avatar || defaultAvatar" alt="用户头像" />
-            <span class="profile-text">个人中心</span>
+            <span class="username">{{ userStore.userInfo.name || '用户' }}</span>
+            <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
           </div>
-        </router-link>
+
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">
+                <el-icon><User /></el-icon>
+                个人中心
+              </el-dropdown-item>
+              <el-dropdown-item divided command="logout">
+                <el-icon><SwitchButton /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </template>
       <template v-else>
         <!-- 未登录状态：显示登录/注册按钮 -->
@@ -56,39 +66,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
-import router from '@/router'
 const userStore = useUserStore()
 const defaultAvatar = 'https://picsum.photos/id/1027/200'
-const searchInput = ref('')
 
-//新增: 处理搜索逻辑
-function handleSearch() {
-  // 检查输入是否为空
-  if (searchInput.value.trim() === '') {
-    // 可以选择性地给出提示，或者直接不进行跳转
-    return
-  }
-
-  // 使用 router.push 进行跳转
-  // 假设你的搜索结果页路由是 /search，并将关键词作为 query 参数传递
-  router.push({
-    path: '/search',
-    query: {
-      q: searchInput.value, // q 是查询关键词参数
-    },
+// 退出登录处理
+const handleLogout = async () => {
+  await ElMessageBox.confirm('确定要退出登录吗？', '退出确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
   })
 
-  // 搜索完成后，可以选择清空输入框
-  // searchInput.value = ''
-}
-// 退出登录处理
-const handleLogout = () => {
   userStore.logout()
-  // 可添加路由跳转，例如回到首页
-  // router.push('/')
+  ElMessage.success('已退出登录')
+  router.push('/')
 }
 </script>
 
@@ -203,62 +196,92 @@ const handleLogout = () => {
   transform: scale(0.9);
 }
 
-.user-center {
-  text-decoration: none;
-}
-
-/* 核心：个人中心按钮（收缩/展开容器） */
-.user-profile {
-  border: 1px solid var(--primary-green);
+/* 用户下拉菜单触发器样式 */
+.user-dropdown-trigger {
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* 改为左对齐 */
-  width: 40px; /* 初始宽度=头像宽度，只显示头像 */
-  height: 40px;
-  overflow: hidden; /* 隐藏超出容器的文字 */
-  background: var(--sun-back);
-  border-radius: 50px; /* 圆角和你示例一致 */
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.3s ease-out; /* 过渡和你示例一致 */
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.user-dropdown-trigger:hover {
+  border-color: #007c27;
+  background-color: rgba(0, 124, 39, 0.05);
 }
 
 /* 头像样式 */
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  transition: all 0.3s ease-out;
+  border: 2px solid #f0f0f0;
 }
-/* 个人中心文字（默认隐藏） */
-.profile-text {
-  opacity: 0;
-  width: 0;
-  margin-left: 0;
-  overflow: hidden;
-  transition:
-    width 0.3s ease-out,
-    background-color 0.4s ease,
-    box-shadow 0.4s ease;
+
+.username {
   font-size: 14px;
-  font-family: 'SimSun', '宋体', serif;
-  font-weight: 600;
-  color: #ffffff; /* 文字白色，和hover背景对比 */
-  white-space: nowrap; /* 防止文字换行 */
+  font-weight: 500;
+  color: #333;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Hover展开效果 */
-.user-profile:hover {
-  width: 120px; /* 展开后的宽度，刚好容纳头像+文字 */
-  padding: 0px 12px 0px 0px; /* 左右内边距，避免文字贴边 */
-  box-shadow: 0px 6px 12px var(--shadow-green); /* 主题色阴影 */
-  background-color: var(--secondary-green); /* 主题色背景，和你之前按钮呼应 */
+.dropdown-icon {
+  font-size: 12px;
+  color: #666;
+  transition: transform 0.2s ease;
 }
 
-/* Hover时文字显示 */
-.user-profile:hover .profile-text {
-  opacity: 1;
-  width: auto;
-  margin-left: 12px; /* 文字和头像的间距 */
+/* 下拉菜单项样式 */
+.el-dropdown-menu {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.el-dropdown-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.el-dropdown-menu__item .el-icon {
+  font-size: 16px;
+}
+
+.el-dropdown-menu__item--divided {
+  border-top: 1px solid #f0f0f0;
+}
+
+.el-dropdown-menu__item:focus:not(.is-disabled),
+.el-dropdown-menu__item:hover:not(.is-disabled) {
+  background-color: #f5f5f5;
+  color: #007c27;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 20px;
+  }
+
+  .search-input {
+    width: 180px;
+  }
+
+  .username {
+    display: none;
+  }
+
+  .user-dropdown-trigger {
+    padding: 4px 8px;
+  }
 }
 </style>

@@ -43,15 +43,35 @@
 
     <!-- 下半部分：三个按钮横向排列 -->
     <div class="bottom-section">
-      <button class="rating-button" @click="handleRate('recommend')">推荐</button>
-      <button class="rating-button" @click="handleRate('average')">一般</button>
-      <button class="rating-button" @click="handleRate('poor')">不行</button>
+      <!-- 修改：根据用户评分状态添加active类 -->
+      <button
+        class="rating-button recommend"
+        :class="{ 'rated-active': userHasReviewed && userReview.rating === 'recommend' }"
+        @click="handleRate('recommend')"
+      >
+        {{ userHasReviewed && userReview.rating === 'recommend' ? '已推荐' : '推荐' }}
+      </button>
+      <button
+        class="rating-button average"
+        :class="{ 'rated-active': userHasReviewed && userReview.rating === 'average' }"
+        @click="handleRate('average')"
+      >
+        {{ userHasReviewed && userReview.rating === 'average' ? '已评一般' : '一般' }}
+      </button>
+      <button
+        class="rating-button poor"
+        :class="{ 'rated-active': userHasReviewed && userReview.rating === 'poor' }"
+        @click="handleRate('poor')"
+      >
+        {{ userHasReviewed && userReview.rating === 'poor' ? '已评不行' : '不行' }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router' // 修改：添加路由相关
 
 // 定义props
 interface Props {
@@ -62,6 +82,8 @@ interface Props {
     average: number
     poor: number
   }
+  bookId?: string // 修改：添加书籍ID参数
+  bookTitle?: string // 修改：添加书籍标题参数
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -71,8 +93,18 @@ const props = withDefaults(defineProps<Props>(), {
     recommend: 70,
     average: 20,
     poor: 10
-  })
+  }),
+  bookId: '',
+  bookTitle: ''
 })
+
+// 修改：获取路由实例
+const route = useRoute()
+const router = useRouter()
+
+// 修改：添加响应式数据跟踪用户评分
+const userHasReviewed = ref(false)
+const userReview = ref<any>(null)
 
 // 定义事件
 const emit = defineEmits<{
@@ -94,6 +126,45 @@ const ratingPercentages = computed(() => {
   }
 })
 
+// 修改：检查用户是否已评分
+const checkUserReview = () => {
+  if (!props.bookId) return
+
+  try {
+    // 获取当前用户ID（这里用固定用户，实际项目中应该从登录状态获取）
+    const currentUserId = getCurrentUserId()
+
+    // 从localStorage获取用户的所有点评
+    const userReviews = JSON.parse(localStorage.getItem('userReviews') || '{}')
+
+    if (userReviews[currentUserId] && userReviews[currentUserId][props.bookId]) {
+      userHasReviewed.value = true
+      userReview.value = userReviews[currentUserId][props.bookId]
+    } else {
+      userHasReviewed.value = false
+      userReview.value = null
+    }
+  } catch (error) {
+    console.error('检查用户点评失败:', error)
+    userHasReviewed.value = false
+    userReview.value = null
+  }
+}
+
+// 获取当前用户ID（简化版，实际项目中应该从登录状态获取）
+const getCurrentUserId = () => {
+  // 尝试从localStorage获取用户ID
+  let userId = localStorage.getItem('currentUserId')
+
+  // 如果没有用户ID，创建一个新的（模拟新用户）
+  if (!userId) {
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    localStorage.setItem('currentUserId', userId)
+  }
+
+  return userId
+}
+
 // 查看点评
 const handleViewReviews = () => {
   console.log('查看点评')
@@ -104,10 +175,36 @@ const handleViewReviews = () => {
 const handleRate = (rating: string) => {
   console.log('评分:', rating)
   emit('rateBook', rating)
+
+  // 修改：跳转到写点评页面时传递书籍信息和编辑模式
+  const currentUserId = getCurrentUserId()
+
+  router.push({
+    path: '/writereview',
+    query: {
+      bookId: props.bookId,
+      bookTitle: props.bookTitle,
+      rating: rating,
+      editMode: userHasReviewed.value ? 'true' : 'false'
+    }
+  })
 }
+
+// 修改：监听路由变化，检查评分状态
+watch(() => route.query, (newQuery) => {
+  if (newQuery.refresh === 'true') {
+    checkUserReview()
+  }
+}, { immediate: true })
+
+// 修改：组件挂载时检查评分状态
+onMounted(() => {
+  checkUserReview()
+})
 </script>
 
 <style scoped>
+/* 样式保持不变，只添加新的类 */
 .book-recommendation-section {
   width: 800px;
   height: 220px;
@@ -273,6 +370,13 @@ const handleRate = (rating: string) => {
 
 .rating-button:active {
   background: #e8e8e8;
+}
+
+/* 修改：添加已评分的按钮样式（淡蓝色） */
+.rating-button.rated-active {
+  background: #e6f7ff; /* 淡蓝色背景 */
+  border-color: #91d5ff; /* 蓝色边框 */
+  color: #1890ff; /* 蓝色文字 */
 }
 
 /* 响应式调整 */
