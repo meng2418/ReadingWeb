@@ -1,3 +1,4 @@
+<!--阅读统计视图，包含图表和阅读时长排行榜-->
 <template>
   <div class="stats-view">
     <!-- 图表 -->

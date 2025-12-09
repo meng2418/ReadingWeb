@@ -23,7 +23,7 @@ interface Props {
   title?: string
   author?: string
   reason?: string
-  bookId?: string | number  // 新增：书籍ID，用于路由跳转
+  bookId?: string | number // 新增：书籍ID，用于路由跳转
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: '',
   author: '',
   reason: '',
-  bookId: ''  // 默认值
+  bookId: '', // 默认值
 })
 
 // 跳转到书籍详情页
@@ -51,7 +51,6 @@ const goToBookDetail = (): void => {
   width: 180px;
   background-color: #fff;
   border-radius: 10px;
-  overflow: hidden;
   text-align: center;
   padding: 12px;
   transition:
@@ -61,7 +60,6 @@ const goToBookDetail = (): void => {
 }
 
 .book-card:hover {
-  transform: translateY(4px) scale(1.02);
   filter: brightness(1.05);
 }
 

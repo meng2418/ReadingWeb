@@ -19,6 +19,13 @@ const username = ref('')
 const password = ref('')
 const code = ref('')
 
+// 注册表单字段
+const signUpUsername = ref('')
+const signUpPhone = ref('')
+const signUpPassword = ref('')
+const signUpConfirmPassword = ref('')
+const signUpCode = ref('')
+
 // 根据路由参数决定显示登录或注册界面
 watchEffect(() => {
   isSignUp.value = route.query.mode === 'signup'
@@ -69,13 +76,22 @@ function toggleCaptchaLogin() {
   code.value = ''
 }
 
-// 发送验证码（示例）
+// 发送验证码（登录）
 function sendCode() {
   if (!phone.value || phone.value.trim().length < 6) {
     window.alert('请输入有效的手机号')
     return
   }
   window.alert(`已向 ${phone.value} 发送验证码（模拟）`)
+}
+
+// 发送验证码（注册）
+function sendSignUpCode() {
+  if (!signUpPhone.value || signUpPhone.value.trim().length < 6) {
+    window.alert('请输入有效的手机号')
+    return
+  }
+  window.alert(`已向 ${signUpPhone.value} 发送验证码（模拟）`)
 }
 
 // 忘记密码跳转
@@ -133,6 +149,7 @@ async function simulateLogin() {
         :class="isSignUp ? 'bounceLeft' : 'bounceRight'"
         id="user_options-forms"
       >
+        <!-- 登录表单 -->
         <div class="user_forms-login">
           <h2 class="forms_title">登录</h2>
           <form class="forms_form" @submit.prevent="simulateLogin">
@@ -173,26 +190,54 @@ async function simulateLogin() {
             </div>
           </form>
         </div>
+
+        <!-- 注册表单 -->
         <div class="user_forms-signup">
           <h2 class="forms_title">注册</h2>
           <form class="forms_form">
             <fieldset class="forms_fieldset">
+              <!-- 用户名 -->
               <div class="forms_field">
                 <input v-model="username" type="text" placeholder="用户名" class="forms_field-input" required />
               </div>
+
+              <!-- 手机号码 -->
               <div class="forms_field">
-                <input type="text" placeholder="昵称" class="forms_field-input" required />
+                <input
+                  v-model="signUpPhone"
+                  type="tel"
+                  placeholder="手机号码"
+                  class="forms_field-input"
+                  required
+                />
               </div>
               <div class="forms_field">
                 <input type="tel" placeholder="手机号码" class="forms_field-input" required />
               </div>
+
+              <!-- 密码 -->
               <div class="forms_field">
-                <input type="email" placeholder="邮箱" class="forms_field-input" required />
+                <input
+                  v-model="signUpPassword"
+                  type="password"
+                  placeholder="密码"
+                  class="forms_field-input"
+                  required
+                />
               </div>
+
+              <!-- 确认密码 -->
               <div class="forms_field">
-                <input type="password" placeholder="密码" class="forms_field-input" required />
+                <input
+                  v-model="signUpConfirmPassword"
+                  type="password"
+                  placeholder="确认密码"
+                  class="forms_field-input"
+                  required
+                />
               </div>
             </fieldset>
+
             <div class="forms_buttons">
               <button type="submit" class="forms_buttons-action">注册</button>
             </div>
@@ -204,12 +249,6 @@ async function simulateLogin() {
 </template>
 
 <style scoped>
-/**
- * * General variables
- * */
-/**
- * * General configs
- * */
 * {
   box-sizing: border-box;
 }
@@ -268,9 +307,6 @@ input::placeholder {
   color: #ccc;
 }
 
-/**
- * * Bounce to the left side
- * */
 @-webkit-keyframes bounceLeft {
   0% {
     transform: translate3d(100%, -50%, 0);
@@ -318,9 +354,7 @@ input::placeholder {
     transform: translate3d(100%, -50%, 0);
   }
 }
-/**
- * * Show Sign Up form
- * */
+
 @-webkit-keyframes showSignUp {
   100% {
     opacity: 1;
@@ -335,9 +369,7 @@ input::placeholder {
     transform: translate3d(0, 0, 0);
   }
 }
-/**
- * * Page background
- * */
+
 .user {
   display: flex;
   justify-content: center;
@@ -361,9 +393,6 @@ input::placeholder {
   border-radius: 3px;
 }
 
-/**
- * * Registered and Unregistered user box and text
- * */
 .user_options-registered,
 .user_options-unregistered {
   width: 50%;
@@ -405,9 +434,6 @@ input::placeholder {
   background-color: #333;
 }
 
-/**
- * * Login and signup forms
- * */
 .user_options-forms {
   position: absolute;
   top: 50%;
@@ -523,9 +549,6 @@ input::placeholder {
   visibility: visible;
 }
 
-/**
- * * Triggers
- * */
 .user_options-forms.bounceLeft {
   -webkit-animation: bounceLeft 1s forwards;
   animation: bounceLeft 1s forwards;

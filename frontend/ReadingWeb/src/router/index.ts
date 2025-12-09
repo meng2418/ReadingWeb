@@ -15,7 +15,7 @@ import TopicDetail from '@/pages/TopicDetail.vue'
 import UserPosts from '@/pages/UserPosts.vue'
 import ReaderPage from '@/pages/ReaderPage.vue'
 import WriteReview from '@/pages/WriteReview.vue'
-
+import AllReadingNotes from '@/pages/AllReadingNotes.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -93,6 +93,11 @@ const router = createRouter({
       component: WriteReview,
       props: true,
       meta: { requiresAuth: true } // 需要登录
+    },
+    {
+      path: '/allreadingnotes',
+      name: 'AllReadingNotes',
+      component: AllReadingNotes,
     },
   ],
 })

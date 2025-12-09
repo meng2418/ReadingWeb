@@ -13,6 +13,9 @@
 
       <main class="right-dashboard">
         <ReadingDashboard :initialTab="$route.query.tab" />
+        <ReadingNotes />
+        <ReadingThoughts />
+        <ReadingReviews />
       </main>
     </section>
   </div>
@@ -23,6 +26,9 @@ import NavBar from '@/components/layout/NavBar.vue'
 import UserProfile from '@/components/user/UserProfile.vue'
 import SidebarRankings from '@/components/user/SidebarRankings.vue'
 import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
+import ReadingNotes from '@/components/user/ReadingNotes.vue'
+import ReadingThoughts from '@/components/user/ReadingThoughts.vue'
+import ReadingReviews from '@/components/user/ReadingReviews.vue'
 </script>
 
 <style scoped>
@@ -50,7 +56,11 @@ import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
   gap: 20px;
   align-items: start; /* 防止侧边栏被拉伸 */
 }
-
+.right-dashboard {
+  /* 🔥 关键代码：防止 grid 子元素被内部宽内容撑开 */
+  min-width: 0;
+  /* 或者使用 overflow: hidden; 但 min-width: 0 更推荐 */
+}
 /* 响应式处理 */
 @media (max-width: 900px) {
   .main-section {

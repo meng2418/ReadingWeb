@@ -1,3 +1,4 @@
+<!-- 时间选择器 -->
 <template>
   <div class="stats-container">
     <!-- 时间选择器（仅周/月/年显示） -->

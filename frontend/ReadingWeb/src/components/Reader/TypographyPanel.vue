@@ -1,189 +1,168 @@
+<script setup lang="ts">
+import { AlignJustify } from 'lucide-vue-next'
+import type { TypographySettings } from './types'
+
+const props = defineProps<{
+  settings: TypographySettings
+  isDarkMode: boolean
+}>()
+
+const emit = defineEmits<(e: 'update', settings: TypographySettings) => void>()
+
+const adjustFontSize = (delta: number) => {
+  const newSize = Math.max(14, Math.min(32, props.settings.fontSize + delta))
+  emit('update', { ...props.settings, fontSize: newSize })
+}
+
+const adjustLineHeight = (delta: number) => {
+  const newHeight = Math.round((props.settings.lineHeight + delta) * 10) / 10
+  emit('update', {
+    ...props.settings,
+    lineHeight: Math.max(1.2, Math.min(2.4, newHeight)),
+  })
+}
+</script>
+
 <template>
-  <!-- 排版设置面板 -->
-  <div class="typography-panel" :class="isDarkMode ? 'dark-mode' : ''">
-    <h3 class="panel-title">Typography</h3>
+  <div class="typography-panel" :class="{ 'dark-mode': isDarkMode }">
+    <h3 class="panel-title">字体</h3>
 
-    <!-- 字体大小设置 -->
-    <div class="setting-group">
-      <div class="setting-header">
-        <span class="setting-label">Size</span>
-        <span class="setting-value">{{ settings.fontSize }}px</span>
+    <!-- Font Size -->
+    <div class="control-group">
+      <div class="control-header">
+        <span class="label">大小</span>
+        <span class="value">{{ settings.fontSize }}px</span>
       </div>
-
-      <div class="control-group">
+      <div class="button-group">
         <button @click="adjustFontSize(-1)" class="control-btn">
           <span class="text-sm">A</span>
         </button>
-
         <button @click="adjustFontSize(1)" class="control-btn">
           <span class="text-lg">A</span>
         </button>
       </div>
     </div>
 
-    <!-- 行高设置 -->
-    <div class="setting-group">
-      <div class="setting-header">
-        <span class="setting-label">Spacing</span>
-        <span class="setting-value">{{ settings.lineHeight }}</span>
+    <!-- Line Height -->
+    <div>
+      <div class="control-header">
+        <span class="label">间距</span>
+        <span class="value">{{ settings.lineHeight }}</span>
       </div>
-
-      <div class="control-group">
-        <button @click="adjustLineHeight(-0.1)" class="control-btn">
-          <AlignJustify :size="16" class="icon-narrow" />
+      <div class="button-group">
+        <button @click="adjustLineHeight(-0.1)" class="control-btn center-content">
+          <AlignJustify :size="16" class="rotate-90" />
         </button>
-
-        <button @click="adjustLineHeight(0.1)" class="control-btn">
-          <AlignJustify :size="16" class="icon-wide" />
+        <button @click="adjustLineHeight(0.1)" class="control-btn center-content">
+          <AlignJustify :size="16" class="rotate-90 scale-y-125" />
         </button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { AlignJustify } from 'lucide-vue-next'
-import type { TypographySettings } from './types'
-
-interface Props {
-  settings: TypographySettings
-  updateSettings: (s: TypographySettings) => void
-  isDarkMode: boolean
-}
-
-const props = defineProps<Props>()
-
-const adjustFontSize = (delta: number) => {
-  const newSize = Math.max(14, Math.min(32, props.settings.fontSize + delta))
-  props.updateSettings({ ...props.settings, fontSize: newSize })
-}
-
-const adjustLineHeight = (delta: number) => {
-  const newHeight = Math.round((props.settings.lineHeight + delta) * 10) / 10
-  const limited = Math.max(1.2, Math.min(2.4, newHeight))
-  props.updateSettings({ ...props.settings, lineHeight: limited })
-}
-</script>
-
 <style scoped>
-/* 排版设置面板容器 */
 .typography-panel {
   position: absolute;
-  right: 5rem; /* 对应right-20 */
+  right: 5rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 18rem; /* 对应w-72 */
-  padding: 1.5rem; /* 对应p-6 */
-  border-radius: 1rem; /* 对应rounded-2xl */
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05); /* 对应shadow-xl */
+  width: 18rem; /* 72 */
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   z-index: 50;
+  transition: all 0.2s;
   transform-origin: right;
-  transition: all 200ms;
-  border: 1px solid #f3f4f6; /* 浅色模式边框 */
-  background-color: #ffffff; /* 浅色模式背景 */
-  color: #1f2937; /* 浅色模式文字 */
+
+  background-color: white;
+  color: #1f2937;
+  border: 1px solid #f3f4f6;
 }
 
-/* 深色模式面板样式 */
 .typography-panel.dark-mode {
-  background-color: #27272a; /* 对应bg-zinc-800 */
-  color: #e5e7eb; /* 对应text-gray-200 */
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); /* 对应shadow-black/50 */
-  border-color: #3f3f46; /* 对应border-zinc-700 */
+  background-color: #27272a; /* zinc-800 */
+  color: #e5e7eb;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  border-color: #3f3f46;
 }
 
-/* 面板标题 */
 .panel-title {
-  font-size: 0.75rem; /* 对应text-xs */
+  font-size: 0.75rem;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 0.1em; /* 对应tracking-wider */
-  margin-bottom: 1rem; /* 对应mb-4 */
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
   opacity: 0.5;
 }
 
-/* 设置项组 */
-.setting-group {
-  margin-bottom: 1.5rem; /* 对应mb-6 */
+.control-group {
+  margin-bottom: 1.5rem;
 }
 
-/* 最后一个设置项组取消底部外边距 */
-.setting-group:last-child {
-  margin-bottom: 0;
-}
-
-/* 设置项头部 */
-.setting-header {
+.control-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem; /* 对应mb-2 */
+  margin-bottom: 0.5rem;
 }
 
-/* 设置项标签 */
-.setting-label {
-  font-size: 0.875rem; /* 对应text-sm */
+.label {
+  font-size: 0.875rem;
 }
-
-/* 设置项数值 */
-.setting-value {
-  font-size: 0.75rem; /* 对应text-xs */
+.value {
+  font-size: 0.75rem;
   opacity: 0.5;
 }
 
-/* 控制按钮组 */
-.control-group {
+.button-group {
   display: flex;
   align-items: center;
-  gap: 0.25rem; /* 对应gap-1 */
-  padding: 0.25rem; /* 对应p-1 */
-  border-radius: 0.5rem; /* 对应rounded-lg */
-  background-color: #f3f4f6; /* 浅色模式背景 */
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  background-color: #f3f4f6;
+}
+.dark-mode .button-group {
+  background-color: #18181b;
 }
 
-/* 深色模式控制按钮组背景 */
-.typography-panel.dark-mode .control-group {
-  background-color: #18181b; /* 对应bg-zinc-900 */
-}
-
-/* 控制按钮 */
 .control-btn {
   flex: 1;
-  padding: 0.5rem; /* 对应p-2 */
-  border-radius: 0.375rem; /* 对应rounded-md */
-  background-color: transparent;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background: transparent;
   border: none;
   cursor: pointer;
-  transition: background-color 200ms;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: background-color 0.2s;
+  color: inherit;
 }
-
-/* 浅色模式控制按钮hover */
 .control-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05); /* 对应hover:bg-black/5 */
+  background-color: rgba(0, 0, 0, 0.05);
 }
-
-/* 深色模式控制按钮hover */
-.typography-panel.dark-mode .control-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1); /* 对应dark:hover:bg-white/10 */
+.dark-mode .control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
-
-/* 控制按钮点击效果 */
 .control-btn:active {
-  transform: scale(0.95); /* 对应active:scale-95 */
+  transform: scale(0.95);
 }
 
-/* 窄间距图标样式 */
-.icon-narrow {
-  transform: rotate(90deg); /* 对应rotate-90 */
+.center-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* 宽间距图标样式 */
-.icon-wide {
-  transform: rotate(90deg) scaleY(1.25); /* 对应rotate-90 scale-y-125 */
+.rotate-90 {
+  transform: rotate(90deg);
+}
+.scale-y-125 {
+  transform: rotate(90deg) scaleY(1.25);
+}
+.text-sm {
+  font-size: 0.875rem;
+}
+.text-lg {
+  font-size: 1.125rem;
 }
 </style>
