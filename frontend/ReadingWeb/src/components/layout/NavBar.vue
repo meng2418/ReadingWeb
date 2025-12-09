@@ -22,10 +22,14 @@
     <div class="nav-right">
       <!-- 搜索框保持不变 -->
       <div class="search-container">
-        <input type="text" placeholder="搜索书名、作者" class="search-input" />
-        <el-icon class="search-icon">
-          <Search />
-        </el-icon>
+        <input
+          type="text"
+          placeholder="搜索书名、作者"
+          class="search-input"
+          v-model="searchInput"
+          @keyup.enter="handleSearch"
+        />
+        <el-icon class="search-icon" @click="handleSearch"> <Search /> </el-icon>
       </div>
 
       <!-- 根据登录状态显示不同内容 -->
@@ -33,11 +37,7 @@
         <!-- 登录状态：使用下拉菜单 -->
         <el-dropdown @command="handleCommand">
           <div class="user-dropdown-trigger">
-            <img
-              class="avatar"
-              :src="userStore.userInfo.avatar || defaultAvatar"
-              alt="用户头像"
-            />
+            <img class="avatar" :src="userStore.userInfo.avatar || defaultAvatar" alt="用户头像" />
             <span class="username">{{ userStore.userInfo.name || '用户' }}</span>
             <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
           </div>
@@ -70,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -78,6 +79,21 @@ import { Search, ArrowDown, User, SwitchButton } from '@element-plus/icons-vue'
 const router = useRouter()
 const userStore = useUserStore()
 const defaultAvatar = 'https://picsum.photos/id/1027/200'
+
+const searchInput = ref('')
+
+function handleSearch() {
+  if (searchInput.value.trim() === '') {
+    return
+  }
+
+  router.push({
+    path: '/search',
+    query: {
+      q: searchInput.value,
+    },
+  })
+}
 
 // 下拉菜单命令处理
 const handleCommand = async (command: string) => {
@@ -95,31 +111,21 @@ const handleCommand = async (command: string) => {
 
 // 退出登录处理
 const handleLogout = async () => {
-  try {
-    // 确认对话框
-    await ElMessageBox.confirm(
-      '确定要退出登录吗？',
-      '退出确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
+  // 确认对话框
+  await ElMessageBox.confirm('确定要退出登录吗？', '退出确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
 
-    // 调用退出登录方法
-    userStore.logout()
+  // 调用退出登录方法
+  userStore.logout()
 
-    // 显示成功消息
-    ElMessage.success('已退出登录')
+  // 显示成功消息
+  ElMessage.success('已退出登录')
 
-    // 跳转到首页
-    router.push('/')
-
-  } catch (error) {
-    // 用户点击了取消，什么都不做
-    console.log('取消退出登录')
-  }
+  // 跳转到首页
+  router.push('/')
 }
 </script>
 
@@ -244,11 +250,24 @@ const handleLogout = async () => {
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+
+  /* 去掉默认焦点轮廓和阴影，避免出现黑色粗框 */
+  outline: none;
+  box-shadow: none;
 }
 
+/* hover 保持原来视觉，但确保不出现黑色框线 */
 .user-dropdown-trigger:hover {
   border-color: #007c27;
   background-color: rgba(0, 124, 39, 0.05);
+  box-shadow: none;
+}
+
+/* 明确禁止 focus 导致的黑框（一些浏览器会在 :focus 添加 UA 样式） */
+.user-dropdown-trigger:focus,
+.user-dropdown-trigger:active {
+  outline: none;
+  box-shadow: none;
 }
 
 /* 头像样式 */

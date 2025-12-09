@@ -17,6 +17,7 @@ import ReaderPage from '@/pages/ReaderPage.vue'
 import WriteReview from '@/pages/WriteReview.vue'
 import AllReadingNotes from '@/pages/AllReadingNotes.vue'
 import AuthorDetail from '@/pages/AuthorDetail.vue'
+import SearchResultsPage from '@/pages/SearchResultsPage.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -34,13 +35,13 @@ const router = createRouter({
       path: '/bookshelf',
       name: 'Bookshelf',
       component: BookshelfPage,
-      meta: { requiresAuth: true } // 需要登录
+      meta: { requiresAuth: true }, // 需要登录
     },
     {
       path: '/community',
       name: 'Community',
       component: CommunityPage,
-      meta: { requiresAuth: true } // 需要登录
+      meta: { requiresAuth: true }, // 需要登录
     },
     {
       path: '/forget-password',
@@ -68,7 +69,7 @@ const router = createRouter({
       path: '/profile',
       name: 'Profile',
       component: Profile,
-      meta: { requiresAuth: true } // 需要登录
+      meta: { requiresAuth: true }, // 需要登录
     },
     {
       path: '/topicdetail/:id?',
@@ -93,7 +94,7 @@ const router = createRouter({
       name: 'WriteReview',
       component: WriteReview,
       props: true,
-      meta: { requiresAuth: true } // 需要登录
+      meta: { requiresAuth: true }, // 需要登录
     },
     {
       path: '/allreadingnotes',
@@ -101,11 +102,20 @@ const router = createRouter({
       component: AllReadingNotes,
     },
     {
-    path: '/authordetail/:id',
-    name: 'AuthorDetail',
-    component: AuthorDetail,
-    props: true // 将路由参数作为props传递
-  },
+      path: '/authordetail/:id',
+      name: 'AuthorDetail',
+      component: AuthorDetail,
+      props: true // 将路由参数作为props传递
+    },
+    {
+      path: '/search',
+      name: 'SearchResult', // 路由名称
+      component: SearchResultsPage, // 关联到 SearchResultPage 组件
+      props: (route) => ({
+        // 通过 props 传递 query 参数 q (搜索关键词) 给组件
+      searchQuery: route.query.q,
+      }),
+    },
   ],
 })
 
@@ -125,30 +135,26 @@ router.beforeEach(async (to, from, next) => {
   console.log(`用户登录状态: ${userStore.isLoggedIn}`)
 
   // 检查目标路由是否需要登录
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
 
   // 如果需要登录但用户未登录
   if (requiresAuth && !userStore.isLoggedIn) {
     try {
       // 显示Element Plus的确认对话框
-      await ElMessageBox.confirm(
-        '当前未登录，请先登录以继续操作',
-        '登录提示',
-        {
-          confirmButtonText: '立即登录',
-          cancelButtonText: '取消',
-          type: 'warning',
-          showClose: false,
-          closeOnClickModal: false,
-          closeOnPressEscape: false
-        }
-      )
+      await ElMessageBox.confirm('当前未登录，请先登录以继续操作', '登录提示', {
+        confirmButtonText: '立即登录',
+        cancelButtonText: '取消',
+        type: 'warning',
+        showClose: false,
+        closeOnClickModal: false,
+        closeOnPressEscape: false,
+      })
 
       // 用户点击了"立即登录"
       // 跳转到登录页面，并携带当前想去的页面路径
       next({
         path: '/login',
-        query: { redirect: to.fullPath }
+        query: { redirect: to.fullPath },
       })
     } catch (error) {
       // 用户点击了"取消"
