@@ -1,3 +1,4 @@
+<!-- LoginPage.vue -->
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -14,7 +15,7 @@ const isSignUp = ref(false)
 // 登录表单字段
 const isCaptchaLogin = ref(false)
 const phone = ref('')
-const username = ref('') // 你原本缺了 username 声明
+const username = ref('')
 const password = ref('')
 const code = ref('')
 
@@ -23,25 +24,37 @@ watchEffect(() => {
   isSignUp.value = route.query.mode === 'signup'
 })
 
-// 点击 “注册” 按钮
+// 点击 "注册" 按钮
 function handleSignUp() {
   isSignUp.value = true
 }
 
-// 点击 “登录” 按钮（异步函数）
+// 点击 "登录" 按钮（异步函数）
 async function handleLogin() {
   try {
+    // 模拟登录请求
     const res = await axios.post('/api/login', {
       username: username.value,
       password: password.value,
     })
 
+    // 调用store的登录方法
     userStore.login({
       token: res.data.token,
       userInfo: res.data.user, // { name, avatar }
     })
 
-    router.push('/')
+    // 检查是否有重定向参数（从哪个页面跳转过来的）
+    const redirect = route.query.redirect as string
+
+    // 如果有重定向路径，就跳转回去
+    if (redirect) {
+      router.push(redirect)
+    } else {
+      // 否则跳转到首页
+      router.push('/')
+    }
+
   } catch (err) {
     console.error(err)
     window.alert('登录失败，请检查用户名或密码')
@@ -68,6 +81,29 @@ function sendCode() {
 // 忘记密码跳转
 function goForgetPassword() {
   router.push('/forget-password')
+}
+
+// 模拟登录函数（用于测试，不需要真实API）
+async function simulateLogin() {
+  // 模拟登录成功
+  userStore.login({
+    token: userStore.generateToken(),
+    userInfo: {
+      name: username.value || '测试用户',
+      avatar: 'https://picsum.photos/200/200'
+    }
+  })
+
+  // 检查是否有重定向参数
+  const redirect = route.query.redirect as string
+
+  // 如果有重定向路径，就跳转回去
+  if (redirect) {
+    router.push(redirect)
+  } else {
+    // 否则跳转到首页
+    router.push('/')
+  }
 }
 </script>
 
@@ -99,14 +135,14 @@ function goForgetPassword() {
       >
         <div class="user_forms-login">
           <h2 class="forms_title">登录</h2>
-          <form class="forms_form">
+          <form class="forms_form" @submit.prevent="simulateLogin">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
                 <!-- 根据 isCaptchaLogin 切换输入类型 / 占位 -->
                 <input
-                  v-model="phone"
-                  :type="isCaptchaLogin ? 'tel' : 'email'"
-                  :placeholder="isCaptchaLogin ? '手机号码' : '邮箱/手机号码'"
+                  v-model="username"
+                  type="text"
+                  placeholder="用户名/邮箱/手机号"
                   class="forms_field-input"
                   required
                   autofocus
@@ -115,31 +151,12 @@ function goForgetPassword() {
 
               <div class="forms_field" style="display: flex; align-items: center; gap: 8px">
                 <input
-                  v-if="!isCaptchaLogin"
                   v-model="password"
                   type="password"
                   placeholder="密码"
                   class="forms_field-input"
                   required
                 />
-                <div v-else style="display: flex; gap: 8px; align-items: center; width: 100%">
-                  <input
-                    v-model="code"
-                    type="text"
-                    placeholder="验证码"
-                    class="forms_field-input"
-                    required
-                    style="flex: 1"
-                  />
-                  <button
-                    type="button"
-                    class="forms_buttons-action"
-                    @click="sendCode"
-                    style="padding: 6px 12px"
-                  >
-                    发送验证码
-                  </button>
-                </div>
               </div>
             </fieldset>
 
@@ -152,7 +169,7 @@ function goForgetPassword() {
                   {{ isCaptchaLogin ? '密码登录' : '验证码登录' }}
                 </button>
               </div>
-              <input type="submit" value="登录" class="forms_buttons-action" />
+              <button type="submit" class="forms_buttons-action">登录</button>
             </div>
           </form>
         </div>
@@ -161,13 +178,13 @@ function goForgetPassword() {
           <form class="forms_form">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
-                <input type="username" placeholder="用户名" class="forms_field-input" required />
+                <input v-model="username" type="text" placeholder="用户名" class="forms_field-input" required />
               </div>
               <div class="forms_field">
                 <input type="text" placeholder="昵称" class="forms_field-input" required />
               </div>
               <div class="forms_field">
-                <input type="email" placeholder="手机号码" class="forms_field-input" required />
+                <input type="tel" placeholder="手机号码" class="forms_field-input" required />
               </div>
               <div class="forms_field">
                 <input type="email" placeholder="邮箱" class="forms_field-input" required />
@@ -177,7 +194,7 @@ function goForgetPassword() {
               </div>
             </fieldset>
             <div class="forms_buttons">
-              <input type="submit" value="注册" class="forms_buttons-action" />
+              <button type="submit" class="forms_buttons-action">注册</button>
             </div>
           </form>
         </div>

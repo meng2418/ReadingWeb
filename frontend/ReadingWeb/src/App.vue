@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
+import Footer from '@/components/layout/Footer.vue'
+
 
 const userStore = useUserStore()
 onMounted(() => {
@@ -10,8 +12,20 @@ onMounted(() => {
 
 <template>
   <router-view></router-view>
+  <Footer />
 </template>
 
 <style>
-/* 全局样式 */
+/* 设置全局背景色 */
+html, body {
+  background-color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+}
+
+/* 或者给根元素设置背景 */
+#app {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
 </style>

@@ -1,4 +1,7 @@
+// router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import HomePage from '../pages/HomePage.vue'
 import BookshelfPage from '../pages/BookShelfPage.vue'
 import LoginPage from '../pages/LoginPage.vue'
@@ -30,11 +33,13 @@ const router = createRouter({
       path: '/bookshelf',
       name: 'Bookshelf',
       component: BookshelfPage,
+      meta: { requiresAuth: true } // 需要登录
     },
     {
       path: '/community',
       name: 'Community',
       component: CommunityPage,
+      meta: { requiresAuth: true } // 需要登录
     },
     {
       path: '/forget-password',
@@ -46,49 +51,106 @@ const router = createRouter({
       name: 'Category',
       component: CategoryPage,
     },
-
     {
-      path: '/bookdetail/:id?', // 修改：添加动态参数，?表示可选
+      path: '/bookdetail/:id?',
       name: 'BookDetail',
       component: BookDetail,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
     {
-      path: '/postdetail/:id?', // 修改：添加动态参数，?表示可选
+      path: '/postdetail/:id?',
       name: 'PostDetail',
       component: PostDetailPage,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
     {
       path: '/profile',
       name: 'Profile',
       component: Profile,
+      meta: { requiresAuth: true } // 需要登录
     },
     {
-      path: '/topicdetail/:id?', // 修改：添加动态参数，?表示可选
+      path: '/topicdetail/:id?',
       name: 'TopicDetail',
       component: TopicDetail,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
     {
-      path: '/userposts/:id?', // 修改：添加动态参数，?表示可选
+      path: '/userposts/:id?',
       name: 'UserPosts',
       component: UserPosts,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
     {
-      path: '/reader/:id?', // 修改：添加动态参数，?表示可选
+      path: '/reader/:id?',
       name: 'ReaderPage',
       component: ReaderPage,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
-        {
-      path: '/writereview/:id?', // 修改：添加动态参数，?表示可选
+    {
+      path: '/writereview/:id?',
       name: 'WriteReview',
       component: WriteReview,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
+      meta: { requiresAuth: true } // 需要登录
     },
   ],
+})
+
+// 路由守卫：登录拦截
+router.beforeEach(async (to, from, next) => {
+  // 获取用户状态
+  const userStore = useUserStore()
+
+  // 恢复会话（如果是刷新页面）
+  if (!userStore.token) {
+    userStore.restoreSession()
+  }
+
+  // 调试信息
+  console.log(`路由跳转: ${from.path} -> ${to.path}`)
+  console.log(`需要登录吗: ${to.meta.requiresAuth}`)
+  console.log(`用户登录状态: ${userStore.isLoggedIn}`)
+
+  // 检查目标路由是否需要登录
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  // 如果需要登录但用户未登录
+  if (requiresAuth && !userStore.isLoggedIn) {
+    try {
+      // 显示Element Plus的确认对话框
+      await ElMessageBox.confirm(
+        '当前未登录，请先登录以继续操作',
+        '登录提示',
+        {
+          confirmButtonText: '立即登录',
+          cancelButtonText: '取消',
+          type: 'warning',
+          showClose: false,
+          closeOnClickModal: false,
+          closeOnPressEscape: false
+        }
+      )
+
+      // 用户点击了"立即登录"
+      // 跳转到登录页面，并携带当前想去的页面路径
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    } catch (error) {
+      // 用户点击了"取消"
+      // 返回上一页或首页
+      if (from.path !== '/') {
+        next(from.path)
+      } else {
+        next('/')
+      }
+    }
+  } else {
+    // 不需要登录或已登录，正常放行
+    next()
+  }
 })
 
 export default router
