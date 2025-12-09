@@ -231,12 +231,16 @@ const toLogin = () => {
 /* 基础样式 */
 .fp-container {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100vh;
+  background: url('@/img/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .fp-box {
@@ -400,7 +404,7 @@ const toLogin = () => {
 }
 
 .fp-link {
-  color: #007c27;
+  color: #dadada;
   text-decoration: underline;
   cursor: pointer;
 }
