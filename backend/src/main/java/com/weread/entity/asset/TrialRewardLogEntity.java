@@ -1,11 +1,11 @@
 package com.weread.entity.asset;
+import com.weread.entity.user.UserEntity;
 import lombok.Data;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-// 【✅ 修正：将唯一性约束放在 @Table 注解中】
 @Table(name = "trial_reward_log", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"userId", "rewardType"})
 })
@@ -13,7 +13,7 @@ public class TrialRewardLogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long logId;
+    private Integer logId;
 
     @Column(nullable = false)
     private Long userId;
@@ -25,5 +25,12 @@ public class TrialRewardLogEntity {
     private Integer daysGranted;
 
     private LocalDateTime claimedAt = LocalDateTime.now();
+
+    // 注意：如果您希望在日志中通过 JPA 关联到 UserEntity，需要添加 ManyToOne 关联：
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
+    private UserEntity user;
+    
 
 }

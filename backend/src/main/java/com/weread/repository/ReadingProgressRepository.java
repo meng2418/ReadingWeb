@@ -10,10 +10,10 @@ import java.util.Optional;
 
 public interface ReadingProgressRepository extends JpaRepository<ReadingProgressEntity, Integer> {
 
-    // 1. ²éÑ¯ÓÃ»§Ä³±¾ÊéµÄÔÄ¶Á½ø¶È
-    Optional<ReadingProgressEntity> findByUserIdAndBookId(Integer userId, Integer bookId);
+    // 1. ï¿½ï¿½Ñ¯ï¿½Ã»ï¿½Ä³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½
+    Optional<ReadingProgressEntity> findByUserIdAndBookId(Long userId, Integer bookId);
 
-    // 2. ¸üÐÂÔÄ¶Á½ø¶È£¨ÕÂ½Ú¡¢Ò³Âë¡¢½ø¶È¡¢×îºóÔÄ¶ÁÊ±¼ä£©
+    // 2. ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½È£ï¿½ï¿½Â½Ú¡ï¿½Ò³ï¿½ë¡¢ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½Ê±ï¿½ä£©
     @Modifying
     @Query("UPDATE ReadingProgressEntity r SET " +
             "r.chapterId = :chapterId, " +
@@ -22,7 +22,7 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
             "r.lastReadAt = :lastReadAt " +
             "WHERE r.userId = :userId AND r.bookId = :bookId")
     void updateProgress(
-            @Param("userId") Integer userId,
+            @Param("userId") Long userId,
             @Param("bookId") Integer bookId,
             @Param("chapterId") Integer chapterId,
             @Param("currentPage") Integer currentPage,

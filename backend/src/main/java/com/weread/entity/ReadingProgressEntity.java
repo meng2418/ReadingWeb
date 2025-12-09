@@ -14,7 +14,7 @@ public class ReadingProgressEntity {
     private Integer readingProgressId;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(name = "book_id", nullable = false)
     private Integer bookId;

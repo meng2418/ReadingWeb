@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 
 @Entity
 // 确保同一用户对同一目标（帖子/评论）只能点赞一次
-@Table(name = "user_like", 
-       uniqueConstraints = @UniqueConstraint(columnNames = {"target_type", "target_id", "user_id"})) 
+@Table(name = "like_info", 
+    uniqueConstraints = @UniqueConstraint(columnNames = {"userId", "postId", "commentId", "noteId"}))
 @Data
 @EntityListeners(AuditingEntityListener.class)
 public class LikeEntity {
@@ -19,13 +19,14 @@ public class LikeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long likeId;
 
-    // 点赞目标类型：例如 "POST", "COMMENT"
-    @Column(name = "target_type", length = 10, nullable = false)
-    private String targetType; 
+    @Column(name = "post_id")
+    private Long postId; // 核心修改：帖子 ID 必须是 Long
 
-    // 点赞目标的ID：帖子ID 或 评论ID
-    @Column(name = "target_id", nullable = false)
-    private Long targetId; 
+    @Column(name = "comment_id")
+    private Long commentId; // 核心修改：评论 ID 必须是 Long
+    
+    @Column(name = "note_id")
+    private Integer noteId; // 保持 Integer (笔记 ID 是内容资产 ID)
 
     @Column(name = "user_id", nullable = false)
     private Long userId; // 点赞的用户ID

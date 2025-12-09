@@ -12,7 +12,7 @@ public class TrialBalanceEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long balanceId;
+    private Integer balanceId;
 
     @Column(unique = true, nullable = false)
     private Long userId; // 关联到 UserEntity 的 ID

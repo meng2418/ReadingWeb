@@ -46,7 +46,7 @@ public class CoinController {
      */
     @PostMapping("/purchase/{bookId}")
     public ResponseEntity<?> purchaseBook(@RequestAttribute("userId") Long userId, 
-                                          @PathVariable Long bookId, 
+                                          @PathVariable Integer bookId, 
                                           @RequestParam Integer price) {
         
         // 业务逻辑放在 Service 层，Controller 只负责调用和处理异常

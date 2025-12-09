@@ -13,7 +13,7 @@ public class UserStatEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long statId;
+    private Integer statId;
 
     @Column(nullable = false, unique = true)
     private Long userId; // 与用户ID一对一关联

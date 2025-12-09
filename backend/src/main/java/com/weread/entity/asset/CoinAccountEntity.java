@@ -3,21 +3,23 @@ package com.weread.entity.asset;
 import com.weread.entity.base.BaseEntity;
 import com.weread.entity.user.UserEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "coin_account_info")
 public class CoinAccountEntity extends BaseEntity {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long accountId;
-    
+    private Integer accountId;
+
     @Column(unique = true, nullable = false)
     private Long userId;
-    
+
     private Integer balance = 0; // 充值币余额
 
     @OneToOne(fetch = FetchType.LAZY)

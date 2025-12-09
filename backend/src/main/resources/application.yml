@@ -9,19 +9,26 @@ spring:
   # 数据源配置 (H2 数据库，文件模式)
   # -------------------------------------
   datasource:
-    url: jdbc:h2:file:./data/reading_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
+    url: jdbc:mysql://localhost:3306/wechatreading_db?useSSL=false&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root # 替换为您的 MySQL 用户名
+    password: 299792 # 替换为您的 MySQL 密码
   
   # -------------------------------------
   # JPA / Hibernate 配置
   # -------------------------------------
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.MySQLDialect # (保留这个以兼容Spring Boot Autoconfigure)
+    properties:
+      # 显式告诉 Hibernate 使用 MySQL 8 方言
+      hibernate.dialect: org.hibernate.dialect.MySQLDialect
+      # 禁用对序列（SEQUENCES）表的查询，这是解决问题的关键
+      hibernate.id.disable_sequences: true
+      
     hibernate:
-      ddl-auto: update # 实体模型发生变化时自动更新数据库结构
-    show-sql: true # 打印 SQL 语句到控制台
+      # ddl-auto 保持不变
+      ddl-auto: update 
+    show-sql: true
   
   # -------------------------------------
   # Redis 配置 (从前一个配置中保留)

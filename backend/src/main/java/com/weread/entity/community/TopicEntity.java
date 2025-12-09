@@ -11,7 +11,7 @@ public class TopicEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long topicId;
+    private Integer topicId;
 
     @Column(unique = true, nullable = false, length = 50)
     private String name; // 话题名称

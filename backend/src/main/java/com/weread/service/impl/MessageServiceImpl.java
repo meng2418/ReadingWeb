@@ -53,7 +53,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional // @Modifying 操作需要事务
-    public void markMessageAsRead(Long userId, Long messageId) {
+    public void markMessageAsRead(Long userId, Integer messageId) {
         int updatedRows = messageRepository.markAsRead(messageId, userId);
         
         if (updatedRows == 0) {

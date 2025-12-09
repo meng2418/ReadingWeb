@@ -14,7 +14,7 @@ public class AchievementLogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long logId;
+    private Integer logId;
 
     @Column(nullable = false)
     private Long userId;

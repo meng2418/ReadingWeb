@@ -3,6 +3,7 @@ package com.weread.entity.asset;
 import com.weread.entity.base.BaseEntity; 
 import com.weread.entity.user.UserEntity; // 假设 UserEntity 存在
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
  * 记录用户是否是付费会员及其到期时间。
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "member_info")
 // 假设继承了 BaseEntity (包含 createdAt, updatedAt)
@@ -18,7 +20,7 @@ public class MemberEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long memberId;
+    private Integer memberId;
 
     /**
      * 用户ID，与 UserEntity 形成一对一关系，且必须唯一。

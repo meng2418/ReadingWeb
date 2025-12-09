@@ -5,6 +5,6 @@ import com.weread.vo.asset.TransactionReceiptVO;
 
 public interface CoinService {
     CoinAccountEntity getOrCreateAccount(Long userId);
-    void purchaseBook(Long userId, Long bookId, int bookPrice);
+    void purchaseBook(Long userId, Integer bookId, int bookPrice);
     TransactionReceiptVO processSimulatedDeposit(Long userId, int moneyAmount); // 模拟充值
 }

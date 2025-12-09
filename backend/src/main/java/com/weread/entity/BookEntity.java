@@ -20,10 +20,10 @@ public class BookEntity {
     @Column(nullable = false) // �ǿ��ֶ�
     private String title; // �鼮����
 
-    @Column(name = "author_id", nullable = false) // ����ֶΣ��������߱�
+    @Column(name = "author_id", nullable = false, insertable = true, updatable = true) // ����ֶΣ��������߱�
     private Integer authorId;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "authorId", insertable = false, updatable = false) // 使用 authorId 作为外键
+    @JoinColumn(name = "author_id", insertable = false, updatable = false) // 使用 authorId 作为外键
     private AuthorEntity author;
 
     private String cover; // ����ͼƬ������Ϊnull��

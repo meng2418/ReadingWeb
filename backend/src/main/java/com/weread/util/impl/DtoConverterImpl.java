@@ -4,8 +4,6 @@ import com.weread.util.DtoConverter;
 import com.weread.vo.asset.OrderStatusVO;
 import com.weread.vo.user.LoginLogVO;
 import com.weread.vo.user.UserDetailVO;
-import com.weread.entity.asset.OrderEntity;
-import com.weread.entity.asset.RechargePackageEntity;
 import com.weread.entity.user.UserEntity;
 import com.weread.entity.user.LoginLogEntity;
 import org.springframework.stereotype.Component;
@@ -56,27 +54,6 @@ public class DtoConverterImpl implements DtoConverter {
     
 
     // 订单创建 helper 2 (充值)
-    @Override
-    public OrderEntity toOrderEntity(Long userId, RechargePackageEntity packageEntity, String paymentMethod) {
-        OrderEntity order = new OrderEntity();
-        order.setUserId(userId);
-        order.setAmountCents(packageEntity.getPriceCents());
-        order.setPaymentMethod(paymentMethod);
-        order.setDescription(packageEntity.getName());
-        order.setCreatedAt(LocalDateTime.now());
-        order.setPackageId(packageEntity.getId());
-        // ... 其他属性
-        return order;
-    }
-
-    @Override
-    public OrderStatusVO toOrderStatusVO(OrderEntity entity) {
-        return new OrderStatusVO(
-            entity.getStatus(),
-            entity.getAmountCents(),
-            entity.getCreatedAt()
-        );
-    }
     
     
 

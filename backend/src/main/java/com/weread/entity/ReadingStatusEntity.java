@@ -14,12 +14,12 @@ public class ReadingStatusEntity {
     private Integer readingStatusId;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(nullable = false)
     private LocalDateTime date = LocalDateTime.now();
 
     @Column(name = "readingtime")
-    private Integer readingTime = 0; // ·ÖÖÓ
+    private Integer readingTime = 0; // ï¿½ï¿½ï¿½ï¿½
 
 }

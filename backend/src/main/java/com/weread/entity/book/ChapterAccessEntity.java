@@ -11,10 +11,10 @@ public class ChapterAccessEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long accessId;
+    private Integer accessId;
 
     @Column(nullable = false, unique = true)
-    private Long chapterId; // 章节ID
+    private Integer chapterId; // 章节ID
 
     /**
      * 访问级别：free, trial, member

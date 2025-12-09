@@ -74,7 +74,7 @@ public class CoinServiceImpl implements CoinService {
 
     @Override
     @Transactional
-    public void purchaseBook(Long userId, Long bookId, int bookPrice) {
+    public void purchaseBook(Long userId, Integer bookId, int bookPrice) {
         CoinAccountEntity account = getOrCreateAccount(userId);
 
         if (userBookAccessRepository.existsByUserIdAndBookId(userId, bookId)) {

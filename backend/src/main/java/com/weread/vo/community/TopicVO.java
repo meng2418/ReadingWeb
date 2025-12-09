@@ -11,7 +11,7 @@ import lombok.Data;
 @Builder
 public class TopicVO {
 
-    private Long topicId;
+    private Integer topicId;
     private String name;
     private String description;
     

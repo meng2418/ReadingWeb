@@ -18,7 +18,7 @@ public class BookAccessController {
      */
     @GetMapping("/check/{bookId}")
     public BookAccessStatusVO checkBookAccess(@RequestAttribute("userId") Long userId, 
-                                                @PathVariable Long bookId) {
+                                                @PathVariable Integer bookId) {
         
         boolean hasAccess = userBookAccessRepository.existsByUserIdAndBookId(userId, bookId);
 

@@ -19,7 +19,7 @@ public class PostTopicEntity implements Serializable {
 
     @Id
     @Column(nullable = false)
-    private Long topicId;
+    private Integer topicId; 
 
     // 关联到 PostEntity
     @ManyToOne(fetch = FetchType.LAZY)
@@ -34,7 +34,7 @@ public class PostTopicEntity implements Serializable {
     // 复合主键类
     @Data
     public static class PostTopicId implements Serializable {
-        private Long postId;
-        private Long topicId;
+        private Long postId; 
+        private Integer topicId; 
     }
 }

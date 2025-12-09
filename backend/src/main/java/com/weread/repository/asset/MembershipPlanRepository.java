@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface MembershipPlanRepository extends JpaRepository<MembershipPlanEntity, Long> {
+public interface MembershipPlanRepository extends JpaRepository<MembershipPlanEntity, Integer> {
     
     /**
      * 获取所有在售的套餐

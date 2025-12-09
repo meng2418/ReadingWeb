@@ -54,4 +54,7 @@ public class UserEntity {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt; // 更新时间
+
+    @Column(name = "follower_count") // 确保数据库列名也存在
+    private Integer followerCount;
 }

@@ -1,4 +1,6 @@
 package com.weread.entity.community;
+import com.weread.entity.user.UserEntity;
+import com.weread.entity.note.NoteEntity;
 
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
@@ -8,7 +10,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "post_comment")
+@Table(name = "comment_info")
 @Data
 @EntityListeners(AuditingEntityListener.class)
 public class CommentEntity {
@@ -19,6 +21,9 @@ public class CommentEntity {
 
     @Column(name = "post_id", nullable = false)
     private Long postId; // 所属帖子ID
+
+    @Column(name = "note_id")
+    private Integer noteId; // 保持 Integer (笔记 ID 是内容资产 ID)
 
     @Column(name = "user_id", nullable = false)
     private Long userId; // 评论者ID
@@ -36,4 +41,30 @@ public class CommentEntity {
     
     @CreatedDate
     private LocalDateTime createdAt;
+
+    // 💡 提示：如果需要 JPA 关联，您可以添加：
+    
+    // --- JPA 关联 ---
+
+    // 关联评论用户
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
+    private UserEntity user;
+
+    // 关联所属帖子
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "postId", referencedColumnName = "postId", insertable = false, updatable = false)
+    private PostEntity post;
+
+    // 关联所属笔记 (如果 noteId 不为空)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "noteId", referencedColumnName = "noteId", insertable = false, updatable = false)
+    private NoteEntity note;
+    
+    // 关联父级评论 (自引用)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parentCommentId", referencedColumnName = "commentId", insertable = false, updatable = false)
+    private CommentEntity parentComment;
+
+    
 }

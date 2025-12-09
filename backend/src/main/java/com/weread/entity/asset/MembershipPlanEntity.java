@@ -18,7 +18,7 @@ public class MembershipPlanEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long planId;
+    private Integer planId;
     
     @Column(unique = true, nullable = false, length = 50)
     private String name;

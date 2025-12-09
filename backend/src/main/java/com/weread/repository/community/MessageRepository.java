@@ -27,7 +27,7 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
      */
     @Modifying
     @Query("UPDATE MessageEntity m SET m.isRead = TRUE WHERE m.messageId = :messageId AND m.userId = :userId")
-    int markAsRead(@Param("messageId") Long messageId, @Param("userId") Long userId);
+    int markAsRead(@Param("messageId") Integer messageId, @Param("userId") Long userId);
 
     /**
      * 【@Modifying】将用户的所有未读消息标记为已读（一键已读）

@@ -4,52 +4,52 @@ import com.weread.dto.bookshelf.*;
 import java.util.List;
 
 /**
- * Êé¼ÜÄ£¿éÒµÎñ½Ó¿Ú
+ * ï¿½ï¿½ï¿½Ä£ï¿½ï¿½Òµï¿½ï¿½Ó¿ï¿½
  */
 public interface BookshelfService {
 
     /**
-     * Ìí¼ÓÊé¼®µ½Êé¼Ü
+     * ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½
      * 
-     * @param dto    °üº¬Êé¼®IDºÍ³õÊ¼×´Ì¬
-     * @param userId µ±Ç°ÓÃ»§ID
-     * @return Ìí¼Ó½á¹ûVO
+     * @param dto    ï¿½ï¿½ï¿½ï¿½ï¿½é¼®IDï¿½Í³ï¿½Ê¼×´Ì¬
+     * @param userId ï¿½ï¿½Ç°ï¿½Ã»ï¿½ID
+     * @return ï¿½ï¿½ï¿½Ó½ï¿½ï¿½VO
      */
-    BookAddVO addBookToShelf(BookAddDTO dto, Integer userId);
+    BookAddVO addBookToShelf(BookAddDTO dto, Long userId);
 
     /**
-     * ´ÓÊé¼ÜÒÆ³ýÊé¼®
+     * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ³ï¿½ï¿½é¼®
      * 
-     * @param bookId Êé¼®ID
-     * @param userId µ±Ç°ÓÃ»§ID
-     * @return ÒÆ³ý½á¹ûÌáÊ¾
+     * @param bookId ï¿½é¼®ID
+     * @param userId ï¿½ï¿½Ç°ï¿½Ã»ï¿½ID
+     * @return ï¿½Æ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
      */
-    String removeBookFromShelf(Integer bookId, Integer userId);
+    String removeBookFromShelf(Integer bookId, Long userId);
 
     /**
-     * ¸üÐÂÊé¼®ÔÄ¶Á×´Ì¬
+     * ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½Ä¶ï¿½×´Ì¬
      * 
-     * @param dto    °üº¬Êé¼®IDºÍÐÂ×´Ì¬
-     * @param userId µ±Ç°ÓÃ»§ID
-     * @return ×´Ì¬¸üÐÂ½á¹ûVO
+     * @param dto    ï¿½ï¿½ï¿½ï¿½ï¿½é¼®IDï¿½ï¿½ï¿½ï¿½×´Ì¬
+     * @param userId ï¿½ï¿½Ç°ï¿½Ã»ï¿½ID
+     * @return ×´Ì¬ï¿½ï¿½ï¿½Â½ï¿½ï¿½VO
      */
-    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Integer userId);
+    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId);
 
     /**
-     * ¸üÐÂÔÄ¶Á½ø¶È£¨ÕÂ½Ú¡¢Ò³Âë£©
+     * ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½È£ï¿½ï¿½Â½Ú¡ï¿½Ò³ï¿½ë£©
      * 
-     * @param dto    °üº¬Êé¼®ID¡¢ÕÂ½ÚË÷Òý¡¢Ò³Âë
-     * @param userId µ±Ç°ÓÃ»§ID
-     * @return ½ø¶È¸üÐÂ½á¹ûVO
+     * @param dto    ï¿½ï¿½ï¿½ï¿½ï¿½é¼®IDï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½
+     * @param userId ï¿½ï¿½Ç°ï¿½Ã»ï¿½ID
+     * @return ï¿½ï¿½ï¿½È¸ï¿½ï¿½Â½ï¿½ï¿½VO
      */
-    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Integer userId);
+    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId);
 
     /**
-     * ·ÖÒ³²éÑ¯ÓÃ»§Êé¼ÜÖÐµÄÊé¼®£¨Ö§³Ö°´×´Ì¬É¸Ñ¡£©
+     * ï¿½ï¿½Ò³ï¿½ï¿½Ñ¯ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½é¼®ï¿½ï¿½Ö§ï¿½Ö°ï¿½×´Ì¬É¸Ñ¡ï¿½ï¿½
      * 
-     * @param dto    °üº¬×´Ì¬É¸Ñ¡Ìõ¼þºÍ·ÖÒ³²ÎÊý
-     * @param userId µ±Ç°ÓÃ»§ID
-     * @return Êé¼®ÁÐ±íVO£¨´ø·ÖÒ³ÐÅÏ¢£©
+     * @param dto    ï¿½ï¿½ï¿½ï¿½×´Ì¬É¸Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½Ò³ï¿½ï¿½ï¿½ï¿½
+     * @param userId ï¿½ï¿½Ç°ï¿½Ã»ï¿½ID
+     * @return ï¿½é¼®ï¿½Ð±ï¿½VOï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½Ï¢ï¿½ï¿½
      */
-    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Integer userId);
+    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId);
 }

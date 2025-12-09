@@ -2,13 +2,7 @@ package com.weread.util;
 
 // 假设导入所有需要转换的 Entity 和 DTO/VO
 import com.weread.entity.user.LoginLogEntity;
-import com.weread.entity.asset.OrderEntity;
-import com.weread.entity.asset.RechargePackageEntity;
-import com.weread.entity.asset.RechargeLogEntity;
-import com.weread.entity.asset.MemberEntity;
 import com.weread.entity.user.UserEntity;
-import com.weread.vo.asset.MemberStatusVO;
-import com.weread.vo.asset.OrderStatusVO;
 import com.weread.vo.user.LoginLogVO;
 import com.weread.vo.user.UserDetailVO;
 
@@ -25,6 +19,5 @@ public interface DtoConverter {
     
 
     // --- 订单/充值相关 ---
-    OrderEntity toOrderEntity(Long userId, RechargePackageEntity packageEntity, String paymentMethod);
-    OrderStatusVO toOrderStatusVO(OrderEntity entity);
+    
 }

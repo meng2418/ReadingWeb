@@ -19,6 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -40,56 +41,56 @@ public class BookshelfServiceImplTest {
     @InjectMocks
     private BookshelfServiceImpl bookshelfService;
 
-    // ²âÊÔÊý¾Ý
-    private final Integer userId = 1;
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    private final Long userId = 1L;
     private final Integer bookId = 1001;
     private final Integer authorId = 2001;
 
-    // ====================== ²âÊÔ addBookToShelf ·½·¨ ======================
+    // ====================== ï¿½ï¿½ï¿½ï¿½ addBookToShelf ï¿½ï¿½ï¿½ï¿½ ======================
     @Test
     public void testAddBookToShelf_Success() {
-        // 1. ×¼±¸ÇëÇóÊý¾Ý
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookAddDTO dto = new BookAddDTO();
         dto.setBookId(bookId);
         dto.setStatus("reading");
 
-        // 2. Mock ÒÀÀµ·µ»Ø
+        // 2. Mock ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookEntity mockBook = new BookEntity();
         mockBook.setBookId(bookId);
-        mockBook.setTitle("²âÊÔÊé¼®");
+        mockBook.setTitle("ï¿½ï¿½ï¿½ï¿½ï¿½é¼®");
         mockBook.setAuthorId(authorId);
         mockBook.setCover("cover.jpg");
 
         AuthorEntity mockAuthor = new AuthorEntity();
         mockAuthor.setAuthorId(authorId);
-        mockAuthor.setName("²âÊÔ×÷Õß");
+        mockAuthor.setName("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
 
         when(bookRepository.findById(bookId)).thenReturn(Optional.of(mockBook));
-        when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.empty()); // Êé¼®²»ÔÚÊé¼Ü
+        when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.empty()); // ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         when(authorRepository.findById(authorId)).thenReturn(Optional.of(mockAuthor));
         when(bookshelfRepository.save(any(BookshelfEntity.class))).thenAnswer(invocation -> {
             BookshelfEntity entity = invocation.getArgument(0);
-            entity.setBookshelfId(1); // Ä£ÄâÉú³ÉID
+            entity.setBookshelfId(1); // Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ID
             entity.setAddedAt(LocalDateTime.now());
             return entity;
         });
         when(progressRepository.save(any(ReadingProgressEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // 3. Ö´ÐÐ·½·¨
+        // 3. Ö´ï¿½Ð·ï¿½ï¿½ï¿½
         BookAddVO result = bookshelfService.addBookToShelf(dto, userId);
 
-        // 4. ÑéÖ¤½á¹û
+        // 4. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½
         assertNotNull(result);
         assertEquals(bookId, result.getBookId());
-        assertEquals("²âÊÔÊé¼®", result.getTitle());
-        assertEquals("²âÊÔ×÷Õß", result.getAuthor());
+        assertEquals("ï¿½ï¿½ï¿½ï¿½ï¿½é¼®", result.getTitle());
+        assertEquals("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", result.getAuthor());
         assertEquals("cover.jpg", result.getCoverUrl());
         assertEquals("reading", result.getStatus());
         assertNotNull(result.getAddedAt());
-        assertEquals("Êé¼®ÒÑ³É¹¦Ìí¼Óµ½Êé¼Ü", result.getMessage());
+        assertEquals("ï¿½é¼®ï¿½Ñ³É¹ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½", result.getMessage());
 
-        // 5. ÑéÖ¤ÒÀÀµµ÷ÓÃ
+        // 5. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         verify(bookRepository, times(1)).findById(bookId);
         verify(bookshelfRepository, times(1)).findByUserIdAndBookId(userId, bookId);
         verify(bookshelfRepository, times(1)).save(any());
@@ -99,44 +100,44 @@ public class BookshelfServiceImplTest {
 
     @Test
     public void testAddBookToShelf_BookAlreadyExists() {
-        // 1. ×¼±¸Êý¾Ý
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookAddDTO dto = new BookAddDTO();
         dto.setBookId(bookId);
 
-        // 2. Mock£ºÊé¼®ÒÑÔÚÊé¼Ü
+        // 2. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(new BookshelfEntity()));
 
-        // 3. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 3. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.addBookToShelf(dto, userId);
         });
-        assertEquals("Êé¼®ÒÑÔÚÊé¼ÜÖÐ", exception.getMessage());
+        assertEquals("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", exception.getMessage());
 
-        // 4. ÑéÖ¤Î´µ÷ÓÃ±£´æ·½·¨
+        // 4. ï¿½ï¿½Ö¤Î´ï¿½ï¿½ï¿½Ã±ï¿½ï¿½æ·½ï¿½ï¿½
         verify(bookshelfRepository, never()).save(any());
         verify(progressRepository, never()).save(any());
     }
 
     @Test
     public void testAddBookToShelf_BookNotFound() {
-        // 1. ×¼±¸Êý¾Ý
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookAddDTO dto = new BookAddDTO();
         dto.setBookId(bookId);
 
-        // 2. Mock£ºÊé¼®²»´æÔÚ
+        // 2. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookRepository.findById(bookId)).thenReturn(Optional.empty());
 
-        // 3. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 3. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.addBookToShelf(dto, userId);
         });
-        assertEquals("Êé¼®²»´æÔÚ", exception.getMessage());
+        assertEquals("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", exception.getMessage());
     }
 
-    // ====================== ²âÊÔ removeBookFromShelf ·½·¨ ======================
+    // ====================== ï¿½ï¿½ï¿½ï¿½ removeBookFromShelf ï¿½ï¿½ï¿½ï¿½ ======================
     @Test
     public void testRemoveBookFromShelf_Success() {
-        // 1. Mock Êý¾Ý
+        // 1. Mock ï¿½ï¿½ï¿½ï¿½
         BookshelfEntity mockShelf = new BookshelfEntity();
         mockShelf.setBookshelfId(1);
         mockShelf.setUserId(userId);
@@ -148,42 +149,42 @@ public class BookshelfServiceImplTest {
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(mockShelf));
         when(progressRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(mockProgress));
 
-        // 2. Ö´ÐÐ·½·¨
+        // 2. Ö´ï¿½Ð·ï¿½ï¿½ï¿½
         String result = bookshelfService.removeBookFromShelf(bookId, userId);
 
-        // 3. ÑéÖ¤½á¹û
-        assertEquals("Êé¼®ÒÑ´ÓÊé¼ÜÒÆ³ý£¬ÔÄ¶Á½ø¶ÈÒÑÍ¬²½Çå³ý", result);
+        // 3. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½
+        assertEquals("ï¿½é¼®ï¿½Ñ´ï¿½ï¿½ï¿½ï¿½ï¿½Æ³ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½", result);
 
-        // 4. ÑéÖ¤É¾³ý²Ù×÷
+        // 4. ï¿½ï¿½Ö¤É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         verify(bookshelfRepository, times(1)).delete(mockShelf);
         verify(progressRepository, times(1)).delete(mockProgress);
     }
 
     @Test
     public void testRemoveBookFromShelf_BookNotInShelf() {
-        // 1. Mock£ºÊé¼®²»ÔÚÊé¼Ü
+        // 1. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.empty());
 
-        // 2. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 2. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.removeBookFromShelf(bookId, userId);
         });
-        assertEquals("Êé¼®²»ÔÚÊé¼ÜÖÐ£¬ÎÞ·¨ÒÆ³ý", exception.getMessage());
+        assertEquals("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Þ·ï¿½ï¿½Æ³ï¿½", exception.getMessage());
 
-        // 3. ÑéÖ¤Î´Ö´ÐÐÉ¾³ý
+        // 3. ï¿½ï¿½Ö¤Î´Ö´ï¿½ï¿½É¾ï¿½ï¿½
         verify(bookshelfRepository, never()).delete(any());
         verify(progressRepository, never()).delete(any());
     }
 
-    // ====================== ²âÊÔ updateBookStatus ·½·¨ ======================
+    // ====================== ï¿½ï¿½ï¿½ï¿½ updateBookStatus ï¿½ï¿½ï¿½ï¿½ ======================
     @Test
     public void testUpdateBookStatus_Success() {
-        // 1. ×¼±¸Êý¾Ý
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookStatusUpdateDTO dto = new BookStatusUpdateDTO();
         dto.setBookId(bookId);
         dto.setStatus("finished");
 
-        // 2. Mock ÒÀÀµ
+        // 2. Mock ï¿½ï¿½ï¿½ï¿½
         BookshelfEntity mockShelf = new BookshelfEntity();
         mockShelf.setUserId(userId);
         mockShelf.setBookId(bookId);
@@ -194,147 +195,147 @@ public class BookshelfServiceImplTest {
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(mockShelf));
         when(progressRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(mockProgress));
 
-        // 3. Ö´ÐÐ·½·¨
+        // 3. Ö´ï¿½Ð·ï¿½ï¿½ï¿½
         BookStatusVO result = bookshelfService.updateBookStatus(dto, userId);
 
-        // 4. ÑéÖ¤½á¹û
+        // 4. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½
         assertNotNull(result);
         assertEquals(bookId, result.getBookId());
         assertEquals("finished", result.getStatus());
-        assertEquals("ÔÄ¶Á×´Ì¬ÒÑ¸üÐÂ", result.getMessage());
+        assertEquals("ï¿½Ä¶ï¿½×´Ì¬ï¿½Ñ¸ï¿½ï¿½ï¿½", result.getMessage());
 
-        // 5. ÑéÖ¤¸üÐÂ²Ù×÷
+        // 5. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½Â²ï¿½ï¿½ï¿½
         verify(bookshelfRepository, times(1)).updateBookStatus(eq(userId), eq(bookId), eq("finished"),
                 any(LocalDateTime.class));
-        verify(progressRepository, times(1)).save(mockProgress); // ÑéÖ¤½ø¶È±íÊ±¼ä¸üÐÂ
+        verify(progressRepository, times(1)).save(mockProgress); // ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½È±ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½
     }
 
     @Test
     public void testUpdateBookStatus_InvalidStatus() {
-        // 1. ×¼±¸Êý¾Ý£¨·Ç·¨×´Ì¬£©
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½Ç·ï¿½×´Ì¬ï¿½ï¿½
         BookStatusUpdateDTO dto = new BookStatusUpdateDTO();
         dto.setBookId(bookId);
         dto.setStatus("invalid");
 
-        // 2. Mock£ºÊé¼®ÔÚÊé¼Ü
+        // 2. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(new BookshelfEntity()));
 
-        // 3. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 3. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateBookStatus(dto, userId);
         });
-        assertEquals("×´Ì¬±ØÐëÎª reading/unread/finished", exception.getMessage());
+        assertEquals("×´Ì¬ï¿½ï¿½ï¿½ï¿½Îª reading/unread/finished", exception.getMessage());
     }
 
     @Test
     public void testUpdateBookStatus_BookNotInShelf() {
-        // 1. ×¼±¸Êý¾Ý
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookStatusUpdateDTO dto = new BookStatusUpdateDTO();
         dto.setBookId(bookId);
 
-        // 2. Mock£ºÊé¼®²»ÔÚÊé¼Ü
+        // 2. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.empty());
 
-        // 3. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 3. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateBookStatus(dto, userId);
         });
-        assertEquals("Êé¼®²»ÔÚÊé¼ÜÖÐ", exception.getMessage());
+        assertEquals("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", exception.getMessage());
     }
 
-    // ====================== ²âÊÔ updateReadingProgress ·½·¨ ======================
+    // ====================== ï¿½ï¿½ï¿½ï¿½ updateReadingProgress ï¿½ï¿½ï¿½ï¿½ ======================
     @Test
     public void testUpdateReadingProgress_Success() {
-        // 1. ×¼±¸Êý¾Ý
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         ReadingProgressDTO dto = new ReadingProgressDTO();
         dto.setBookId(bookId);
         dto.setChapterId(5);
         dto.setCurrentPage(120);
         dto.setProgress(0.6f);
 
-        // 2. Mock ÒÀÀµ
+        // 2. Mock ï¿½ï¿½ï¿½ï¿½
         BookshelfEntity mockShelf = new BookshelfEntity();
         mockShelf.setBookshelfId(1);
 
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(mockShelf));
 
-        // 3. Ö´ÐÐ·½·¨
+        // 3. Ö´ï¿½Ð·ï¿½ï¿½ï¿½
         ReadingProgressVO result = bookshelfService.updateReadingProgress(dto, userId);
 
-        // 4. ÑéÖ¤½á¹û
+        // 4. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½
         assertNotNull(result);
         assertEquals(bookId, result.getBookId());
         assertEquals(5, result.getChapterId());
         assertEquals(120, result.getCurrentPage());
         assertEquals(0.6f, result.getProgress());
         assertNotNull(result.getLastReadTime());
-        assertEquals("ÔÄ¶Á½ø¶ÈÒÑ¸üÐÂ", result.getMessage());
+        assertEquals("ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¸ï¿½ï¿½ï¿½", result.getMessage());
 
-        // 5. ÑéÖ¤¸üÐÂ²Ù×÷
+        // 5. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½Â²ï¿½ï¿½ï¿½
         verify(progressRepository, times(1)).updateProgress(
                 eq(userId), eq(bookId), eq(5), eq(120), eq(0.6f), any(LocalDateTime.class));
-        verify(bookshelfRepository, times(1)).save(mockShelf); // ÑéÖ¤Êé¼Ü±íÊ±¼ä¸üÐÂ
+        verify(bookshelfRepository, times(1)).save(mockShelf); // ï¿½ï¿½Ö¤ï¿½ï¿½Ü±ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½
     }
 
     @Test
     public void testUpdateReadingProgress_InvalidProgress() {
-        // 1. ×¼±¸Êý¾Ý£¨½ø¶È³¬³ö·¶Î§£©
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½È³ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½
         ReadingProgressDTO dto = new ReadingProgressDTO();
         dto.setBookId(bookId);
-        dto.setProgress(1.2f); // ·Ç·¨Öµ
+        dto.setProgress(1.2f); // ï¿½Ç·ï¿½Öµ
 
-        // 2. Mock£ºÊé¼®ÔÚÊé¼Ü
+        // 2. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(new BookshelfEntity()));
 
-        // 3. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 3. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateReadingProgress(dto, userId);
         });
-        assertEquals("½ø¶ÈÖµ±ØÐëÔÚ 0-1 Ö®¼ä", exception.getMessage());
+        assertEquals("ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0-1 Ö®ï¿½ï¿½", exception.getMessage());
     }
 
     @Test
     public void testUpdateReadingProgress_InvalidPage() {
-        // 1. ×¼±¸Êý¾Ý£¨Ò³Âë·Ç·¨£©
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½Ò³ï¿½ï¿½Ç·ï¿½ï¿½ï¿½
         ReadingProgressDTO dto = new ReadingProgressDTO();
         dto.setBookId(bookId);
-        dto.setCurrentPage(0); // ·Ç·¨Öµ
+        dto.setCurrentPage(0); // ï¿½Ç·ï¿½Öµ
         dto.setProgress(0.5f);
 
-        // 2. Mock£ºÊé¼®ÔÚÊé¼Ü
+        // 2. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(new BookshelfEntity()));
 
-        // 3. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 3. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateReadingProgress(dto, userId);
         });
-        assertEquals("Ò³Âë±ØÐëÎªÕýÕûÊý", exception.getMessage());
+        assertEquals("Ò³ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", exception.getMessage());
     }
 
     @Test
     public void testUpdateReadingProgress_BookNotInShelf() {
-        // 1. ×¼±¸Êý¾Ý
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         ReadingProgressDTO dto = new ReadingProgressDTO();
         dto.setBookId(bookId);
 
-        // 2. Mock£ºÊé¼®²»ÔÚÊé¼Ü
+        // 2. Mockï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.empty());
 
-        // 3. Ö´ÐÐ²¢ÑéÖ¤Òì³£
+        // 3. Ö´ï¿½Ð²ï¿½ï¿½ï¿½Ö¤ï¿½ì³£
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateReadingProgress(dto, userId);
         });
-        assertEquals("Êé¼®²»ÔÚÊé¼ÜÖÐ£¬ÎÞ·¨¸üÐÂ½ø¶È", exception.getMessage());
+        assertEquals("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Þ·ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½", exception.getMessage());
     }
 
-    // ====================== ²âÊÔ getUserBooks ·½·¨ ======================
+    // ====================== ï¿½ï¿½ï¿½ï¿½ getUserBooks ï¿½ï¿½ï¿½ï¿½ ======================
     @Test
     public void testGetUserBooks_WithStatusFilter() {
-        // 1. ×¼±¸²éÑ¯Ìõ¼þ
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
         dto.setStatus("reading");
 
-        // 2. Mock ÒÀÀµÊý¾Ý
+        // 2. Mock ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookshelfEntity shelf1 = new BookshelfEntity();
         shelf1.setBookshelfId(1);
         shelf1.setUserId(userId);
@@ -344,13 +345,13 @@ public class BookshelfServiceImplTest {
 
         BookEntity book = new BookEntity();
         book.setBookId(bookId);
-        book.setTitle("²âÊÔÊé¼®");
+        book.setTitle("ï¿½ï¿½ï¿½ï¿½ï¿½é¼®");
         book.setAuthorId(authorId);
         book.setCover("cover.jpg");
 
         AuthorEntity author = new AuthorEntity();
         author.setAuthorId(authorId);
-        author.setName("²âÊÔ×÷Õß");
+        author.setName("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
 
         ReadingProgressEntity progress = new ReadingProgressEntity();
         progress.setChapterId(3);
@@ -362,17 +363,17 @@ public class BookshelfServiceImplTest {
         when(authorRepository.findById(authorId)).thenReturn(Optional.of(author));
         when(progressRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(progress));
 
-        // 3. Ö´ÐÐ·½·¨
+        // 3. Ö´ï¿½Ð·ï¿½ï¿½ï¿½
         List<BookShelfVO> result = bookshelfService.getUserBooks(dto, userId);
 
-        // 4. ÑéÖ¤½á¹û
+        // 4. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½
         assertNotNull(result);
         assertEquals(1, result.size());
 
         BookShelfVO vo = result.get(0);
         assertEquals(bookId, vo.getBookId());
-        assertEquals("²âÊÔÊé¼®", vo.getTitle());
-        assertEquals("²âÊÔ×÷Õß", vo.getAuthor());
+        assertEquals("ï¿½ï¿½ï¿½ï¿½ï¿½é¼®", vo.getTitle());
+        assertEquals("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", vo.getAuthor());
         assertEquals("cover.jpg", vo.getCoverUrl());
         assertEquals("reading", vo.getStatus());
         assertEquals(3, vo.getChapterId());
@@ -382,53 +383,54 @@ public class BookshelfServiceImplTest {
 
     @Test
     public void testGetUserBooks_WithoutStatusFilter() {
-        // 1. ×¼±¸²éÑ¯Ìõ¼þ£¨²»É¸Ñ¡×´Ì¬£©
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¸Ñ¡×´Ì¬ï¿½ï¿½
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
 
-        // 2. Mock ÒÀÀµÊý¾Ý£¨·µ»Ø2±¾Êé£©
+        // 2. Mock ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½é£©
         BookshelfEntity shelf1 = new BookshelfEntity();
         shelf1.setBookId(bookId);
         shelf1.setStatus("reading");
 
         BookshelfEntity shelf2 = new BookshelfEntity();
-        shelf2.setBookId(1002); // µÚ¶þ±¾ÊéID
+        shelf2.setBookId(1002); // ï¿½Ú¶ï¿½ï¿½ï¿½ï¿½ï¿½ID
         shelf2.setStatus("finished");
 
-        // ÎªÁ½±¾ÊéÉèÖÃÓÐÐ§µÄ authorId£¨Óë stub Ò»ÖÂ£©
+        // Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ authorIdï¿½ï¿½ï¿½ï¿½ stub Ò»ï¿½Â£ï¿½
         BookEntity book1 = new BookEntity();
         book1.setBookId(bookId);
-        book1.setAuthorId(authorId); // Ê¹ÓÃ²âÊÔÀàÖÐ¶¨ÒåµÄ authorId=2001
+        book1.setAuthorId(authorId); // Ê¹ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ authorId=2001
 
         BookEntity book2 = new BookEntity();
         book2.setBookId(1002);
-        book2.setAuthorId(authorId); // Í³Ò»Ê¹ÓÃÍ¬Ò»¸ö authorId
+        book2.setAuthorId(authorId); // Í³Ò»Ê¹ï¿½ï¿½Í¬Ò»ï¿½ï¿½ authorId
 
-        // ÐÞÕý stub£ºµ±²éÑ¯ authorId=2001 Ê±·µ»Ø mock ×÷Õß
+        // ï¿½ï¿½ï¿½ï¿½ stubï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ authorId=2001 Ê±ï¿½ï¿½ï¿½ï¿½ mock ï¿½ï¿½ï¿½ï¿½
         when(bookRepository.findById(bookId)).thenReturn(Optional.of(book1));
         when(bookRepository.findById(1002)).thenReturn(Optional.of(book2));
-        when(authorRepository.findById(authorId)).thenReturn(Optional.of(new AuthorEntity())); // Æ¥Åä authorId=2001
-        when(progressRepository.findByUserIdAndBookId(anyInt(), anyInt()))
-                .thenReturn(Optional.of(new ReadingProgressEntity()));
+        when(authorRepository.findById(authorId)).thenReturn(Optional.of(new AuthorEntity())); // Æ¥ï¿½ï¿½ authorId=2001
+        when(progressRepository.findByUserIdAndBookId(anyLong(), any(Integer.class)))
+        .thenReturn(Optional.of(new ReadingProgressEntity()));
 
-        // 3. Ö´ÐÐ·½·¨
+
+        // 3. Ö´ï¿½Ð·ï¿½ï¿½ï¿½
         List<BookShelfVO> result = bookshelfService.getUserBooks(dto, userId);
 
-        // 4. ÑéÖ¤½á¹û
-        assertEquals(2, result.size()); // ÑéÖ¤·µ»Ø2ÌõÊý¾Ý
+        // 4. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½
+        assertEquals(2, result.size()); // ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     }
 
     @Test
     public void testGetUserBooks_NoBooks() {
-        // 1. ×¼±¸²éÑ¯Ìõ¼þ
+        // 1. ×¼ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
 
-        // 2. Mock£ºÓÃ»§ÎÞÊé¼ÜÊé¼®
+        // 2. Mockï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é¼®
         when(bookshelfRepository.findByUserId(userId)).thenReturn(List.of());
 
-        // 3. Ö´ÐÐ·½·¨
+        // 3. Ö´ï¿½Ð·ï¿½ï¿½ï¿½
         List<BookShelfVO> result = bookshelfService.getUserBooks(dto, userId);
 
-        // 4. ÑéÖ¤½á¹û
+        // 4. ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½
         assertTrue(result.isEmpty());
     }
 }

@@ -14,10 +14,10 @@ public class CoinTransactionEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long transactionId;
+    private Integer transactionId;
 
     @Column(nullable = false)
-    private Long accountId; // 关联到 CoinAccount
+    private Integer accountId; // 关联到 CoinAccount
 
     private Integer amount; // 交易数量 (充值: 正, 消费: 负)
     

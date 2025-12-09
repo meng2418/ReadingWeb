@@ -24,7 +24,7 @@ public interface MessageService {
     /**
      * 标记单条消息为已读
      */
-    void markMessageAsRead(Long userId, Long messageId);
+    void markMessageAsRead(Long userId, Integer messageId);
 
     /**
      * 标记用户所有消息为已读

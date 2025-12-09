@@ -32,7 +32,7 @@ public class MembershipPlanController {
      * 根据ID获取单个套餐的详细信息
      */
     @GetMapping("/plans/{planId}")
-    public ResponseEntity<MembershipPlanEntity> getPlanDetails(@PathVariable Long planId) {
+    public ResponseEntity<MembershipPlanEntity> getPlanDetails(@PathVariable Integer planId) {
         return membershipPlanService.getPlanById(planId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

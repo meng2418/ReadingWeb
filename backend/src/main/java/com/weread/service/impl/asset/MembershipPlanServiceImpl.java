@@ -59,7 +59,7 @@ public class MembershipPlanServiceImpl implements MembershipPlanService {
     }
 
     @Override
-    public Optional<MembershipPlanEntity> getPlanById(Long planId) {
+    public Optional<MembershipPlanEntity> getPlanById(Integer planId) {
         return planRepository.findById(planId);
     }
 }

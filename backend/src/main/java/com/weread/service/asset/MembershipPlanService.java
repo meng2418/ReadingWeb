@@ -15,7 +15,7 @@ public interface MembershipPlanService {
     /**
      * 根据ID获取单个套餐
      */
-    Optional<MembershipPlanEntity> getPlanById(Long planId);
+    Optional<MembershipPlanEntity> getPlanById(Integer planId);
 
     // 可以在这里提供一个初始化方法，将您的月卡、季卡、年卡数据插入数据库
     void initializeDefaultPlans();

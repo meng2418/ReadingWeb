@@ -13,108 +13,108 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Êé¼ÜÄ£¿é¿ØÖÆÆ÷£¨ÍêÕû¸ÄÔì°æ£©
- * ËùÓÐ½Ó¿ÚÏìÓ¦¸ñÊ½Í³Ò»Îª Result ÀàÐÍ£¬ÊÊÅäÈ«¾ÖÒì³£´¦Àí
+ * ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ£©
+ * ï¿½ï¿½ï¿½Ð½Ó¿ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½Ê½Í³Ò»Îª Result ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½ï¿½ì³£ï¿½ï¿½ï¿½ï¿½
  */
 @RestController
 @RequestMapping("/api/bookshelf")
 @RequiredArgsConstructor
-@Tag(name = "Êé¼Ü", description = "Êé¼ÜÄ£¿éÏà¹Ø½Ó¿Ú")
-@SecurityRequirement(name = "bearerAuth") // ÐèJWTÈÏÖ¤
+@Tag(name = "ï¿½ï¿½ï¿½", description = "ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½Ø½Ó¿ï¿½")
+@SecurityRequirement(name = "bearerAuth") // ï¿½ï¿½JWTï¿½ï¿½Ö¤
 public class BookshelfController {
 
     private final BookshelfService bookshelfService;
 
     /**
-     * »ñÈ¡Êé¼ÜÊé¼®ÁÐ±í£¨Ö§³Ö°´×´Ì¬É¸Ñ¡£©
+     * ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½é¼®ï¿½Ð±ï¿½ï¿½ï¿½Ö§ï¿½Ö°ï¿½×´Ì¬É¸Ñ¡ï¿½ï¿½
      */
     @GetMapping
-    @Operation(summary = "»ñÈ¡Êé¼Ü", description = "²éÑ¯ÓÃ»§Êé¼ÜÖÐµÄÊé¼®£¬¿É°´×´Ì¬É¸Ñ¡£¨all/unread/reading/finished£©")
+    @Operation(summary = "ï¿½ï¿½È¡ï¿½ï¿½ï¿½", description = "ï¿½ï¿½Ñ¯ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½é¼®ï¿½ï¿½ï¿½É°ï¿½×´Ì¬É¸Ñ¡ï¿½ï¿½all/unread/reading/finishedï¿½ï¿½")
     public Result<Map<String, Object>> getBookshelf(
             @RequestParam(required = false, defaultValue = "all") String status,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // ¹¹½¨²éÑ¯²ÎÊýDTO
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½DTO
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
         if (!"all".equals(status)) {
             dto.setStatus(status);
         }
 
-        // µ÷ÓÃService²éÑ¯
+        // ï¿½ï¿½ï¿½ï¿½Serviceï¿½ï¿½Ñ¯
         List<BookShelfVO> books = bookshelfService.getUserBooks(dto, userId);
 
-        // Í³Ò»ÓÃResult·â×°ÏìÓ¦
+        // Í³Ò»ï¿½ï¿½Resultï¿½ï¿½×°ï¿½ï¿½Ó¦
         return Result.success(Map.of("books", books));
     }
 
     /**
-     * Ìí¼ÓÊé¼®µ½Êé¼Ü
+     * ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½
      */
     @PostMapping
-    @Operation(summary = "Ìí¼Óµ½Êé¼Ü", description = "½«Ö¸¶¨Êé¼®Ìí¼Óµ½ÓÃ»§Êé¼Ü£¬Ä¬ÈÏ×´Ì¬ÎªÎ´¶Á")
+    @Operation(summary = "ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½", description = "ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½Óµï¿½ï¿½Ã»ï¿½ï¿½ï¿½Ü£ï¿½Ä¬ï¿½ï¿½×´Ì¬ÎªÎ´ï¿½ï¿½")
     public Result<Void> addToBookshelf(
             @RequestBody BookAddDTO dto,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // µ÷ÓÃServiceÌí¼Ó
+        // ï¿½ï¿½ï¿½ï¿½Serviceï¿½ï¿½ï¿½ï¿½
         bookshelfService.addBookToShelf(dto, userId);
 
-        // ÎÞÊý¾Ý·µ»Ø£¬½öÌáÊ¾³É¹¦
+        // ï¿½ï¿½ï¿½ï¿½ï¿½Ý·ï¿½ï¿½Ø£ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½É¹ï¿½
         return Result.success();
     }
 
     /**
-     * ´ÓÊé¼ÜÒÆ³ýÊé¼®
+     * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ³ï¿½ï¿½é¼®
      */
     @DeleteMapping("/{bookId}")
-    @Operation(summary = "´ÓÊé¼ÜÒÆ³ý", description = "½«Ö¸¶¨Êé¼®´ÓÓÃ»§Êé¼ÜÖÐÉ¾³ý")
+    @Operation(summary = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ³ï¿½", description = "ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½")
     public Result<Void> removeFromBookshelf(
             @PathVariable Integer bookId,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // µ÷ÓÃServiceÒÆ³ý
+        // ï¿½ï¿½ï¿½ï¿½Serviceï¿½Æ³ï¿½
         bookshelfService.removeBookFromShelf(bookId, userId);
 
         return Result.success();
     }
 
     /**
-     * ¸üÐÂÊé¼®ÔÄ¶Á×´Ì¬
+     * ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½Ä¶ï¿½×´Ì¬
      */
     @PutMapping("/{bookId}")
-    @Operation(summary = "¸üÐÂÔÄ¶Á×´Ì¬", description = "ÐÞ¸ÄÊé¼ÜÖÐÊé¼®µÄÔÄ¶Á×´Ì¬£¨unread/reading/finished£©")
+    @Operation(summary = "ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½×´Ì¬", description = "ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½Ä¶ï¿½×´Ì¬ï¿½ï¿½unread/reading/finishedï¿½ï¿½")
     public Result<Void> updateBookStatus(
             @PathVariable Integer bookId,
             @RequestBody BookStatusUpdateDTO dto,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // ·â×°×´Ì¬¸üÐÂDTO
+        // ï¿½ï¿½×°×´Ì¬ï¿½ï¿½ï¿½ï¿½DTO
         BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
         statusDTO.setBookId(bookId);
         statusDTO.setStatus(dto.getStatus());
 
-        // µ÷ÓÃService¸üÐÂ
+        // ï¿½ï¿½ï¿½ï¿½Serviceï¿½ï¿½ï¿½ï¿½
         bookshelfService.updateBookStatus(statusDTO, userId);
 
         return Result.success();
     }
 
     /**
-     * Êé¼ÜÅúÁ¿²Ù×÷£¨É¾³ý/¸üÐÂ×´Ì¬£©
+     * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½
      */
     @PostMapping("/batch")
-    @Operation(summary = "ÅúÁ¿²Ù×÷", description = "ÅúÁ¿É¾³ýÊé¼ÜÊé¼®»òÅúÁ¿¸üÐÂÔÄ¶Á×´Ì¬")
+    @Operation(summary = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", description = "ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½×´Ì¬")
     public Result<Void> batchOperation(
             @RequestBody BookshelfBatchDTO dto,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // ÅúÁ¿É¾³ý
+        // ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
         if ("delete".equals(dto.getAction())) {
             for (Integer bookId : dto.getBookIds()) {
                 bookshelfService.removeBookFromShelf(bookId, userId);
             }
         }
-        // ÅúÁ¿¸üÐÂ×´Ì¬
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
         else if ("update-status".equals(dto.getAction())) {
             for (Integer bookId : dto.getBookIds()) {
                 BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
@@ -123,9 +123,9 @@ public class BookshelfController {
                 bookshelfService.updateBookStatus(statusDTO, userId);
             }
         }
-        // ²»Ö§³ÖµÄ²Ù×÷ÀàÐÍ£¨»á±»È«¾ÖÒì³£´¦ÀíÆ÷²¶»ñ£©
+        // ï¿½ï¿½Ö§ï¿½ÖµÄ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½ï¿½á±»È«ï¿½ï¿½ï¿½ì³£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         else {
-            throw new RuntimeException("²»Ö§³ÖµÄ²Ù×÷ÀàÐÍ£º" + dto.getAction());
+            throw new RuntimeException("ï¿½ï¿½Ö§ï¿½ÖµÄ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½" + dto.getAction());
         }
 
         return Result.success();

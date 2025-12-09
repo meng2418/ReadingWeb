@@ -11,21 +11,21 @@ import java.util.Optional;
 
 public interface BookshelfRepository extends JpaRepository<BookshelfEntity, Integer> {
 
-    // 1. ¼ì²éÊé¼®ÊÇ·ñÔÚÓÃ»§Êé¼ÜÖÐ
-    Optional<BookshelfEntity> findByUserIdAndBookId(Integer userId, Integer bookId);
+    // 1. ï¿½ï¿½ï¿½ï¿½é¼®ï¿½Ç·ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    Optional<BookshelfEntity> findByUserIdAndBookId(Long userId, Integer bookId);
 
-    // 2. ²éÑ¯ÓÃ»§Êé¼ÜÖÐµÄËùÓÐÊé¼®£¨È«²¿Êé¼Ü£©
-    List<BookshelfEntity> findByUserId(Integer userId);
+    // 2. ï¿½ï¿½Ñ¯ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½Ü£ï¿½
+    List<BookshelfEntity> findByUserId(Long userId);
 
-    // 3. °´×´Ì¬É¸Ñ¡ÓÃ»§Êé¼ÜÖÐµÄÊé¼®£¨Î´¶Á/ÔÄ¶ÁÖÐ/ÒÑÍê³É£©
-    List<BookshelfEntity> findByUserIdAndStatus(Integer userId, String status);
+    // 3. ï¿½ï¿½×´Ì¬É¸Ñ¡ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½é¼®ï¿½ï¿½Î´ï¿½ï¿½/ï¿½Ä¶ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½É£ï¿½
+    List<BookshelfEntity> findByUserIdAndStatus(Long userId, String status);
 
-    // 4. ¸üÐÂÊé¼®ÔÚÊé¼ÜÖÐµÄ×´Ì¬£¨Èç´Óreading¸ÄÎªfinished£©
+    // 4. ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½readingï¿½ï¿½Îªfinishedï¿½ï¿½
     @Modifying
     @Query("UPDATE BookshelfEntity b SET b.status = :status, b.lastReadAt = :lastReadAt " +
             "WHERE b.userId = :userId AND b.bookId = :bookId")
     void updateBookStatus(
-            @Param("userId") Integer userId,
+            @Param("userId") Long userId,
             @Param("bookId") Integer bookId,
             @Param("status") String status,
             @Param("lastReadAt") LocalDateTime lastReadAt);

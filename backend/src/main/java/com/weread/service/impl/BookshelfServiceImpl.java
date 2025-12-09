@@ -22,32 +22,32 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public BookAddVO addBookToShelf(BookAddDTO dto, Integer userId) {
-        // 1. Ð£ÑéÊé¼®´æÔÚÐÔ
+    public BookAddVO addBookToShelf(BookAddDTO dto, Long userId) {
+        // 1. Ð£ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookEntity book = bookRepository.findById(dto.getBookId())
-                .orElseThrow(() -> new RuntimeException("Êé¼®²»´æÔÚ"));
+                .orElseThrow(() -> new RuntimeException("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"));
 
-        // 2. Ð£ÑéÊÇ·ñÒÑÔÚÊé¼Ü
+        // 2. Ð£ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId()).isPresent()) {
-            throw new RuntimeException("Êé¼®ÒÑÔÚÊé¼ÜÖÐ");
+            throw new RuntimeException("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
         }
 
-        // 3. ±£´æÊé¼Ü¹ØÁª¼ÇÂ¼
+        // 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü¹ï¿½ï¿½ï¿½ï¿½ï¿½Â¼
         BookshelfEntity shelfEntity = new BookshelfEntity();
         shelfEntity.setUserId(userId);
         shelfEntity.setBookId(dto.getBookId());
         shelfEntity.setStatus(dto.getStatus());
         bookshelfRepository.save(shelfEntity);
 
-        // 4. ³õÊ¼»¯ÔÄ¶Á½ø¶È¼ÇÂ¼
+        // 4. ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½È¼ï¿½Â¼
         ReadingProgressEntity progressEntity = new ReadingProgressEntity();
         progressEntity.setUserId(userId);
         progressEntity.setBookId(dto.getBookId());
         progressRepository.save(progressEntity);
 
-        // 5. ×é×°·µ»Ø½á¹û
+        // 5. ï¿½ï¿½×°ï¿½ï¿½ï¿½Ø½ï¿½ï¿½
         AuthorEntity author = authorRepository.findById(book.getAuthorId())
-                .orElseThrow(() -> new RuntimeException("×÷ÕßÐÅÏ¢²»´æÔÚ"));
+                .orElseThrow(() -> new RuntimeException("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"));
         BookAddVO vo = new BookAddVO();
         vo.setBookId(book.getBookId());
         vo.setTitle(book.getTitle());
@@ -55,75 +55,75 @@ public class BookshelfServiceImpl implements BookshelfService {
         vo.setCoverUrl(book.getCover());
         vo.setStatus(dto.getStatus());
         vo.setAddedAt(shelfEntity.getAddedAt());
-        vo.setMessage("Êé¼®ÒÑ³É¹¦Ìí¼Óµ½Êé¼Ü");
+        vo.setMessage("ï¿½é¼®ï¿½Ñ³É¹ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½");
         return vo;
     }
 
     @Override
     @Transactional
-    public String removeBookFromShelf(Integer bookId, Integer userId) {
-        // 1. Ð£ÑéÊé¼®ÊÇ·ñÔÚÊé¼ÜÖÐ
+    public String removeBookFromShelf(Integer bookId, Long userId) {
+        // 1. Ð£ï¿½ï¿½ï¿½é¼®ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookshelfEntity shelfEntity = bookshelfRepository.findByUserIdAndBookId(userId, bookId)
-                .orElseThrow(() -> new RuntimeException("Êé¼®²»ÔÚÊé¼ÜÖÐ£¬ÎÞ·¨ÒÆ³ý"));
+                .orElseThrow(() -> new RuntimeException("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Þ·ï¿½ï¿½Æ³ï¿½"));
 
-        // 2. É¾³ýÊé¼Ü¹ØÁª¼ÇÂ¼
+        // 2. É¾ï¿½ï¿½ï¿½ï¿½Ü¹ï¿½ï¿½ï¿½ï¿½ï¿½Â¼
         bookshelfRepository.delete(shelfEntity);
 
-        // 3. É¾³ý¹ØÁªµÄÔÄ¶Á½ø¶È¼ÇÂ¼
+        // 3. É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½È¼ï¿½Â¼
         progressRepository.findByUserIdAndBookId(userId, bookId)
                 .ifPresent(progressRepository::delete);
 
-        return "Êé¼®ÒÑ´ÓÊé¼ÜÒÆ³ý£¬ÔÄ¶Á½ø¶ÈÒÑÍ¬²½Çå³ý";
+        return "ï¿½é¼®ï¿½Ñ´ï¿½ï¿½ï¿½ï¿½ï¿½Æ³ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½";
     }
 
     @Override
     @Transactional
-    public BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Integer userId) {
-        // 1. Ð£ÑéÊé¼®ÔÚÊé¼ÜÖÐ
+    public BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId) {
+        // 1. Ð£ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         BookshelfEntity shelfEntity = bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId())
-                .orElseThrow(() -> new RuntimeException("Êé¼®²»ÔÚÊé¼ÜÖÐ"));
+                .orElseThrow(() -> new RuntimeException("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"));
 
-        // 2. Ð£Ñé×´Ì¬ºÏ·¨ÐÔ
+        // 2. Ð£ï¿½ï¿½×´Ì¬ï¿½Ï·ï¿½ï¿½ï¿½
         if (!List.of("reading", "unread", "finished").contains(dto.getStatus())) {
-            throw new RuntimeException("×´Ì¬±ØÐëÎª reading/unread/finished");
+            throw new RuntimeException("×´Ì¬ï¿½ï¿½ï¿½ï¿½Îª reading/unread/finished");
         }
 
-        // 3. ¸üÐÂÊé¼ÜÖÐµÄ×´Ì¬£¬²¢Í¬²½×îºóÔÄ¶ÁÊ±¼ä
+        // 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½Ê±ï¿½ï¿½
         LocalDateTime now = LocalDateTime.now();
         bookshelfRepository.updateBookStatus(userId, dto.getBookId(), dto.getStatus(), now);
 
-        // 4. Í¬²½¸üÐÂ½ø¶È±íµÄ×îºóÔÄ¶ÁÊ±¼ä
+        // 4. Í¬ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½È±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½Ê±ï¿½ï¿½
         progressRepository.findByUserIdAndBookId(userId, dto.getBookId())
                 .ifPresent(progress -> {
                     progress.setLastReadAt(now);
                     progressRepository.save(progress);
                 });
 
-        // 5. ×é×°·µ»Ø½á¹û
+        // 5. ï¿½ï¿½×°ï¿½ï¿½ï¿½Ø½ï¿½ï¿½
         BookStatusVO vo = new BookStatusVO();
         vo.setBookId(dto.getBookId());
         vo.setStatus(dto.getStatus());
-        vo.setMessage("ÔÄ¶Á×´Ì¬ÒÑ¸üÐÂ");
+        vo.setMessage("ï¿½Ä¶ï¿½×´Ì¬ï¿½Ñ¸ï¿½ï¿½ï¿½");
         return vo;
     }
 
     @Override
     @Transactional
-    public ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Integer userId) {
-        // 1. Ð£ÑéÊé¼®ÔÚÊé¼ÜÖÐ
+    public ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId) {
+        // 1. Ð£ï¿½ï¿½ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId()).isEmpty()) {
-            throw new RuntimeException("Êé¼®²»ÔÚÊé¼ÜÖÐ£¬ÎÞ·¨¸üÐÂ½ø¶È");
+            throw new RuntimeException("ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Þ·ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½");
         }
 
-        // 2. Ð£Ñé²ÎÊýºÏ·¨ÐÔ
+        // 2. Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½
         if (dto.getProgress() == null || dto.getProgress() < 0 || dto.getProgress() > 1) {
-            throw new RuntimeException("½ø¶ÈÖµ±ØÐëÔÚ 0-1 Ö®¼ä");
+            throw new RuntimeException("ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0-1 Ö®ï¿½ï¿½");
         }
         if (dto.getCurrentPage() == null || dto.getCurrentPage() < 1) {
-            throw new RuntimeException("Ò³Âë±ØÐëÎªÕýÕûÊý");
+            throw new RuntimeException("Ò³ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
         }
 
-        // 3. ¸üÐÂ½ø¶È±í
+        // 3. ï¿½ï¿½ï¿½Â½ï¿½ï¿½È±ï¿½
         LocalDateTime now = LocalDateTime.now();
         progressRepository.updateProgress(
                 userId,
@@ -133,52 +133,52 @@ public class BookshelfServiceImpl implements BookshelfService {
                 dto.getProgress(),
                 now);
 
-        // 4. Í¬²½¸üÐÂÊé¼Ü±íµÄ×îºóÔÄ¶ÁÊ±¼ä
+        // 4. Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½Ê±ï¿½ï¿½
         bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId())
                 .ifPresent(shelf -> {
                     shelf.setLastReadAt(now);
                     bookshelfRepository.save(shelf);
                 });
 
-        // 5. ×é×°·µ»Ø½á¹û
+        // 5. ï¿½ï¿½×°ï¿½ï¿½ï¿½Ø½ï¿½ï¿½
         ReadingProgressVO vo = new ReadingProgressVO();
         vo.setBookId(dto.getBookId());
         vo.setChapterId(dto.getChapterId());
         vo.setCurrentPage(dto.getCurrentPage());
         vo.setProgress(dto.getProgress());
         vo.setLastReadTime(now);
-        vo.setMessage("ÔÄ¶Á½ø¶ÈÒÑ¸üÐÂ");
+        vo.setMessage("ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¸ï¿½ï¿½ï¿½");
         return vo;
     }
 
     @Override
-    public List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Integer userId) {
-        // 1. °´Ìõ¼þ²éÑ¯Êé¼Ü¼ÇÂ¼£¨Ö§³Ö×´Ì¬É¸Ñ¡£©
+    public List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId) {
+        // 1. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½Ü¼ï¿½Â¼ï¿½ï¿½Ö§ï¿½ï¿½×´Ì¬É¸Ñ¡ï¿½ï¿½
         List<BookshelfEntity> shelfEntities;
         if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
-            // °´×´Ì¬É¸Ñ¡£¨Èç "unread"¡¢"reading"¡¢"finished"£©
+            // ï¿½ï¿½×´Ì¬É¸Ñ¡ï¿½ï¿½ï¿½ï¿½ "unread"ï¿½ï¿½"reading"ï¿½ï¿½"finished"ï¿½ï¿½
             shelfEntities = bookshelfRepository.findByUserIdAndStatus(userId, dto.getStatus());
         } else {
-            // ²éÑ¯ÓÃ»§ËùÓÐÊé¼ÜÊé¼®£¨È«²¿Êé¼Ü£©
+            // ï¿½ï¿½Ñ¯ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é¼®ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½Ü£ï¿½
             shelfEntities = bookshelfRepository.findByUserId(userId);
         }
 
-        // 2. ¹ØÁª²éÑ¯Êé¼®¡¢×÷Õß¡¢ÔÄ¶Á½ø¶È£¬×ª»»ÎªVO
+        // 2. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½é¼®ï¿½ï¿½ï¿½ï¿½ï¿½ß¡ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½È£ï¿½×ªï¿½ï¿½ÎªVO
         return shelfEntities.stream().map(shelf -> {
-            // »ñÈ¡Êé¼®ÐÅÏ¢
+            // ï¿½ï¿½È¡ï¿½é¼®ï¿½ï¿½Ï¢
             BookEntity book = bookRepository.findById(shelf.getBookId())
-                    .orElseThrow(() -> new RuntimeException("Êé¼®ÐÅÏ¢²»´æÔÚ£º" + shelf.getBookId()));
+                    .orElseThrow(() -> new RuntimeException("ï¿½é¼®ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½" + shelf.getBookId()));
 
-            // »ñÈ¡×÷ÕßÐÅÏ¢
+            // ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
             AuthorEntity author = authorRepository.findById(book.getAuthorId())
-                    .orElseThrow(() -> new RuntimeException("×÷ÕßÐÅÏ¢²»´æÔÚ£º" + book.getAuthorId()));
+                    .orElseThrow(() -> new RuntimeException("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½" + book.getAuthorId()));
 
-            // »ñÈ¡ÔÄ¶Á½ø¶È£¨ÎÞ½ø¶ÈÔòÓÃÄ¬ÈÏÖµ£©
+            // ï¿½ï¿½È¡ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½È£ï¿½ï¿½Þ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Öµï¿½ï¿½
             ReadingProgressEntity progress = progressRepository
                     .findByUserIdAndBookId(userId, shelf.getBookId())
                     .orElse(new ReadingProgressEntity());
 
-            // ×é×°VO
+            // ï¿½ï¿½×°VO
             BookShelfVO vo = new BookShelfVO();
             vo.setBookId(book.getBookId());
             vo.setTitle(book.getTitle());

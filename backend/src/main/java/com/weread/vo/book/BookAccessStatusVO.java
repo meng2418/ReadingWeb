@@ -13,7 +13,7 @@ public class BookAccessStatusVO {
 
     private Long userId;
     
-    private Long bookId;
+    private Integer bookId;
 
     /**
      * 是否拥有该书籍的永久阅读权限（通过购买获得）

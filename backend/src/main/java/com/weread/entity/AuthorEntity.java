@@ -4,34 +4,34 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 /**
- * ×÷ÕßÊµÌåÀà£¨¶ÔÓ¦Êý¾Ý¿â±í author_info£©
+ * ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½à£¨ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ author_infoï¿½ï¿½
  */
 @Data
 @Entity
-@Table(name = "author_info") // Ó³ÉäÊý¾Ý¿â±íÃû
+@Table(name = "author_info") // Ó³ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½
 public class AuthorEntity {
 
     /**
-     * ×÷ÕßID£¨Ö÷¼ü£¬×ÔÔö£©
+     * ï¿½ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // ×ÔÔö²ßÂÔ£¬¶ÔÓ¦ @default(autoincrement())
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½Ó¦ @default(autoincrement())
     private Integer authorId;
 
     /**
-     * ×÷ÕßÐÕÃû£¨Î¨Ò»£©
+     * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¨Ò»ï¿½ï¿½
      */
-    @Column(unique = true, nullable = false) // ¶ÔÓ¦ @unique£¬·Ç¿Õ
+    @Column(unique = true, nullable = false) // ï¿½ï¿½Ó¦ @uniqueï¿½ï¿½ï¿½Ç¿ï¿½
     private String name;
 
     /**
-     * ×÷Õß¼ò½é£¨³¤ÎÄ±¾£¬¿ÉÑ¡£©
+     * ï¿½ï¿½ï¿½ß¼ï¿½é£¨ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½
      */
-    @Column(columnDefinition = "TEXT") // ¶ÔÓ¦ @db.Text£¬Ö§³Ö³¤ÎÄ±¾
+    @Column(columnDefinition = "TEXT") // ï¿½ï¿½Ó¦ @db.Textï¿½ï¿½Ö§ï¿½Ö³ï¿½ï¿½Ä±ï¿½
     private String bio;
 
     /**
-     * ×÷ÕßÍ·Ïñ£¨¿ÉÑ¡£¬´æ´¢Í¼Æ¬URL£©
+     * ï¿½ï¿½ï¿½ï¿½Í·ï¿½ñ£¨¿ï¿½Ñ¡ï¿½ï¿½ï¿½æ´¢Í¼Æ¬URLï¿½ï¿½
      */
     private String avatar;
 

@@ -1,60 +1,57 @@
 package com.weread.entity.community;
 
+import com.weread.entity.base.BaseEntity;
+import com.weread.entity.user.UserEntity;
+import com.weread.entity.BookEntity;
 import lombok.Data;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import lombok.EqualsAndHashCode;
+
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.weread.entity.BookEntity;
-
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "Post_info")
+@Table(name = "post_info")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @EntityListeners(AuditingEntityListener.class)
-public class PostEntity {
+public class PostEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "post_id")
     private Long postId;
 
-    // 谁发的帖子
+    // 关联用户
+    @Column(name = "author_id", nullable = false)
     private Long authorId;
 
-    // 帖子标题
     private String title;
 
-    // 帖子内容
-    @Lob // 大文本字段
+    @Lob
     private String content;
 
-    // --- 【修改点 1: 关联书本ID列表 -> @ManyToMany 关系】 ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+    private UserEntity user;
+
+    // 关联书本
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "post_book_mapping", // 中间表名
-        joinColumns = @JoinColumn(name = "postId"),
-        inverseJoinColumns = @JoinColumn(name = "bookId")
+            name = "post_book_mapping",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "book_id")
     )
-    private List<BookEntity> relatedBooks; 
-    
-    // --- 【修改点 2: 标签列表 -> @ElementCollection】 ---
-    @ElementCollection(fetch = FetchType.EAGER) // 简单字段可以 EAGER 加载
-    @CollectionTable(name = "post_hashtag", joinColumns = @JoinColumn(name = "post_id"))
-    @Column(name = "tag_name")
-    private List<String> hashtags;
-    // 统计数据
-    private long likesCount = 0;
-    private long commentsCount = 0;
-    
-    // 帖子状态 (例如：0-正常, 1-审核中, 2-已删除)
-    private int status = 0; 
-    
-    @CreatedDate
-    private LocalDateTime createdAt;
+    private List<BookEntity> relatedBooks;
 
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
+    // 标签
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "post_topic_info", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "topic_name")
+    private List<String> relatedTopics;
+
+    private int likesCount = 0;
+    private int commentsCount = 0;
+    private int status = 0;
 }

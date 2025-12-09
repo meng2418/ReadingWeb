@@ -17,8 +17,7 @@ public class PostCreationDTO {
     private String content;
     
     // 书本ID列表（可以为空）
-    private List<Long> bookIds;
+    private List<Integer> bookIds;
 
-    // 标签列表（可以为空）
-    private List<String> hashtags;
+    private List<String> topics;
 }
