@@ -12,6 +12,7 @@ import TopicDetail from '@/pages/TopicDetail.vue'
 import UserPosts from '@/pages/UserPosts.vue'
 import ReaderPage from '@/pages/ReaderPage.vue'
 import AllReadingNotes from '@/pages/AllReadingNotes.vue'
+import SearchResultsPage from '@/pages/SearchResultsPage.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -85,6 +86,15 @@ const router = createRouter({
       path: '/allreadingnotes',
       name: 'AllReadingNotes',
       component: AllReadingNotes,
+    },
+    {
+      path: '/search',
+      name: 'SearchResult', // 路由名称
+      component: SearchResultsPage, // 关联到 SearchResultPage 组件
+      props: (route) => ({
+        // 通过 props 传递 query 参数 q (搜索关键词) 给组件
+        searchQuery: route.query.q,
+      }),
     },
   ],
 })

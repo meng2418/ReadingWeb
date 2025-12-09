@@ -22,10 +22,14 @@
     <div class="nav-right">
       <!-- 搜索框保持不变 -->
       <div class="search-container">
-        <input type="text" placeholder="搜索书名、作者" class="search-input" />
-        <el-icon class="search-icon">
-          <Search />
-        </el-icon>
+        <input
+          type="text"
+          placeholder="搜索书名、作者"
+          class="search-input"
+          v-model="searchInput"
+          @keyup.enter="handleSearch"
+        />
+        <el-icon class="search-icon" @click="handleSearch"> <Search /> </el-icon>
       </div>
 
       <!-- 根据登录状态显示不同内容 -->
@@ -52,11 +56,34 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
+import router from '@/router'
 const userStore = useUserStore()
 const defaultAvatar = 'https://picsum.photos/id/1027/200'
+const searchInput = ref('')
 
+//新增: 处理搜索逻辑
+function handleSearch() {
+  // 检查输入是否为空
+  if (searchInput.value.trim() === '') {
+    // 可以选择性地给出提示，或者直接不进行跳转
+    return
+  }
+
+  // 使用 router.push 进行跳转
+  // 假设你的搜索结果页路由是 /search，并将关键词作为 query 参数传递
+  router.push({
+    path: '/search',
+    query: {
+      q: searchInput.value, // q 是查询关键词参数
+    },
+  })
+
+  // 搜索完成后，可以选择清空输入框
+  // searchInput.value = ''
+}
 // 退出登录处理
 const handleLogout = () => {
   userStore.logout()
