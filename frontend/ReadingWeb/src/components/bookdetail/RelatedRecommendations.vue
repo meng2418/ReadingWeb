@@ -14,7 +14,7 @@
         v-for="book in displayedBooks"
         :key="book.id"
         class="recommendation-item"
-        @click="selectBook(book)"
+        @click.stop="goToBookDetail(book)"
       >
         <div class="book-cover">
           <img v-if="book.cover" :src="book.cover" :alt="book.title" @error="handleImageError">
@@ -33,18 +33,21 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
 // 定义组件属性
 interface Props {
   books: Book[];
   maxDisplayCount?: number;
 }
+
 // 定义 Book 类型
 interface Book {
   id: number;
   title: string;
   intro: string;
   cover: string;
+  bookId?: string | number;
 }
 
 // 定义组件事件
@@ -64,6 +67,9 @@ const emit = defineEmits<Emits>();
 // 响应式数据
 const currentIndex = ref(0);
 
+// 初始化 router
+const router = useRouter();
+
 // 计算属性
 const displayedBooks = computed(() => {
   const start = currentIndex.value;
@@ -78,9 +84,32 @@ const refreshRecommendations = () => {
   emit('refresh');
 };
 
-const selectBook = (book: Book) => {
+// 跳转到书籍详情页
+const goToBookDetail = (book: Book): void => {
   console.log(`选择了书籍: ${book.title}`);
+
+  // 触发事件通知父组件
   emit('bookSelect', book);
+
+  // 然后跳转到详情页
+  // 优先使用 book.bookId，如果不存在则用 book.id
+  const bookId = book.bookId || book.id;
+
+  // 详细的路由跳转，带错误处理
+  if (bookId) {
+    console.log('正在跳转到书籍详情页，ID:', bookId);
+    router.push(`/bookdetail/${bookId}`).then(() => {
+      console.log('路由跳转成功');
+    }).catch((error) => {
+      console.error('路由跳转失败:', error);
+      console.error('尝试的路径:', `/bookdetail/${bookId}`);
+    });
+  } else {
+    console.log('使用默认路径跳转');
+    router.push('/bookdetail').catch((error) => {
+      console.error('默认路径跳转失败:', error);
+    });
+  }
 };
 
 // 图片加载失败处理
@@ -102,9 +131,7 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
   margin-bottom: 20px;
-  /* 设置固定宽度，适合放在右侧 */
   width: 300px;
-  /* 高度自适应内容 */
   height: fit-content;
 }
 
@@ -220,7 +247,7 @@ onMounted(() => {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .related-recommendations {
-    width: 100%; /* 在移动设备上占满宽度 */
+    width: 100%;
     padding: 15px;
   }
 
