@@ -1,3 +1,5 @@
+<!-- ReadingDashboard.vue -->
+<!-- 阅读统计仪表盘，包含周/月/年/总的统计数据和阅历历史 -->
 <template>
   <div class="dashboard-card">
     <div class="nav-tabs">
@@ -28,12 +30,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import HistoryView from '@/components/user/HistoryView.vue'
 import ReadingStats from '@/components/user/ReadingStats.vue'
 import StatsView from '@/components/user/StatsView.vue'
 
-const currentTab = ref('week') // 默认显示月度统计
+const props = defineProps({
+  initialTab: {
+    type: String,
+    default: 'week',
+  },
+})
+
+const currentTab = ref(props.initialTab)
 
 const tabs = [
   { label: '周', key: 'week' },
@@ -61,7 +70,23 @@ const historyRecords = ref([
     quote:
       '尼采略略地笑着，“我知道她如何在这点上反应。她对传统婚姻显得并不宽容，她认为它是女性卖身契的一种委婉说法。”“就是她跟我说的话！”',
   },
+  {
+    date: '2023-12-15',
+    type: 'finishBook',
+    statLabel: '完成图书',
+    statValue: 20,
+    statUnit: '本书',
+    text: '你完成了《追风筝的人》，感动于阿米尔和哈桑之间的深厚友谊。',
+  },
 ])
+
+// 允许用户在个人中心内切换 tab，同时当路由变化时也跟着变
+watch(
+  () => props.initialTab,
+  (newTab) => {
+    if (newTab) currentTab.value = newTab
+  },
+)
 </script>
 
 <style scoped>
@@ -70,7 +95,7 @@ const historyRecords = ref([
   border-radius: 16px;
   padding: 20px;
   min-height: 600px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.05));
 }
 
 .nav-tabs {

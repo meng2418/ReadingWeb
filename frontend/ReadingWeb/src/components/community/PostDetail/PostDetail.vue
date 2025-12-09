@@ -79,9 +79,9 @@
             <Heart />
             <span v-if="likeCount" class="like-count">{{ likeCount }}</span>
           </button>
-          <button class="action-button" title="Share">
-            <el-icon><Share /></el-icon>
-          </button>
+          <!-- <button class="action-button" title="Comment">
+            <el-icon><Comment /></el-icon>
+          </button> -->
         </div>
       </div>
     </div>

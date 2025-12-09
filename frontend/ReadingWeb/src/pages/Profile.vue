@@ -1,3 +1,4 @@
+<!-- Profile.vue -->
 <template>
   <NavBar />
   <div class="profile-page">
@@ -11,23 +12,23 @@
       </aside>
 
       <main class="right-dashboard">
-        <ReadingDashboard />
+        <ReadingDashboard :initialTab="$route.query.tab" />
+        <ReadingNotes />
+        <ReadingThoughts />
+        <ReadingReviews />
       </main>
     </section>
   </div>
 </template>
 
 <script setup>
-/**
- * 假设你的组件目录结构如下：
- * src/components/user/UserProfile.vue
- * src/components/user/SidebarRankings.vue
- * src/components/user/ReadingDashboard.vue
- */
 import NavBar from '@/components/layout/NavBar.vue'
 import UserProfile from '@/components/user/UserProfile.vue'
 import SidebarRankings from '@/components/user/SidebarRankings.vue'
 import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
+import ReadingNotes from '@/components/user/ReadingNotes.vue'
+import ReadingThoughts from '@/components/user/ReadingThoughts.vue'
+import ReadingReviews from '@/components/user/ReadingReviews.vue'
 </script>
 
 <style scoped>
@@ -55,7 +56,11 @@ import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
   gap: 20px;
   align-items: start; /* 防止侧边栏被拉伸 */
 }
-
+.right-dashboard {
+  /* 🔥 关键代码：防止 grid 子元素被内部宽内容撑开 */
+  min-width: 0;
+  /* 或者使用 overflow: hidden; 但 min-width: 0 更推荐 */
+}
 /* 响应式处理 */
 @media (max-width: 900px) {
   .main-section {

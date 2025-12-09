@@ -45,16 +45,12 @@
     <!-- 底部卡片操作 -->
     <div class="card-actions">
       <div class="balance-box">
-        <span>赠币</span>
-        <span class="balance-num">{{ user.giftCoin }}</span>
-      </div>
-      <div class="balance-box">
-        <span>充值币</span>
-        <span class="balance-num">{{ user.payCoin }}</span>
-      </div>
-      <div class="balance-box">
         <span>体验卡</span>
         <span class="balance-num">{{ user.giftVIP }} 天</span>
+      </div>
+      <div class="coin-box">
+        <span>充值币</span>
+        <span class="coin-num">{{ user.payCoin }}</span>
       </div>
       <button class="vip-btn">成为会员</button>
     </div>
@@ -77,7 +73,6 @@ const user = ref({
     posts: 5,
   },
   payCoin: 180,
-  giftCoin: 45,
   giftVIP: 12,
 })
 </script>
@@ -87,7 +82,7 @@ const user = ref({
   background: var(--card-bg);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.05));
 }
 
 /* 顶部用户信息 */
@@ -224,7 +219,28 @@ const user = ref({
   color: var(--text-main);
   margin-top: 4px;
 }
-
+.coin-box {
+  background: var(--primary-green);
+  border: none;
+  color: #fff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 80px;
+  align-items: center;
+  font-size: 12px;
+}
+.coin-box:hover {
+  background: var(--third-green);
+}
+.coin-num {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 4px;
+}
 .vip-btn {
   background: var(--primary-green);
   border: none;

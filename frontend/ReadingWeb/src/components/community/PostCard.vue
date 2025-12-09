@@ -12,7 +12,13 @@
         <div class="post-time">{{ postTime }}</div>
       </div>
 
-      <button class="follow-btn" :class="{ following: localIsFollowing }" @click="toggleFollow">
+      <!-- 条件渲染关注按钮 -->
+      <button
+        v-if="showFollowButton"
+        class="follow-btn"
+        :class="{ following: localIsFollowing }"
+        @click="toggleFollow"
+      >
         {{ localIsFollowing ? '已关注' : '+ 关注' }}
       </button>
     </div>
@@ -38,11 +44,6 @@
 
     <!-- 操作区 -->
     <div class="post-actions">
-      <div class="action-item" @click="sharePost">
-        <el-icon><Share /></el-icon>
-        <span v-if="shareCount > 0">{{ shareCount }}</span>
-      </div>
-
       <div class="action-item" @click="commentPost">
         <el-icon><Comment /></el-icon>
         <span v-if="commentCount > 0">{{ commentCount }}</span>
@@ -66,7 +67,7 @@
 <script setup lang="ts">
 import router from '@/router'
 import { ref, computed } from 'vue'
-import { Comment, Share } from '@element-plus/icons-vue'
+import { Comment } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
 import { Heart } from 'lucide-vue-next'
 
@@ -85,11 +86,11 @@ interface Props {
   content: string
   likeCount: number
   commentCount: number
-  shareCount: number
   isFollowing: boolean
   isLiked: boolean
   book?: Book | null
   postId?: number // 补充postId类型定义，修复跳转TS警告
+  showFollowButton?: boolean  // 新增：控制是否显示关注按钮
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -97,13 +98,13 @@ const props = withDefaults(defineProps<Props>(), {
   title: undefined,
   book: null,
   postId: undefined,
+  showFollowButton: true  // 默认显示关注按钮
 })
 
 const emit = defineEmits<{
   'follow-change': [isFollowing: boolean]
   like: [likeCount: number, isLiked: boolean]
   comment: []
-  share: []
 }>()
 
 const showFull = ref<boolean>(false)
@@ -141,9 +142,6 @@ const commentPost = (): void => {
   emit('comment')
 }
 
-const sharePost = (): void => {
-  emit('share')
-}
 
 const toggleExpand = (): void => {
   showFull.value = !showFull.value
@@ -182,7 +180,7 @@ const handleCardClick = () => {
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /*box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);*/
   border: 1px solid #f0f0f0;
 }
 
@@ -276,10 +274,14 @@ const handleCardClick = () => {
 /* 操作区：统一三个图标样式 */
 .post-actions {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
+  align-items: center;
   border-top: 1px solid #f5f5f5;
   padding-top: 10px;
+  gap: 250px; /* 控制两个按钮之间的距离 */
 }
+
+
 
 .action-item {
   display: flex;
@@ -289,6 +291,8 @@ const handleCardClick = () => {
   color: #666;
   cursor: pointer;
   transition: all 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 6px;
 }
 
 .action-item:hover {
@@ -301,7 +305,7 @@ const handleCardClick = () => {
   color: #ff6b6b;
 }
 
-/* 爱心图标统一样式：与转发/评论图标尺寸、对齐一致 */
+/* 爱心图标统一样式：与评论图标尺寸、对齐一致 */
 .heart-icon {
   display: inline-flex;
   align-items: center;
