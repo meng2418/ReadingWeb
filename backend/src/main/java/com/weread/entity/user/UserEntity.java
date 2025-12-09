@@ -47,6 +47,10 @@ public class UserEntity {
     @Column(name = "follower_count")
     private Integer followerCount = 0;
 
+    // 【关键修复：添加 followingCount 属性】
+    @Column(name = "following_count")
+    private Integer followingCount = 0; // 必须添加此行
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

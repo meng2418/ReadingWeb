@@ -13,7 +13,8 @@ public class UserStatEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer statId;
+    @Column(name = "user_stat_id") // 明确映射到数据库中的 user_stat_id 列
+    private Integer userStatId;
 
     @Column(name = "user_id", nullable = false, unique = true)
     private Long userId;

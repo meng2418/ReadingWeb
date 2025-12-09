@@ -11,7 +11,6 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByPhone(String phone);
-    Optional<UserEntity> findByEmail(String receiverEmail);
     boolean existsByPhone(String phone);
     Optional<UserEntity> findByUserId(Long userId);
     
@@ -26,28 +25,28 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * 关注者（follower）的关注数 (followingCount) +1
      */
     @Modifying
-    @Query("UPDATE UserEntity u SET u.followingCount = u.followingCount + 1 WHERE u.id = :userId")
+    @Query("UPDATE UserEntity u SET u.followingCount = u.followingCount + 1 WHERE u.userId = :userId")
     void incrementFollowingCount(@Param("userId") Long userId);
 
     /**
      * 被关注者（following）的粉丝数 (followerCount) +1
      */
     @Modifying
-    @Query("UPDATE UserEntity u SET u.followerCount = u.followerCount + 1 WHERE u.id = :userId")
+    @Query("UPDATE UserEntity u SET u.followerCount = u.followerCount + 1 WHERE u.userId = :userId")
     void incrementFollowerCount(@Param("userId") Long userId);
 
     /**
      * 关注者（follower）的关注数 (followingCount) -1
      */
     @Modifying
-    @Query("UPDATE UserEntity u SET u.followingCount = u.followingCount - 1 WHERE u.id = :userId AND u.followingCount > 0")
+    @Query("UPDATE UserEntity u SET u.followingCount = u.followingCount - 1 WHERE u.userId = :userId AND u.followingCount > 0")
     void decrementFollowingCount(@Param("userId") Long userId);
 
     /**
      * 被关注者（following）的粉丝数 (followerCount) -1
      */
     @Modifying
-    @Query("UPDATE UserEntity u SET u.followerCount = u.followerCount - 1 WHERE u.id = :userId AND u.followerCount > 0")
+    @Query("UPDATE UserEntity u SET u.followerCount = u.followerCount - 1 WHERE u.userId = :userId AND u.followerCount > 0")
     void decrementFollowerCount(@Param("userId") Long userId);
     
 }

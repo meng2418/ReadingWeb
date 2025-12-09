@@ -11,15 +11,15 @@ import jakarta.persistence.MappedSuperclass;
 import java.time.LocalDateTime;
 
 @Data
-@MappedSuperclass // 【核心】将属性映射到继承的子类表结构中
-@EntityListeners(AuditingEntityListener.class) // 【核心】开启JPA审计，自动填充时间
-public abstract class BaseEntity { // 使用抽象类，不对应任何数据库表
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+public abstract class BaseEntity {
 
     @CreatedDate
-    @Column(nullable = false, updatable = false) // 创建时间不可更新
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }

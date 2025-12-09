@@ -22,8 +22,9 @@ public class CommentEntity {
     @Column(name = "post_id", nullable = false)
     private Long postId;
 
+    // 关键修正：将类型从 Integer 改为 Long，以匹配 NoteEntity 的主键类型
     @Column(name = "note_id")
-    private Integer noteId;
+    private Long noteId; 
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
