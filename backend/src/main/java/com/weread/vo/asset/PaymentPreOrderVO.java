@@ -1,22 +1,29 @@
 package com.weread.vo.asset;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * PaymentPreOrderVO - 支付预订单信息视图对象
- * 返回给前端用于唤起支付或展示二维码。
+ * 前端扫码支付界面需要的字段
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentPreOrderVO {
-    /** 后端生成的订单ID */
-    private Long orderId;
 
-    /** 用于跳转或展示二维码的支付URL */
-    private String paymentUrl;
+    /**
+     * 用户订单号
+     */
+    private String orderId;
 
-    /** 预支付ID，可能用于App端调起支付 */
-    private String prepayId;
+    /**
+     * 二维码 URL（用于前端生成二维码）
+     */
+    private String qrCodeUrl;
+
+    /**
+     * 第三方支付平台的预支付 ID（可为空，但为了统一结构预留）
+     */
+    private String prePayId;
 }
