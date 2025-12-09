@@ -8,12 +8,15 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+/**
+ * ReadingProgress Data Access Interface.
+ */
 public interface ReadingProgressRepository extends JpaRepository<ReadingProgressEntity, Integer> {
 
-    // 1. ��ѯ�û�ĳ������Ķ�����
+    // 1. Query the reading progress of a specific book for a user
     Optional<ReadingProgressEntity> findByUserIdAndBookId(Long userId, Integer bookId);
 
-    // 2. �����Ķ����ȣ��½ڡ�ҳ�롢���ȡ�����Ķ�ʱ�䣩
+    // 2. Update the reading progress (chapterId, currentPage, progress, lastReadAt)
     @Modifying
     @Query("UPDATE ReadingProgressEntity r SET " +
             "r.chapterId = :chapterId, " +

@@ -4,52 +4,47 @@ import com.weread.dto.bookshelf.*;
 import java.util.List;
 
 /**
- * ���ģ��ҵ��ӿ�
+ * Bookshelf Module Business Interface.
  */
 public interface BookshelfService {
 
     /**
-     * �����鼮�����
-     * 
-     * @param dto    �����鼮ID�ͳ�ʼ״̬
-     * @param userId ��ǰ�û�ID
-     * @return ���ӽ��VO
+     * Adds a book to the bookshelf.
+     * * @param dto Book ID and initial status
+     * @param userId Current User ID
+     * @return BookAddVO result
      */
     BookAddVO addBookToShelf(BookAddDTO dto, Long userId);
 
     /**
-     * ������Ƴ��鼮
-     * 
-     * @param bookId �鼮ID
-     * @param userId ��ǰ�û�ID
-     * @return �Ƴ������ʾ
+     * Removes a book from the bookshelf.
+     * * @param bookId Book ID
+     * @param userId Current User ID
+     * @return Removal message string
      */
     String removeBookFromShelf(Integer bookId, Long userId);
 
     /**
-     * �����鼮�Ķ�״̬
-     * 
-     * @param dto    �����鼮ID����״̬
-     * @param userId ��ǰ�û�ID
-     * @return ״̬���½��VO
+     * Updates the book's reading status.
+     * * @param dto Book ID and new status
+     * @param userId Current User ID
+     * @return Status update result VO
      */
     BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId);
 
     /**
-     * �����Ķ����ȣ��½ڡ�ҳ�룩
-     * 
-     * @param dto    �����鼮ID���½�������ҳ��
-     * @param userId ��ǰ�û�ID
-     * @return ���ȸ��½��VO
+     * Updates the reading progress (chapter, page, progress).
+     * * @param dto Book ID, chapter, page, progress details
+     * @param userId Current User ID
+     * @return Progress update result VO
      */
     ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId);
 
     /**
-     * ��ҳ��ѯ�û�����е��鼮��֧�ְ�״̬ɸѡ��
-     * 
-     * @param dto    ����״̬ɸѡ�����ͷ�ҳ����
-     * @param userId ��ǰ�û�ID
-     * @return �鼮�б�VO������ҳ��Ϣ��
+     * Queries the user's bookshelf list, supports status filtering.
+     * * @param dto Status filter (and pagination if implemented)
+     * @param userId Current User ID
+     * @return List of BookShelfVO
      */
     List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId);
 }

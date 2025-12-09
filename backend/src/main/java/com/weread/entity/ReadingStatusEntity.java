@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class ReadingStatusEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "readingstatusid")
+    @Column(name = "readingstatus_id")
     private Integer readingStatusId;
 
     @Column(name = "user_id", nullable = false)
@@ -20,6 +20,6 @@ public class ReadingStatusEntity {
     private LocalDateTime date = LocalDateTime.now();
 
     @Column(name = "readingtime")
-    private Integer readingTime = 0; // ����
+    private Integer readingTime = 0; //
 
 }

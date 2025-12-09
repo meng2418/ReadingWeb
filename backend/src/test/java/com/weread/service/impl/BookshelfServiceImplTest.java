@@ -44,7 +44,7 @@ public class BookshelfServiceImplTest {
     // ��������
     private final Long userId = 1L;
     private final Integer bookId = 1001;
-    private final Integer authorId = 2001;
+    private final Long authorId = 2001L;
 
     // ====================== ���� addBookToShelf ���� ======================
     @Test

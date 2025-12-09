@@ -17,13 +17,13 @@ public class CoinAccountEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer accountId;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "user_id", unique = true, nullable = false)
     private Long userId;
 
-    private Integer balance = 0; // 充值币余额
+    private Integer balance = 0;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user;
 
     @OneToMany(mappedBy = "coinAccount", cascade = CascadeType.ALL, orphanRemoval = true)

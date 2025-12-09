@@ -18,7 +18,7 @@ public class BookshelfEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "bookshelfid")
+    @Column(name = "bookshelf_id")
     private Integer bookshelfId; // 主键：保持 Integer
 
     @Column(name = "user_id", nullable = false)

@@ -9,52 +9,49 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "User_info")
+@Table(name = "user_info")
 @Data
 public class UserEntity {
-    // ---------------------- 基础信息 ----------------------
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(unique = true, nullable = false, length = 11)
-    private String phone; // 手机号
+    @Column(name = "username", unique = true, nullable = false, length = 255)
+    private String username;
 
-    @Column(unique = true, length = 50)
-    private String username; // 用户名
+    @Column(name = "phone", unique = true, length = 255)
+    private String phone;
 
-    @Column(nullable = false, length = 100)
-    private String password; // 加密后的密码
-    
-    // ---------------------- 档案信息 ----------------------
-    
-    @Column(length = 255)
-    private String avatar; // 头像URL
-    
-    @Column(length = 500)
-    private String bio; // 个人简介
-    
-    // ---------------------- 权益与统计 ----------------------
-    @Column(nullable = false)
-    private Boolean isMember = false; // 是否为会员（与 Member_info 表对应）
-    
+    @Column(name = "password", nullable = false, length = 255)
+    private String password;
+
+    @Column(name = "avatar", length = 255)
+    private String avatar;
+
+    @Column(name = "bio", length = 255)
+    private String bio;
+
+    @Column(name = "is_member", nullable = false)
+    private Boolean isMember = false;
+
+    @Column(name = "member_end_date", nullable = false)
     private LocalDateTime memberEndDate;
 
-    @Column(nullable = false)
-    private Integer coins = 0; // 书币余额
+    @Column(name = "coins", nullable = false)
+    private Integer coins = 0;
 
-    @Column(nullable = false)
-    private Integer totalReadingTime = 0; // 总阅读时长（分钟）
-    
-    // ---------------------- 时间戳 ----------------------
+    @Column(name = "total_reading_time", nullable = false)
+    private Integer totalReadingTime = 0;
+
+    @Column(name = "follower_count")
+    private Integer followerCount = 0;
+
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt; // 创建时间
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt; // 更新时间
-
-    @Column(name = "follower_count") // 确保数据库列名也存在
-    private Integer followerCount;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

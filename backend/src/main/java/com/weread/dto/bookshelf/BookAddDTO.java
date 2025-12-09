@@ -5,21 +5,21 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * Ìí¼ÓÊé¼®µ½Êé¼ÜµÄÇëÇó²ÎÊı
+ * DTO for adding a book to the bookshelf.
  */
 @Data
 public class BookAddDTO {
 
     /**
-     * Êé¼®ID£¨±Ø´«£©
+     * Book ID (required).
      */
-    @NotNull(message = "Êé¼®ID²»ÄÜÎª¿Õ")
+    @NotNull(message = "å›¾ä¹¦IDä¸èƒ½ä¸ºç©º")
     private Integer bookId;
 
     /**
-     * ³õÊ¼ÔÄ¶Á×´Ì¬£¨¿ÉÑ¡£¬Ä¬ÈÏreading£©
-     * ÔÊĞíÖµ£ºreading£¨ÔÄ¶ÁÖĞ£©¡¢unread£¨Î´¶Á£©¡¢finished£¨ÒÑÍê³É£©
+     * Initial reading status (optional, default is reading).
+     * Allowed values: "reading", "unread", "finished".
      */
-    @NotBlank(message = "ÔÄ¶Á×´Ì¬²»ÄÜÎª¿Õ")
+    @NotBlank(message = "é˜…è¯»çŠ¶æ€ä¸èƒ½ä¸ºç©º")
     private String status = "reading";
 }

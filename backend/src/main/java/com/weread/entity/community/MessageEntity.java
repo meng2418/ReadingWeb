@@ -15,7 +15,7 @@ public class MessageEntity {
     private Long messageId;
 
     // 消息接收者ID
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     // 消息类型: system, like, comment, follow (对应 Prisma 的 type)
@@ -37,6 +37,6 @@ public class MessageEntity {
 
     // 关联关系：接收者用户
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user; 
 }

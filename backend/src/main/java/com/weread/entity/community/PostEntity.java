@@ -23,7 +23,7 @@ public class PostEntity extends BaseEntity {
     @Column(name = "post_id")
     private Long postId;
 
-    // 关联用户
+    // 关联用户 (author_id -> userId)
     @Column(name = "author_id", nullable = false)
     private Long authorId;
 
@@ -33,7 +33,7 @@ public class PostEntity extends BaseEntity {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+    @JoinColumn(name = "author_id", insertable = false, updatable = false)
     private UserEntity user;
 
     // 关联书本

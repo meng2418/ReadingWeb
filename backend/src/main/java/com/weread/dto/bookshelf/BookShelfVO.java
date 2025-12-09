@@ -4,23 +4,23 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 书架书籍展示VO（整合书籍、书架状态、阅读进度信息）
+ * Bookshelf display VO (View Object), contains book details, status, and reading progress information.
  */
-@Data // 关键：Lombok的@Data注解会自动生成所有属性的getter、setter、toString等方法
+@Data // The Lombok @Data annotation automatically generates getters, setters, toString, etc.
 public class BookShelfVO {
-    // 书籍基础信息
+    // Book basic information
     private Integer bookId;
     private String title;
     private String author;
     private String coverUrl;
 
-    // 书架关联信息（来自BookshelfEntity）
-    private String status; // 阅读状态：reading/unread/finished
-    private LocalDateTime addedAt; // 添加到书架的时间
-    private LocalDateTime lastReadTime; // 最后阅读时间
+    // Bookshelf status information (from BookshelfEntity)
+    private String status; // Reading status: "reading", "unread", "finished"
+    private LocalDateTime addedAt; // Time when the book was added to the shelf
+    private LocalDateTime lastReadTime; // Last reading time
 
-    // 阅读进度信息（来自ReadingProgressEntity）
-    private Integer chapterId; // 当前章节ID
-    private Integer currentPage; // 当前页码
-    private Float progress; // 阅读进度（0-1）
+    // Reading progress information (from ReadingProgressEntity)
+    private Integer chapterId; // Current chapter ID
+    private Integer currentPage; // Current page number
+    private Float progress; // Reading progress (0.0 to 1.0)
 }

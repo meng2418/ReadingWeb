@@ -11,7 +11,7 @@ import jakarta.persistence.*;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "user_book_access_info", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"userId", "bookId"})
+        @UniqueConstraint(columnNames = {"user_id", "book_id"})
 })
 public class UserBookAccessEntity extends BaseEntity {
 
@@ -19,22 +19,17 @@ public class UserBookAccessEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer accessId;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(name = "book_id", nullable = false)
     private Integer bookId;
 
-    // BaseEntity 会提供 createdAt (purchaseTime)
-
-    // 💡 提示：如果需要 JPA 关联，您可以添加：
-    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bookId", referencedColumnName = "bookId", insertable = false, updatable = false)
+    @JoinColumn(name = "book_id", insertable = false, updatable = false)
     private BookEntity book;
-    
 }

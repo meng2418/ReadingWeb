@@ -14,18 +14,18 @@ public class TrialBalanceEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer balanceId;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "user_id", unique = true, nullable = false)
     private Long userId; // 关联到 UserEntity 的 ID
 
-    private Integer daysBalance = 0; // 剩余体验天数余额
+    private Integer daysBalance = 0;
 
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-    
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
-    
-    // 关联关系：如果需要从 Balance 查 User
+
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user;
 }

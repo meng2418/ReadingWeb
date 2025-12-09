@@ -4,34 +4,34 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 /**
- * ����ʵ���ࣨ��Ӧ���ݿ�� author_info��
+ * Author Entity (corresponds to the 'author_info' table in the database).
  */
 @Data
 @Entity
-@Table(name = "author_info") // ӳ�����ݿ����
+@Table(name = "author_info") // Maps to the database table name
 public class AuthorEntity {
 
     /**
-     * ����ID��������������
+     * Author ID (Primary Key, Auto Increment).
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // �������ԣ���Ӧ @default(autoincrement())
-    private Integer authorId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment strategy
+    private Long authorId;
 
     /**
-     * ����������Ψһ��
+     * Author's name (Unique, Not Null).
      */
-    @Column(unique = true, nullable = false) // ��Ӧ @unique���ǿ�
+    @Column(unique = true, nullable = false) // Unique and not null constraint
     private String name;
 
     /**
-     * ���߼�飨���ı�����ѡ��
+     * Author's biography (Optional, supports long text).
      */
-    @Column(columnDefinition = "TEXT") // ��Ӧ @db.Text��֧�ֳ��ı�
+    @Column(columnDefinition = "TEXT") // Supports long text content
     private String bio;
 
     /**
-     * ����ͷ�񣨿�ѡ���洢ͼƬURL��
+     * Author's avatar (Optional, stores the image URL).
      */
     private String avatar;
 

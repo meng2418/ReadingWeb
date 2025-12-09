@@ -1,6 +1,6 @@
 package com.weread.entity.user;
 
-import com.weread.entity.base.BaseEntity; // 假设有一个包含 createdAt/updatedAt 的 BaseEntity
+import com.weread.entity.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
@@ -8,27 +8,26 @@ import jakarta.persistence.*;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "UserStat_info")
+@Table(name = "user_stat_info")
 public class UserStatEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer statId;
 
-    @Column(nullable = false, unique = true)
-    private Long userId; // 与用户ID一对一关联
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Long userId;
 
     @Column(nullable = false)
-    private Integer totalBooksCompleted = 0; // 累计阅读书籍数量
+    private Integer totalBooksCompleted = 0;
 
     @Column(nullable = false)
-    private Integer totalNotesCount = 0; // 累计笔记数量
+    private Integer totalNotesCount = 0;
 
-    // 单位：分钟
     @Column(nullable = false)
-    private Integer totalReadingDurationMinutes = 0; // 累计阅读时长
+    private Integer totalReadingDurationMinutes = 0;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user;
 }

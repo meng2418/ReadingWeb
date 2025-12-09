@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class ReadingProgressEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "readingprogressid")
+    @Column(name = "readingprogress_id")
     private Integer readingProgressId;
 
     @Column(name = "user_id", nullable = false)
@@ -19,7 +19,7 @@ public class ReadingProgressEntity {
     @Column(name = "book_id", nullable = false)
     private Integer bookId;
 
-    @Column(name = "chapterid")
+    @Column(name = "chapter_id")
     private Integer chapterId;
 
     @Column(name = "currentpage")

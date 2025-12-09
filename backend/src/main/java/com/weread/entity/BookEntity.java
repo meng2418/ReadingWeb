@@ -5,65 +5,67 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * �鼮ʵ���ࣨ��Ӧ���ݿ�� book_info��
+ * Book Entity (corresponds to the 'book_info' table in the database).
  */
 @Data
 @Entity
-@Table(name = "Book_info") // �����ݿ��������һ��
+@Table(name = "book_info") 
 public class BookEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // ��������
-    @Column(name = "book_id") // ӳ�����ݿ��ֶ� bookId
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+    @Column(name = "book_id") 
     private Integer bookId;
 
-    @Column(nullable = false) // �ǿ��ֶ�
-    private String title; // �鼮����
+    @Column(nullable = false) 
+    private String title; 
 
-    @Column(name = "author_id", nullable = false, insertable = true, updatable = true) // ����ֶΣ��������߱�
-    private Integer authorId;
+    // 外键字段，用于数据插入和更新
+    @Column(name = "author_id", nullable = false) 
+    private Long authorId;
+    
+    // JPA 关联：只用于查询，不参与插入/更新
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id", insertable = false, updatable = false) // 使用 authorId 作为外键
-    private AuthorEntity author;
+    @JoinColumn(name = "author_id", insertable = false, updatable = false) 
+    private AuthorEntity author; // 关联作者实体
 
-    private String cover; // ����ͼƬ������Ϊnull��
+    private String cover; 
 
-    @Column(columnDefinition = "TEXT") // ���ı����ͣ���Ӧ���ݿ��@db.Text
-    private String description; // �鼮��飨����Ϊnull��
+    @Column(columnDefinition = "TEXT") 
+    private String description; 
 
-    @Column(name = "category_id", nullable = false) // ����ֶΣ����������
+    @Column(name = "category_id", nullable = false) 
     private Integer categoryId;
 
-    private String publisher; // �����磨����Ϊnull��
+    private String publisher; 
 
     @Column(name = "publish_date")
-    private LocalDateTime publishDate; // �������ڣ�����Ϊnull��
+    private LocalDateTime publishDate; 
 
-    private String isbn; // ISBN��ţ�����Ϊnull��
+    private String isbn; 
 
     @Column(name = "word_count")
-    private Integer wordCount; // ����
+    private Integer wordCount; 
 
-    private Integer price; // ��Ҽ۸�Ĭ��0
+    private Integer price; 
 
     @Column(name = "is_free")
-    private Boolean isFree; // �Ƿ���ѣ�Ĭ��false
+    private Boolean isFree; 
 
-    private Float rating; // �Ƽ�ֵ��Ĭ��0
+    private Float rating; 
 
     @Column(name = "read_count")
-    private Integer readCount; // �Ķ�������Ĭ��0
+    private Integer readCount; 
 
-    @Column(name = "created_at", updatable = false) // ����������
-    private LocalDateTime createdAt; // ����ʱ�䣬Ĭ�ϵ�ǰʱ��
+    @Column(name = "created_at", updatable = false) 
+    private LocalDateTime createdAt; 
 
-    // �Զ���䴴��ʱ�䣨������ݿ�δ����Ĭ��ֵ��
+    // Custom logic to set creation time and default values if not set by the database
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        // ��ʼ��Ĭ��ֵ��������ݿ�δ����Ĭ��ֵ��
         if (price == null) {
             price = 0;
         }

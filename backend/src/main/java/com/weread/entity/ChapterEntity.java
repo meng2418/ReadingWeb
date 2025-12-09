@@ -8,9 +8,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "chapter_info")
 public class ChapterEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "chapterid")
+    @Column(name = "chapter_id")
     private Integer chapterId;
 
     @Column(nullable = false)
@@ -19,12 +20,12 @@ public class ChapterEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Column(name = "`order`", nullable = false) // order 是关键字，必须加 ``
     private Integer order;
 
-    @Column(name = "bookid", nullable = false)
+    @Column(name = "book_id", nullable = false)
     private Integer bookId;
 
-    @Column(name = "createdat")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-
 }

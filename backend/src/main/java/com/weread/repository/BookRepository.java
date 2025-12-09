@@ -6,19 +6,19 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * �鼮���ݷ��ʽӿ�
+ * Book Data Access Interface.
  */
 @Repository
 public interface BookRepository extends JpaRepository<BookEntity, Integer> {
 
     /**
-     * �����鼮ID��ѯ�鼮
-     * �����ģ����ķ���������/��ѯ�鼮ʱ����֤�鼮�Ƿ���ڣ�
+     * Finds a book by its Book ID.
+     * This method can be used to validate if a book exists when adding/querying a book.
      */
     Optional<BookEntity> findByBookId(Integer bookId);
 
     /**
-     * ����ISBN��ѯ�鼮������У���鼮Ψһ�ԣ�
+     * Finds a book by its ISBN (used for unique validation).
      */
     Optional<BookEntity> findByIsbn(String isbn);
 }

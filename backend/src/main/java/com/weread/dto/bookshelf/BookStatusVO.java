@@ -3,11 +3,11 @@ package com.weread.dto.bookshelf;
 import lombok.Data;
 
 /**
- * Êé¼®×´Ì¬¸üĞÂ½á¹ûÊÓÍ¼¶ÔÏó
+ * ä¹¦æ¶çŠ¶æ€æ›´æ–°ç»“æœè§†å›¾å¯¹è±¡ (View Object).
  */
 @Data
 public class BookStatusVO {
     private Integer bookId;
-    private String status; // ĞÂµÄÔÄ¶Á×´Ì¬
-    private String message; // ²Ù×÷ÌáÊ¾ĞÅÏ¢
+    private String status; // æ–°çš„é˜…è¯»çŠ¶æ€
+    private String message; // æˆåŠŸæˆ–å¤±è´¥çš„æç¤ºä¿¡æ¯
 }

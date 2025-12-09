@@ -13,17 +13,13 @@ public class ChapterAccessEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer accessId;
 
-    @Column(nullable = false, unique = true)
-    private Integer chapterId; // 章节ID
+    @Column(name = "chapter_id", nullable = false, unique = true)
+    private Integer chapterId;
 
-    /**
-     * 访问级别：free, trial, member
-     */
-    @Column(nullable = false)
+    @Column(name = "access_level", nullable = false)
     private String accessLevel = "free";
 
-    // 关联关系
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chapterId", insertable = false, updatable = false)
-    private ChapterEntity chapter; 
+    @JoinColumn(name = "chapter_id", insertable = false, updatable = false)
+    private ChapterEntity chapter;
 }

@@ -13,108 +13,100 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ���ģ�����������������棩
- * ���нӿ���Ӧ��ʽͳһΪ Result ���ͣ�����ȫ���쳣����
+ * Bookshelf Module Controller.
+ * All interface return results are encapsulated with Result<T>.
  */
 @RestController
 @RequestMapping("/api/bookshelf")
 @RequiredArgsConstructor
-@Tag(name = "���", description = "���ģ����ؽӿ�")
-@SecurityRequirement(name = "bearerAuth") // ��JWT��֤
+@Tag(name = "Bookshelf", description = "Interfaces for bookshelf management")
+@SecurityRequirement(name = "bearerAuth") // Require JWT authentication
 public class BookshelfController {
 
     private final BookshelfService bookshelfService;
 
     /**
-     * ��ȡ����鼮�б���֧�ְ�״̬ɸѡ��
+     * Retrieve the user's bookshelf list, supports filtering by read status.
      */
     @GetMapping
-    @Operation(summary = "��ȡ���", description = "��ѯ�û�����е��鼮���ɰ�״̬ɸѡ��all/unread/reading/finished��")
+    @Operation(summary = "Get Bookshelf", description = "Query books in the user's bookshelf, filterable by status (all/unread/reading/finished)")
     public Result<Map<String, Object>> getBookshelf(
             @RequestParam(required = false, defaultValue = "all") String status,
             @RequestHeader("userId") Long userId) {
 
-        // ������ѯ����DTO
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
         if (!"all".equals(status)) {
             dto.setStatus(status);
         }
 
-        // ����Service��ѯ
         List<BookShelfVO> books = bookshelfService.getUserBooks(dto, userId);
 
-        // ͳһ��Result��װ��Ӧ
         return Result.success(Map.of("books", books));
     }
 
     /**
-     * �����鼮�����
+     * Add a book to the bookshelf.
      */
     @PostMapping
-    @Operation(summary = "���ӵ����", description = "��ָ���鼮���ӵ��û���ܣ�Ĭ��״̬Ϊδ��")
+    @Operation(summary = "Add to Bookshelf", description = "Add a specified book to the user's bookshelf (default status: unread)")
     public Result<Void> addToBookshelf(
             @RequestBody BookAddDTO dto,
             @RequestHeader("userId") Long userId) {
 
-        // ����Service����
         bookshelfService.addBookToShelf(dto, userId);
 
-        // �����ݷ��أ�����ʾ�ɹ�
         return Result.success();
     }
 
     /**
-     * ������Ƴ��鼮
+     * Remove a book from the bookshelf.
      */
     @DeleteMapping("/{bookId}")
-    @Operation(summary = "������Ƴ�", description = "��ָ���鼮���û������ɾ��")
+    @Operation(summary = "Remove from Bookshelf", description = "Delete the specified book from the user's bookshelf")
     public Result<Void> removeFromBookshelf(
             @PathVariable Integer bookId,
             @RequestHeader("userId") Long userId) {
 
-        // ����Service�Ƴ�
         bookshelfService.removeBookFromShelf(bookId, userId);
 
         return Result.success();
     }
 
     /**
-     * �����鼮�Ķ�״̬
+     * Update the book's reading status.
      */
     @PutMapping("/{bookId}")
-    @Operation(summary = "�����Ķ�״̬", description = "�޸�������鼮���Ķ�״̬��unread/reading/finished��")
+    @Operation(summary = "Update Reading Status", description = "Modify the reading status of a book in the bookshelf (unread/reading/finished)")
     public Result<Void> updateBookStatus(
             @PathVariable Integer bookId,
             @RequestBody BookStatusUpdateDTO dto,
             @RequestHeader("userId") Long userId) {
 
-        // ��װ״̬����DTO
         BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
         statusDTO.setBookId(bookId);
         statusDTO.setStatus(dto.getStatus());
 
-        // ����Service����
         bookshelfService.updateBookStatus(statusDTO, userId);
 
         return Result.success();
     }
 
     /**
-     * �������������ɾ��/����״̬��
+     * Batch operation (delete or update status).
      */
     @PostMapping("/batch")
-    @Operation(summary = "��������", description = "����ɾ������鼮�����������Ķ�״̬")
+    @Operation(summary = "Batch Operation", description = "Batch delete books or batch update reading status")
     public Result<Void> batchOperation(
             @RequestBody BookshelfBatchDTO dto,
             @RequestHeader("userId") Long userId) {
 
-        // ����ɾ��
+        // Batch delete
         if ("delete".equals(dto.getAction())) {
             for (Integer bookId : dto.getBookIds()) {
                 bookshelfService.removeBookFromShelf(bookId, userId);
             }
         }
-        // ��������״̬
+        // Batch update status
         else if ("update-status".equals(dto.getAction())) {
             for (Integer bookId : dto.getBookIds()) {
                 BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
@@ -123,9 +115,9 @@ public class BookshelfController {
                 bookshelfService.updateBookStatus(statusDTO, userId);
             }
         }
-        // ��֧�ֵĲ������ͣ��ᱻȫ���쳣����������
+        // Unsupported operation type
         else {
-            throw new RuntimeException("��֧�ֵĲ������ͣ�" + dto.getAction());
+            throw new RuntimeException("Unsupported operation type: " + dto.getAction());
         }
 
         return Result.success();

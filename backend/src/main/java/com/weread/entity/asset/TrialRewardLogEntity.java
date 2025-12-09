@@ -1,4 +1,5 @@
 package com.weread.entity.asset;
+
 import com.weread.entity.user.UserEntity;
 import lombok.Data;
 import jakarta.persistence.*;
@@ -7,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "trial_reward_log", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"userId", "rewardType"})
+    @UniqueConstraint(columnNames = {"user_id", "reward_type"})
 })
 public class TrialRewardLogEntity {
 
@@ -15,22 +16,19 @@ public class TrialRewardLogEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer logId;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(nullable = false, length = 50)
-    private String rewardType; 
-    
-    @Column(nullable = false)
+    @Column(name = "reward_type", nullable = false, length = 50)
+    private String rewardType;
+
+    @Column(name = "days_granted", nullable = false)
     private Integer daysGranted;
 
+    @Column(name = "claimed_at")
     private LocalDateTime claimedAt = LocalDateTime.now();
 
-    // 注意：如果您希望在日志中通过 JPA 关联到 UserEntity，需要添加 ManyToOne 关联：
-    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user;
-    
-
 }
