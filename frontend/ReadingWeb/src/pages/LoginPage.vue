@@ -15,7 +15,6 @@ const isSignUp = ref(false)
 // 登录表单字段
 const isCaptchaLogin = ref(false)
 const phone = ref('')
-const username = ref('')
 const password = ref('')
 const code = ref('')
 
@@ -52,47 +51,24 @@ function toggleCaptchaLogin() {
 // 发送验证码（登录）
 function sendCode() {
   if (!phone.value || phone.value.trim().length < 6) {
-    window.alert('请输入有效的手机号')
+    globalThis.alert('请输入有效的手机号')
     return
   }
-  window.alert(`已向 ${phone.value} 发送验证码（模拟）`)
+  globalThis.alert(`已向 ${phone.value} 发送验证码（模拟）`)
 }
 
 // 发送验证码（注册）
 function sendSignUpCode() {
   if (!signUpPhone.value || signUpPhone.value.trim().length < 6) {
-    window.alert('请输入有效的手机号')
+    globalThis.alert('请输入有效的手机号')
     return
   }
-  window.alert(`已向 ${signUpPhone.value} 发送验证码（模拟）`)
+  globalThis.alert(`已向 ${signUpPhone.value} 发送验证码（模拟）`)
 }
 
 // 忘记密码跳转
 function goForgetPassword() {
   router.push('/forget-password')
-}
-
-// 模拟登录函数（用于测试，不需要真实API）
-async function simulateLogin() {
-  // 模拟登录成功
-  userStore.login({
-    token: userStore.generateToken(),
-    userInfo: {
-      name: username.value || '测试用户',
-      avatar: 'https://picsum.photos/200/200',
-    },
-  })
-
-  // 检查是否有重定向参数
-  const redirect = route.query.redirect as string
-
-  // 如果有重定向路径，就跳转回去
-  if (redirect) {
-    router.push(redirect)
-  } else {
-    // 否则跳转到首页
-    router.push('/')
-  }
 }
 </script>
 
@@ -125,14 +101,13 @@ async function simulateLogin() {
         <!-- 登录表单 -->
         <div class="user_forms-login">
           <h2 class="forms_title">登录</h2>
-          <form class="forms_form" @submit.prevent="simulateLogin">
+          <form class="forms_form">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
-                <!-- 根据 isCaptchaLogin 切换输入类型 / 占位 -->
                 <input
-                  v-model="username"
-                  type="text"
-                  placeholder="用户名/邮箱/手机号"
+                  v-model="phone"
+                  type="tel"
+                  placeholder="手机号码"
                   class="forms_field-input"
                   required
                   autofocus
@@ -141,12 +116,31 @@ async function simulateLogin() {
 
               <div class="forms_field" style="display: flex; align-items: center; gap: 8px">
                 <input
+                  v-if="!isCaptchaLogin"
                   v-model="password"
                   type="password"
                   placeholder="密码"
                   class="forms_field-input"
                   required
                 />
+                <div v-else style="display: flex; gap: 8px; align-items: center; width: 100%">
+                  <input
+                    v-model="code"
+                    type="text"
+                    placeholder="验证码"
+                    class="forms_field-input"
+                    required
+                    style="flex: 1"
+                  />
+                  <button
+                    type="button"
+                    class="forms_buttons-action"
+                    @click="sendCode"
+                    style="padding: 6px 12px"
+                  >
+                    发送验证码
+                  </button>
+                </div>
               </div>
             </fieldset>
 
@@ -159,7 +153,7 @@ async function simulateLogin() {
                   {{ isCaptchaLogin ? '密码登录' : '验证码登录' }}
                 </button>
               </div>
-              <button type="submit" class="forms_buttons-action">登录</button>
+              <input type="submit" value="登录" class="forms_buttons-action" />
             </div>
           </form>
         </div>
@@ -172,7 +166,7 @@ async function simulateLogin() {
               <!-- 用户名 -->
               <div class="forms_field">
                 <input
-                  v-model="username"
+                  v-model="signUpUsername"
                   type="text"
                   placeholder="用户名"
                   class="forms_field-input"
@@ -190,8 +184,25 @@ async function simulateLogin() {
                   required
                 />
               </div>
-              <div class="forms_field">
-                <input type="tel" placeholder="手机号码" class="forms_field-input" required />
+
+              <!-- 验证码 -->
+              <div class="forms_field" style="display: flex; align-items: center; gap: 8px">
+                <input
+                  v-model="signUpCode"
+                  type="text"
+                  placeholder="验证码"
+                  class="forms_field-input"
+                  required
+                  style="flex: 1"
+                />
+                <button
+                  type="button"
+                  class="forms_buttons-action"
+                  @click="sendSignUpCode"
+                  style="padding: 6px 12px"
+                >
+                  发送验证码
+                </button>
               </div>
 
               <!-- 密码 -->
@@ -218,7 +229,7 @@ async function simulateLogin() {
             </fieldset>
 
             <div class="forms_buttons">
-              <button type="submit" class="forms_buttons-action">注册</button>
+              <input type="submit" value="注册" class="forms_buttons-action" />
             </div>
           </form>
         </div>
@@ -228,6 +239,12 @@ async function simulateLogin() {
 </template>
 
 <style scoped>
+/**
+ * * General variables
+ * */
+/**
+ * * General configs
+ * */
 * {
   box-sizing: border-box;
 }
@@ -286,6 +303,9 @@ input::placeholder {
   color: #ccc;
 }
 
+/**
+ * * Bounce to the left side
+ * */
 @-webkit-keyframes bounceLeft {
   0% {
     transform: translate3d(100%, -50%, 0);
@@ -333,7 +353,9 @@ input::placeholder {
     transform: translate3d(100%, -50%, 0);
   }
 }
-
+/**
+ * * Show Sign Up form
+ * */
 @-webkit-keyframes showSignUp {
   100% {
     opacity: 1;
@@ -348,7 +370,9 @@ input::placeholder {
     transform: translate3d(0, 0, 0);
   }
 }
-
+/**
+ * * Page background
+ * */
 .user {
   display: flex;
   justify-content: center;
@@ -372,6 +396,9 @@ input::placeholder {
   border-radius: 3px;
 }
 
+/**
+ * * Registered and Unregistered user box and text
+ * */
 .user_options-registered,
 .user_options-unregistered {
   width: 50%;
@@ -413,6 +440,9 @@ input::placeholder {
   background-color: #333;
 }
 
+/**
+ * * Login and signup forms
+ * */
 .user_options-forms {
   position: absolute;
   top: 50%;
@@ -528,6 +558,9 @@ input::placeholder {
   visibility: visible;
 }
 
+/**
+ * * Triggers
+ * */
 .user_options-forms.bounceLeft {
   -webkit-animation: bounceLeft 1s forwards;
   animation: bounceLeft 1s forwards;

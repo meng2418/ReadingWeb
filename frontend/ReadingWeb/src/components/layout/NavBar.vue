@@ -66,21 +66,45 @@
 </template>
 
 <script setup lang="ts">
-import { Search } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, ArrowDown, User, SwitchButton } from '@element-plus/icons-vue'
+
+const router = useRouter()
 const userStore = useUserStore()
 const defaultAvatar = 'https://picsum.photos/id/1027/200'
 
+// 下拉菜单命令处理
+const handleCommand = async (command: string) => {
+  switch (command) {
+    case 'profile':
+      // 跳转到个人中心
+      router.push('/profile')
+      break
+    case 'logout':
+      // 退出登录
+      await handleLogout()
+      break
+  }
+}
+
 // 退出登录处理
 const handleLogout = async () => {
+  // 确认对话框
   await ElMessageBox.confirm('确定要退出登录吗？', '退出确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
   })
 
+  // 调用退出登录方法
   userStore.logout()
+
+  // 显示成功消息
   ElMessage.success('已退出登录')
+
+  // 跳转到首页
   router.push('/')
 }
 </script>
@@ -206,11 +230,24 @@ const handleLogout = async () => {
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+
+  /* 去掉默认焦点轮廓和阴影，避免出现黑色粗框 */
+  outline: none;
+  box-shadow: none;
 }
 
+/* hover 保持原来视觉，但确保不出现黑色框线 */
 .user-dropdown-trigger:hover {
   border-color: #007c27;
   background-color: rgba(0, 124, 39, 0.05);
+  box-shadow: none;
+}
+
+/* 明确禁止 focus 导致的黑框（一些浏览器会在 :focus 添加 UA 样式） */
+.user-dropdown-trigger:focus,
+.user-dropdown-trigger:active {
+  outline: none;
+  box-shadow: none;
 }
 
 /* 头像样式 */
