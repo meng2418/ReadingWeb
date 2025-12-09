@@ -43,7 +43,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-
+import { useRouter } from 'vue-router'
+// 添加路由
+const router = useRouter()
 // 定义props
 interface Work {
   id:  number
@@ -90,8 +92,8 @@ const handleWorkClick = (work: Work) => {
 
 // 查看全部作品
 const handleViewAllWorks = () => {
-  emit('viewAllWorks')
-  console.log('查看全部作品')
+  const authorId = props.author.id || 1 // 这里假设author有id属性
+  router.push(`/authordetail/${authorId}`)
 }
 </script>
 

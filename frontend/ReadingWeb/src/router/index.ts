@@ -16,6 +16,7 @@ import UserPosts from '@/pages/UserPosts.vue'
 import ReaderPage from '@/pages/ReaderPage.vue'
 import WriteReview from '@/pages/WriteReview.vue'
 import AllReadingNotes from '@/pages/AllReadingNotes.vue'
+import AuthorDetail from '@/pages/AuthorDetail.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -99,6 +100,12 @@ const router = createRouter({
       name: 'AllReadingNotes',
       component: AllReadingNotes,
     },
+    {
+    path: '/authordetail/:id',
+    name: 'AuthorDetail',
+    component: AuthorDetail,
+    props: true // 将路由参数作为props传递
+  },
   ],
 })
 

@@ -48,19 +48,35 @@
         <span>体验卡</span>
         <span class="balance-num">{{ user.giftVIP }} 天</span>
       </div>
-      <div class="coin-box">
+      <div class="coin-box" @click="openRechargeDialog">
         <span>充值币</span>
         <span class="coin-num">{{ user.payCoin }}</span>
       </div>
-      <button class="vip-btn">成为会员</button>
+      <button class="vip-btn" @click="openVipDialog">成为会员</button>
     </div>
   </div>
+
+  <!-- 充值弹窗 -->
+  <RechargeDialog ref="rechargeDialogRef" @recharge-success="handleRechargeSuccess" />
+
+  <!-- 会员弹窗 -->
+  <VipDialog ref="vipDialogRef" @purchase-success="handlePurchaseSuccess" />
+
 </template>
 
 <script setup lang="ts">
 import { Edit2, Palette } from 'lucide-vue-next'
 import { ref } from 'vue'
 import DefaultAvatar from '@/img/avatar.jpg'
+import RechargeDialog from '@/components/user/RechargeDialog.vue'
+import VipDialog from '@/components/user/VipDialog.vue'
+import { useRouter } from 'vue-router'
+
+
+
+const router = useRouter()
+
+
 // 个人信息数据，从JS传入
 const user = ref({
   nickname: '幼稚园战神',
@@ -75,6 +91,33 @@ const user = ref({
   payCoin: 180,
   giftVIP: 12,
 })
+
+
+
+// 充值弹窗
+const rechargeDialogRef = ref()
+const openRechargeDialog = () => {
+  rechargeDialogRef.value.open()
+}
+
+const handleRechargeSuccess = (option: any) => {
+  console.log('充值成功:', option)
+  // 这里可以更新用户的书币数量
+  user.value.payCoin += option.amount + (option.bonus || 0)
+  ElMessage.success(`成功充值${option.amount}书币${option.bonus ? `，赠送${option.bonus}书币` : ''}`)
+}
+
+// 会员弹窗
+const vipDialogRef = ref()
+const openVipDialog = () => {
+  vipDialogRef.value.open()
+}
+
+const handlePurchaseSuccess = (plan: any) => {
+  console.log('会员购买成功:', plan)
+  // 这里可以更新用户的会员信息
+  ElMessage.success(`成功开通${plan.name}，有效期${plan.duration}`)
+}
 </script>
 
 <style scoped>
