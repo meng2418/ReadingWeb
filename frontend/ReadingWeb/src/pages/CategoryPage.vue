@@ -725,7 +725,7 @@ function stringToHash(str: string): number {
 }
 
 .category-tab.active {
-  color: #007fff;
+  color: #00a735;
   font-weight: 600;
   background-color: transparent;
 }

@@ -1,12 +1,6 @@
 <!-- AuthorDetail.vue -->
 <template>
   <div class="author-detail-container">
-    <!-- 返回按钮 -->
-    <div class="back-button" @click="goBack">
-      <span class="back-icon">←</span>
-      返回
-    </div>
-
     <!-- 简化后的作者信息区域 -->
     <div class="author-header-section">
       <div class="section-header">
@@ -140,15 +134,15 @@ const handleBookClick = (work: Work) => {
   router.push(`/bookdetail/${work.id}`)
 }
 
-// 返回上一页
-const goBack = () => {
-  router.back()
-}
+
 
 // 组件挂载时获取数据
 onMounted(() => {
   fetchAuthorData()
   fetchWorks()
+  window.scrollTo({
+    top: 0,
+  })
 })
 </script>
 
@@ -160,26 +154,6 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-/* 返回按钮样式 */
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 0;
-  color: #666;
-  cursor: pointer;
-  font-size: 16px;
-  transition: color 0.3s ease;
-  margin-bottom: 20px;
-}
-
-.back-button:hover {
-  color: #333;
-}
-
-.back-icon {
-  font-size: 18px;
-}
 
 /* 作者头部区域 - 简化版 */
 .author-header-section {

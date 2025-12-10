@@ -157,7 +157,7 @@ const handleStatClick = (type: 'follow' | 'fans' | 'post') => {
 .number {
   font-weight: bold;
   font-size: 20px;
-  color: #007fff;
+  color: #007c27;
   margin-bottom: 5px;
 }
 

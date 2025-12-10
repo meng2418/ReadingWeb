@@ -1,4 +1,5 @@
 <template>
+  <!-- 第一步：选择套餐弹窗 -->
   <el-dialog
     v-model="dialogVisible"
     title="开通会员"
@@ -54,26 +55,6 @@
         </div>
       </div>
 
-      <!-- 支付方式 -->
-      <div class="payment-section">
-        <div class="payment-title">选择支付方式</div>
-        <div class="payment-options">
-          <div
-            v-for="method in paymentMethods"
-            :key="method.id"
-            class="payment-item"
-            :class="{ 'active': selectedMethod === method.id }"
-            @click="selectedMethod = method.id"
-          >
-            <div class="method-info">
-              <el-icon class="method-icon"><component :is="method.icon" /></el-icon>
-              <span>{{ method.name }}</span>
-            </div>
-            <el-radio :model-value="selectedMethod === method.id" />
-          </div>
-        </div>
-      </div>
-
       <!-- 会员协议 -->
       <div class="vip-agreement">
         <el-checkbox v-model="agreed">
@@ -98,9 +79,63 @@
           type="primary"
           :loading="loading"
           :disabled="!agreed"
-          @click="handlePurchase"
+          @click="goToPaymentStep"
         >
           立即开通 ¥{{ selectedPlanObj?.price || 0 }}
+        </el-button>
+      </div>
+    </div>
+  </el-dialog>
+
+  <!-- 第二步：支付方式弹窗 -->
+  <el-dialog
+    v-model="paymentDialogVisible"
+    title="选择支付方式"
+    width="420px"
+    align-center
+    :before-close="handleClosePayment"
+  >
+    <div class="payment-dialog">
+      <!-- 支付金额信息 -->
+      <div class="payment-info">
+        <div class="payment-amount">
+          <span class="label">支付金额：</span>
+          <span class="value">¥{{ selectedPlanObj?.price || 0 }}</span>
+        </div>
+        <div class="payment-duration">
+          <span class="label">开通时长：</span>
+          <span class="value">{{ selectedPlanObj?.duration || '' }}</span>
+        </div>
+      </div>
+
+      <!-- 支付方式选择 -->
+      <div class="payment-methods">
+        <div class="payment-title">选择支付方式</div>
+        <div class="payment-options">
+          <div
+            v-for="method in paymentMethods"
+            :key="method.id"
+            class="payment-item"
+            :class="{ 'active': selectedMethod === method.id }"
+            @click="selectedMethod = method.id"
+          >
+            <div class="method-info">
+              <el-icon class="method-icon"><component :is="method.icon" /></el-icon>
+              <span class="method-name">{{ method.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="dialog-actions">
+        <el-button @click="backToPlanStep">返回</el-button>
+        <el-button
+          type="primary"
+          :loading="loading"
+          @click="handlePurchase"
+        >
+          立即支付 ¥{{ selectedPlanObj?.price || 0 }}
         </el-button>
       </div>
     </div>
@@ -109,7 +144,7 @@
 
 <script setup lang="ts">
 import { ref, computed, defineEmits, defineExpose } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star,
   Reading,
@@ -138,6 +173,7 @@ interface VipPlan {
   duration: string
   savings?: number
   popular: boolean
+  days?: number // 添加天数字段
 }
 
 interface PaymentMethod {
@@ -149,6 +185,7 @@ interface PaymentMethod {
 const emit = defineEmits(['purchase-success'])
 
 const dialogVisible = ref(false)
+const paymentDialogVisible = ref(false)
 const loading = ref(false)
 const selectedPlan = ref(2) // 默认选择月度套餐
 const selectedMethod = ref('wechat')
@@ -164,10 +201,10 @@ const vipBenefits: VipBenefit[] = [
 ]
 
 const vipPlans: VipPlan[] = [
-  { id: 1, name: '周会员', price: 9, duration: '7天', popular: false },
-  { id: 2, name: '月会员', price: 25, originalPrice: 30, duration: '30天', savings: 5, popular: true },
-  { id: 3, name: '季会员', price: 68, originalPrice: 90, duration: '90天', savings: 22, popular: false },
-  { id: 4, name: '年会员', price: 238, originalPrice: 360, duration: '365天', savings: 122, popular: false },
+  { id: 1, name: '周会员', price: 9, duration: '7天', days: 7, popular: false },
+  { id: 2, name: '月会员', price: 25, originalPrice: 30, duration: '30天', days: 30, savings: 5, popular: true },
+  { id: 3, name: '季会员', price: 68, originalPrice: 90, duration: '90天', days: 90, savings: 22, popular: false },
+  { id: 4, name: '年会员', price: 238, originalPrice: 360, duration: '365天', days: 365, savings: 122, popular: false },
 ]
 
 const paymentMethods: PaymentMethod[] = [
@@ -185,31 +222,79 @@ const selectPlan = (id: number) => {
   selectedPlan.value = id
 }
 
-const handleClose = () => {
-  dialogVisible.value = false
-}
-
-const handlePurchase = async () => {
+const goToPaymentStep = () => {
   if (!agreed.value) {
     ElMessage.warning('请先阅读并同意会员协议')
     return
   }
 
+  // 关闭套餐选择弹窗，打开支付弹窗
+  dialogVisible.value = false
+  setTimeout(() => {
+    paymentDialogVisible.value = true
+  }, 300)
+}
+
+const backToPlanStep = () => {
+  paymentDialogVisible.value = false
+  setTimeout(() => {
+    dialogVisible.value = true
+  }, 300)
+}
+
+const handleClose = () => {
+  dialogVisible.value = false
+}
+
+const handleClosePayment = () => {
+  paymentDialogVisible.value = false
+}
+
+const handlePurchase = async () => {
+  if (loading.value) {
+    return
+  }
+
   loading.value = true
   try {
-    // 模拟购买过程
+    // 模拟支付过程
     await new Promise(resolve => setTimeout(resolve, 1500))
 
-    ElMessage.success('会员开通成功！')
+    // 关闭支付弹窗
+    paymentDialogVisible.value = false
+
+    // 显示成功弹窗
+    await ElMessageBox.confirm(
+      `<div class="success-content">
+         <div class="success-title">您已成功开通会员</div>
+         <div class="success-desc">
+           已成功开通 ${selectedPlanObj.value?.name}，有效期 ${selectedPlanObj.value?.duration}
+         </div>
+         <div class="success-tip">
+           会员特权已生效，立即享受会员服务
+         </div>
+       </div>`,
+      '开通成功',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '',
+        showCancelButton: false,
+        dangerouslyUseHTMLString: true,
+        customClass: 'success-dialog',
+        center: true,
+      }
+    )
+
+    // 触发成功事件，通知父组件更新会员信息
     emit('purchase-success', selectedPlanObj.value)
-    dialogVisible.value = false
+
   } catch (error) {
+    // 支付失败处理
     ElMessage.error('开通失败，请重试')
   } finally {
     loading.value = false
   }
 }
-
 // 暴露方法供父组件调用
 const open = () => {
   dialogVisible.value = true
@@ -374,14 +459,71 @@ defineExpose({
   border-radius: 4px;
 }
 
-.payment-section {
-  margin-bottom: 20px;
+.vip-agreement {
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.auto-renewal {
+  font-size: 12px;
+  color: #999;
+  margin-top: 8px;
+  margin-left: 24px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* 支付弹窗样式 */
+.payment-dialog {
+  padding: 10px 0;
+}
+
+.payment-info {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.payment-amount,
+.payment-duration {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.payment-amount .label,
+.payment-duration .label {
+  color: #666;
+}
+
+.payment-amount .value {
+  font-weight: 600;
+  color: #333;
+}
+
+.payment-duration .value {
+  font-weight: 600;
+  color: #67c23a;
+}
+
+.payment-methods {
+  margin-bottom: 24px;
 }
 
 .payment-title {
   font-size: 14px;
   color: #666;
   margin-bottom: 12px;
+  font-weight: 500;
 }
 
 .payment-options {
@@ -417,27 +559,73 @@ defineExpose({
 }
 
 .method-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  color: #409eff;
 }
 
-.vip-agreement {
-  margin-bottom: 24px;
-  padding: 16px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+.method-name {
+  font-size: 14px;
+  color: #333;
 }
 
-.auto-renewal {
-  font-size: 12px;
-  color: #999;
-  margin-top: 8px;
-  margin-left: 24px;
+/* 成功弹窗样式 */
+:deep(.success-dialog .el-message-box) {
+  text-align: center;
+  min-width: 300px;
 }
 
-.dialog-actions {
+:deep(.success-dialog .el-message-box__status) {
+  display: none;
+}
+
+:deep(.success-dialog .el-message-box__header) {
+  text-align: center;
+  padding: 20px 20px 0 20px;
+}
+
+:deep(.success-dialog .el-message-box__title) {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+:deep(.success-dialog .el-message-box__content) {
+  padding: 10px 20px;
+  text-align: center;
+}
+
+:deep(.success-dialog .el-message-box__btns) {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  justify-content: center;
+  padding: 0 20px 20px 20px;
+}
+
+:deep(.success-dialog .el-button--primary) {
+  background-color: #67c23a;
+  border-color: #67c23a;
+  min-width: 100px;
+}
+
+:deep(.success-dialog .el-button--primary:hover) {
+  background-color: #85ce61;
+  border-color: #85ce61;
+}
+
+:deep(.success-content) {
+  text-align: center;
+  padding: 10px 0;
+}
+
+:deep(.success-title) {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+:deep(.success-desc) {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
 }
 </style>

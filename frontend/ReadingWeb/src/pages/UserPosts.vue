@@ -5,43 +5,6 @@
     <!-- 只有在发布页面才显示浮动添加按钮 -->
     <FloatingAddButton v-if="currentTab === 'posts'" />
     <div class="page-content">
-      <!-- 返回按钮 -->
-      <div class="back-button-container">
-        <button class="back-btn" @click="goBack">
-          <el-icon><ArrowLeft /></el-icon>
-          返回
-        </button>
-      </div>
-
-      <!-- 用户信息卡片 - 普通样式 -->
-      <div class="profile-card">
-        <div class="profile-content">
-          <div class="avatar-section">
-            <div class="avatar-wrapper">
-              <img :src="userInfo.avatar" alt="用户头像" class="profile-avatar">
-            </div>
-          </div>
-          <div class="profile-info">
-            <h2 class="username">{{ userInfo.username }}</h2>
-            <div class="stats-row">
-              <div class="stat-item">
-                <span class="stat-number">{{ userInfo.postCount }}</span>
-                <span class="stat-label">发布</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-number">{{ userInfo.followingCount }}</span>
-                <span class="stat-label">关注</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-number">{{ userInfo.followerCount }}</span>
-                <span class="stat-label">粉丝</span>
-              </div>
-              <!-- 删除了获赞数 -->
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- 左右分栏布局 -->
       <div class="main-layout">
         <!-- 左侧导航栏 -->
@@ -58,19 +21,31 @@
             <el-icon><UserFilled /></el-icon>
             <span>粉丝</span>
           </div>
+          <div class="nav-item" :class="{ active: currentTab === 'thoughts' }" @click="switchTab('thoughts')">
+            <el-icon><ChatLineSquare /></el-icon>
+            <span>想法</span>
+          </div>
+          <div class="nav-item" :class="{ active: currentTab === 'reviews' }" @click="switchTab('reviews')">
+            <el-icon><Star /></el-icon>
+            <span>书评</span>
+          </div>
         </div>
 
         <!-- 右侧内容区域 -->
         <div class="content-area">
           <!-- 发布内容 -->
           <div v-if="currentTab === 'posts'" class="posts-container">
-            <!-- 修改了这部分：在标题右侧添加获赞数和评论数 -->
+            <!-- 标题和统计信息 -->
             <div class="section-title-with-stats">
               <div class="section-title-left">
                 <h3>我的帖子</h3>
                 <div class="title-line"></div>
               </div>
               <div class="section-title-stats">
+                <div class="stat-item">
+                  <span class="stat-number">{{ userStats.postCount }}</span>
+                  <span class="stat-label">发布</span>
+                </div>
                 <div class="stat-item">
                   <span class="stat-number">{{ totalLikes }}</span>
                   <span class="stat-label">获赞</span>
@@ -82,12 +57,13 @@
               </div>
             </div>
 
-            <div
-              v-for="post in userPosts"
-              :key="post.id"
-              class="post-item"
-            >
-              <div class="post-card-wrapper">
+            <!-- 帖子列表 -->
+            <div class="posts-list">
+              <div
+                v-for="post in userPosts"
+                :key="post.id"
+                class="post-item"
+              >
                 <PostCard
                   v-bind="post"
                   :show-follow-button="false"
@@ -118,85 +94,96 @@
             </div>
           </div>
 
-          <!-- 关注列表 -->
-          <div v-if="currentTab === 'following'" class="following-container">
-            <div class="section-title">
-              <h3>关注列表</h3>
-              <div class="title-line"></div>
-            </div>
+          <!-- 关注列表 - 使用 UserList 组件 -->
+          <div v-if="currentTab === 'following'" class="user-list-wrapper">
+            <UserList
+              type="following"
+              :users="followingList"
+              @update="handleFollowingUpdate"
+            />
+          </div>
 
-            <div class="users-grid">
-              <div
-                v-for="user in followingList"
-                :key="user.id"
-                class="user-card"
-              >
-                <!-- 左侧头像 -->
-                <div class="user-avatar-container">
-                  <img :src="user.avatar" alt="用户头像" class="user-avatar">
-                </div>
-                <!-- 右侧内容 -->
-                <div class="user-right-content">
-                  <div class="user-info">
-                    <h4 class="user-name">{{ user.username }}</h4>
-                    <p class="user-bio">{{ user.bio }}</p>
-                  </div>
-                  <button class="follow-btn following" @click="handleUnfollow(user.id)">
-                    已关注
-                  </button>
+          <!-- 粉丝列表 - 使用 UserList 组件 -->
+          <div v-if="currentTab === 'followers'" class="user-list-wrapper">
+            <UserList
+              type="followers"
+              :users="followersList"
+              @update="handleFollowersUpdate"
+            />
+          </div>
+
+          <!-- 想法列表 -->
+          <div v-if="currentTab === 'thoughts'" class="thoughts-container">
+            <div class="section-title-with-stats">
+              <div class="section-title-left">
+                <h3>我的想法</h3>
+                <div class="title-line"></div>
+              </div>
+              <div class="section-title-stats">
+                <div class="stat-item">
+                  <span class="stat-number">{{ thoughts.length }}</span>
+                  <span class="stat-label">想法</span>
                 </div>
               </div>
             </div>
 
-            <div v-if="followingList.length === 0" class="empty-state">
+            <!-- 想法列表 - 使用 ThoughtCard 组件 -->
+            <div class="thoughts-list">
+              <ThoughtCard
+                v-for="item in thoughts"
+                :key="item.id"
+                :thought="item"
+                @delete="handleDeleteThought"
+              />
+            </div>
+
+            <div v-if="thoughts.length === 0" class="empty-state">
               <div class="empty-illustration">
-                <div class="empty-icon">👤</div>
+                <div class="empty-icon">💭</div>
               </div>
-              <h3>还没有关注任何人</h3>
-              <p class="empty-hint">快去发现有趣的人吧！</p>
+              <h3>还没有任何想法</h3>
+              <p class="empty-hint">记录你的阅读感悟，分享你的思考</p>
+              <button class="create-post-btn" @click="goToCreateThought">
+                记录想法
+              </button>
             </div>
           </div>
 
-          <!-- 粉丝列表 -->
-          <div v-if="currentTab === 'followers'" class="followers-container">
-            <div class="section-title">
-              <h3>粉丝列表</h3>
-              <div class="title-line"></div>
-            </div>
-
-            <div class="users-grid">
-              <div
-                v-for="user in followersList"
-                :key="user.id"
-                class="user-card"
-              >
-                <!-- 左侧头像 -->
-                <div class="user-avatar-container">
-                  <img :src="user.avatar" alt="用户头像" class="user-avatar">
-                </div>
-                <!-- 右侧内容 -->
-                <div class="user-right-content">
-                  <div class="user-info">
-                    <h4 class="user-name">{{ user.username }}</h4>
-                    <p class="user-bio">{{ user.bio }}</p>
-                  </div>
-                  <button
-                    class="follow-btn"
-                    :class="{ following: user.isFollowing }"
-                    @click="handleFollow(user.id)"
-                  >
-                    {{ user.isFollowing ? '已互关' : '回关' }}
-                  </button>
+          <!-- 书评列表 -->
+          <div v-if="currentTab === 'reviews'" class="reviews-container">
+            <div class="section-title-with-stats">
+              <div class="section-title-left">
+                <h3>我的书评</h3>
+                <div class="title-line"></div>
+              </div>
+              <div class="section-title-stats">
+                <div class="stat-item">
+                  <span class="stat-number">{{ reviews.length }}</span>
+                  <span class="stat-label">书评</span>
                 </div>
               </div>
             </div>
 
-            <div v-if="followersList.length === 0" class="empty-state">
+            <!-- 书评列表 - 使用 ReviewCard 组件 -->
+            <div class="reviews-list">
+              <ReviewCard
+                v-for="review in reviews"
+                :key="review.id"
+                :review="review"
+                :rating-config="ratingConfig"
+                @delete="handleDeleteReview"
+              />
+            </div>
+
+            <div v-if="reviews.length === 0" class="empty-state">
               <div class="empty-illustration">
-                <div class="empty-icon">👥</div>
+                <div class="empty-icon">📚</div>
               </div>
-              <h3>还没有粉丝</h3>
-              <p class="empty-hint">积极创作，吸引更多关注吧！</p>
+              <h3>还没有任何书评</h3>
+              <p class="empty-hint">写下你的读书感悟，分享你的见解</p>
+              <button class="create-post-btn" @click="goToCreateReview">
+                撰写书评
+              </button>
             </div>
           </div>
         </div>
@@ -208,12 +195,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, ArrowLeft, Edit, User, UserFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Delete, Edit, User, UserFilled, ChatLineSquare, Star } from '@element-plus/icons-vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
+import ThoughtCard from '@/components/userposts/ThoughtCard.vue'
+import ReviewCard from '@/components/userposts/ReviewCard.vue'
+import UserList from '@/components/userposts/UserList.vue'
 
 // 定义 props 接收路由参数
 interface Props {
@@ -232,21 +222,26 @@ const switchTab = (tab: string) => {
   currentTab.value = tab
 }
 
-// 返回上一页
-const goBack = () => {
-  router.back()
-}
-
 // 跳转到发布页面
 const goToCreatePost = () => {
   console.log('跳转到发布页面')
   // router.push('/create-post')
 }
 
-// 用户信息
-const userInfo = ref({
-  username: props.id ? `用户${props.id}` : '当前用户',
-  avatar: `https://picsum.photos/100?random=${props.id || 1}`,
+// 跳转到创建想法页面
+const goToCreateThought = () => {
+  console.log('跳转到创建想法页面')
+  // router.push('/create-thought')
+}
+
+// 跳转到创建书评页面
+const goToCreateReview = () => {
+  console.log('跳转到创建书评页面')
+  // router.push('/create-review')
+}
+
+// 用户统计信息
+const userStats = ref({
   postCount: 8,
   followingCount: 24,
   followerCount: 156
@@ -295,6 +290,78 @@ const userPosts = ref([
     isLiked: true,
     book: null,
   }
+])
+
+// 想法数据
+const thoughts = ref([
+  {
+    id: 1,
+    bookName: '置身事内',
+    date: '2025-05-20',
+    thought: '地方政府热衷开发区的本质是在经营土地。风险在于人口流入一旦停止，游戏就难以为继。作者通过详实的案例和数据，揭示了地方政府与土地财政之间的紧密关系，让我对中国的经济运作有了更深入的理解。这种发展模式的可持续性值得思考。',
+    quote: '土地财政的本质，是政府将未来的土地收益提前变现。',
+  },
+  {
+    id: 2,
+    bookName: '当尼采哭泣',
+    date: '2025-04-29',
+    thought: '布雷尔医生是我们大多数人的缩影，拥有世俗的成功，内心却充满对"未选生活"的恐惧。欧文·亚隆通过这部小说展现了心理治疗的魅力，尼采与布雷尔之间的对话充满了哲学智慧。每个人都在某种程度上害怕过自己真正想要的生活，这种恐惧往往源于对未知的担忧和对现有安全感的依恋。',
+    quote: '通过这一层层的面具，我看到了那个孤独的人。他不仅害怕死，更害怕生。',
+  },
+  {
+    id: 3,
+    bookName: '长安的荔枝',
+    date: '2025-02-15',
+    thought: '职场生存守则第一条：永远不要相信领导画的饼，除非饼已经在你嘴里了。马伯庸通过唐代小吏的故事，生动展现了古代职场的种种规则。虽然时代不同，但人性与职场规则的本质并没有太大变化。这本书让我反思现代职场中的种种现象，以及如何在复杂的环境中保持自己的原则。',
+    quote: '流程，是弱者才遵守的规矩。',
+  },
+  {
+    id: 4,
+    bookName: '三体II',
+    date: '2025-01-10',
+    thought: '罗辑才是真正的面壁者，欺骗世界也欺骗自己，只为最后的对决。黑暗森林理论让我重新思考宇宙文明之间的关系。刘慈欣的想象力令人惊叹，他将宏大的宇宙观与细腻的人性描写完美结合。这本书不仅是一部科幻作品，更是对人类社会、道德和文明的深刻思考。',
+    quote: '我有一个梦，也许有一天，灿烂的阳光能照进黑暗森林。',
+  },
+])
+
+// 书评数据
+const defaultCover = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=300'
+
+// 定义评级对应的配置
+const ratingConfig = {
+  recommend: { label: '推荐', className: 'tag-recommend' },
+  average: { label: '一般', className: 'tag-average' },
+  bad: { label: '不行', className: 'tag-bad' },
+}
+
+const reviews = ref([
+  {
+    id: 1,
+    bookName: '置身事内',
+    cover: defaultCover,
+    rating: 'recommend',
+    date: '2024-05-20',
+    likes: 128,
+    content: '这本书彻底改变了我对宏观经济的看法。它不是枯燥的理论堆砌，而是从地方政府的微观视角切入，通过详实的案例和数据，揭示了中国经济发展背后的真实逻辑。作者兰小欢教授用通俗易懂的语言，将复杂的政治经济学问题讲得深入浅出。特别值得一提的是，书中对地方政府与土地财政关系的分析，让我对城市化进程有了全新的认识。这本书不仅适合经济学专业的学生，也适合所有关心中国发展的普通读者。',
+  },
+  {
+    id: 2,
+    bookName: '当尼采哭泣',
+    cover: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=300',
+    rating: 'recommend',
+    date: '2024-04-15',
+    likes: 45,
+    content: '欧文·亚隆将哲学和心理学融合得太完美了。这本书不仅是一部小说，更是一本心理治疗和哲学思考的杰作。作者虚构了尼采与布雷尔医生的会面，通过他们之间的对话，探讨了存在、孤独、自由、责任等深刻的哲学命题。书中的对话充满智慧，每一句话都值得反复品味。作为心理咨询的开山之作，它展现了心理治疗的魅力与深度。读完后，我不禁反思自己的人生选择和对生活的态度。',
+  },
+  {
+    id: 3,
+    bookName: '长安的荔枝',
+    cover: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=300',
+    rating: 'recommend',
+    date: '2024-02-10',
+    likes: 89,
+    content: '马伯庸用一个小人物的视角，展现了大唐盛世的另一面。故事围绕"一骑红尘妃子笑，无人知是荔枝来"展开，讲述了小吏李善德如何克服重重困难，将鲜荔枝从岭南运到长安的惊险历程。这本书不仅是一部历史小说，更是一部职场生存指南。作者通过古代的故事，反映了现代职场的种种现象。书中的智慧和幽默让我在阅读过程中既感受到历史的厚重，又不乏轻松的阅读体验。',
+  },
 ])
 
 // 关注列表数据
@@ -405,55 +472,33 @@ const handleComment = () => {
 
 // 删除帖子
 const handleDeletePost = async (postId: number) => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要删除这篇帖子吗？删除后不可恢复。',
-      '删除确认',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
-    userPosts.value = userPosts.value.filter(post => post.id !== postId)
-    userInfo.value.postCount = userPosts.value.length
-    ElMessage.success('帖子删除成功')
-  } catch {
-    console.log('取消删除')
-  }
+  userPosts.value = userPosts.value.filter(post => post.id !== postId)
+  userStats.value.postCount = userPosts.value.length
+  ElMessage.success('帖子删除成功')
 }
 
-// 关注用户
-const handleFollow = (userId: number) => {
-  const user = followersList.value.find(u => u.id === userId)
-  if (user) {
-    user.isFollowing = !user.isFollowing
-    ElMessage.success(user.isFollowing ? '关注成功' : '已取消关注')
-  }
+// 删除想法
+const handleDeleteThought = (thoughtId: number) => {
+  thoughts.value = thoughts.value.filter(thought => thought.id !== thoughtId)
+  ElMessage.success('想法删除成功')
 }
 
-// 取消关注
-const handleUnfollow = (userId: number) => {
-  try {
-    ElMessageBox.confirm(
-      '确定要取消关注吗？',
-      '取消关注',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    ).then(() => {
-      followingList.value = followingList.value.filter(user => user.id !== userId)
-      userInfo.value.followingCount--
-      ElMessage.success('已取消关注')
-    }).catch(() => {
-      console.log('取消操作')
-    })
-  } catch {
-    console.log('取消操作')
-  }
+// 删除书评
+const handleDeleteReview = (reviewId: number) => {
+  reviews.value = reviews.value.filter(review => review.id !== reviewId)
+  ElMessage.success('书评删除成功')
+}
+
+// 更新关注列表
+const handleFollowingUpdate = (updatedUsers: any[]) => {
+  followingList.value = updatedUsers
+  userStats.value.followingCount = updatedUsers.length
+}
+
+// 更新粉丝列表
+const handleFollowersUpdate = (updatedUsers: any[]) => {
+  followersList.value = updatedUsers
+  userStats.value.followerCount = updatedUsers.length
 }
 
 // 监听路由参数变化，以便从UserProfileCard跳转时能切换到对应标签页
@@ -462,7 +507,7 @@ onMounted(() => {
 
   // 检查是否有tab参数
   const tabParam = route.query.tab as string
-  if (tabParam && ['posts', 'following', 'followers'].includes(tabParam)) {
+  if (tabParam && ['posts', 'following', 'followers', 'thoughts', 'reviews'].includes(tabParam)) {
     currentTab.value = tabParam
   }
 })
@@ -471,7 +516,7 @@ onMounted(() => {
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && ['posts', 'following', 'followers'].includes(newTab as string)) {
+    if (newTab && ['posts', 'following', 'followers', 'thoughts', 'reviews'].includes(newTab as string)) {
       currentTab.value = newTab as string
     }
   }
@@ -482,119 +527,13 @@ watch(
 .user-posts-page {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
-
 }
 
 .page-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-}
-
-/* 返回按钮样式 */
-.back-button-container {
-  margin-bottom: 16px;
-  margin-top: 20px;
-}
-
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: white;
-  color: #4a5568;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.back-btn:hover {
-  background: #f7fafc;
-  border-color: #cbd5e0;
-}
-
-/* 个人资料卡片 - 普通样式 */
-.profile-card {
-  background: white;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f0f0f0;
-  overflow: hidden;
-  position: relative;
-  padding: 40px 20px 30px;
-}
-
-.profile-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  position: relative;
-  z-index: 1;
-}
-
-.avatar-section {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.avatar-wrapper {
-  position: relative;
-  width: 120px;
-  height: 120px;
-}
-
-.profile-avatar {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 4px solid white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.profile-info {
-  text-align: center;
-}
-
-.username {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #2d3748;
-}
-
-.stats-row {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  cursor: default;
-}
-
-.stat-number {
-  font-size: 18px;
-  font-weight: 700;
-  color: #2d3748;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #718096;
-  font-weight: 500;
+  margin-top: 28px;
 }
 
 /* 左右分栏布局 */
@@ -608,9 +547,7 @@ watch(
 .sidebar {
   width: 200px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-color);
   padding: 16px 0;
   flex-shrink: 0;
 }
@@ -621,7 +558,7 @@ watch(
   gap: 12px;
   padding: 14px 24px;
   cursor: pointer;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -630,13 +567,13 @@ watch(
 
 .nav-item:hover {
   background: #f8fafc;
-  color: #4a9af5;
+  color: var(--primary-green);
 }
 
 .nav-item.active {
-  background: #f0f7ff;
-  color: #4a9af5;
-  border-left: 3px solid #4a9af5;
+  background: rgba(126, 180, 143, 0.1); /* 使用 --bg-green 的浅色版本 */
+  color: var(--primary-green);
+  border-left: 3px solid var(--primary-green);
 }
 
 .nav-item .el-icon {
@@ -649,7 +586,7 @@ watch(
   min-width: 0; /* 防止flex item溢出 */
 }
 
-/* 修改：发布页面的标题与统计区域 */
+/* 所有页面的标题与统计区域 */
 .section-title-with-stats {
   display: flex;
   justify-content: space-between;
@@ -657,6 +594,7 @@ watch(
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  margin-bottom: 24px;
 }
 
 .section-title-left {
@@ -667,15 +605,14 @@ watch(
 .section-title-with-stats h3 {
   font-size: 20px;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .section-title-with-stats .title-line {
   width: 60px;
   height: 3px;
-  background: #a0aec0;
-  border-radius: 2px;
+  background: var(--primary-green);
 }
 
 .section-title-stats {
@@ -695,52 +632,37 @@ watch(
 .section-title-stats .stat-number {
   font-size: 16px;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--primary-green);
 }
 
 .section-title-stats .stat-label {
   font-size: 12px;
-  color: #718096;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
-/* 关注和粉丝页面的标题样式保持不变 */
-.section-title {
-  margin-bottom: 24px;
-  position: relative;
-}
-
-.section-title h3 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #2d3748;
-  margin-bottom: 8px;
-}
-
-.title-line {
-  width: 60px;
-  height: 3px;
-  background: #a0aec0;
-  border-radius: 2px;
-}
-
-/* 帖子样式 */
-.post-item {
-  margin-bottom: 16px;
-}
-
-.post-card-wrapper {
+/* 发布容器样式 - 与其他页面保持一致 */
+.posts-container {
   background: white;
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
-  overflow: hidden;
+  border: 1px solid var(--border-color);
+  padding: 24px;
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 帖子项样式 */
+.post-item {
+  border: 1px solid var(--border-color);
+  padding: 0;
 }
 
 /* 关键修改：调整帖子卡片的外边距和内边距 */
-.post-card-wrapper :deep(.post-card) {
+.post-item :deep(.post-card) {
   margin-bottom: 0;
-  border-radius: 0;
-  box-shadow: none;
   border: none;
 }
 
@@ -750,6 +672,7 @@ watch(
   display: flex;
   justify-content: flex-end;
   background: white;
+  border-top: 1px solid var(--border-color);
 }
 
 .delete-btn {
@@ -758,7 +681,7 @@ watch(
   gap: 6px;
   padding: 8px 16px;
   background: #f5f5f5;
-  color: #666;
+  color: var(--text-secondary);
   border: 1px solid #e0e0e0;
   border-radius: 6px;
   cursor: pointer;
@@ -767,117 +690,42 @@ watch(
 }
 
 .delete-btn:hover {
-  background: #ff4d4f;
+  background: var(--primary-pink);
   color: white;
-  border-color: #ff4d4f;
-  transform: translateY(-1px);
+  border-color: var(--primary-pink);
 }
 
-/* 用户卡片网格布局 */
-.users-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.user-card {
+/* 用户列表包装器 */
+.user-list-wrapper {
   background: white;
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid #f0f0f0;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: stretch;
-  min-height: 120px; /* 设置最小高度，使卡片高度统一 */
+  border: 1px solid var(--border-color);
+  padding: 24px;
 }
 
-.user-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+/* 想法容器样式 */
+.thoughts-container {
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 24px;
 }
 
-/* 左侧头像容器 */
-.user-avatar-container {
-  flex-shrink: 0;
-  margin-right: 12px;
-  display: flex;
-  align-items: center;
-}
-
-.user-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-/* 右侧内容区域 */
-.user-right-content {
-  flex: 1;
+.thoughts-list {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-width: 0; /* 防止内容溢出 */
+  gap: 20px;
 }
 
-/* 用户信息区域 */
-.user-info {
-  flex: 1;
-  margin-bottom: 12px;
-  overflow: hidden;
+/* 书评容器样式 */
+.reviews-container {
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 24px;
 }
 
-.user-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 6px;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.user-bio {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.4;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 关注按钮样式 */
-.follow-btn {
-  padding: 8px 16px;
-  background: #ff6b6b;
-  color: white;
-  border: none;
-  border-radius: 16px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  height: 32px; /* 固定按钮高度 */
-  width: 100%; /* 按钮宽度占满右侧区域 */
-}
-
-.follow-btn:hover {
-  background: #ff8787;
-}
-
-.follow-btn.following {
-  background: #f0f0f0;
-  color: #666;
-}
-
-.follow-btn.following:hover {
-  background: #e0e0e0;
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 /* 空状态 */
@@ -885,9 +733,7 @@ watch(
   text-align: center;
   padding: 60px 20px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-color);
 }
 
 .empty-icon {
@@ -898,19 +744,19 @@ watch(
 .empty-state h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
 .empty-hint {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 24px;
 }
 
 .create-post-btn {
   padding: 10px 24px;
-  background: #64adf7;
+  background: var(--primary-green);
   color: white;
   border: none;
   border-radius: 6px;
@@ -921,28 +767,13 @@ watch(
 }
 
 .create-post-btn:hover {
-  background: #4a9af5;
+  background: var(--thrid-green);
 }
 
 /* 响应式设计 */
-@media (max-width: 1024px) {
-  .users-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 @media (max-width: 768px) {
   .page-content {
     padding: 16px;
-  }
-
-  .profile-content {
-    padding: 0;
-  }
-
-  .stats-row {
-    gap: 20px;
-    flex-wrap: wrap;
   }
 
   .main-layout {
@@ -951,24 +782,11 @@ watch(
 
   .sidebar {
     width: 100%;
-    height: auto; /* 移动端恢复自动高度 */
-    overflow-y: visible; /* 移除滚动条 */
+    height: auto;
+    overflow-y: visible;
   }
 
-  .users-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .user-card {
-    min-height: 100px;
-  }
-
-  .user-avatar {
-    width: 50px;
-    height: 50px;
-  }
-
-  /* 移动端适配：发布页面标题与统计区域 */
+  /* 移动端适配：标题与统计区域 */
   .section-title-with-stats {
     flex-direction: column;
     align-items: flex-start;
@@ -977,7 +795,7 @@ watch(
   .section-title-stats {
     width: 100%;
     justify-content: flex-start;
-    padding: 0; /* 去掉内边距 */
+    padding: 0;
   }
 }
 </style>
