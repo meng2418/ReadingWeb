@@ -1,6 +1,5 @@
 <template>
-  <div class="user-profile-card">
-    <!-- 顶部用户信息 -->
+  <div class="user-profile-card" :style="cssVars">
     <div class="profile-header">
       <div class="user-info">
         <div class="avatar">
@@ -28,21 +27,19 @@
           <span class="label">发布</span>
         </div>
 
-        <!-- 操作按钮 -->
         <div class="actions">
-          <button class="icon-btn">
-            <Edit2 />
+          <button class="icon-btn" @click="openEditDialog">
+            <Edit2 :size="16" />
             <span>编辑</span>
           </button>
-          <button class="icon-btn">
-            <Palette />
+          <button class="icon-btn" @click="openAppearanceDrawer">
+            <Palette :size="16" />
             <span>外观</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 底部卡片操作 -->
     <div class="card-actions">
       <div class="balance-box">
         <span>体验卡</span>
@@ -54,35 +51,334 @@
       </div>
       <button class="vip-btn">成为会员</button>
     </div>
+
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑个人信息"
+      width="500px"
+      :append-to-body="true"
+    >
+      <div class="edit-form">
+        <div class="form-group">
+          <label>头像</label>
+          <div class="avatar-upload">
+            <img :src="editForm.avatar" alt="预览" class="avatar-preview" />
+            <el-button @click="triggerFileInput">上传图片</el-button>
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              style="display: none"
+              @change="handleAvatarUpload"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>昵称</label>
+          <el-input
+            v-model="editForm.nickname"
+            placeholder="请输入昵称"
+            maxlength="20"
+            show-word-limit
+          />
+        </div>
+        <div class="form-group">
+          <label>个性签名</label>
+          <el-input
+            v-model="editForm.signature"
+            type="textarea"
+            placeholder="请输入个性签名"
+            maxlength="200"
+            show-word-limit
+            :rows="4"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleEditConfirm">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <div
+      v-if="appearanceDrawerVisible"
+      class="appearance-drawer-overlay"
+      @click="closeAppearanceDrawer"
+    ></div>
+
+    <transition name="slide-up">
+      <div v-if="appearanceDrawerVisible" class="appearance-drawer">
+        <div class="drawer-header">
+          <h3>外观设置</h3>
+          <button class="close-btn" @click="closeAppearanceDrawer">
+            <X :size="24" />
+          </button>
+        </div>
+
+        <div class="drawer-content">
+          <div class="appearance-section">
+            <h4>选择主题色</h4>
+            <div class="theme-options">
+              <div
+                v-for="theme in themes"
+                :key="theme.value"
+                :class="['theme-option', { active: previewThemeValue === theme.value }]"
+                @click="handleThemePreview(theme.value)"
+              >
+                <div :class="['theme-preview']" :style="getThemePreviewStyle(theme)"></div>
+                <span>{{ theme.label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <el-button @click="closeAppearanceDrawer">取消</el-button>
+          <el-button type="primary" @click="handleAppearanceSave">保存设置</el-button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Edit2, Palette } from 'lucide-vue-next'
-import { ref } from 'vue'
-import DefaultAvatar from '@/img/avatar.jpg'
-// 个人信息数据，从JS传入
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElButton, ElDialog, ElInput } from 'element-plus'
+import { Edit2, Palette, X } from 'lucide-vue-next'
+
+// --- 数据定义 ---
+
 const user = ref({
   nickname: '幼稚园战神',
   signature:
     'B站有机生物，人工制造，含水分，碳包碳，小学毕业证，初中毕业证，高中毕业证，卒業証明書，会吃饭睡觉，不主持仪式不喜欢小男孩儿的神父（凑字数）',
-  avatar: DefaultAvatar,
-  stats: {
-    following: 10,
-    followers: 1000,
-    posts: 5,
-  },
+  avatar: 'https://picsum.photos/id/1027/200',
+  stats: { following: 10, followers: 1000, posts: 5 },
   payCoin: 180,
   giftVIP: 12,
 })
+// --- 主题配置 ---
+
+// 定义主题的详细颜色映射
+const themes = [
+  {
+    value: 'classic-white',
+    label: '经典白',
+    colors: {
+      '--primary-green': '#007c27',
+      '--secondary-green': '#1ad6a1',
+      '--third-green': '#00a86b',
+      '--card-bg': '#ffffff',
+      '--text-main': '#1f2937',
+      '--text-light': '#9ca3af',
+      '--bg-gray': '#f3f4f6',
+      '--shadow': '0 4px 12px rgba(0, 0, 0, 0.05)',
+    },
+    // 用于抽屉里那个小圆块的预览样式
+    previewBg: '#ffffff',
+  },
+  {
+    value: 'silent-black',
+    label: '沉静黑',
+    colors: {
+      '--primary-green': '#d4d4d4',
+      '--secondary-green': '#404040',
+      '--third-green': '#595959',
+      '--card-bg': '#0a0a0a',
+      '--text-main': '#e0e0e0',
+      '--text-light': '#a0a0a0',
+      '--bg-gray': '#1a1a1a',
+      '--shadow': '0 4px 12px rgba(0, 0, 0, 0.5)',
+    },
+    previewBg: '#0a0a0a',
+  },
+  {
+    value: 'tranquil-green',
+    label: '恬静绿',
+    colors: {
+      '--primary-green': '#2d5a3d',
+      '--secondary-green': '#4a7c59',
+      '--third-green': '#6ba876',
+      '--card-bg': '#f0f5f3',
+      '--text-main': '#1a3a2a',
+      '--text-light': '#5c7a68',
+      '--bg-gray': '#e1e8e4',
+      '--shadow': '0 4px 12px rgba(45, 90, 61, 0.1)',
+    },
+    previewBg: 'linear-gradient(135deg, #f0f5f3 0%, #d5e6db 100%)',
+  },
+  {
+    value: 'gay-purple',
+    label: '基佬紫',
+    colors: {
+      '--primary-green': '#7c3aed',
+      '--secondary-green': '#a78bfa',
+      '--third-green': '#c4b5fd',
+      '--card-bg': '#f5f3ff',
+      '--text-main': '#4c1d95',
+      '--text-light': '#8b5cf6',
+      '--bg-gray': '#ede9fe',
+      '--shadow': '0 4px 12px rgba(124, 58, 237, 0.1)',
+    },
+    previewBg: 'linear-gradient(135deg, #f5f3ff 0%, #ddd6fe 100%)',
+  },
+  {
+    value: 'sweet-pink',
+    label: '甜美粉',
+    colors: {
+      '--primary-green': '#db2777',
+      '--secondary-green': '#f472b6',
+      '--third-green': '#fbcfe8',
+      '--card-bg': '#fff1f2',
+      '--text-main': '#881337',
+      '--text-light': '#be123c',
+      '--bg-gray': '#ffe4e6',
+      '--shadow': '0 4px 12px rgba(219, 39, 119, 0.1)',
+    },
+    previewBg: 'linear-gradient(135deg, #fff1f2 0%, #fecdd3 100%)',
+  },
+]
+
+// --- 状态管理 ---
+
+const editDialogVisible = ref(false)
+const editForm = ref({ ...user.value })
+const fileInput = ref<HTMLInputElement | null>(null)
+const appearanceDrawerVisible = ref(false)
+
+// activeThemeValue: 当前真正生效、已保存的主题
+const activeThemeValue = ref(localStorage.getItem('theme') || 'classic-white')
+// previewThemeValue: 当前正在预览的主题（随点击变化，未保存时可回滚）
+const previewThemeValue = ref(activeThemeValue.value)
+// 新增：用于存储待上传的 File 对象
+const tempAvatarFile = ref<File | null>(null)
+// --- 计算属性 ---
+
+// 核心：根据当前预览的主题，动态生成 CSS 变量对象
+// 这个对象绑定在最外层 div 上，实现换肤
+const cssVars = computed(() => {
+  const current = themes.find((t) => t.value === previewThemeValue.value)
+  return current ? current.colors : {}
+})
+
+// --- 方法 ---
+
+// 获取颜色块的预览样式
+const getThemePreviewStyle = (theme: any) => {
+  return {
+    background: theme.previewBg,
+    border: '1px solid rgba(0,0,0,0.1)',
+  }
+}
+
+// 打开编辑
+const openEditDialog = () => {
+  editForm.value = { ...user.value }
+  editDialogVisible.value = true
+}
+
+const handleEditConfirm = () => {
+  if (!editForm.value.nickname.trim()) {
+    ElMessage.warning('昵称不能为空')
+    return
+  }
+  user.value = { ...editForm.value }
+  // 2. 🔴 处理头像上传和更新
+  if (tempAvatarFile.value) {
+    ElMessage.info('正在模拟上传新头像...')
+
+    // 实际应用：
+    // const permanentUrl = await uploadAvatarToApi(tempAvatarFile.value);
+    // user.value.avatar = permanentUrl;
+
+    // 演示代码：直接使用 DataURL 作为新的 Avatar URL (⚠️ 仅供演示)
+    user.value.avatar = editForm.value.avatar
+  }
+  // 3. 清理状态并关闭
+  tempAvatarFile.value = null // 清理临时文件
+  ElMessage.success('信息更新成功')
+  editDialogVisible.value = false
+}
+// 触发文件上传
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+// 处理头像上传
+
+const handleAvatarUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+
+  const file = target.files?.[0]
+
+  if (file) {
+    const reader = new FileReader()
+
+    reader.onload = (e) => {
+      editForm.value.avatar = e.target?.result as string
+    }
+
+    reader.readAsDataURL(file)
+  }
+}
+// 打开外观抽屉
+const openAppearanceDrawer = () => {
+  // 打开时，预览值 = 当前生效值
+  previewThemeValue.value = activeThemeValue.value
+  appearanceDrawerVisible.value = true
+}
+
+// 点击颜色块（预览）
+const handleThemePreview = (val: string) => {
+  previewThemeValue.value = val
+  // 不需要 applyTheme 函数，computed cssVars 会自动响应更新 DOM
+}
+
+// 关闭抽屉（取消）
+const closeAppearanceDrawer = () => {
+  // 关闭时，如果不保存，界面会自动因为 previewThemeValue 变回 active 而恢复原样
+  // 但为了动画效果，我们先改值，再关窗，或者关窗后改值
+  // 这里逻辑是：只要没点保存，preview 应该回滚到 active
+  if (previewThemeValue.value !== activeThemeValue.value) {
+    previewThemeValue.value = activeThemeValue.value
+  }
+  appearanceDrawerVisible.value = false
+}
+
+// 保存设置
+const handleAppearanceSave = () => {
+  // 确认修改：将预览值转正
+  activeThemeValue.value = previewThemeValue.value
+  localStorage.setItem('theme', activeThemeValue.value)
+  ElMessage.success('外观设置已保存')
+  appearanceDrawerVisible.value = false
+}
 </script>
 
 <style scoped>
+/* 所有颜色值都使用 CSS 变量，变量由父容器的 style 动态注入 
+  这样就不需要 applyTheme 这种复杂的 JS 操作 DOM 逻辑了
+*/
+
 .user-profile-card {
+  /* 默认变量兜底，防止加载瞬间闪烁 */
+  --card-bg: #fff;
+  --text-main: #333;
+  --bg-gray: #f3f4f6;
+  --primary-green: #007c27;
+
   background: var(--card-bg);
   border-radius: 16px;
   padding: 24px;
   box-shadow: var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.05));
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
+  position: relative;
+  overflow: hidden; /* 防止抽屉溢出 */
 }
 
 /* 顶部用户信息 */
@@ -90,14 +386,13 @@ const user = ref({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px; /* 增加元素之间的间距，防止靠得太近 */
+  gap: 20px;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 16px;
-  /* 关键改动：让用户信息部分占据尽可能多的空间，但不挤压右侧 */
   flex: 1;
 }
 
@@ -105,12 +400,14 @@ const user = ref({
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 3px solid #f0f0f0;
+  border: 3px solid var(--card-bg); /* 跟随背景色 */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
   background: var(--bg-gray);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .avatar img {
@@ -122,7 +419,6 @@ const user = ref({
 .text-info {
   display: flex;
   flex-direction: column;
-  /* 关键改动：限制文本区域的最大宽度 */
   max-width: 650px;
 }
 
@@ -131,15 +427,19 @@ const user = ref({
   font-size: 20px;
   font-weight: 700;
   color: var(--text-main);
+  transition: color 0.3s ease;
 }
 
 .signature {
   margin: 4px 0 0 0;
   color: var(--text-light);
   font-size: 14px;
-  /* 关键改动：处理文字溢出 */
-  overflow: hidden; /* 隐藏超出容器的部分 */
-  text-overflow: ellipsis; /* 用省略号代替被隐藏的部分 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  transition: color 0.3s ease;
 }
 
 /* 数据统计行 */
@@ -147,7 +447,6 @@ const user = ref({
   display: flex;
   gap: 24px;
   align-items: center;
-  /* 关键改动：防止统计行被压缩得过小 */
   flex-shrink: 0;
 }
 
@@ -161,11 +460,13 @@ const user = ref({
   font-size: 20px;
   font-weight: bold;
   color: var(--text-main);
+  transition: color 0.3s ease;
 }
 
 .stat-item .label {
   font-size: 12px;
   color: var(--text-light);
+  transition: color 0.3s ease;
 }
 
 /* 按钮操作 */
@@ -181,7 +482,7 @@ const user = ref({
   background: var(--bg-gray);
   border: none;
   border-radius: 8px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   cursor: pointer;
   font-size: 14px;
   color: var(--text-main);
@@ -201,7 +502,7 @@ const user = ref({
 }
 
 .balance-box {
-  border: 1px solid #eee;
+  border: 1px solid rgba(0, 0, 0, 0.05);
   padding: 10px 24px;
   border-radius: 12px;
   display: flex;
@@ -210,7 +511,8 @@ const user = ref({
   font-size: 12px;
   color: var(--text-light);
   min-width: 80px;
-  background: #fafafa;
+  background: var(--bg-gray);
+  transition: all 0.3s ease;
 }
 
 .balance-num {
@@ -218,7 +520,9 @@ const user = ref({
   font-weight: bold;
   color: var(--text-main);
   margin-top: 4px;
+  transition: color 0.3s ease;
 }
+
 .coin-box {
   background: var(--primary-green);
   border: none;
@@ -233,14 +537,17 @@ const user = ref({
   align-items: center;
   font-size: 12px;
 }
+
 .coin-box:hover {
-  background: var(--third-green);
+  background: var(--secondary-green);
 }
+
 .coin-num {
   font-size: 16px;
   font-weight: bold;
   margin-top: 4px;
 }
+
 .vip-btn {
   background: var(--primary-green);
   border: none;
@@ -253,6 +560,177 @@ const user = ref({
 }
 
 .vip-btn:hover {
-  background: var(--third-green);
+  background: var(--secondary-green);
+}
+
+/* 编辑表单样式 */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e0e0e0;
+}
+/* --- 外观抽屉样式 (保留第一版的自定义设计) --- */
+.appearance-drawer-overlay {
+  position: absolute; /* 改为 absolute 以限制在卡片内，或者 fixed 全屏 */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  border-radius: 16px; /* 适配卡片圆角 */
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.appearance-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card-bg); /* 抽屉背景也跟随主题 */
+  border-radius: 16px 16px 16px 16px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.3s ease;
+  overflow: hidden;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.drawer-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-light);
+}
+
+.drawer-content {
+  padding: 24px;
+}
+
+.appearance-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.theme-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.theme-option:hover {
+  background: var(--bg-gray);
+}
+
+.theme-option.active .theme-preview {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px var(--primary-green);
+}
+
+.theme-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.theme-option span {
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.drawer-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: var(--bg-gray); /* 底部稍微深一点 */
+}
+
+/* 动画 */
+.slide-up-enter-active {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-up-leave-active {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) reverse;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 响应式适配 */
+@media (max-width: 600px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stats-row {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 </style>
