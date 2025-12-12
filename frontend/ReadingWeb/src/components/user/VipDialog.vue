@@ -319,7 +319,7 @@ defineExpose({
 
 .benefit-title {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 12px;
 }
 
@@ -342,7 +342,7 @@ defineExpose({
 .benefit-icon {
   width: 32px;
   height: 32px;
-  color: #409eff;
+  color: var(--primary-green);
   margin-bottom: 8px;
 }
 
@@ -350,11 +350,12 @@ defineExpose({
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .benefit-desc {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .vip-plans {
@@ -363,7 +364,7 @@ defineExpose({
 
 .plan-title {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 12px;
 }
 
@@ -374,7 +375,7 @@ defineExpose({
 }
 
 .plan-item {
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 20px 16px;
   cursor: pointer;
@@ -383,20 +384,20 @@ defineExpose({
 }
 
 .plan-item:hover {
-  border-color: #409eff;
+  border-color: var(--primary-green);
 }
 
 .plan-item.active {
-  border-color: #409eff;
-  background-color: #f0f9ff;
+  border-color: var(--primary-green);
+  background-color: rgba(126, 180, 143, 0.1); /* 使用 --bg-green 的浅色版本 */
 }
 
 .plan-item.popular {
-  border-color: #ff6b6b;
+  border-color: var(--primary-pink);
 }
 
 .plan-item.popular.active {
-  background-color: #fff0f0;
+  background-color: rgba(255, 107, 107, 0.1); /* 浅粉色背景 */
 }
 
 .popular-badge {
@@ -404,7 +405,7 @@ defineExpose({
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  background: linear-gradient(135deg, var(--primary-pink), #ff8e8e);
   color: white;
   font-size: 12px;
   padding: 4px 12px;
@@ -420,12 +421,13 @@ defineExpose({
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
 .plan-price {
   font-size: 24px;
   font-weight: 700;
-  color: #ff6b6b;
+  color: var(--primary-pink);
   margin-bottom: 4px;
 }
 
@@ -439,20 +441,20 @@ defineExpose({
 
 .original-price {
   font-size: 14px;
-  color: #999;
+  color: var(--text-placeholder);
   text-decoration: line-through;
   margin-left: 8px;
 }
 
 .plan-duration {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .plan-savings {
   text-align: center;
   font-size: 12px;
-  color: #ff6b6b;
+  color: var(--primary-pink);
   font-weight: 600;
   padding: 4px;
   background-color: rgba(255, 107, 107, 0.1);
@@ -468,7 +470,7 @@ defineExpose({
 
 .auto-renewal {
   font-size: 12px;
-  color: #999;
+  color: var(--text-placeholder);
   margin-top: 8px;
   margin-left: 24px;
 }
@@ -502,17 +504,17 @@ defineExpose({
 
 .payment-amount .label,
 .payment-duration .label {
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .payment-amount .value {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .payment-duration .value {
   font-weight: 600;
-  color: #67c23a;
+  color: var(--primary-green);
 }
 
 .payment-methods {
@@ -521,7 +523,7 @@ defineExpose({
 
 .payment-title {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 12px;
   font-weight: 500;
 }
@@ -537,19 +539,19 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .payment-item:hover {
-  border-color: #409eff;
+  border-color: var(--primary-green);
 }
 
 .payment-item.active {
-  border-color: #409eff;
-  background-color: #f0f9ff;
+  border-color: var(--primary-green);
+  background-color: rgba(126, 180, 143, 0.1); /* 使用 --bg-green 的浅色版本 */
 }
 
 .method-info {
@@ -561,12 +563,12 @@ defineExpose({
 .method-icon {
   width: 24px;
   height: 24px;
-  color: #409eff;
+  color: var(--primary-green);
 }
 
 .method-name {
   font-size: 14px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 /* 成功弹窗样式 */
@@ -585,7 +587,7 @@ defineExpose({
 }
 
 :deep(.success-dialog .el-message-box__title) {
-  color: #67c23a;
+  color: var(--primary-green);
   font-weight: 600;
 }
 
@@ -601,14 +603,14 @@ defineExpose({
 }
 
 :deep(.success-dialog .el-button--primary) {
-  background-color: #67c23a;
-  border-color: #67c23a;
+  background-color: var(--primary-green);
+  border-color: var(--primary-green);
   min-width: 100px;
 }
 
 :deep(.success-dialog .el-button--primary:hover) {
-  background-color: #85ce61;
-  border-color: #85ce61;
+  background-color: var(--thrid-green);
+  border-color: var(--thrid-green);
 }
 
 :deep(.success-content) {
@@ -619,13 +621,13 @@ defineExpose({
 :deep(.success-title) {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
 :deep(.success-desc) {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 </style>

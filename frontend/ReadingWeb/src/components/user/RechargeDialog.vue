@@ -366,6 +366,7 @@ defineExpose({
 })
 </script>
 
+
 <style scoped>
 .recharge-step1,
 .recharge-step2 {
@@ -383,14 +384,14 @@ defineExpose({
 
 .balance-label {
   font-size: 14px;
-  color: #020202;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
 .balance-amount {
   font-size: 32px;
   font-weight: 700;
-  color: #0c0c0c;
+  color: var(--primary-green);
 }
 
 .recharge-options {
@@ -401,7 +402,7 @@ defineExpose({
 }
 
 .recharge-option {
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   padding: 16px 12px;
   cursor: pointer;
@@ -412,14 +413,14 @@ defineExpose({
 }
 
 .recharge-option:hover {
-  border-color: #409eff;
+  border-color: var(--primary-green);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 124, 39, 0.1); /* 使用 --primary-green 的透明版本 */
 }
 
 .recharge-option.active {
-  border-color: #409eff;
-  background-color: #f0f9ff;
+  border-color: var(--primary-green);
+  background-color: rgba(126, 180, 143, 0.1); /* 使用 --bg-green 的浅色版本 */
   position: relative;
 }
 
@@ -432,7 +433,7 @@ defineExpose({
   height: 0;
   border-style: solid;
   border-width: 0 20px 20px 0;
-  border-color: transparent #409eff transparent transparent;
+  border-color: transparent var(--primary-green) transparent transparent;
 }
 
 .recharge-option.active::before {
@@ -452,21 +453,21 @@ defineExpose({
 .option-amount {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .option-price {
   font-size: 16px;
   font-weight: 500;
-  color: #f56161;
+  color: var(--primary-pink);
   margin-bottom: 4px;
 }
 
 .option-bonus {
   font-size: 12px;
-  color: #67c23a;
-  background-color: rgba(103, 194, 58, 0.1);
+  color: var(--primary-green);
+  background-color: rgba(0, 124, 39, 0.1);
   padding: 2px 6px;
   border-radius: 10px;
   display: inline-block;
@@ -476,7 +477,7 @@ defineExpose({
 .agreement-hint {
   text-align: center;
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 16px;
   padding: 8px;
   background-color: #f8f9fa;
@@ -484,7 +485,7 @@ defineExpose({
 }
 
 .agreement-hint a {
-  color: #409eff;
+  color: var(--primary-green);
   text-decoration: none;
   margin-left: 4px;
 }
@@ -501,13 +502,13 @@ defineExpose({
 .hint-title {
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: var(--text-secondary);
   border: none;
 }
 
 .hint-content {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.6;
   border: none;
 }
@@ -536,7 +537,7 @@ defineExpose({
 }
 
 .payment-total {
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-color);
   padding-top: 12px;
   margin-top: 12px;
 }
@@ -544,22 +545,22 @@ defineExpose({
 .payment-amount .label,
 .payment-bonus .label,
 .payment-total .label {
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .payment-amount .value {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .payment-bonus .value {
-  color: #67c23a;
+  color: var(--primary-green);
   font-weight: 600;
 }
 
 .total-amount {
   font-size: 18px;
-  color: #ff6b6b;
+  color: var(--primary-pink);
   font-weight: 700;
 }
 
@@ -569,7 +570,7 @@ defineExpose({
 
 .payment-title {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 12px;
   font-weight: 500;
 }
@@ -585,7 +586,7 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
@@ -593,13 +594,13 @@ defineExpose({
 }
 
 .payment-item:hover {
-  border-color: #409eff;
+  border-color: var(--primary-green);
   background-color: #fafafa;
 }
 
 .payment-item.active {
-  border-color: #409eff;
-  background-color: #f0f9ff;
+  border-color: var(--primary-green);
+  background-color: rgba(126, 180, 143, 0.1); /* 使用 --bg-green 的浅色版本 */
 }
 
 .method-info {
@@ -611,12 +612,12 @@ defineExpose({
 .method-icon {
   width: 24px;
   height: 24px;
-  color: #409eff;
+  color: var(--primary-green);
 }
 
 .method-name {
   font-size: 14px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .payment-agreement {
@@ -628,11 +629,11 @@ defineExpose({
 
 .payment-agreement :deep(.el-checkbox__label) {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .payment-agreement a {
-  color: #409eff;
+  color: var(--primary-green);
   text-decoration: none;
   margin: 0 2px;
 }
@@ -668,16 +669,16 @@ defineExpose({
 }
 
 :deep(.agreement-content h3) {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 :deep(.agreement-content p) {
   margin-bottom: 12px;
   line-height: 1.6;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* 成功弹窗样式 */
@@ -696,7 +697,7 @@ defineExpose({
 }
 
 :deep(.success-dialog .el-message-box__title) {
-  color: #67c23a;
+  color: var(--primary-green);
   font-weight: 600;
 }
 
@@ -712,14 +713,14 @@ defineExpose({
 }
 
 :deep(.success-dialog .el-button--primary) {
-  background-color: #67c23a;
-  border-color: #67c23a;
+  background-color: var(--primary-green);
+  border-color: var(--primary-green);
   min-width: 100px;
 }
 
 :deep(.success-dialog .el-button--primary:hover) {
-  background-color: #85ce61;
-  border-color: #85ce61;
+  background-color: var(--thrid-green);
+  border-color: var(--thrid-green);
 }
 
 :deep(.success-content) {
@@ -727,22 +728,16 @@ defineExpose({
   padding: 10px 0;
 }
 
-:deep(.success-icon) {
-  font-size: 48px;
-  color: #67c23a;
-  margin-bottom: 16px;
-}
-
 :deep(.success-title) {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
 :deep(.success-desc) {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 

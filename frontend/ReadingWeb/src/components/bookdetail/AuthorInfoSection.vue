@@ -56,15 +56,18 @@ interface Work {
 
 interface Props {
   author: {
+    id?: number  // 添加id字段
     name: string
     description: string
   }
   works: Work[]
   maxDisplayCount?: number
+  openInNewTab?: boolean // 新增：是否在新标签页打开
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  maxDisplayCount: 3
+  maxDisplayCount: 3,
+  openInNewTab: true // 默认在新标签页打开
 })
 
 // 定义事件
@@ -90,27 +93,33 @@ const handleWorkClick = (work: Work) => {
   console.log('点击作品:', work.title)
 }
 
-// 查看全部作品
+// 查看全部作品 - 在新标签页打开作者详情页
 const handleViewAllWorks = () => {
   const authorId = props.author.id || 1 // 这里假设author有id属性
-  router.push(`/authordetail/${authorId}`)
+  emit('viewAllWorks')
+
+  if (props.openInNewTab) {
+    // 在新标签页打开作者详情页
+    window.open(`/authordetail/${authorId}`, '_blank')
+  } else {
+    // 在当前页打开
+    router.push(`/authordetail/${authorId}`)
+  }
 }
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .author-info-section {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
   margin-bottom: 20px;
-  /* 设置固定宽度，适合放在右侧 */
   width: 300px;
-  /* 高度自适应内容 */
   height: fit-content;
 }
 
-/* 标题样式 */
 .section-header {
   margin-bottom: 15px;
 }
@@ -124,19 +133,16 @@ const handleViewAllWorks = () => {
   border-bottom: 1px solid #f0f0f0;
 }
 
-/* 作者简介样式 - 加长区域 */
 .author-description {
   font-size: 18px;
   line-height: 1.6;
   color: #555;
   margin-bottom: 20px;
-  /* 增加简介区域高度 */
   max-height: 400px;
   overflow-y: auto;
   padding-right: 5px;
 }
 
-/* 滚动条样式 */
 .author-description::-webkit-scrollbar {
   width: 4px;
 }
@@ -155,7 +161,6 @@ const handleViewAllWorks = () => {
   background: #a8a8a8;
 }
 
-/* 作品标题和按钮区域 */
 .works-header {
   display: flex;
   justify-content: space-between;
@@ -170,7 +175,6 @@ const handleViewAllWorks = () => {
   margin: 0;
 }
 
-/* 查看全部按钮样式 - 放在作品标题右侧 */
 .view-all-button {
   padding: 6px 12px;
   background: transparent;
@@ -189,7 +193,6 @@ const handleViewAllWorks = () => {
   color: #333;
 }
 
-/* 作品列表样式 */
 .works-list {
   display: flex;
   flex-direction: column;
@@ -210,7 +213,6 @@ const handleViewAllWorks = () => {
   transform: translateY(-2px);
 }
 
-/* 作品封面样式 */
 .work-cover {
   flex-shrink: 0;
   width: 75px;
@@ -237,7 +239,6 @@ const handleViewAllWorks = () => {
   font-size: 16px;
 }
 
-/* 作品信息样式 */
 .work-info {
   flex: 1;
   display: flex;
@@ -258,15 +259,14 @@ const handleViewAllWorks = () => {
   color: #666;
   line-height: 1.4;
   display: -webkit-box;
-  line-clamp: 2;          /* 标准属性 */
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .author-info-section {
-    width: 100%; /* 在移动设备上占满宽度 */
+    width: 100%;
     padding: 15px;
   }
 
@@ -276,7 +276,7 @@ const handleViewAllWorks = () => {
 
   .author-description {
     font-size: 13px;
-    max-height: 150px; /* 在移动设备上稍微减小高度 */
+    max-height: 150px;
   }
 
   .works-title {

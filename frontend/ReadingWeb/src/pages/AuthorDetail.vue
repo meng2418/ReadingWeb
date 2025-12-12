@@ -132,6 +132,7 @@ const fetchWorks = () => {
 const handleBookClick = (work: Work) => {
   // 跳转到书籍详情页
   router.push(`/bookdetail/${work.id}`)
+  window.open(`/bookdetail?id=${work.id}`, '_blank')
 }
 
 

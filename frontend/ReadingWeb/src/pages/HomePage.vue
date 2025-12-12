@@ -7,6 +7,8 @@ import ReadingTimeCard from '@/components/home/ReadingTimeCard.vue'
 import RecentRead from '@/components/home/RecentRead.vue'
 import { onMounted } from 'vue'
 import axios from 'axios'
+import Footer from '@/components/layout/Footer.vue'
+
 
 /*onMounted(async () => {
   try {
@@ -62,6 +64,7 @@ import axios from 'axios'
       </div>
     </div>
     <BackToTop />
+    <Footer />
   </div>
 </template>
 

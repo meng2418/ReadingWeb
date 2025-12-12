@@ -50,13 +50,15 @@ interface Props {
   ranktitle?: string
   desc?: string
   books?: Book[]
-  tabId?: string // 新增：用于指定跳转到哪个榜单
+  tabId?: string // 用于指定跳转到哪个榜单
+  openInNewTab?: boolean // 新增：是否在新标签页打开
 }
 // 使用解构，直接在解构中定义默认值
 const {
   ranktitle,
   desc = '最近一周热读书籍', // 直接赋值默认字符串
   tabId,
+  openInNewTab = true, // 默认在新标签页打开
   books = [
     // 直接赋值默认数组，不需要 () => [] 工厂函数，Vue 编译器会自动处理引用问题
     {
@@ -132,7 +134,7 @@ const {
   ],
 } = defineProps<Props>()
 
-// 查看全部点击事件
+// 查看全部点击事件 - 在当前页跳转
 const handleViewAll = (): void => {
   router.push(`/category?tab=${tabId}`)
 }
@@ -140,9 +142,19 @@ const handleViewAll = (): void => {
 // 书籍点击事件 - 跳转到书籍详情页
 const handleBookClick = (bookId?: number | string): void => {
   if (bookId) {
-    router.push(`/bookdetail/${bookId}`)
+    if (openInNewTab) {
+      // 在新标签页打开书籍详情页
+      window.open(`/bookdetail?id=${bookId}`, '_blank')
+    } else {
+      // 在当前页打开
+      router.push(`/bookdetail/${bookId}`)
+    }
   } else {
-    router.push('/bookdetail')
+    if (openInNewTab) {
+      window.open('/bookdetail', '_blank')
+    } else {
+      router.push('/bookdetail')
+    }
   }
 }
 </script>
