@@ -47,7 +47,9 @@ const defaultCover =
   'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=200'
 
 const goToAllReviews = () => {
-  router.push({ name: 'AllReadingReviews' })
+  let url = '/userposts?tab=reviews'
+  // 在新标签页打开
+  window.open(url, '_blank')
 }
 
 // 定义评级对应的 配置（文字 + 样式类名）
