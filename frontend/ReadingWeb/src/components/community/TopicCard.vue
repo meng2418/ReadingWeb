@@ -34,7 +34,9 @@ const props = defineProps({
 })
 
 const goToTopicDetail = () => {
-  router.push(`/topicdetail/${props.id}`)
+  // 使用 router.resolve 获取路由的完整路径
+  const route = router.resolve({ name: 'TopicDetail', params: { id: props.id } })
+  window.open(route.href, '_blank')
 }
 </script>
 

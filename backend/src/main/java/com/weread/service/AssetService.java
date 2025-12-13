@@ -1,14 +1,14 @@
 package com.weread.service;
 
-import com.weread.dto.asset.MemberPackageVO;
-import com.weread.dto.asset.MemberStatusVO;
-import com.weread.dto.asset.PaymentPreOrderVO;
 import com.weread.dto.asset.CreateOrderDTO;
-import com.weread.dto.asset.OrderStatusVO;
-import com.weread.dto.asset.CoinBalanceVO;
 import com.weread.dto.asset.RechargeOrderDTO;
-import com.weread.dto.asset.RechargeLogVO;
-import com.weread.dto.asset.ExpenseLogVO;
+import com.weread.vo.asset.CoinBalanceVO;
+import com.weread.vo.asset.ExpenseLogVO;
+import com.weread.vo.asset.MemberPackageVO;
+import com.weread.vo.asset.MemberStatusVO;
+import com.weread.vo.asset.OrderStatusVO;
+import com.weread.vo.asset.PaymentPreOrderVO;
+import com.weread.vo.asset.RechargeLogVO;
 
 import java.util.List;
 

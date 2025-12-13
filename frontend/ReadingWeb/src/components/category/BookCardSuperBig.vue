@@ -72,7 +72,7 @@ export default {
     const router = useRouter()
     // 返回给模板使用
     const goToBookDetail = () => {
-      router.push('/book')
+      router.push('/bookdetail')
     }
     return { goToBookDetail }
   },

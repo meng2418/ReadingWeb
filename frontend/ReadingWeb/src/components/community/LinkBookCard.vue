@@ -1,5 +1,3 @@
-<!-- components/LinkBookCard.vue -->
- <!--帖子里的书籍链接卡片-->
 <template>
   <div class="link-book-card" @click="goToBook">
     <img :src="cover" alt="书籍封面" class="book-cover" />
@@ -21,14 +19,23 @@ interface Props {
   title: string
   author: string
   bookId: string | number
+  openInNewTab?: boolean // 新增：是否在新标签页打开
 }
 
 // 使用 TypeScript 方式定义 props
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  openInNewTab: true // 默认在新标签页打开
+})
 
 // 跳转到书籍详情页
 const goToBook = (): void => {
-  router.push(`/bookdetail/${props.bookId}`)
+  if (props.openInNewTab) {
+    // 在新标签页打开
+    window.open(`/bookdetail?id=${props.bookId}`, '_blank')
+  } else {
+    // 在当前页打开
+    router.push(`/bookdetail/${props.bookId}`)
+  }
 }
 </script>
 

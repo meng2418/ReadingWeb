@@ -1,11 +1,13 @@
 package com.weread.filter;
 
-import com.weread.service.impl.UserDetailsServiceImpl;
+import com.weread.service.impl.user.UserDetailsServiceImpl;
 import com.weread.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.lang.NonNull; 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +21,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserDetailsServiceImpl userDetailsService; // 使用我们后面要实现的Service
+    private final UserDetailsServiceImpl userDetailsService;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
         this.jwtUtil = jwtUtil;
@@ -27,8 +29,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+        // 【修正点】：添加 @NonNull 注解
+        @NonNull HttpServletRequest request, 
+        @NonNull HttpServletResponse response, 
+        @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;

@@ -92,7 +92,7 @@
             <div class="balance-title">充值币余额</div>
             <div class="balance-amount">{{ userPayCoin }}</div>
           </div>
-          <button class="recharge-btn" @click="goToRecharge">
+          <button class="recharge-btn" @click="handleRechargeClick">
             去充值
           </button>
         </div>
@@ -163,6 +163,7 @@ const emit = defineEmits<{
   toggleBookshelf: [isAdded: boolean]
   startReading: []
   statClick: [statType: string]
+  openRechargeDialog: [] // 添加打开充值弹窗的事件
 }>()
 
 // 本地状态
@@ -210,6 +211,7 @@ const handleExperienceCardClick = () => {
 const goToRecharge = () => {
   console.log('跳转到充值页面')
   purchaseDialogVisible.value = false
+  emit('openRechargeDialog')
   // router.push('/recharge') // 如果需要跳转，取消注释
 }
 

@@ -58,27 +58,29 @@ const emit = defineEmits<{
   statClick: [type: 'follow' | 'fans' | 'post']
 }>()
 
-// 统计项点击处理
+// 统计项点击处理 - 在新标签页打开
 const handleStatClick = (type: 'follow' | 'fans' | 'post') => {
   console.log(`点击了${type}统计`)
+  emit('statClick', type)
 
-  // 跳转到个人发布页面，并传递tab参数
+  // 跳转到个人发布页面，并传递tab参数 - 在新标签页打开
+  let url = '/userposts'
+
   switch (type) {
     case 'post':
-      // 跳转到发布页面
-      router.push('/userposts?tab=posts')
+      url += '?tab=posts'
       break
     case 'follow':
-      // 跳转到关注页面
-      router.push('/userposts?tab=following')
+      url += '?tab=following'
       break
     case 'fans':
-      // 跳转到粉丝页面
-      router.push('/userposts?tab=followers')
+      url += '?tab=followers'
       break
   }
-}
 
+  // 在新标签页打开
+  window.open(url, '_blank')
+}
 
 </script>
 
@@ -157,7 +159,7 @@ const handleStatClick = (type: 'follow' | 'fans' | 'post') => {
 .number {
   font-weight: bold;
   font-size: 20px;
-  color: #007fff;
+  color: #007c27;
   margin-bottom: 5px;
 }
 

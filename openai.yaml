@@ -82,7 +82,7 @@ components:
         details:
           type: string
   requestBodies:
-    SendPhoneVertificationcodeRequest:
+    SendSmsRequest:
       description: 手机号验证码发送请求体
       required: true
       content:
@@ -93,18 +93,7 @@ components:
               phone:
                 type: string
             required: [phone]
-    SendEmailVertificationcodeRequest:
-      description: 邮箱验证码发送请求体
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              email:
-                type: string
-            required: [email]
-    VertificationcodeLoginRequest:
+    SmsLoginRequest:
       description: 手机号验证码登录请求体
       required: true
       content:
@@ -176,20 +165,51 @@ components:
               confirmNewPassword:
                 type: string
             required: [oldPassword, newPassword, confirmNewPassword]
-    BindRequest:
-      description: 更改密码请求体
+    ResetPasswordRequest:
+      description: 重置密码请求体
       required: true
       content:
         application/json:
           schema:
             type: object
             properties:
-              phone:
+              phoneNumber:
                 type: string
-              email:
+              sms:
                 type: string
-              vertificationcode:
+              newPassword:
                 type: string
+              confirmNewPassword:
+                type: string
+            required: [phoneNumber, sms, newPassword, confirmNewPassword]
+    CreatePostDTO:
+      description: 发布帖子请求体
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                description: 帖子的标题。
+                minLength: 1
+              content:
+                type: string
+                description: 帖子的正文内容。
+                minLength: 1
+              bookIds:
+                type: array
+                description: 帖子关联的书本ID列表 (支持多个)。
+                items:
+                  type: integer
+                  format: int64
+              hashtags:
+                type: array
+                description: 帖子使用的标签/话题列表。
+                items:
+                  type: string
+            required: [title, content] # 标题和内容是必填项 
   responses:
     LoginResponse:
       description: Login response object
@@ -234,7 +254,7 @@ components:
               userId:
                 type: integer
                 example: 123
-    SendVertificationcodeResponse:
+    SendSmsResponse:
       description: Vertification response object
       content:
         application/json:
@@ -290,8 +310,8 @@ components:
               message:
                 type: string
                 example: "Password updated successfully"
-    BindResponse:
-      description: Update password response object
+    ResetPasswordResponse:
+      description: Reset password response object
       content:
         application/json:
           schema:
@@ -302,20 +322,7 @@ components:
                 example: 200
               message:
                 type: string
-                example: "Bind successfully"
-    UnbindResponse:
-      description: Update password response object
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                example: 200
-              message:
-                type: string
-                example: "Unbind successfully"
+                example: "Password reset successfully"
     LoginLogResponse:
       description: Update password response object
       content:
@@ -335,6 +342,120 @@ components:
               device:
                 type: string
                 example: Chrome on Windows 10
+    UserSummaryVO:
+      description: User summary response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              userId:
+                type: integer
+                format: int64
+                description: 用户ID
+              username:
+                type: string
+                description: 用户昵称
+              avatarUrl:
+                type: string
+                format: url
+                description: 用户头像URL
+    PostVO:
+      description: Post create response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              postId:
+                type: integer
+                description: 帖子ID。
+                format: int64
+              title:
+                type: string
+              content:
+                type: string
+              authorId: 
+                type: integer
+                description: 发帖用户ID。 
+                format: int64
+              likesCount:
+                type: integer
+                description: 点赞数。
+              commentsCount:
+                type: integer
+                description: 评论数。
+              createdAt:
+                type: string
+                format: date-time
+              bookIds:
+                type: array
+                description: 帖子关联的书本ID列表。
+              items:
+                type: integer
+                format: int64
+              hasgtags:
+                type: array
+                description: 帖子使用的标签/话题列表。
+                items:
+                  type: string
+    PostListVO:
+      description: Post list response object
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              posts:
+                type: array
+                description: 帖子列表数据
+              items:
+                $ref: '#/components/responses/PostVO' 
+              total:
+                type: integer
+                description: 总帖子数 (用于分页)。
+                format: int64
+                example: 150
+              page:
+                type: integer
+                description: 当前页码。
+                example: 1
+              limit:
+                type: integer
+                description: 每页数量。
+                example: 20
+    LikeInfoVO:
+      description: 错误响应
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              totalLikes:
+                type: integer
+                format: int64
+                description: 总点赞数
+              isLiked:
+                  type: boolean
+                  description: 当前登录用户是否已点赞 (需要认证)
+              likedUsers:
+                type: array
+                description: 点赞该目标的用户简要信息列表 (按时间倒序)
+                items:
+                  $ref: '#/components/responses/UserSummaryVO'
+    SuccessVO:
+      description: 成功响应
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              details:
+                type: string
     Error:
       description: 错误响应
       content:
@@ -351,7 +472,7 @@ components:
 
 paths:
   # ==================== 认证相关接口 ====================
-  /auth/vertificationcodeLogin:
+  /auth/smsLogin:
     post:
       summary: 手机号验证码登录
       tags: [认证]
@@ -360,7 +481,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/requestBodies/VertificationcodeLoginRequest'
+              $ref: '#/components/requestBodies/SmsLoginRequest'
       responses:
         200:
           description: 登录成功
@@ -390,7 +511,7 @@ paths:
         400:
           $ref: '#/components/responses/Error'
 
-  /auth/sendVertificationcode:
+  /auth/sendSms:
     post:
       summary: 发送验证码
       tags: [认证]
@@ -399,14 +520,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/requestBodies/SendPhoneVertificationcodeRequest'
+              $ref: '#/components/requestBodies/SendSmsRequest'
       responses:
         200:
           description: 发送成功
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/SendVertificationcodeResponse'
+                $ref: '#/components/responses/SendSmsResponse'
 
   /auth/passwordRegister:
     post:
@@ -425,7 +546,23 @@ paths:
             application/json:
               schema:
                     $ref: '#/components/responses/RegisterResponse'
-
+  /auth/resetPassword:
+    post:
+      summary: 忘记密码
+      tags: [认证]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/ResetPasswordRequest'
+      responses:
+        200:
+          description: 忘记密码成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/ResetPasswordResponse'
   /auth/logout:
     post:
       summary: 退出登录
@@ -475,7 +612,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/responses/UpdateUserProfileResponse'
-  /user/password:
+  /user/updatePassword:
     put:
       tags:
         - 个人信息管理
@@ -495,7 +632,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/responses/UpdatePasswordResponse'
-
   /user/reading-status:
     get:
       summary: 获取阅读统计
@@ -525,26 +661,6 @@ paths:
                   readingDays:
                     type: integer
 
-  /user/security/bind:
-    post:
-      tags:
-        - 账号安全
-      summary: 绑定手机号或邮箱
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/requestBodies/BindRequest'
-      responses:
-        '200':
-          description: 绑定成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/responses/BindResponse'
   /user/security/login-logs:
     get:
       tags:
@@ -1452,17 +1568,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                content:
-                  type: string
-                bookId:
-                  type: integer
-                topic:
-                  type: string
-              required: [title, content]
+              $ref: '#/components/requestBodies/CreatePostDTO'
       responses:
         201:
           description: 发帖成功
@@ -1473,45 +1579,48 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: "Post created successfully"
                   post:
-                    type: object
+                    $ref: '#/components/responses/PostVO'
     get:
       summary: 帖子列表
       tags: [社区]
+      security:
+        - bearerAuth: []  
       parameters:
         - name: page
           in: query
           schema:
             type: integer
             default: 1
+          description: 当前页码
         - name: limit
           in: query
           schema:
             type: integer
             default: 20
+          description: 每页限制数量
         - name: type
           in: query
           schema:
             type: string
             enum: [all, following, mine]
-        - name: topic
+          description: 帖子类型筛选 (全部, 关注, 我的)
+        - name: hashtags
           in: query
           schema:
-            type: string
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
       responses:
         200:
           description: 成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  posts:
-                    type: array
-                    items:
-                      type: object
-                  total:
-                    type: integer
+                $ref: '#/components/responses/PostListVO'
 
   /posts/{id}:
     get:
@@ -1532,8 +1641,70 @@ paths:
                 type: object
                 properties:
                   post:
-                    type: object
-
+                    $ref: '#/components/responses/PostVO'
+  /posts/{postId}/likes:
+    get:
+      summary: 获取帖子点赞总数及点赞用户列表
+      tags: [社区]
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: 限制返回的点赞用户数量 (例如：只返回前10个)
+      responses:
+        200:
+          description: 成功返回点赞信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/LikeInfoVO'
+  /posts/{postId}/like:
+    put:
+      summary: 用户点赞帖子
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: 点赞成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/SuccessVO'
+    delete:
+      summary: 用户取消点赞帖子
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: 取消点赞成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/SuccessVO'
   /likes:
     post:
       summary: 点赞
@@ -1626,7 +1797,68 @@ paths:
                     type: string
                   comment:
                     type: object
-
+  /comments/{commentId}/likes:
+    get:
+      summary: 获取评论点赞总数及点赞用户列表
+      tags: [社区]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: 成功返回点赞信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/LikeInfoVO'
+  /comments/{commentId}/like:
+    put:
+      summary: 用户点赞评论
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: 点赞成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/SuccessVO'
+    delete:
+      summary: 用户取消点赞评论
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: 取消点赞成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/SuccessVO'
   /follows:
     post:
       summary: 关注用户

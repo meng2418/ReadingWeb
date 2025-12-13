@@ -4,52 +4,47 @@ import com.weread.dto.bookshelf.*;
 import java.util.List;
 
 /**
- * 书架模块业务接口
+ * Bookshelf Module Business Interface.
  */
 public interface BookshelfService {
 
     /**
-     * 添加书籍到书架
-     * 
-     * @param dto    包含书籍ID和初始状态
-     * @param userId 当前用户ID
-     * @return 添加结果VO
+     * Adds a book to the bookshelf.
+     * * @param dto Book ID and initial status
+     * @param userId Current User ID
+     * @return BookAddVO result
      */
-    BookAddVO addBookToShelf(BookAddDTO dto, Integer userId);
+    BookAddVO addBookToShelf(BookAddDTO dto, Long userId);
 
     /**
-     * 从书架移除书籍
-     * 
-     * @param bookId 书籍ID
-     * @param userId 当前用户ID
-     * @return 移除结果提示
+     * Removes a book from the bookshelf.
+     * * @param bookId Book ID
+     * @param userId Current User ID
+     * @return Removal message string
      */
-    String removeBookFromShelf(Integer bookId, Integer userId);
+    String removeBookFromShelf(Integer bookId, Long userId);
 
     /**
-     * 更新书籍阅读状态
-     * 
-     * @param dto    包含书籍ID和新状态
-     * @param userId 当前用户ID
-     * @return 状态更新结果VO
+     * Updates the book's reading status.
+     * * @param dto Book ID and new status
+     * @param userId Current User ID
+     * @return Status update result VO
      */
-    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Integer userId);
+    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId);
 
     /**
-     * 更新阅读进度（章节、页码）
-     * 
-     * @param dto    包含书籍ID、章节索引、页码
-     * @param userId 当前用户ID
-     * @return 进度更新结果VO
+     * Updates the reading progress (chapter, page, progress).
+     * * @param dto Book ID, chapter, page, progress details
+     * @param userId Current User ID
+     * @return Progress update result VO
      */
-    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Integer userId);
+    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId);
 
     /**
-     * 分页查询用户书架中的书籍（支持按状态筛选）
-     * 
-     * @param dto    包含状态筛选条件和分页参数
-     * @param userId 当前用户ID
-     * @return 书籍列表VO（带分页信息）
+     * Queries the user's bookshelf list, supports status filtering.
+     * * @param dto Status filter (and pagination if implemented)
+     * @param userId Current User ID
+     * @return List of BookShelfVO
      */
-    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Integer userId);
+    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId);
 }

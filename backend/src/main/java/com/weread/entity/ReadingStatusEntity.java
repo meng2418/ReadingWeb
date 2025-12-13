@@ -10,16 +10,16 @@ import java.time.LocalDateTime;
 public class ReadingStatusEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "readingstatusid")
+    @Column(name = "readingstatus_id")
     private Integer readingStatusId;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(nullable = false)
     private LocalDateTime date = LocalDateTime.now();
 
     @Column(name = "readingtime")
-    private Integer readingTime = 0; // ∑÷÷”
+    private Integer readingTime = 0; //
 
 }

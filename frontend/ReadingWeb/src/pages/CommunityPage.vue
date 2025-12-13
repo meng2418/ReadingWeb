@@ -10,6 +10,9 @@ import avatarImg from '@/img/avatar.jpg'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import CommentItem from '@/components/community/Mine/CommentItem.vue'
 import LikeItem from '@/components/community/Mine/LikeItem.vue'
+import Footer from '@/components/layout/Footer.vue'
+
+
 // 当前用户信息
 const currentUser = reactive({
   username: '阅读爱好者',
@@ -331,6 +334,7 @@ const handleShare = (postId: number): void => {
         <HotTopics :topics="hotTopics" @topic-click="handleTopicClick" />
       </div>
     </div>
+    <Footer />
   </div>
 </template>
 

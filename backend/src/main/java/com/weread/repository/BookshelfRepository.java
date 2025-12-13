@@ -9,23 +9,26 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Bookshelf Data Access Interface.
+ */
 public interface BookshelfRepository extends JpaRepository<BookshelfEntity, Integer> {
 
-    // 1. 检查书籍是否在用户书架中
-    Optional<BookshelfEntity> findByUserIdAndBookId(Integer userId, Integer bookId);
+    // 1. Check if a book exists on the user's bookshelf
+    Optional<BookshelfEntity> findByUserIdAndBookId(Long userId, Integer bookId);
 
-    // 2. 查询用户书架中的所有书籍（全部书架）
-    List<BookshelfEntity> findByUserId(Integer userId);
+    // 2. Query all bookshelf items for a specific user
+    List<BookshelfEntity> findByUserId(Long userId);
 
-    // 3. 按状态筛选用户书架中的书籍（未读/阅读中/已完成）
-    List<BookshelfEntity> findByUserIdAndStatus(Integer userId, String status);
+    // 3. Query bookshelf items filtered by status (unread/reading/finished)
+    List<BookshelfEntity> findByUserIdAndStatus(Long userId, String status);
 
-    // 4. 更新书籍在书架中的状态（如从reading改为finished）
+    // 4. Custom query to update a book's status and last read time
     @Modifying
     @Query("UPDATE BookshelfEntity b SET b.status = :status, b.lastReadAt = :lastReadAt " +
             "WHERE b.userId = :userId AND b.bookId = :bookId")
     void updateBookStatus(
-            @Param("userId") Integer userId,
+            @Param("userId") Long userId,
             @Param("bookId") Integer bookId,
             @Param("status") String status,
             @Param("lastReadAt") LocalDateTime lastReadAt);

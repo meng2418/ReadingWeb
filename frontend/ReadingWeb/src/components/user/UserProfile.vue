@@ -14,18 +14,21 @@
       </div>
 
       <div class="stats-row">
-        <div class="stat-item">
+        <!-- 修改关注为可点击按钮 -->
+        <button class="stat-item stat-btn" @click="goToUserPosts('following')">
           <span class="num">{{ user.stats.following }}</span>
           <span class="label">关注</span>
-        </div>
-        <div class="stat-item">
+        </button>
+        <!-- 修改粉丝为可点击按钮 -->
+        <button class="stat-item stat-btn" @click="goToUserPosts('followers')">
           <span class="num">{{ user.stats.followers }}</span>
           <span class="label">粉丝</span>
-        </div>
-        <div class="stat-item">
+        </button>
+        <!-- 修改发布为可点击按钮 -->
+        <button class="stat-item stat-btn" @click="goToUserPosts('posts')">
           <span class="num">{{ user.stats.posts }}</span>
           <span class="label">发布</span>
-        </div>
+        </button>
 
         <div class="actions">
           <button class="icon-btn" @click="openEditDialog">
@@ -45,11 +48,14 @@
         <span>体验卡</span>
         <span class="balance-num">{{ user.giftVIP }} 天</span>
       </div>
-      <div class="coin-box">
+      <div class="coin-box" @click="openRechargeDialog">
         <span>充值币</span>
         <span class="coin-num">{{ user.payCoin }}</span>
       </div>
-      <button class="vip-btn">成为会员</button>
+      <!-- 会员按钮：保持样式不变，只修改文字 -->
+      <button class="vip-btn" @click="openVipDialog">
+        {{ getVipButtonText() }}
+      </button>
     </div>
 
     <el-dialog
@@ -141,15 +147,27 @@
       </div>
     </transition>
   </div>
+
+  <!-- 充值弹窗 -->
+  <RechargeDialog ref="rechargeDialogRef" @recharge-success="handleRechargeSuccess" />
+
+  <!-- 会员弹窗 -->
+  <VipDialog ref="vipDialogRef" @purchase-success="handlePurchaseSuccess" />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElButton, ElDialog, ElInput } from 'element-plus'
-import { Edit2, Palette, X } from 'lucide-vue-next'
+import { Edit2, Palette } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import DefaultAvatar from '@/img/avatar.jpg'
+import RechargeDialog from '@/components/user/RechargeDialog.vue'
+import VipDialog from '@/components/user/VipDialog.vue'
+import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 
-// --- 数据定义 ---
+// 添加路由实例
+const router = useRouter()
 
+// 个人信息数据
 const user = ref({
   nickname: '幼稚园战神',
   signature:
@@ -158,7 +176,85 @@ const user = ref({
   stats: { following: 10, followers: 1000, posts: 5 },
   payCoin: 180,
   giftVIP: 12,
+  isVip: false, // 是否会员
+  vipDays: 0, // 会员剩余天数
+  vipEndTime: null as string | null, // 会员到期时间
 })
+
+// 跳转到UserPosts页面的对应标签页 - 在新标签页打开
+const goToUserPosts = (tab: string) => {
+  // 在新标签页打开UserPosts页面，并传递tab参数
+  window.open(`/userposts?tab=${tab}`, '_blank')
+}
+
+// 充值弹窗
+const rechargeDialogRef = ref()
+const openRechargeDialog = () => {
+  rechargeDialogRef.value.open(user.value.payCoin)
+}
+
+const handleRechargeSuccess = (option: any) => {
+  console.log('充值成功:', option)
+  // 更新用户的书币数量
+  user.value.payCoin += option.amount + (option.bonus || 0)
+  ElMessage.success(
+    `成功充值${option.amount}书币${option.bonus ? `，赠送${option.bonus}书币` : ''}`,
+  )
+}
+
+// 会员弹窗
+const vipDialogRef = ref()
+const openVipDialog = () => {
+  vipDialogRef.value.open()
+}
+
+const handlePurchaseSuccess = (plan: any) => {
+  console.log('会员购买成功:', plan)
+
+  // 计算要添加的天数
+  let daysToAdd = 0
+  if (plan.duration.includes('7') || plan.name.includes('周')) {
+    daysToAdd = 7
+  } else if (plan.duration.includes('30') || plan.name.includes('月')) {
+    daysToAdd = 30
+  } else if (plan.duration.includes('90') || plan.name.includes('季')) {
+    daysToAdd = 90
+  } else if (plan.duration.includes('365') || plan.name.includes('年')) {
+    daysToAdd = 365
+  } else {
+    // 尝试从duration中提取数字
+    const match = plan.duration.match(/\d+/)
+    daysToAdd = match ? parseInt(match[0]) : 30
+  }
+
+  // 更新会员状态
+  user.value.isVip = true
+
+  // 计算新的会员到期时间
+  const now = new Date()
+  if (user.value.vipEndTime) {
+    // 如果已有会员，则在现有到期时间上累加
+    const endTime = new Date(user.value.vipEndTime)
+    endTime.setDate(endTime.getDate() + daysToAdd)
+    user.value.vipEndTime = endTime.toISOString()
+    user.value.vipDays = Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  } else {
+    // 如果没有会员，从今天开始计算
+    now.setDate(now.getDate() + daysToAdd)
+    user.value.vipEndTime = now.toISOString()
+    user.value.vipDays = daysToAdd
+  }
+
+  ElMessage.success(`成功开通${plan.name}，有效期${plan.duration}`)
+}
+
+// 计算会员按钮显示的文字
+const getVipButtonText = () => {
+  if (user.value.isVip && user.value.vipDays > 0) {
+    return `VIP剩余${user.value.vipDays}天`
+  }
+  return '成为会员'
+}
 // --- 主题配置 ---
 
 // 定义主题的详细颜色映射
@@ -448,6 +544,45 @@ const handleAppearanceSave = () => {
   gap: 24px;
   align-items: center;
   flex-shrink: 0;
+}
+
+/* 新增：统计按钮样式 */
+.stat-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.stat-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.stat-btn:active {
+  transform: translateY(0);
+}
+
+.stat-btn .num {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-main);
+  transition: color 0.2s ease;
+}
+
+.stat-btn:hover .num {
+  color: var(--primary-green);
+}
+
+.stat-btn .label {
+  font-size: 12px;
+  color: var(--text-light);
 }
 
 .stat-item {

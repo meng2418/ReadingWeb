@@ -24,6 +24,7 @@ interface Props {
   author?: string
   reason?: string
   bookId?: string | number // 新增：书籍ID，用于路由跳转
+  openInNewTab?: boolean // 新增：是否在新标签页打开
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -32,16 +33,26 @@ const props = withDefaults(defineProps<Props>(), {
   author: '',
   reason: '',
   bookId: '', // 默认值
+  openInNewTab: true, // 默认在新标签页打开
 })
 
 // 跳转到书籍详情页
 const goToBookDetail = (): void => {
   if (props.bookId) {
-    // 使用书籍ID跳转到对应详情页
-    router.push(`/bookdetail/${props.bookId}`)
+    if (props.openInNewTab) {
+      // 在新标签页打开
+      window.open(`/bookdetail?id=${props.bookId}`, '_blank')
+    } else {
+      // 在当前页打开
+      router.push(`/bookdetail/${props.bookId}`)
+    }
   } else {
     // 如果没有bookId，跳转到默认详情页（备用方案）
-    router.push('/bookdetail')
+    if (props.openInNewTab) {
+      window.open('/bookdetail', '_blank')
+    } else {
+      router.push('/bookdetail')
+    }
   }
 }
 </script>

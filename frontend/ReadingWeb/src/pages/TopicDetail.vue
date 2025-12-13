@@ -346,6 +346,8 @@ const loadMore = () => {
 
 const goToTopic = (id: string) => {
   router.push(`/topicdetail/${id}`)
+  // 在新标签页打开话题详情页
+  window.open(`/topicdetail/${id}`, '_blank')
 }
 
 // 刷新相关话题

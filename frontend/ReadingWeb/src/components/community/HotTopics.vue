@@ -28,6 +28,7 @@ interface Topic {
 // 定义props
 const props = defineProps<{
   topics?: Topic[]
+  openInNewTab?: boolean // 新增：是否在新标签页打开
 }>()
 
 // 默认话题数据 - 使用"文本标签"作为默认值
@@ -48,14 +49,16 @@ const topics = props.topics || defaultTopics
 
 const handleTopicClick = (topic: Topic) => {
   console.log('点击话题:', topic.name)
-  // 这里可以触发事件或跳转
-  goToTopicDetail(topic.id)  // 添加跳转
   emit('topicClick', topic)
-}
 
-// 添加跳转函数
-const goToTopicDetail = (topicId: number) => {
-  router.push(`/topicdetail/${topicId}`)
+  // 跳转到话题详情页
+  if (props.openInNewTab !== false) { // 默认在新标签页打开
+    // 在新标签页打开话题详情页
+    window.open(`/topicdetail/${topic.id}`, '_blank')
+  } else {
+    // 在当前页打开
+    router.push(`/topicdetail/${topic.id}`)
+  }
 }
 
 // 定义事件

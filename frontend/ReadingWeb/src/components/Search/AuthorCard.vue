@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
+
+const router = useRouter()
+const route = useRoute()
 const props = defineProps({
   name: { type: String, required: true },
   avatar: { type: String, required: true },
@@ -20,6 +24,7 @@ const formattedReaders = computed(() => {
 
 const handleViewDetail = () => {
   emit('view')
+  router.push(`/authordetail/${props.id}`)
 }
 </script>
 

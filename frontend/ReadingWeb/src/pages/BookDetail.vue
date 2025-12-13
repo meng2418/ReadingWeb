@@ -17,6 +17,7 @@
           @toggle-bookshelf="handleBookshelfToggle"
           @start-reading="handleStartReading"
           @stat-click="handleStatClick"
+          @open-recharge-dialog="handleOpenRechargeDialog"
         />
 
         <!-- 推荐值组件 -->
@@ -70,15 +71,26 @@ import AuthorInfoSection from '@/components/bookdetail/AuthorInfoSection.vue'
 import RelatedRecommendations from '@/components/bookdetail/RelatedRecommendations.vue'
 import UserReviews from '@/components/bookdetail/UserReviews.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
-
+import UserProfile from '@/components/user/UserProfile.vue'
 const route = useRoute()
-
+const userProfileRef = ref() // UserProfile组件引用
 // 在组件挂载时滚动到顶部
 onMounted(() => {
   window.scrollTo({
     top: 0,
   })
 })
+
+// 处理打开充值弹窗
+const handleOpenRechargeDialog = () => {
+  // 触发UserProfile组件的充值弹窗
+  // 注意：这里需要确保UserProfile组件已经加载并暴露openRechargeDialog方法
+  if (userProfileRef.value) {
+    // 假设UserProfile组件有一个方法可以打开充值弹窗
+    // 你可能需要在UserProfile组件中添加一个公共方法来打开充值弹窗
+    userProfileRef.value.openRechargeDialog?.(userPayCoin.value)
+  }
+}
 
 // 修改：添加书籍ID和标题常量
 const bookId = 'book-123' // 书籍的唯一标识符

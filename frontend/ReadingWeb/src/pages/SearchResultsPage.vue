@@ -65,7 +65,7 @@ const rawData = [
   },
 ]
 const goToAuthorPage = (id: number) => {
-  router.push(`/author/${id}`)
+  router.push(`/authordetail/${id}`)
 }
 const searchResults = ref(rawData)
 

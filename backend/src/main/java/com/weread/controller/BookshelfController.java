@@ -13,108 +13,100 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 书架模块控制器（完整改造版）
- * 所有接口响应格式统一为 Result 类型，适配全局异常处理
+ * Bookshelf Module Controller.
+ * All interface return results are encapsulated with Result<T>.
  */
 @RestController
 @RequestMapping("/api/bookshelf")
 @RequiredArgsConstructor
-@Tag(name = "书架", description = "书架模块相关接口")
-@SecurityRequirement(name = "bearerAuth") // 需JWT认证
+@Tag(name = "Bookshelf", description = "Interfaces for bookshelf management")
+@SecurityRequirement(name = "bearerAuth") // Require JWT authentication
 public class BookshelfController {
 
     private final BookshelfService bookshelfService;
 
     /**
-     * 获取书架书籍列表（支持按状态筛选）
+     * Retrieve the user's bookshelf list, supports filtering by read status.
      */
     @GetMapping
-    @Operation(summary = "获取书架", description = "查询用户书架中的书籍，可按状态筛选（all/unread/reading/finished）")
+    @Operation(summary = "Get Bookshelf", description = "Query books in the user's bookshelf, filterable by status (all/unread/reading/finished)")
     public Result<Map<String, Object>> getBookshelf(
             @RequestParam(required = false, defaultValue = "all") String status,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // 构建查询参数DTO
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
         if (!"all".equals(status)) {
             dto.setStatus(status);
         }
 
-        // 调用Service查询
         List<BookShelfVO> books = bookshelfService.getUserBooks(dto, userId);
 
-        // 统一用Result封装响应
         return Result.success(Map.of("books", books));
     }
 
     /**
-     * 添加书籍到书架
+     * Add a book to the bookshelf.
      */
     @PostMapping
-    @Operation(summary = "添加到书架", description = "将指定书籍添加到用户书架，默认状态为未读")
+    @Operation(summary = "Add to Bookshelf", description = "Add a specified book to the user's bookshelf (default status: unread)")
     public Result<Void> addToBookshelf(
             @RequestBody BookAddDTO dto,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // 调用Service添加
         bookshelfService.addBookToShelf(dto, userId);
 
-        // 无数据返回，仅提示成功
         return Result.success();
     }
 
     /**
-     * 从书架移除书籍
+     * Remove a book from the bookshelf.
      */
     @DeleteMapping("/{bookId}")
-    @Operation(summary = "从书架移除", description = "将指定书籍从用户书架中删除")
+    @Operation(summary = "Remove from Bookshelf", description = "Delete the specified book from the user's bookshelf")
     public Result<Void> removeFromBookshelf(
             @PathVariable Integer bookId,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // 调用Service移除
         bookshelfService.removeBookFromShelf(bookId, userId);
 
         return Result.success();
     }
 
     /**
-     * 更新书籍阅读状态
+     * Update the book's reading status.
      */
     @PutMapping("/{bookId}")
-    @Operation(summary = "更新阅读状态", description = "修改书架中书籍的阅读状态（unread/reading/finished）")
+    @Operation(summary = "Update Reading Status", description = "Modify the reading status of a book in the bookshelf (unread/reading/finished)")
     public Result<Void> updateBookStatus(
             @PathVariable Integer bookId,
             @RequestBody BookStatusUpdateDTO dto,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // 封装状态更新DTO
         BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
         statusDTO.setBookId(bookId);
         statusDTO.setStatus(dto.getStatus());
 
-        // 调用Service更新
         bookshelfService.updateBookStatus(statusDTO, userId);
 
         return Result.success();
     }
 
     /**
-     * 书架批量操作（删除/更新状态）
+     * Batch operation (delete or update status).
      */
     @PostMapping("/batch")
-    @Operation(summary = "批量操作", description = "批量删除书架书籍或批量更新阅读状态")
+    @Operation(summary = "Batch Operation", description = "Batch delete books or batch update reading status")
     public Result<Void> batchOperation(
             @RequestBody BookshelfBatchDTO dto,
-            @RequestHeader("userId") Integer userId) {
+            @RequestHeader("userId") Long userId) {
 
-        // 批量删除
+        // Batch delete
         if ("delete".equals(dto.getAction())) {
             for (Integer bookId : dto.getBookIds()) {
                 bookshelfService.removeBookFromShelf(bookId, userId);
             }
         }
-        // 批量更新状态
+        // Batch update status
         else if ("update-status".equals(dto.getAction())) {
             for (Integer bookId : dto.getBookIds()) {
                 BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
@@ -123,9 +115,9 @@ public class BookshelfController {
                 bookshelfService.updateBookStatus(statusDTO, userId);
             }
         }
-        // 不支持的操作类型（会被全局异常处理器捕获）
+        // Unsupported operation type
         else {
-            throw new RuntimeException("不支持的操作类型：" + dto.getAction());
+            throw new RuntimeException("Unsupported operation type: " + dto.getAction());
         }
 
         return Result.success();
