@@ -158,7 +158,6 @@
 <script setup lang="ts">
 import { Edit2, Palette } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
-import DefaultAvatar from '@/img/avatar.jpg'
 import RechargeDialog from '@/components/user/RechargeDialog.vue'
 import VipDialog from '@/components/user/VipDialog.vue'
 import { ElMessage } from 'element-plus'
@@ -251,7 +250,7 @@ const handlePurchaseSuccess = (plan: any) => {
 // 计算会员按钮显示的文字
 const getVipButtonText = () => {
   if (user.value.isVip && user.value.vipDays > 0) {
-    return `VIP剩余${user.value.vipDays}天`
+    return `会员卡 ${user.value.vipDays}天`
   }
   return '成为会员'
 }
