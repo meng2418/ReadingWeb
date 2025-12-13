@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
-import Footer from '@/components/layout/Footer.vue'
+
 
 
 const userStore = useUserStore()
@@ -12,7 +12,6 @@ onMounted(() => {
 
 <template>
   <router-view></router-view>
-  <Footer />
 </template>
 
 <style>

@@ -4,6 +4,7 @@ import NavBar from '@/components/layout/NavBar.vue'
 import BookCard from '@/components/bookshelf/BookCardMiddle.vue'
 import { ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
+import Footer from '@/components/layout/Footer.vue'
 
 const books = ref([
   { id: 1, title: 'Vue 3 进阶实战', cover: 'https://picsum.photos/200/300?1', status: '读完' },
@@ -134,6 +135,7 @@ const deleteSelectedBooks = async () => {
         </div>
       </div>
     </div>
+    <Footer />
   </div>
 </template>
 

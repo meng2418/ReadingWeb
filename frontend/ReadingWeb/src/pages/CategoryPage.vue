@@ -56,6 +56,7 @@
         </div>
       </div>
     </div>
+    <Footer />
   </div>
 </template>
 
@@ -65,6 +66,7 @@ import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
+import Footer from '@/components/layout/Footer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,6 +96,7 @@ interface Book {
 const goToBookDetail = (bookId: string | number) => {
   console.log('跳转到书籍详情页，书籍ID:', bookId)
   router.push(`/bookdetail?id=${bookId}`)
+  window.open(`/bookdetail?id=${bookId}`, '_blank')
 }
 
 // 导航标签
@@ -725,7 +728,7 @@ function stringToHash(str: string): number {
 }
 
 .category-tab.active {
-  color: #007fff;
+  color: #00a735;
   font-weight: 600;
   background-color: transparent;
 }
