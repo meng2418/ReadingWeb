@@ -90,7 +90,7 @@ interface Props {
   isLiked: boolean
   book?: Book | null
   postId?: number // 补充postId类型定义，修复跳转TS警告
-  showFollowButton?: boolean  // 新增：控制是否显示关注按钮
+  showFollowButton?: boolean // 新增：控制是否显示关注按钮
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -98,7 +98,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: undefined,
   book: null,
   postId: undefined,
-  showFollowButton: true  // 默认显示关注按钮
+  showFollowButton: true, // 默认显示关注按钮
 })
 
 const emit = defineEmits<{
@@ -140,8 +140,8 @@ const handleLike = (): void => {
 // 其他操作事件保持不变
 const commentPost = (): void => {
   emit('comment')
+  router.push('/postdetail')
 }
-
 
 const toggleExpand = (): void => {
   showFull.value = !showFull.value
@@ -280,8 +280,6 @@ const handleCardClick = () => {
   padding-top: 10px;
   gap: 250px; /* 控制两个按钮之间的距离 */
 }
-
-
 
 .action-item {
   display: flex;
