@@ -70,27 +70,12 @@ import { ref, computed } from 'vue'
 import { Comment } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
 import { Heart } from 'lucide-vue-next'
+import type { Post, PostBookSummary, PostCardEmits } from '@/types/post'
 
-interface Book {
-  id: number
-  cover: string
-  title: string
-  author: string
-}
-
-interface Props {
-  username: string
-  avatar?: string
-  postTime: string
-  title?: string
-  content: string
-  likeCount: number
-  commentCount: number
-  isFollowing: boolean
-  isLiked: boolean
-  book?: Book | null
+interface Props extends Post {
   postId?: number // 补充postId类型定义，修复跳转TS警告
   showFollowButton?: boolean // 新增：控制是否显示关注按钮
+  book?: PostBookSummary | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -101,11 +86,7 @@ const props = withDefaults(defineProps<Props>(), {
   showFollowButton: true, // 默认显示关注按钮
 })
 
-const emit = defineEmits<{
-  'follow-change': [isFollowing: boolean]
-  like: [likeCount: number, isLiked: boolean]
-  comment: []
-}>()
+const emit = defineEmits<PostCardEmits>()
 
 const showFull = ref<boolean>(false)
 const maxChars = 120 // 控制显示多少字
@@ -149,7 +130,7 @@ const toggleExpand = (): void => {
 
 // 点击卡片跳转：修复postId判断逻辑
 const handleCardClick = () => {
-  let url = '/postdetail'
+  const url = '/postdetail'
   // 在新标签页打开
   window.open(url, '_blank')
 }

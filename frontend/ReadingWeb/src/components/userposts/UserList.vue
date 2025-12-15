@@ -43,24 +43,11 @@ import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import UserCard from '@/components/userposts/UserCard.vue'
 
-// 定义用户类型
-interface User {
-  id: number
-  username: string
-  avatar: string
-  bio: string
-  isFollowing?: boolean
-}
+import type { FollowUser } from '@/types/user'
 
-// 定义 props
-interface Props {
-  type: 'following' | 'followers'
-  users: User[]
-}
-
-const props = defineProps<Props>()
+const props = defineProps<{ type: 'following' | 'followers'; users: FollowUser[] }>()
 const emit = defineEmits<{
-  update: [users: User[]]
+  update: [users: FollowUser[]]
 }>()
 
 // 根据类型计算相关文本

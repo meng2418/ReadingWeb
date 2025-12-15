@@ -9,9 +9,8 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
+import { useBookNavigation } from '@/composables/useBookNavigation'
+const { openBookDetail } = useBookNavigation()
 
 // 定义 Props 接口
 interface Props {
@@ -24,18 +23,12 @@ interface Props {
 
 // 使用 TypeScript 方式定义 props
 const props = withDefaults(defineProps<Props>(), {
-  openInNewTab: true // 默认在新标签页打开
+  openInNewTab: true, // 默认在新标签页打开
 })
 
 // 跳转到书籍详情页
 const goToBook = (): void => {
-  if (props.openInNewTab) {
-    // 在新标签页打开
-    window.open(`/bookdetail?id=${props.bookId}`, '_blank')
-  } else {
-    // 在当前页打开
-    router.push(`/bookdetail/${props.bookId}`)
-  }
+  openBookDetail(props.bookId, props.openInNewTab ? 'new-tab' : 'current')
 }
 </script>
 

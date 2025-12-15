@@ -44,23 +44,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import type { AuthorWork, AuthorInfo } from '@/types/author'
 // 添加路由
 const router = useRouter()
 // 定义props
-interface Work {
-  id:  number
-  title: string
-  summary: string
-  cover?: string
-}
-
 interface Props {
-  author: {
-    id?: number  // 添加id字段
-    name: string
-    description: string
-  }
-  works: Work[]
+  author: AuthorInfo
+  works: AuthorWork[]
   maxDisplayCount?: number
   openInNewTab?: boolean // 新增：是否在新标签页打开
 }
@@ -72,7 +62,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 定义事件
 const emit = defineEmits<{
-  workClick: [work: Work]
+  workClick: [work: AuthorWork]
   viewAllWorks: []
 }>()
 
@@ -88,7 +78,7 @@ const handleImageError = (event: Event) => {
 }
 
 // 作品点击事件
-const handleWorkClick = (work: Work) => {
+const handleWorkClick = (work: AuthorWork) => {
   emit('workClick', work)
   console.log('点击作品:', work.title)
 }

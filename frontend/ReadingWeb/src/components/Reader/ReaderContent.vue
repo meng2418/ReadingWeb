@@ -51,8 +51,8 @@ const handleMouseUp = () => {
     selection.value = null
     return
   }
-  let anchorNode = selectionObj.anchorNode
-  let focusNode = selectionObj.focusNode
+  const anchorNode = selectionObj.anchorNode
+  const focusNode = selectionObj.focusNode
 
   const findParentP = (node: Node | null): HTMLElement | null => {
     let current = node
@@ -180,7 +180,7 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
 
     const activeAnns = relevant.filter((a) => a.start <= start && a.end >= end)
 
-    let classes: string[] = ['segment-transition']
+    const classes: string[] = ['segment-transition']
     let hasAction = false
     let noteId = undefined
     let isThought = false

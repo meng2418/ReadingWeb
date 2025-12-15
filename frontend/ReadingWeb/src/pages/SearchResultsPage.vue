@@ -4,6 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import AuthorCard from '@/components/Search/AuthorCard.vue'
+import type {
+  SearchTab,
+  SearchResultBook,
+  SearchResultAuthor,
+  CategorizedResults,
+} from '@/types/search'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,16 +73,16 @@ const rawData = [
 const goToAuthorPage = (id: number) => {
   router.push(`/authordetail/${id}`)
 }
-const searchResults = ref(rawData)
+const searchResults = ref<(SearchResultBook | SearchResultAuthor)[]>(rawData as any)
 
-type SearchTab = 'all' | 'books' | 'authors'
 const currentTab = ref<SearchTab>('all')
 
 // 计算属性：将数据分类，方便模板渲染
-const categorizedResults = computed(() => {
-  const books = searchResults.value.filter((item) => item.type === 'book')
-  const authors = searchResults.value.filter((item) => item.type === 'author')
-
+const categorizedResults = computed<CategorizedResults>(() => {
+  const books = searchResults.value.filter((item): item is SearchResultBook => item.type === 'book')
+  const authors = searchResults.value.filter(
+    (item): item is SearchResultAuthor => item.type === 'author',
+  )
   return { books, authors }
 })
 
@@ -114,7 +120,7 @@ const selectTab = (tab: SearchTab) => {
               :key="item.id"
               :name="item.name"
               :avatar="item.avatar"
-              :readersCount="item.readersCount"
+              :readersCount="String(item.readersCount)"
               :works="item.works"
               :description="item.description"
             />
@@ -130,8 +136,8 @@ const selectTab = (tab: SearchTab) => {
               :title="item.title"
               :author="item.author"
               :cover="item.cover"
-              :readersCount="item.readersCount"
-              :recommendationRate="parseFloat(item.recommend)"
+              :readers-count="item.readersCount"
+              :recommendation-rate="Number.parseFloat(item.recommend)"
               :description="item.description"
               class="book-item-spacing"
             />
@@ -152,7 +158,7 @@ const selectTab = (tab: SearchTab) => {
             v-for="item in categorizedResults.books"
             :key="item.id"
             v-bind="item"
-            :recommendationRate="parseFloat(item.recommend || '0')"
+            :recommendation-rate="Number.parseFloat(item.recommend || '0')"
             class="book-item-spacing"
           />
         </div>
@@ -166,7 +172,7 @@ const selectTab = (tab: SearchTab) => {
             :key="item.id"
             :name="item.name"
             :avatar="item.avatar"
-            :readersCount="item.readersCount"
+            :readersCount="String(item.readersCount)"
             :works="item.works"
             :description="item.description"
             @view="goToAuthorPage(item.id)"

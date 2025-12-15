@@ -63,44 +63,27 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useBookNavigation } from '@/composables/useBookNavigation'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import Footer from '@/components/layout/Footer.vue'
+import type { BookListItem } from '@/types/book'
+import type { CategoryTab, SubCategory, RankedBook } from '@/types/category'
 
 const route = useRoute()
 const router = useRouter()
+const { openBookDetail } = useBookNavigation()
 
-// 定义接口
-interface Tab {
-  id: string
-  name: string
-}
-
-interface SubCategory {
-  id: string
-  name: string
-}
-
-interface Book {
-  id: number
-  cover: string
-  title: string
-  author: string
-  recommend: string
-  readersCount: string
-  recommendationRate: number
-  description: string
-}
+// 定义接口统一至 types/category.ts
 
 const goToBookDetail = (bookId: string | number) => {
   console.log('跳转到书籍详情页，书籍ID:', bookId)
-  router.push(`/bookdetail?id=${bookId}`)
-  window.open(`/bookdetail?id=${bookId}`, '_blank')
+  openBookDetail(bookId, 'both')
 }
 
 // 导航标签
-const tabs: Tab[] = [
+const tabs: CategoryTab[] = [
   { id: 'weekly', name: '周榜' },
   { id: 'monthly', name: '月榜' },
   { id: 'new', name: '新书榜' },
@@ -122,7 +105,7 @@ const tabs: Tab[] = [
   { id: 'education_learning', name: '教育学习' },
   { id: 'science_technology', name: '科学技术' },
   { id: 'life_skills', name: '生活百科' },
-  { id: 'periodicals', name: '期刊杂志' }
+  { id: 'periodicals', name: '期刊杂志' },
 ]
 
 const currentTab = ref('weekly')
@@ -139,7 +122,7 @@ watch(
         currentCategory.value = 'all'
       }
     }
-  }
+  },
 )
 
 // 监听路由参数变化 - 分类
@@ -159,7 +142,7 @@ onMounted(() => {
   const tabParam = route.query.tab as string
   const categoryParam = route.query.category as string
 
-  if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+  if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
     currentTab.value = tabParam
   }
 
@@ -181,7 +164,26 @@ const currentTabName = computed(() => {
 
 // 判断当前是否为分类标签（非榜单）
 const isCategoryTab = computed(() => {
-  const categoryTabs = ['novel', 'history', 'art', 'biography', 'computer', 'social_culture', 'economy_finance', 'children_books', 'medical_health', 'literature', 'philosophy_religion', 'psychology', 'personal_development', 'politics_military', 'education_learning', 'science_technology', 'life_skills', 'periodicals']
+  const categoryTabs = [
+    'novel',
+    'history',
+    'art',
+    'biography',
+    'computer',
+    'social_culture',
+    'economy_finance',
+    'children_books',
+    'medical_health',
+    'literature',
+    'philosophy_religion',
+    'psychology',
+    'personal_development',
+    'politics_military',
+    'education_learning',
+    'science_technology',
+    'life_skills',
+    'periodicals',
+  ]
   return categoryTabs.includes(currentTab.value)
 })
 
@@ -210,7 +212,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'folklore', name: '民俗志怪' },
       { id: 'women_fiction', name: '女性小说' },
       { id: 'era', name: '年代小说' },
-      { id: 'healing', name: '治愈小说' }
+      { id: 'healing', name: '治愈小说' },
     ],
     // 历史分类
     history: [
@@ -223,7 +225,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'world_history', name: '世界史' },
       { id: 'ancient_china', name: '中国古代' },
       { id: 'history_culture', name: '历史文化' },
-      { id: 'modern_china', name: '中国近现代' }
+      { id: 'modern_china', name: '中国近现代' },
     ],
 
     // 文学分类
@@ -240,7 +242,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'modern_poetry', name: '现代诗歌' },
       { id: 'ancient_poetry', name: '古代诗词' },
       { id: 'foreign_literature', name: '外国文学' },
-      { id: 'world_classics', name: '世界名著' }
+      { id: 'world_classics', name: '世界名著' },
     ],
 
     // 艺术分类
@@ -258,7 +260,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'folk_art', name: '民艺' },
       { id: 'design', name: '设计' },
       { id: 'dance', name: '舞蹈' },
-      { id: 'music', name: '音乐' }
+      { id: 'music', name: '音乐' },
     ],
 
     // 人物传记分类
@@ -273,7 +275,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'literary_figures', name: '文学家' },
       { id: 'scholars', name: '学者' },
       { id: 'artists', name: '艺术家' },
-      { id: 'celebrities', name: '娱乐明星' }
+      { id: 'celebrities', name: '娱乐明星' },
     ],
 
     // 哲学宗教分类
@@ -288,7 +290,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'western_philosophy', name: '西方哲学' },
       { id: 'philosophy_reading', name: '哲学读物' },
       { id: 'philosophical_works', name: '哲学著作' },
-      { id: 'religion', name: '宗教' }
+      { id: 'religion', name: '宗教' },
     ],
     // 计算机分类
     computer: [
@@ -299,7 +301,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'theoretical_knowledge', name: '理论知识' },
       { id: 'artificial_intelligence', name: '人工智能' },
       { id: 'database', name: '数据库' },
-      { id: 'image_video', name: '图像视频' }
+      { id: 'image_video', name: '图像视频' },
     ],
 
     // 心理分类
@@ -311,7 +313,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'psychology_research', name: '心理学研究' },
       { id: 'intimate_relationships', name: '亲密关系' },
       { id: 'social_psychology', name: '社会心理学' },
-      { id: 'psychology_application', name: '心理学应用' }
+      { id: 'psychology_application', name: '心理学应用' },
     ],
 
     // 社会文化分类
@@ -319,7 +321,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'all', name: '全部' },
       { id: 'law', name: '法律' },
       { id: 'social_science', name: '社科' },
-      { id: 'culture', name: '文化' }
+      { id: 'culture', name: '文化' },
     ],
 
     // 经济理财分类
@@ -328,7 +330,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'financial_planning', name: '理财' },
       { id: 'finance', name: '财经' },
       { id: 'business', name: '商业' },
-      { id: 'management', name: '管理' }
+      { id: 'management', name: '管理' },
     ],
 
     // 医学健康分类
@@ -336,7 +338,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'all', name: '全部' },
       { id: 'health', name: '健康' },
       { id: 'gender_relations', name: '两性' },
-      { id: 'medicine', name: '医学' }
+      { id: 'medicine', name: '医学' },
     ],
 
     // 生活百科分类
@@ -350,7 +352,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'fashion', name: '时尚' },
       { id: 'handicraft', name: '手工' },
       { id: 'sports', name: '体育' },
-      { id: 'games', name: '游戏' }
+      { id: 'games', name: '游戏' },
     ],
 
     // 科学技术分类
@@ -360,7 +362,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'architecture', name: '建筑' },
       { id: 'science_popularization', name: '科学科普' },
       { id: 'agriculture_forestry', name: '农林牧业' },
-      { id: 'natural_science', name: '自然科学' }
+      { id: 'natural_science', name: '自然科学' },
     ],
 
     // 教育学习分类
@@ -371,7 +373,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'education', name: '教育' },
       { id: 'exams', name: '考试' },
       { id: 'foreign_languages', name: '外语' },
-      { id: 'parenting', name: '育儿' }
+      { id: 'parenting', name: '育儿' },
     ],
 
     // 童书分类
@@ -381,7 +383,7 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'comics_cartoons', name: '漫画卡通' },
       { id: 'children_english', name: '少儿英语' },
       { id: 'early_education', name: '幼儿启蒙' },
-      { id: 'reading_reference', name: '阅读工具书' }
+      { id: 'reading_reference', name: '阅读工具书' },
     ],
 
     // 个人成长分类
@@ -393,14 +395,14 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'life_philosophy', name: '人生哲学' },
       { id: 'workplace_life', name: '人在职场' },
       { id: 'cognitive_thinking', name: '认知思维' },
-       { id: 'women_growth', name: '女性成长' }
+      { id: 'women_growth', name: '女性成长' },
     ],
 
     // 政治军事分类
     politics_military: [
       { id: 'all', name: '全部' },
       { id: 'military', name: '军事' },
-      { id: 'politics', name: '政治' }
+      { id: 'politics', name: '政治' },
     ],
 
     // 期刊杂志分类
@@ -409,9 +411,8 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'finance', name: '财经' },
       { id: 'life', name: '生活' },
       { id: 'literature', name: '文学' },
-      { id: 'other', name: '其他' }
-    ]
-
+      { id: 'other', name: '其他' },
+    ],
   }
 
   return subCategories[tabId] || []
@@ -426,7 +427,7 @@ const switchCategory = (categoryId: string) => {
 
 // 定义排名数据类型
 type RankingsType = {
-  [key: string]: Book[] | Record<string, Book[]>
+  [key: string]: RankedBook[] | Record<string, RankedBook[]>
 }
 
 // 模拟数据 - 这里需要替换为真实的API数据
@@ -456,20 +457,20 @@ const rankings: RankingsType = {
   education_learning: generateCategoryDataStructure('education_learning'),
   science_technology: generateCategoryDataStructure('science_technology'),
   life_skills: generateCategoryDataStructure('life_skills'),
-  periodicals: generateCategoryDataStructure('periodicals')
+  periodicals: generateCategoryDataStructure('periodicals'),
 }
 
 // 修改：根据当前标签和分类获取数据
-const currentRanking = computed((): Book[] => {
+const currentRanking = computed((): RankedBook[] => {
   const tab = currentTab.value
 
   // 如果是榜单，直接返回数据
   if (!isCategoryTab.value) {
-    return rankings[tab] as Book[]
+    return rankings[tab] as RankedBook[]
   }
 
   // 如果是分类，根据子分类获取数据
-  const categoryData = rankings[tab] as Record<string, Book[]>
+  const categoryData = rankings[tab] as Record<string, RankedBook[]>
   return categoryData[currentCategory.value] || categoryData.all || []
 })
 
@@ -485,8 +486,8 @@ const switchTab = (tabId: string) => {
 }
 
 // 生成模拟数据函数（用于榜单）
-function generateRankingData(type: string): Book[] {
-  const data: Book[] = []
+function generateRankingData(type: string): RankedBook[] {
+  const data: RankedBook[] = []
   for (let i = 1; i <= 50; i++) {
     data.push({
       id: i,
@@ -503,9 +504,9 @@ function generateRankingData(type: string): Book[] {
 }
 
 // 新增：生成分类数据结构
-function generateCategoryDataStructure(mainCategory: string): Record<string, Book[]> {
+function generateCategoryDataStructure(mainCategory: string): Record<string, RankedBook[]> {
   const subCategories = getSubCategories(mainCategory)
-  const result: Record<string, Book[]> = {}
+  const result: Record<string, RankedBook[]> = {}
 
   // 修复：使用 for...of 替代 forEach
   for (const category of subCategories) {
@@ -516,8 +517,8 @@ function generateCategoryDataStructure(mainCategory: string): Record<string, Boo
 }
 
 // 新增：生成分类数据函数（用于子分类）
-function generateCategoryData(mainCategory: string, subCategory: string): Book[] {
-  const data: Book[] = []
+function generateCategoryData(mainCategory: string, subCategory: string): RankedBook[] {
+  const data: RankedBook[] = []
   for (let i = 1; i <= 50; i++) {
     // 使用哈希函数生成唯一的数字id
     const uniqueId = stringToHash(`${mainCategory}-${subCategory}-${i}`)
@@ -529,7 +530,7 @@ function generateCategoryData(mainCategory: string, subCategory: string): Book[]
       recommend: `${(95 - i * 0.1).toFixed(1)}%`,
       readersCount: (10000 - i * 100).toString(),
       recommendationRate: 95 - i * 0.1,
-      description: `这是${getSubCategoryTitle(mainCategory, subCategory)}第${i}本书的详细描述。这是一本非常优秀的作品，专注于${getSubCategoryDescription(mainCategory, subCategory)}领域。`
+      description: `这是${getSubCategoryTitle(mainCategory, subCategory)}第${i}本书的详细描述。这是一本非常优秀的作品，专注于${getSubCategoryDescription(mainCategory, subCategory)}领域。`,
     })
   }
   return data
@@ -558,7 +559,7 @@ function getTitleByType(type: string): string {
     education_learning: '教育学习书籍',
     science_technology: '科学技术书籍',
     life_skills: '生活百科书籍',
-    periodicals: '期刊杂志'
+    periodicals: '期刊杂志',
   }
   return titles[type] || '书籍'
 }
@@ -566,7 +567,7 @@ function getTitleByType(type: string): string {
 // 新增：获取子分类标题
 function getSubCategoryTitle(mainCategory: string, subCategory: string): string {
   const subCategories = getSubCategories(mainCategory)
-  const category = subCategories.find(cat => cat.id === subCategory)
+  const category = subCategories.find((cat) => cat.id === subCategory)
 
   if (category && category.name !== '全部') {
     return category.name
@@ -579,7 +580,7 @@ function getSubCategoryTitle(mainCategory: string, subCategory: string): string 
 // 新增：获取子分类作者
 function getSubCategoryAuthor(mainCategory: string, subCategory: string): string {
   const subCategories = getSubCategories(mainCategory)
-  const category = subCategories.find(cat => cat.id === subCategory)
+  const category = subCategories.find((cat) => cat.id === subCategory)
 
   if (category && category.name !== '全部') {
     return `${category.name}作者`
@@ -592,7 +593,7 @@ function getSubCategoryAuthor(mainCategory: string, subCategory: string): string
 // 新增：获取子分类描述 - 修复重复函数问题
 function getSubCategoryDescription(mainCategory: string, subCategory: string): string {
   const subCategories = getSubCategories(mainCategory)
-  const category = subCategories.find(cat => cat.id === subCategory)
+  const category = subCategories.find((cat) => cat.id === subCategory)
 
   if (category && category.name !== '全部') {
     return `关于${category.name}的精选书籍`
@@ -604,17 +605,17 @@ function getSubCategoryDescription(mainCategory: string, subCategory: string): s
 
 // 添加字符串到数字的哈希函数
 function stringToHash(str: string): number {
-  let hash = 0;
-  if (str.length === 0) return hash;
+  let hash = 0
+  if (str.length === 0) return hash
 
   // 使用字符串迭代器，它会自动处理 Unicode 代理对
   for (const char of str) {
-    const codePoint = char.codePointAt(0) || 0;
-    hash = ((hash << 5) - hash) + codePoint;
-    hash = hash & hash;
+    const codePoint = char.codePointAt(0) || 0
+    hash = (hash << 5) - hash + codePoint
+    hash = hash & hash
   }
 
-  return Math.abs(hash);
+  return Math.abs(hash)
 }
 </script>
 

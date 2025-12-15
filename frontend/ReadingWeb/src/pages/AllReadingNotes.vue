@@ -151,7 +151,7 @@ const bookList = computed(() => Array.from(new Set(allNotes.value.map((n) => n.b
 
 // 核心修改：增加排序逻辑 sort((a, b) => new Date(b.date) - new Date(a.date))
 const filteredNotes = computed(() => {
-  let result = allNotes.value.filter((note) => {
+  const result = allNotes.value.filter((note) => {
     const matchBook = selectedBook.value ? note.bookName === selectedBook.value : true
     const matchSearch =
       note.content.includes(searchQuery.value) || note.bookName.includes(searchQuery.value)

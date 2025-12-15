@@ -68,7 +68,7 @@ import {
   ensureCurrentUserId,
   getLatestPublicReviews,
 } from '@/composables/useReviews';
-import type { Review } from '@/composables/useReviews';
+import type { Review } from '@/types/review';
 
 const router = useRouter();
 

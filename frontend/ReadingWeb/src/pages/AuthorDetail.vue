@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useBookNavigation } from '@/composables/useBookNavigation'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import { useTitle } from '@/stores/useTitle'
 // 定义类型
@@ -67,6 +68,7 @@ interface AuthorData {
 // 路由
 const router = useRouter()
 const route = useRoute()
+const { openBookDetail } = useBookNavigation()
 
 // 获取作者ID（从路由参数中）
 const authorId = ref(Number(route.params.id) || 1)
@@ -134,8 +136,7 @@ const fetchWorks = () => {
 // 作品点击事件
 const handleBookClick = (work: Work) => {
   // 跳转到书籍详情页
-  router.push(`/bookdetail/${work.id}`)
-  window.open(`/bookdetail?id=${work.id}`, '_blank')
+  openBookDetail(work.id, 'both')
 }
 
 // 组件挂载时获取数据

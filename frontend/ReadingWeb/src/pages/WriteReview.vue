@@ -99,7 +99,7 @@ import {
   removeUserReview,
   getUserReview,
 } from '@/composables/useReviews'
-import type { Review } from '@/composables/useReviews'
+import type { Review } from '@/types/review'
 
 const route = useRoute()
 const router = useRouter()

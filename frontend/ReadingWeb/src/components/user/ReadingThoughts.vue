@@ -44,7 +44,7 @@ import { ArrowRight, Quote } from 'lucide-vue-next'
 const router = useRouter()
 
 const goToAllThoughts = () => {
-  let url = '/userposts?tab=thoughts'
+  const url = '/userposts?tab=thoughts'
   // 在新标签页打开
   window.open(url, '_blank')
 }

@@ -73,7 +73,8 @@ import UserReviews from '@/components/bookdetail/UserReviews.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import { useTitle } from '@/stores/useTitle'
 import { computeRatingStats, countPublicReviews } from '@/composables/useReviews'
-import type { Review } from '@/composables/useReviews'
+import type { Review } from '@/types/review'
+import type { BookListItem } from '@/types/book'
 const route = useRoute()
 const userProfileRef = ref() // UserProfile组件引用
 // 在组件挂载时滚动到顶部
@@ -108,11 +109,8 @@ interface Work {
   cover?: string
 }
 
-interface Book {
-  id: number
-  title: string
+type RelatedBook = Required<Pick<BookListItem, 'id' | 'title' | 'cover'>> & {
   intro: string
-  cover: string
 }
 // 修改：计算推荐值统计数据
 const ratingStats = computed(() =>
@@ -168,7 +166,7 @@ const authorWorks = [
 ]
 
 // 相关推荐作品数据
-const relatedBooks = ref([
+const relatedBooks = ref<RelatedBook[]>([
   {
     id: 1,
     title: '时光旅行者的妻子',

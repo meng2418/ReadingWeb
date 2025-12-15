@@ -64,7 +64,11 @@
         </div>
 
         <!-- 话题选择浮层 - 如果没有当前话题才显示 -->
-        <div v-if="showTopicPanel && !hasCurrentTopic" class="select-panel" @click.self="showTopicPanel = false">
+        <div
+          v-if="showTopicPanel && !hasCurrentTopic"
+          class="select-panel"
+          @click.self="showTopicPanel = false"
+        >
           <div class="panel-content">
             <div class="search-bar">
               <el-icon><Search /></el-icon>
@@ -128,17 +132,13 @@ import { ref, computed, nextTick, watch } from 'vue'
 import { ChatLineRound, Notebook, Search, Reading } from '@element-plus/icons-vue'
 import { Smile } from 'lucide-vue-next'
 import 'emoji-picker-element'
+import type { SimpleBook } from '@/types/book'
 
 // 接口定义
 interface Topic {
   name: string
   view: string
   discuss: string
-}
-
-interface Book {
-  title: string
-  author: string
 }
 
 interface EmojiClickEvent extends CustomEvent {
@@ -176,7 +176,7 @@ const bookKeyword = ref('')
 
 // 已选内容
 const selectedTopics = ref<string[]>([])
-const selectedBooks = ref<Book[]>([])
+const selectedBooks = ref<SimpleBook[]>([])
 
 // 计算属性 - 检查是否有当前话题
 const hasCurrentTopic = computed(() => {
@@ -184,11 +184,15 @@ const hasCurrentTopic = computed(() => {
 })
 
 // 监听当前话题变化，自动添加到已选话题
-watch(() => props.currentTopic, (newTopic) => {
-  if (newTopic && newTopic.name && !selectedTopics.value.includes(newTopic.name)) {
-    selectedTopics.value = [newTopic.name] // 替换而不是追加，确保只有一个话题
-  }
-}, { immediate: true })
+watch(
+  () => props.currentTopic,
+  (newTopic) => {
+    if (newTopic && newTopic.name && !selectedTopics.value.includes(newTopic.name)) {
+      selectedTopics.value = [newTopic.name] // 替换而不是追加，确保只有一个话题
+    }
+  },
+  { immediate: true },
+)
 
 // 示例数据
 const topicList = ref<Topic[]>([
@@ -199,7 +203,7 @@ const topicList = ref<Topic[]>([
   { name: '春节档爆款接力赛', view: '9.5亿', discuss: '70.2万' },
 ])
 
-const bookList = ref<Book[]>([
+const bookList = ref<SimpleBook[]>([
   { title: '人类简史', author: '尤瓦尔·赫拉利' },
   { title: '小王子', author: '圣埃克苏佩里' },
   { title: '乌合之众', author: '古斯塔夫·勒庞' },
@@ -282,7 +286,7 @@ const submitPost = (): void => {
     content: postContent.value,
     topics: selectedTopics.value,
     books: selectedBooks.value,
-    currentTopic: props.currentTopic
+    currentTopic: props.currentTopic,
   })
   // TODO: 这里添加实际的发布逻辑
   closeEditor()

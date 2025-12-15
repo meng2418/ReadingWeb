@@ -1,5 +1,6 @@
 <template>
   <div class="post-detail-page">
+    <NavBar />
     <div class="post-detail-container" v-if="loaded">
       <!-- 左侧主内容区 -->
       <div class="left-column">
@@ -50,6 +51,7 @@ import PostBook from '@/components/community/PostDetail/PostBook.vue'
 import LikeSection from '@/components/community/PostDetail/LikeSection.vue'
 import defaultAvatar from '@/img/avatar.jpg'
 import defaultCover from '@/img/cover.jpg'
+import NavBar from '@/components/layout/NavBar.vue'
 // 获取路由参数
 const route = useRoute()
 const postId = route.params.id
@@ -132,7 +134,7 @@ onMounted(fetchPostDetail)
 .left-column {
   flex: 3;
   margin-bottom: 60px;
-  margin-top: 40px;
+  margin-top: 80px;
 }
 
 /* 右侧栏（占比更小） */
