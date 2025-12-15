@@ -11,7 +11,7 @@ import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import CommentItem from '@/components/community/Mine/CommentItem.vue'
 import LikeItem from '@/components/community/Mine/LikeItem.vue'
 import Footer from '@/components/layout/Footer.vue'
-
+import { useTitle } from '@/stores/useTitle'
 
 // 当前用户信息
 const currentUser = reactive({
@@ -197,6 +197,32 @@ const currentTab = ref<'square' | 'following' | 'topics' | 'mine'>('square')
 const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => (currentTab.value = tab)
 // “我的”内部的二级 Tab
 const mineTab = ref<'like' | 'comment'>('comment')
+
+// 动态页面标题
+// 直接使用 computed
+const title = computed(() => {
+  let tabName = ''
+
+  switch (currentTab.value) {
+    case 'square':
+      tabName = '广场'
+      break
+    case 'following':
+      tabName = '关注'
+      break
+    case 'topics':
+      tabName = '话题'
+      break
+    case 'mine':
+      tabName = mineTab.value === 'like' ? '我的喜欢' : '我的评论'
+      break
+    default:
+      tabName = '首页'
+  }
+
+  return `微信读书社区 - ${tabName}`
+})
+useTitle(title)
 
 const filteredPosts = computed(() => {
   switch (currentTab.value) {

@@ -10,10 +10,6 @@
         </div>
 
         <div class="filters">
-          <div class="search-wrapper">
-            <Search class="search-icon" />
-            <input v-model="searchQuery" type="text" placeholder="搜索笔记内容..." />
-          </div>
           <div class="select-wrapper">
             <BookOpen class="select-icon" />
             <select v-model="selectedBook" class="book-select">
@@ -28,7 +24,7 @@
       <div class="notes-grid">
         <div v-if="filteredNotes.length === 0" class="empty-state">
           <inbox class="icon-lg" />
-          <p>没有找到相关笔记</p>
+          <p>没有找到相关划线</p>
         </div>
 
         <div v-for="note in filteredNotes" :key="note.id" class="note-card">
@@ -37,7 +33,7 @@
               <Book class="icon-xs" />
               <span>{{ note.bookName }}</span>
             </div>
-            <span class="note-date">{{ formatDate(note.date) }}</span>
+            <span class="note-date">{{ formatNoteDate(note.date) }}</span>
           </div>
 
           <div class="card-body">
@@ -65,10 +61,6 @@
                 <!-- 可选：显示文字反馈 -->
                 <span v-if="copiedId === note.id" class="feedback-text">已复制</span>
               </button>
-
-              <button class="action-btn" title="编辑">
-                <FilePenLine class="icon-sm" />
-              </button>
             </div>
           </div>
         </div>
@@ -80,6 +72,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { formatDate as formatDisplayDate } from '@/composables/useReviews'
 // 新增 Check 图标
 import {
   ArrowLeft,
@@ -169,7 +162,7 @@ const filteredNotes = computed(() => {
   return result.sort((a, b) => new Date(b.date) - new Date(a.date))
 })
 
-const formatDate = (str) => str.replace('-', '.')
+const formatNoteDate = (str) => formatDisplayDate(str, { withTime: false, separator: '.' })
 
 const highlightText = (text) => {
   if (!searchQuery.value) return text
@@ -271,38 +264,6 @@ const copyNote = async (note) => {
 .filters {
   display: flex;
   gap: 16px;
-}
-
-/* 搜索框 */
-.search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  color: #888;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-}
-
-.search-wrapper input {
-  padding: 9px 12px 9px 36px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  outline: none;
-  font-size: 14px;
-  width: 220px;
-  background: #f9f9f9;
-  transition: all 0.2s;
-}
-
-.search-wrapper input:focus {
-  background: #fff;
-  border-color: var(--primary-green, #42b983);
-  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.1);
 }
 
 /* 自定义 Select 下拉 */

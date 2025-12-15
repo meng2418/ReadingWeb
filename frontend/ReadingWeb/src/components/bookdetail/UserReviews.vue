@@ -63,24 +63,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import {
+  formatDate,
+  ensureCurrentUserId,
+  getLatestPublicReviews,
+} from '@/composables/useReviews';
+import type { Review } from '@/composables/useReviews';
 
 const router = useRouter();
 
-// 定义评论接口
-interface Review {
-  id: number;
-  bookId: string;
-  bookTitle: string;
-  userId: string;
-  userName: string;
-  content: string;
-  date: string;
-  rating?: string;
-  isPublic?: boolean;
-  lastEditDate?: string;
-}
-
-// 定义组件属性
 interface Props {
   reviews: Review[];
   reviewsPerPage?: number;
@@ -101,40 +92,29 @@ const localReviews = ref<Review[]>([]); // 修改：添加本地存储的评论
 // 计算属性
 // 计算是否应该显示"查看更多"按钮
 const shouldShowButton = computed(() => {
-  // 如果评论数量少于或等于每页显示数量，不显示按钮
-  // 或者已经展开所有评论，也不显示按钮
   const totalReviews = [...props.reviews, ...localReviews.value];
   return totalReviews.length > props.reviewsPerPage && !isExpanded.value;
 });
 
 // 显示的评论列表
 const displayedReviews = computed(() => {
-  // 合并传入的评论和本地存储的公共评论
   const totalReviews = [...props.reviews, ...localReviews.value];
 
-  // 按最后编辑日期排序（最新的在前）
   const sortedReviews = totalReviews.sort((a, b) => {
     const dateA = a.lastEditDate || a.date;
     const dateB = b.lastEditDate || b.date;
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 
-  // 如果已展开，显示所有评论
   if (isExpanded.value) {
     return sortedReviews;
   }
-  // 否则只显示前3条（或reviewsPerPage指定的数量）
   return sortedReviews.slice(0, props.reviewsPerPage);
 });
 
 // 方法
 const getInitials = (name: string): string => {
   return name.substring(0, 2);
-};
-
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 };
 
 // 添加获取评分文本的方法
@@ -150,20 +130,8 @@ const getRatingText = (rating: string | undefined): string => {
 
 // 检查是否是当前用户的点评
 const isCurrentUserReview = (userId: string): boolean => {
-  const currentUserId = getCurrentUserId();
+  const currentUserId = ensureCurrentUserId();
   return userId === currentUserId;
-};
-
-// 获取当前用户ID
-const getCurrentUserId = () => {
-  let userId = localStorage.getItem('currentUserId');
-
-  if (!userId) {
-    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('currentUserId', userId);
-  }
-
-  return userId;
 };
 
 // 编辑点评
@@ -181,7 +149,6 @@ const handleEditReview = (review: Review) => {
 const expandAllReviews = () => {
   isLoading.value = true;
 
-  // 模拟异步加载
   setTimeout(() => {
     isExpanded.value = true;
     isLoading.value = false;
@@ -193,31 +160,7 @@ const loadPublicReviews = () => {
   if (!props.bookId) return;
 
   try {
-    const publicReviews = JSON.parse(localStorage.getItem('publicReviews') || '{}');
-
-    // 获取当前书籍的公开点评
-    if (publicReviews[props.bookId]) {
-      // 转换为数组并过滤掉非公开的（理论上publicReviews里都是公开的）
-      const bookPublicReviews = Object.values(publicReviews[props.bookId])
-        .filter((review: any) => review.isPublic !== false);
-
-      // 只保留每个用户的最新一条点评
-      const userLatestReviews = new Map();
-
-      bookPublicReviews.forEach((review: any) => {
-        const existingReview = userLatestReviews.get(review.userId);
-
-        // 如果没有现有记录，或者当前记录更新，则替换
-        if (!existingReview ||
-            new Date(review.lastEditDate || review.date) > new Date(existingReview.lastEditDate || existingReview.date)) {
-          userLatestReviews.set(review.userId, review);
-        }
-      });
-
-      localReviews.value = Array.from(userLatestReviews.values());
-    } else {
-      localReviews.value = [];
-    }
+    localReviews.value = getLatestPublicReviews(props.bookId);
   } catch (error) {
     console.error('加载公共点评失败:', error);
     localReviews.value = [];

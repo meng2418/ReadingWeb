@@ -46,7 +46,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
-
+import { useTitle } from '@/stores/useTitle'
 // 定义类型
 interface Work {
   id: number
@@ -75,10 +75,13 @@ const authorId = ref(Number(route.params.id) || 1)
 const authorData = ref<AuthorData>({
   id: authorId.value,
   name: '扬·马特尔',
-  description: '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
-  worksCount: 10
+  description:
+    '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
+  worksCount: 10,
 })
-
+// 动态页面标题
+const title = ref(`${authorData.value.name} - 作者详情`)
+useTitle(title)
 // 所有作品数据
 const allWorks = ref<Work[]>([
   {
@@ -87,7 +90,7 @@ const allWorks = ref<Work[]>([
     summary: '这是作品一的简介内容...',
     cover: 'https://picsum.photos/200/280?random=60',
     readersCount: 1021,
-    recommendationRate: 93.6
+    recommendationRate: 93.6,
   },
   {
     id: 2,
@@ -95,7 +98,7 @@ const allWorks = ref<Work[]>([
     summary: '这是作品二的简介内容...',
     cover: 'https://picsum.photos/200/280?random=70',
     readersCount: 892,
-    recommendationRate: 88.4
+    recommendationRate: 88.4,
   },
   {
     id: 3,
@@ -103,7 +106,7 @@ const allWorks = ref<Work[]>([
     summary: '这是作品三的简介内容...',
     cover: 'https://picsum.photos/200/280?random=80',
     readersCount: 654,
-    recommendationRate: 91.2
+    recommendationRate: 91.2,
   },
   // 可以添加更多作品数据...
 ])
@@ -135,8 +138,6 @@ const handleBookClick = (work: Work) => {
   window.open(`/bookdetail?id=${work.id}`, '_blank')
 }
 
-
-
 // 组件挂载时获取数据
 onMounted(() => {
   fetchAuthorData()
@@ -154,7 +155,6 @@ onMounted(() => {
   padding: 20px;
   min-height: 100vh;
 }
-
 
 /* 作者头部区域 - 简化版 */
 .author-header-section {
@@ -198,7 +198,7 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 25px;
   padding-bottom: 15px;
-  border-bottom: 2px solid var(--primary-green, #4CAF50);
+  border-bottom: 2px solid var(--primary-green, #4caf50);
 }
 
 .section-title {

@@ -25,17 +25,19 @@ const router = createRouter({
       path: '/',
       name: 'Home',
       component: HomePage,
+      meta: { title: '微信读书 - 首页' },
     },
     {
       path: '/login',
       name: 'Login',
       component: LoginPage,
+      meta: { title: '微信读书 - 登录' },
     },
     {
       path: '/bookshelf',
       name: 'Bookshelf',
       component: BookshelfPage,
-      meta: { requiresAuth: true }, // 需要登录
+      meta: { requiresAuth: true, title: '微信读书 - 书架' }, // 需要登录
     },
     {
       path: '/community',
@@ -47,17 +49,20 @@ const router = createRouter({
       path: '/forget-password',
       name: 'ForgetPassword',
       component: ForgetPassword,
+      meta: { title: '微信读书 - 忘记密码' },
     },
     {
       path: '/category',
       name: 'Category',
       component: CategoryPage,
+      meta: { title: '微信读书 - 分类' },
     },
     {
       path: '/bookdetail/:id?',
       name: 'BookDetail',
       component: BookDetail,
       props: true,
+      meta: { title: '微信读书 - 书籍详情' },
     },
     {
       path: '/postdetail/:id?',
@@ -94,18 +99,19 @@ const router = createRouter({
       name: 'WriteReview',
       component: WriteReview,
       props: true,
-      meta: { requiresAuth: true }, // 需要登录
+      meta: { requiresAuth: true, title: '书评编辑' }, // 需要登录
     },
     {
       path: '/allreadingnotes',
       name: 'AllReadingNotes',
       component: AllReadingNotes,
+      meta: { title: '微信读书 - 全部划线' },
     },
     {
       path: '/authordetail/:id',
       name: 'AuthorDetail',
       component: AuthorDetail,
-      props: true // 将路由参数作为props传递
+      props: true, // 将路由参数作为props传递
     },
     {
       path: '/search',
@@ -113,7 +119,7 @@ const router = createRouter({
       component: SearchResultsPage, // 关联到 SearchResultPage 组件
       props: (route) => ({
         // 通过 props 传递 query 参数 q (搜索关键词) 给组件
-      searchQuery: route.query.q,
+        searchQuery: route.query.q,
       }),
     },
   ],
@@ -121,6 +127,10 @@ const router = createRouter({
 
 // 路由守卫：登录拦截
 router.beforeEach(async (to, from, next) => {
+  if (to.meta.title) {
+    document.title = to.meta.title
+  }
+  next()
   // 获取用户状态
   const userStore = useUserStore()
 
@@ -158,11 +168,13 @@ router.beforeEach(async (to, from, next) => {
       })
     } catch (error) {
       // 用户点击了"取消"
-      // 返回上一页或首页
-      if (from.path !== '/') {
-        next(from.path)
-      } else {
+      // 记录异常信息
+      console.warn('登录提示对话框被取消', error)
+      // 返回首页或上一页
+      if (from.path === '/') {
         next('/')
+      } else {
+        next(from.path)
       }
     }
   } else {

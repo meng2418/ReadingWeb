@@ -3,7 +3,7 @@
     <!-- 用户信息 -->
     <div class="post-header">
       <div class="avatar-container">
-        <img v-if="avatar" :src="avatar" class="avatar-img" />
+        <img v-if="avatar" :src="avatar" class="avatar-img" :alt="`${username}的头像`" />
         <div v-else class="avatar-placeholder">{{ username.charAt(0) }}</div>
       </div>
 
@@ -149,11 +149,9 @@ const toggleExpand = (): void => {
 
 // 点击卡片跳转：修复postId判断逻辑
 const handleCardClick = () => {
-  if (props.postId) {
-    router.push(`/bookdetail/${props.postId}`)
-  } else {
-    router.push('/postdetail')
-  }
+  let url = '/postdetail'
+  // 在新标签页打开
+  window.open(url, '_blank')
 }
 </script>
 
