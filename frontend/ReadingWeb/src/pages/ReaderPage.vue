@@ -338,8 +338,8 @@ const submitNote = (noteContent: string) => {
   overflow: hidden;
 }
 
-/* 
-  === 核心容器限制 === 
+/*
+  === 核心容器限制 ===
   这个类控制阅读器在屏幕上的物理尺寸
 */
 .reader-viewport {

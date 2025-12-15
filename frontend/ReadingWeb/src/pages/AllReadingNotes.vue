@@ -10,10 +10,6 @@
         </div>
 
         <div class="filters">
-          <div class="search-wrapper">
-            <Search class="search-icon" />
-            <input v-model="searchQuery" type="text" placeholder="搜索笔记内容..." />
-          </div>
           <div class="select-wrapper">
             <BookOpen class="select-icon" />
             <select v-model="selectedBook" class="book-select">
@@ -64,10 +60,6 @@
                 <Copy v-else class="icon-sm" />
                 <!-- 可选：显示文字反馈 -->
                 <span v-if="copiedId === note.id" class="feedback-text">已复制</span>
-              </button>
-
-              <button class="action-btn" title="编辑">
-                <FilePenLine class="icon-sm" />
               </button>
             </div>
           </div>
@@ -272,39 +264,6 @@ const copyNote = async (note) => {
   display: flex;
   gap: 16px;
 }
-
-/* 搜索框 */
-.search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  color: #888;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-}
-
-.search-wrapper input {
-  padding: 9px 12px 9px 36px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  outline: none;
-  font-size: 14px;
-  width: 220px;
-  background: #f9f9f9;
-  transition: all 0.2s;
-}
-
-.search-wrapper input:focus {
-  background: #fff;
-  border-color: var(--primary-green, #42b983);
-  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.1);
-}
-
 /* 自定义 Select 下拉 */
 .select-wrapper {
   position: relative;
@@ -355,7 +314,7 @@ const copyNote = async (note) => {
   gap: 20px;
 }
 
-/* 
+/*
   2. 取消 Hover 悬浮样式
   保持卡片扁平，仅保留基础阴影
 */

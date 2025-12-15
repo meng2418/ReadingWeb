@@ -531,9 +531,9 @@ const handleComment = (postId: number) => {
 }
 
 .filter-tabs button.active {
-  background: #64adf7;
+  background: #007c27;
   color: white;
-  box-shadow: 0 2px 6px rgba(0, 127, 255, 0.3);
+  box-shadow: 0 2px 6px  rgba(126, 180, 143, 0.757);;
 }
 
 .posts-container {
@@ -545,7 +545,7 @@ const handleComment = (postId: number) => {
 .load-more {
   text-align: center;
   padding: 20px;
-  color: #007fff;
+  color: #007c27;
   cursor: pointer;
   background: white;
   border-radius: 8px;
@@ -553,7 +553,7 @@ const handleComment = (postId: number) => {
 }
 
 .load-more:hover {
-  background: #f0f8ff;
+  background: #f0fff6;
 }
 
 .empty-state {
