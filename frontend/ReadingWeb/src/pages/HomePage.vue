@@ -9,7 +9,6 @@ import { onMounted } from 'vue'
 import axios from 'axios'
 import Footer from '@/components/layout/Footer.vue'
 
-
 /*onMounted(async () => {
   try {
     const res = await axios.get('http://localhost:3000/api/home')
@@ -35,32 +34,16 @@ import Footer from '@/components/layout/Footer.vue'
       </div>
       <div class="book-rank">
         <!-- 周榜 -->
-        <BookRankList
-          ranktitle="周榜"
-          desc="最近一周热读书籍"
-          tabId="weekly"
-        />
+        <BookRankList ranktitle="周榜" desc="最近一周热读书籍" tabId="weekly" />
 
         <!-- 月榜 -->
-        <BookRankList
-          ranktitle="月榜"
-          desc="最近一月热读书籍"
-          tabId="monthly"
-        />
+        <BookRankList ranktitle="月榜" desc="最近一月热读书籍" tabId="monthly" />
 
         <!-- 新书榜 -->
-        <BookRankList
-          ranktitle="新书榜"
-          desc="最新上架书籍"
-          tabId="new"
-        />
+        <BookRankList ranktitle="新书榜" desc="最新上架书籍" tabId="new" />
 
-<!-- 神作榜 -->
-<BookRankList
-  ranktitle="神作榜"
-  desc="经典神作书籍"
-  tabId="masterpiece"
-/>
+        <!-- 神作榜 -->
+        <BookRankList ranktitle="神作榜" desc="经典神作书籍" tabId="masterpiece" />
       </div>
     </div>
     <BackToTop />

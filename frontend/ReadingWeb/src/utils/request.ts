@@ -1,7 +1,8 @@
+//src/utils/request.ts
 import axios from 'axios'
 
 const service = axios.create({
-  baseURL: 'http://localhost:3000/api', // 接口文档 servers.url
+  baseURL: 'http://127.0.0.1:4523/m1/7570184-7307845-default', // 接口文档 servers.url
   timeout: 5000,
 })
 

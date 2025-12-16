@@ -1,11 +1,7 @@
 <template>
   <div class="recent-read">
     <div class="cover-list">
-      <div
-        v-for="book in recentBooks"
-        :key="book.id"
-        class="cover-item"
-      >
+      <div v-for="book in recentBooks" :key="book.id" class="cover-item">
         <img :src="book.cover" :alt="book.title" class="cover-img" />
       </div>
     </div>

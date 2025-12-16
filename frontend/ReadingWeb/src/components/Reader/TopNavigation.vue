@@ -2,8 +2,14 @@
   <header :class="['top-bar', isDarkMode ? 'dark' : '']">
     <div class="nav-left">
       <div class="logo-container">
-        <BookOpen :size="18" />
-        <span>{{ title }}</span>
+        <router-link
+          :to="bookId ? `/bookdetail/${bookId}` : '/bookdetail'"
+          target="_blank"
+          class="logo-link"
+        >
+          <BookOpen :size="18" />
+          <span class="title-text">{{ title }}</span>
+        </router-link>
       </div>
 
       <!-- 修改区域：绑定点击事件，动态绑定 class 和内容 -->
@@ -48,16 +54,14 @@ import { useUserStore } from '@/stores/user'
 interface Props {
   title: string
   isDarkMode: boolean
-  // 可选：实际开发中可能需要传入 bookId
-  // bookId?: string
+  bookId?: string
 }
-
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  title: 'Vue 组件设计指南与精品开发',
+  bookId: '',
+})
 
 const userStore = useUserStore()
-// 测试数据
-userStore.login('TestUser', 'https://picsum.photos/id/1027/200')
-
 // --- 书架功能逻辑 ---
 // 状态：是否已在书架（实际项目中这里应该根据 API 返回的初始化数据来设定）
 const isAdded = ref(false)
@@ -124,6 +128,19 @@ const handleToggleLibrary = async () => {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+}
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.logo-link:hover .title-text {
+  text-decoration: underline;
 }
 
 /* --- 按钮基础样式 --- */

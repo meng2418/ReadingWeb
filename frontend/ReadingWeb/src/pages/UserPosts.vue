@@ -209,7 +209,8 @@ import UserList from '@/components/userposts/UserList.vue'
 import type { Post } from '@/types/post'
 import type { FollowUser } from '@/types/user'
 import type { ReviewCardItem, RatingConfig } from '@/types/review'
-
+import { useTitle } from '@/stores/useTitle'
+import { getPosts } from '@/api/userPosts'
 const props = defineProps<{ id?: string }>()
 const route = useRoute()
 
@@ -257,39 +258,17 @@ const totalComments = computed(() => {
 })
 
 // 用户发布的帖子数据
-const userPosts = ref<Post[]>([
-  {
-    id: 1,
-    username: props.id ? `用户${props.id}` : '当前用户',
-    avatar: `https://picsum.photos/100?random=${props.id || 1}`,
-    postTime: '2小时前',
-    title: '《百年孤独》读后感',
-    content: '刚刚读完马尔克斯的《百年孤独》，这本书真的是一种奇妙的阅读体验...',
-    likeCount: 128,
-    commentCount: 23,
-    isFollowing: false,
-    isLiked: false,
-    book: {
-      id: 101,
-      title: '百年孤独',
-      author: '加西亚·马尔克斯',
-      cover: 'https://picsum.photos/100/150?random=1',
-    },
-  },
-  {
-    id: 2,
-    username: props.id ? `用户${props.id}` : '当前用户',
-    avatar: `https://picsum.photos/100?random=${props.id || 1}`,
-    postTime: '1天前',
-    title: '推荐几本好书',
-    content: '最近读了几本很不错的小说，推荐给大家...',
-    likeCount: 89,
-    commentCount: 15,
-    isFollowing: false,
-    isLiked: true,
-    book: null,
-  },
-])
+const userPosts = ref<Post[]>([])
+onMounted(async () => {
+  window.scrollTo(0, 0)
+  const tabParam = route.query.tab as string
+  if (tabParam && ['posts', 'following', 'followers', 'thoughts', 'reviews'].includes(tabParam)) {
+    currentTab.value = tabParam
+  }
+  const res = await getPosts()
+  userPosts.value = res.list
+  userStats.value.postCount = res.total
+})
 
 // 想法数据
 const thoughts = ref([
@@ -536,6 +515,21 @@ watch(
     }
   },
 )
+
+const tabTitleMap: Record<string, string> = {
+  posts: '我的发布',
+  following: '我的关注',
+  followers: '我的粉丝',
+  thoughts: '我的想法',
+  reviews: '我的书评',
+}
+
+const pageTitle = computed(() => {
+  const tabTitle = tabTitleMap[currentTab.value] || '个人中心'
+  return `微信读书 - ${tabTitle}`
+})
+
+useTitle(pageTitle)
 </script>
 
 <style scoped>
