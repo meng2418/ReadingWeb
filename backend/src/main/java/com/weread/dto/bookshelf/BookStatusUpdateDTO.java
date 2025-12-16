@@ -5,22 +5,26 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * ¸üĞÂÊé¼®ÔÄ¶Á×´Ì¬µÄÇëÇó²ÎÊı
+ * DTO for updating a book's reading status.
  */
 @Data
 public class BookStatusUpdateDTO {
 
     /**
-     * Êé¼®ID£¨±Ø´«£©
+     * Book ID (required).
      */
-    @NotNull(message = "Êé¼®ID²»ÄÜÎª¿Õ")
+    @NotNull(message = "å›¾ä¹¦IDä¸èƒ½ä¸ºç©º")
     private Integer bookId;
 
     /**
-     * ĞÂµÄÔÄ¶Á×´Ì¬£¨±Ø´«£©
-     * ÔÊĞíÖµ£ºreading£¨ÔÄ¶ÁÖĞ£©¡¢unread£¨Î´¶Á£©¡¢finished£¨ÒÑÍê³É£©
+     * New reading status (required).
+     * Allowed values: "reading", "unread", "finished".
      */
-    @NotBlank(message = "ÔÄ¶Á×´Ì¬²»ÄÜÎª¿Õ")
+    @NotBlank(message = "é˜…è¯»çŠ¶æ€ä¸èƒ½ä¸ºç©º")
     private String status;
-    private String lastReadAt; // ×îºóÔÄ¶ÁÊ±¼ä£¨¸ñÊ½£ºyyyy-MM-dd HH:mm:ss£©
+    
+    /**
+     * Time of last read (format: yyyy-MM-dd HH:mm:ss).
+     */
+    private String lastReadAt; 
 }

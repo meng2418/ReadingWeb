@@ -4,34 +4,34 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 /**
- * 作者实体类（对应数据库表 author_info）
+ * Author Entity (corresponds to the 'author_info' table in the database).
  */
 @Data
 @Entity
-@Table(name = "author_info") // 映射数据库表名
+@Table(name = "author_info") // Maps to the database table name
 public class AuthorEntity {
 
     /**
-     * 作者ID（主键，自增）
+     * Author ID (Primary Key, Auto Increment).
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // 自增策略，对应 @default(autoincrement())
-    private Integer authorId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment strategy
+    private Long authorId;
 
     /**
-     * 作者姓名（唯一）
+     * Author's name (Unique, Not Null).
      */
-    @Column(unique = true, nullable = false) // 对应 @unique，非空
+    @Column(unique = true, nullable = false) // Unique and not null constraint
     private String name;
 
     /**
-     * 作者简介（长文本，可选）
+     * Author's biography (Optional, supports long text).
      */
-    @Column(columnDefinition = "TEXT") // 对应 @db.Text，支持长文本
+    @Column(columnDefinition = "TEXT") // Supports long text content
     private String bio;
 
     /**
-     * 作者头像（可选，存储图片URL）
+     * Author's avatar (Optional, stores the image URL).
      */
     private String avatar;
 

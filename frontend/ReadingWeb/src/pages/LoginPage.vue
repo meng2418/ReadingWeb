@@ -1,3 +1,4 @@
+<!-- LoginPage.vue -->
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -14,38 +15,29 @@ const isSignUp = ref(false)
 // 登录表单字段
 const isCaptchaLogin = ref(false)
 const phone = ref('')
-const username = ref('') // 你原本缺了 username 声明
 const password = ref('')
 const code = ref('')
+
+// 注册表单字段
+const signUpUsername = ref('')
+const signUpPhone = ref('')
+const signUpPassword = ref('')
+const signUpConfirmPassword = ref('')
+const signUpCode = ref('')
 
 // 根据路由参数决定显示登录或注册界面
 watchEffect(() => {
   isSignUp.value = route.query.mode === 'signup'
 })
 
-// 点击 “注册” 按钮
+// 点击 "注册" 按钮
 function handleSignUp() {
   isSignUp.value = true
 }
 
-// 点击 “登录” 按钮（异步函数）
-async function handleLogin() {
-  try {
-    const res = await axios.post('/api/login', {
-      username: username.value,
-      password: password.value,
-    })
-
-    userStore.login({
-      token: res.data.token,
-      userInfo: res.data.user, // { name, avatar }
-    })
-
-    router.push('/')
-  } catch (err) {
-    console.error(err)
-    window.alert('登录失败，请检查用户名或密码')
-  }
+// 点击 "登录" 按钮（异步函数）
+function handleLogin() {
+  isSignUp.value = false
 }
 
 // 切换验证码 / 密码登录
@@ -56,13 +48,22 @@ function toggleCaptchaLogin() {
   code.value = ''
 }
 
-// 发送验证码（示例）
+// 发送验证码（登录）
 function sendCode() {
   if (!phone.value || phone.value.trim().length < 6) {
-    window.alert('请输入有效的手机号')
+    globalThis.alert('请输入有效的手机号')
     return
   }
-  window.alert(`已向 ${phone.value} 发送验证码（模拟）`)
+  globalThis.alert(`已向 ${phone.value} 发送验证码（模拟）`)
+}
+
+// 发送验证码（注册）
+function sendSignUpCode() {
+  if (!signUpPhone.value || signUpPhone.value.trim().length < 6) {
+    globalThis.alert('请输入有效的手机号')
+    return
+  }
+  globalThis.alert(`已向 ${signUpPhone.value} 发送验证码（模拟）`)
 }
 
 // 忘记密码跳转
@@ -97,16 +98,16 @@ function goForgetPassword() {
         :class="isSignUp ? 'bounceLeft' : 'bounceRight'"
         id="user_options-forms"
       >
+        <!-- 登录表单 -->
         <div class="user_forms-login">
           <h2 class="forms_title">登录</h2>
           <form class="forms_form">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
-                <!-- 根据 isCaptchaLogin 切换输入类型 / 占位 -->
                 <input
                   v-model="phone"
-                  :type="isCaptchaLogin ? 'tel' : 'email'"
-                  :placeholder="isCaptchaLogin ? '手机号码' : '邮箱/手机号码'"
+                  type="tel"
+                  placeholder="手机号码"
                   class="forms_field-input"
                   required
                   autofocus
@@ -156,26 +157,77 @@ function goForgetPassword() {
             </div>
           </form>
         </div>
+
+        <!-- 注册表单 -->
         <div class="user_forms-signup">
           <h2 class="forms_title">注册</h2>
           <form class="forms_form">
             <fieldset class="forms_fieldset">
+              <!-- 用户名 -->
               <div class="forms_field">
-                <input type="username" placeholder="用户名" class="forms_field-input" required />
+                <input
+                  v-model="signUpUsername"
+                  type="text"
+                  placeholder="用户名"
+                  class="forms_field-input"
+                  required
+                />
               </div>
+
+              <!-- 手机号码 -->
               <div class="forms_field">
-                <input type="text" placeholder="昵称" class="forms_field-input" required />
+                <input
+                  v-model="signUpPhone"
+                  type="tel"
+                  placeholder="手机号码"
+                  class="forms_field-input"
+                  required
+                />
               </div>
-              <div class="forms_field">
-                <input type="email" placeholder="手机号码" class="forms_field-input" required />
+
+              <!-- 验证码 -->
+              <div class="forms_field" style="display: flex; align-items: center; gap: 8px">
+                <input
+                  v-model="signUpCode"
+                  type="text"
+                  placeholder="验证码"
+                  class="forms_field-input"
+                  required
+                  style="flex: 1"
+                />
+                <button
+                  type="button"
+                  class="forms_buttons-action"
+                  @click="sendSignUpCode"
+                  style="padding: 6px 12px"
+                >
+                  发送验证码
+                </button>
               </div>
+
+              <!-- 密码 -->
               <div class="forms_field">
-                <input type="email" placeholder="邮箱" class="forms_field-input" required />
+                <input
+                  v-model="signUpPassword"
+                  type="password"
+                  placeholder="密码"
+                  class="forms_field-input"
+                  required
+                />
               </div>
+
+              <!-- 确认密码 -->
               <div class="forms_field">
-                <input type="password" placeholder="密码" class="forms_field-input" required />
+                <input
+                  v-model="signUpConfirmPassword"
+                  type="password"
+                  placeholder="确认密码"
+                  class="forms_field-input"
+                  required
+                />
               </div>
             </fieldset>
+
             <div class="forms_buttons">
               <input type="submit" value="注册" class="forms_buttons-action" />
             </div>

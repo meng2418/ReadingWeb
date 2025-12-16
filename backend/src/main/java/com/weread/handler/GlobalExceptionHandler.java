@@ -9,41 +9,41 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * 全局异常处理器（放在handler层）
- * 统一捕获并处理Controller层抛出的所有异常
+ * Global Exception Handler (Centralized exception handling using @ControllerAdvice).
+ * Unifies the response format and handles exceptions thrown by Controllers.
  */
-@RestControllerAdvice // 作用于所有@RestController注解的类
+@RestControllerAdvice // Applies to all @RestController annotated classes
 public class GlobalExceptionHandler {
 
     /**
-     * 处理业务异常（如"书籍已在书架中"、"书籍不存在"等自定义异常）
+     * Handles business exceptions (e.g., "Book already exists", "Book not found").
      */
     @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST) // 返回400状态码
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // Returns 400 Bad Request
     public Result<Void> handleBusinessException(RuntimeException e) {
         return Result.fail(e.getMessage());
     }
 
     /**
-     * 处理参数校验异常（如@NotNull、@NotEmpty等注解校验失败）
+     * Handles validation exceptions (e.g., failed @NotNull, @NotEmpty checks).
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST) // 返回400状态码
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // Returns 400 Bad Request
     public Result<Void> handleValidationException(MethodArgumentNotValidException e) {
-        // 提取校验失败的字段和错误信息（例如"bookId不能为空"）
+        // Retrieve the first validation failure field and message
         FieldError fieldError = e.getBindingResult().getFieldError();
-        String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "参数校验失败";
+        String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "鍙傛暟鏍￠獙澶辫触";
         return Result.fail(errorMessage);
     }
 
     /**
-     * 处理系统异常（如数据库连接失败、空指针等未捕获的异常）
+     * Handles system exceptions (e.g., database connection failure, unhandled exceptions).
      */
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // 返回500状态码
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // Returns 500 Internal Server Error
     public Result<Void> handleSystemException(Exception e) {
-        // 生产环境建议记录日志（e.printStackTrace()仅用于开发调试）
-        e.printStackTrace();
-        return Result.fail("系统繁忙，请稍后再试");
+        // Log the detailed stack trace for debugging
+        e.printStackTrace(); 
+        return Result.fail("绯荤粺绻佸繖锛岃绋嶅悗閲嶈瘯");
     }
 }

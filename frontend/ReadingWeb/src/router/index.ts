@@ -1,4 +1,7 @@
+// router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import HomePage from '../pages/HomePage.vue'
 import BookshelfPage from '../pages/BookShelfPage.vue'
 import LoginPage from '../pages/LoginPage.vue'
@@ -11,7 +14,10 @@ import Profile from '@/pages/Profile.vue'
 import TopicDetail from '@/pages/TopicDetail.vue'
 import UserPosts from '@/pages/UserPosts.vue'
 import ReaderPage from '@/pages/ReaderPage.vue'
+import WriteReview from '@/pages/WriteReview.vue'
 import AllReadingNotes from '@/pages/AllReadingNotes.vue'
+import AuthorDetail from '@/pages/AuthorDetail.vue'
+import SearchResultsPage from '@/pages/SearchResultsPage.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -19,74 +25,162 @@ const router = createRouter({
       path: '/',
       name: 'Home',
       component: HomePage,
+      meta: { title: '微信读书 - 首页' },
     },
     {
       path: '/login',
       name: 'Login',
       component: LoginPage,
+      meta: { title: '微信读书 - 登录' },
     },
     {
       path: '/bookshelf',
       name: 'Bookshelf',
       component: BookshelfPage,
+      meta: { requiresAuth: true, title: '微信读书 - 书架' }, // 需要登录
     },
     {
       path: '/community',
       name: 'Community',
       component: CommunityPage,
+      meta: { requiresAuth: true }, // 需要登录
     },
     {
       path: '/forget-password',
       name: 'ForgetPassword',
       component: ForgetPassword,
+      meta: { title: '微信读书 - 忘记密码' },
     },
     {
       path: '/category',
       name: 'Category',
       component: CategoryPage,
+      meta: { title: '微信读书 - 分类' },
     },
-
     {
-      path: '/bookdetail/:id?', // 修改：添加动态参数，?表示可选
+      path: '/bookdetail/:id?',
       name: 'BookDetail',
       component: BookDetail,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
+      meta: { title: '微信读书 - 书籍详情' },
     },
     {
-      path: '/postdetail/:id?', // 修改：添加动态参数，?表示可选
+      path: '/postdetail/:id?',
       name: 'PostDetail',
       component: PostDetailPage,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
     {
       path: '/profile',
       name: 'Profile',
       component: Profile,
+      meta: { requiresAuth: true }, // 需要登录
     },
     {
-      path: '/topicdetail/:id?', // 修改：添加动态参数，?表示可选
+      path: '/topicdetail/:id?',
       name: 'TopicDetail',
       component: TopicDetail,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
     {
-      path: '/userposts/:id?', // 修改：添加动态参数，?表示可选
+      path: '/userposts/:id?',
       name: 'UserPosts',
       component: UserPosts,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
     },
     {
-      path: '/reader/:id?', // 修改：添加动态参数，?表示可选
+      path: '/reader/:id?',
       name: 'ReaderPage',
       component: ReaderPage,
-      props: true, // 重要：将路由参数作为 props 传递
+      props: true,
+    },
+    {
+      path: '/writereview/:id?',
+      name: 'WriteReview',
+      component: WriteReview,
+      props: true,
+      meta: { requiresAuth: true, title: '书评编辑' }, // 需要登录
     },
     {
       path: '/allreadingnotes',
       name: 'AllReadingNotes',
       component: AllReadingNotes,
+      meta: { title: '微信读书 - 全部划线' },
+    },
+    {
+      path: '/authordetail/:id',
+      name: 'AuthorDetail',
+      component: AuthorDetail,
+      props: true, // 将路由参数作为props传递
+    },
+    {
+      path: '/search',
+      name: 'SearchResult', // 路由名称
+      component: SearchResultsPage, // 关联到 SearchResultPage 组件
+      props: (route) => ({
+        // 通过 props 传递 query 参数 q (搜索关键词) 给组件
+        searchQuery: route.query.q,
+      }),
     },
   ],
+})
+
+// 路由守卫：登录拦截
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.title) {
+    document.title = to.meta.title
+  }
+  next()
+  // 获取用户状态
+  const userStore = useUserStore()
+
+  // 恢复会话（如果是刷新页面）
+  if (!userStore.token) {
+    userStore.restoreSession()
+  }
+
+  // 调试信息
+  console.log(`路由跳转: ${from.path} -> ${to.path}`)
+  console.log(`需要登录吗: ${to.meta.requiresAuth}`)
+  console.log(`用户登录状态: ${userStore.isLoggedIn}`)
+
+  // 检查目标路由是否需要登录
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+
+  // 如果需要登录但用户未登录
+  if (requiresAuth && !userStore.isLoggedIn) {
+    try {
+      // 显示Element Plus的确认对话框
+      await ElMessageBox.confirm('当前未登录，请先登录以继续操作', '登录提示', {
+        confirmButtonText: '立即登录',
+        cancelButtonText: '取消',
+        type: 'warning',
+        showClose: false,
+        closeOnClickModal: false,
+        closeOnPressEscape: false,
+      })
+
+      // 用户点击了"立即登录"
+      // 跳转到登录页面，并携带当前想去的页面路径
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath },
+      })
+    } catch (error) {
+      // 用户点击了"取消"
+      // 记录异常信息
+      console.warn('登录提示对话框被取消', error)
+      // 返回首页或上一页
+      if (from.path === '/') {
+        next('/')
+      } else {
+        next(from.path)
+      }
+    }
+  } else {
+    // 不需要登录或已登录，正常放行
+    next()
+  }
 })
 
 export default router

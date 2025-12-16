@@ -3,7 +3,7 @@
     <!-- 用户信息 -->
     <div class="post-header">
       <div class="avatar-container">
-        <img v-if="avatar" :src="avatar" class="avatar-img" />
+        <img v-if="avatar" :src="avatar" class="avatar-img" :alt="`${username}的头像`" />
         <div v-else class="avatar-placeholder">{{ username.charAt(0) }}</div>
       </div>
 
@@ -70,27 +70,12 @@ import { ref, computed } from 'vue'
 import { Comment } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
 import { Heart } from 'lucide-vue-next'
+import type { Post, PostBookSummary, PostCardEmits } from '@/types/post'
 
-interface Book {
-  id: number
-  cover: string
-  title: string
-  author: string
-}
-
-interface Props {
-  username: string
-  avatar?: string
-  postTime: string
-  title?: string
-  content: string
-  likeCount: number
-  commentCount: number
-  isFollowing: boolean
-  isLiked: boolean
-  book?: Book | null
+interface Props extends Post {
   postId?: number // 补充postId类型定义，修复跳转TS警告
-  showFollowButton?: boolean  // 新增：控制是否显示关注按钮
+  showFollowButton?: boolean // 新增：控制是否显示关注按钮
+  book?: PostBookSummary | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -98,14 +83,10 @@ const props = withDefaults(defineProps<Props>(), {
   title: undefined,
   book: null,
   postId: undefined,
-  showFollowButton: true  // 默认显示关注按钮
+  showFollowButton: true, // 默认显示关注按钮
 })
 
-const emit = defineEmits<{
-  'follow-change': [isFollowing: boolean]
-  like: [likeCount: number, isLiked: boolean]
-  comment: []
-}>()
+const emit = defineEmits<PostCardEmits>()
 
 const showFull = ref<boolean>(false)
 const maxChars = 120 // 控制显示多少字
@@ -140,8 +121,8 @@ const handleLike = (): void => {
 // 其他操作事件保持不变
 const commentPost = (): void => {
   emit('comment')
+  router.push('/postdetail')
 }
-
 
 const toggleExpand = (): void => {
   showFull.value = !showFull.value
@@ -149,11 +130,9 @@ const toggleExpand = (): void => {
 
 // 点击卡片跳转：修复postId判断逻辑
 const handleCardClick = () => {
-  if (props.postId) {
-    router.push(`/bookdetail/${props.postId}`)
-  } else {
-    router.push('/postdetail')
-  }
+  const url = '/postdetail'
+  // 在新标签页打开
+  window.open(url, '_blank')
 }
 </script>
 
@@ -280,8 +259,6 @@ const handleCardClick = () => {
   padding-top: 10px;
   gap: 250px; /* 控制两个按钮之间的距离 */
 }
-
-
 
 .action-item {
   display: flex;

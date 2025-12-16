@@ -4,62 +4,54 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
-import com.weread.entity.user.UserEntity;
+import com.weread.entity.user.UserEntity; 
 
 /**
- * ���ʵ���ࣨ��Ӧ���ݿ�� bookshelf_info��
- * ���ڼ�¼�û����鼮�Ĺ�����ϵ�������Ķ�״̬��ʱ�����Ϣ
+ * 书架实体类（对应数据库 bookshelf_info）
  */
 @Data
 @Entity
 @Table(name = "bookshelf_info",
-        // ΨһԼ����ͬһ�û������ظ�����ͬһ���飨ƥ�����ݿ�� @@unique([userId, bookId])��
-        uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "book_id" }))
+    // 唯一约束：同一用户不能重复添加同一本书
+    uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "book_id" }))
 public class BookshelfEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "bookshelfid")
-    private Integer bookshelfId; // ��ܼ�¼ID��������������
+    @Column(name = "bookshelf_id")
+    private Integer bookshelfId; // 主键：保持 Integer
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId; // �����û�ID�������
+    private Long userId; // 核心修正：必须是 Long，引用 UserEntity
 
     @Column(name = "book_id", nullable = false)
-    private Integer bookId; // �����鼮ID�������
+    private Integer bookId; // 外键：保持 Integer，引用 BookEntity
 
     @Column(nullable = false)
-    private String status; // �Ķ�״̬��reading���Ķ��У���unread��δ������finished������ɣ���Ĭ��reading
+    private String status; // 阅读状态：reading, unread, finished，默认 reading
 
     @Column(name = "added_at", nullable = false, updatable = false)
-    private LocalDateTime addedAt; // ���ӵ���ܵ�ʱ�䣬Ĭ�ϵ�ǰʱ��
+    private LocalDateTime addedAt; // 添加到书架的时间
 
     @Column(name = "last_read_at")
-    private LocalDateTime lastReadAt; // ����Ķ�ʱ�䣬��Ϊnull
+    private LocalDateTime lastReadAt; // 最后阅读时间
 
-    // ������ϵ���������ӣ����������أ�
-    /**
-     * ���û����Ĺ��������һ�������ܼ�¼����һ���û���
-     */
+    // 关联关系：
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private UserEntity user; // �������û�ʵ��
+    private UserEntity user; // 关联用户实体
 
-    /**
-     * ���鼮���Ĺ��������һ�������ܼ�¼����ͬһ���飩
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id", insertable = false, updatable = false)
-    private BookEntity book; // �������鼮ʵ��
+    private BookEntity book; // 关联书籍实体
 
-    // �Զ����Ĭ��ֵ
+    // 自动设置默认值
     @PrePersist
     protected void onCreate() {
-        // ��������ʱ��Ϊ��ǰʱ�䣨��δ�ֶ����ã�
         if (addedAt == null) {
             addedAt = LocalDateTime.now();
         }
-        // ����Ĭ���Ķ�״̬Ϊreading
         if (status == null || status.trim().isEmpty()) {
             status = "reading";
         }

@@ -3,14 +3,14 @@ package com.weread.dto.bookshelf;
 import lombok.Data;
 
 /**
- * 查询书架书籍的请求参数（仅支持状态筛选，无分页）
+ * DTO for querying the bookshelf list (supports status filtering, no pagination).
  */
 @Data
 public class BookshelfQueryDTO {
 
     /**
-     * 按阅读状态筛选（可选，不传则查询所有状态）
-     * 允许值：reading、unread、finished
+     * Reading status filter (optional, if null, queries all statuses).
+     * Allowed values: "reading", "unread", "finished"
      */
     private String status;
 }

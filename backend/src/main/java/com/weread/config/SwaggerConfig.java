@@ -8,16 +8,12 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Swagger/OpenAPI 配置类
- * 用于生成交互式接口文档，兼容现有安全、缓存等配置
- */
 @Configuration
 public class SwaggerConfig {
 
     @Bean
     public OpenAPI weReadOpenAPI() {
-        // 1. 配置 JWT 认证（与 SecurityConfig 中的认证逻辑对齐）
+        // 1. Configure JWT Security Scheme
         SecurityScheme securityScheme = new SecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
@@ -26,16 +22,16 @@ public class SwaggerConfig {
 
         SecurityRequirement securityRequirement = new SecurityRequirement().addList("bearerAuth");
 
-        // 2. 配置文档基本信息
+        // 2. Configure API Meta Information
         Info info = new Info()
-                .title("微信读书网页版 API")
+                .title("WeRead Backend API")
                 .version("1.0.0")
-                .description("微信读书网页版完整接口文档，包含认证、书架、书籍、阅读器等模块")
+                .description("API documentation for the WeRead backend system.")
                 .contact(new Contact()
-                        .name("开发团队")
+                        .name("WeRead Dev Team")
                         .email("dev@example.com"));
 
-        // 3. 组装 OpenAPI 配置
+        // 3. Assemble OpenAPI Configuration
         return new OpenAPI()
                 .info(info)
                 .addSecurityItem(securityRequirement)

@@ -1,6 +1,25 @@
-<!--书架里的书籍卡片-->
 <template>
-  <div class="book-card" @click="goToBookDetail">
+  <!-- 使用 <a> 标签包裹整个卡片 -->
+  <a
+    v-if="!disableJump"
+    :href="bookId ? `/bookdetail/${bookId}` : '/bookdetail'"
+    target="_blank"
+    class="book-card-link"
+  >
+    <div class="book-card">
+      <div class="book-cover-container">
+        <img :src="cover" alt="book cover" class="book-cover" />
+        <!-- 读完标签 -->
+        <div v-if="isRead && !disableJump" class="read-tag">读完</div>
+      </div>
+      <div class="book-info">
+        <h3 class="book-title">{{ title }}</h3>
+      </div>
+    </div>
+  </a>
+
+  <!-- 如果禁用跳转，只显示卡片，不包裹链接 -->
+  <div v-else class="book-card" :class="{ 'no-link': disableJump }">
     <div class="book-cover-container">
       <img :src="cover" alt="book cover" class="book-cover" />
       <!-- 读完标签 -->
@@ -13,49 +32,43 @@
 </template>
 
 <script setup lang="ts">
-// 导入 useRouter
-import { useRouter } from 'vue-router'
-
-// 初始化 router
-const router = useRouter()
-
-// 定义 props - 添加 bookId 用于跳转
+// 定义 props
 interface Props {
   cover?: string
   title?: string
   isRead?: boolean
-  bookId?: string | number // 新增：书籍ID，用于路由跳转
-  disableJump?: boolean // 新增：禁用跳转prop
+  bookId?: string | number
+  disableJump?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   cover: 'https://picsum.photos/200/300?grayscale',
   title: 'Vue 组件设计指南与精品开发',
   isRead: true,
-  bookId: '', // 默认值
-  disableJump: false, // 默认不禁用
+  bookId: '',
+  disableJump: false,
 })
-
-// 跳转到书籍详情页
-const goToBookDetail = (): void => {
-  // 关键：如果disableJump为true，不执行跳转
-  if (props.disableJump) return
-  if (props.bookId) {
-    // 使用书籍ID跳转到对应详情页
-    router.push(`/bookdetail/${props.bookId}`)
-  } else {
-    // 如果没有bookId，跳转到默认详情页（备用方案）
-    router.push('/bookdetail')
-  }
-}
 </script>
 
 <style scoped>
+/* 链接样式 */
+.book-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+}
+
+/* 卡片基础样式 */
 .book-card {
   width: 150px;
   overflow: hidden;
   text-align: left;
   cursor: pointer;
+}
+
+/* 禁用跳转时的卡片样式 */
+.book-card.no-link {
+  cursor: default;
 }
 
 .book-cover-container {
@@ -97,7 +110,8 @@ const goToBookDetail = (): void => {
   text-overflow: ellipsis;
 }
 
-.book-title:hover {
+/* 只有在可点击的情况下才显示悬停效果 */
+.book-card-link .book-title:hover {
   color: #000;
 }
 </style>

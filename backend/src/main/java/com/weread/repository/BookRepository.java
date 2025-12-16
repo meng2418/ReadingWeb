@@ -6,19 +6,19 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * 书籍数据访问接口
+ * Book Data Access Interface.
  */
 @Repository
 public interface BookRepository extends JpaRepository<BookEntity, Integer> {
 
     /**
-     * 根据书籍ID查询书籍
-     * （书架模块核心方法：添加/查询书籍时需验证书籍是否存在）
+     * Finds a book by its Book ID.
+     * This method can be used to validate if a book exists when adding/querying a book.
      */
     Optional<BookEntity> findByBookId(Integer bookId);
 
     /**
-     * 根据ISBN查询书籍（用于校验书籍唯一性）
+     * Finds a book by its ISBN (used for unique validation).
      */
     Optional<BookEntity> findByIsbn(String isbn);
 }

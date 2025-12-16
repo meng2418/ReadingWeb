@@ -5,62 +5,67 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * Êé¼®ÊµÌåÀà£¨¶ÔÓ¦Êı¾İ¿â±í book_info£©
+ * Book Entity (corresponds to the 'book_info' table in the database).
  */
 @Data
 @Entity
-@Table(name = "book_info") // ÓëÊı¾İ¿â±íÃû±£³ÖÒ»ÖÂ
+@Table(name = "book_info") 
 public class BookEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // ×ÔÔöÖ÷¼ü
-    @Column(name = "book_id") // Ó³ÉäÊı¾İ¿â×Ö¶Î bookId
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+    @Column(name = "book_id") 
     private Integer bookId;
 
-    @Column(nullable = false) // ·Ç¿Õ×Ö¶Î
-    private String title; // Êé¼®±êÌâ
+    @Column(nullable = false) 
+    private String title; 
 
-    @Column(name = "author_id", nullable = false) // Íâ¼ü×Ö¶Î£¬¹ØÁª×÷Õß±í
-    private Integer authorId;
+    // å¤–é”®å­—æ®µï¼Œç”¨äºæ•°æ®æ’å…¥å’Œæ›´æ–°
+    @Column(name = "author_id", nullable = false) 
+    private Long authorId;
+    
+    // JPA å…³è”ï¼šåªç”¨äºæŸ¥è¯¢ï¼Œä¸å‚ä¸æ’å…¥/æ›´æ–°
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", insertable = false, updatable = false) 
+    private AuthorEntity author; // å…³è”ä½œè€…å®ä½“
 
-    private String cover; // ·âÃæÍ¼Æ¬£¨ÔÊĞíÎªnull£©
+    private String cover; 
 
-    @Column(columnDefinition = "TEXT") // ³¤ÎÄ±¾ÀàĞÍ£¬¶ÔÓ¦Êı¾İ¿âµÄ@db.Text
-    private String description; // Êé¼®¼ò½é£¨ÔÊĞíÎªnull£©
+    @Column(columnDefinition = "TEXT") 
+    private String description; 
 
-    @Column(name = "category_id", nullable = false) // Íâ¼ü×Ö¶Î£¬¹ØÁª·ÖÀà±í
+    @Column(name = "category_id", nullable = false) 
     private Integer categoryId;
 
-    private String publisher; // ³ö°æÉç£¨ÔÊĞíÎªnull£©
+    private String publisher; 
 
     @Column(name = "publish_date")
-    private LocalDateTime publishDate; // ³ö°æÈÕÆÚ£¨ÔÊĞíÎªnull£©
+    private LocalDateTime publishDate; 
 
-    private String isbn; // ISBN±àºÅ£¨ÔÊĞíÎªnull£©
+    private String isbn; 
 
     @Column(name = "word_count")
-    private Integer wordCount; // ×ÖÊı
+    private Integer wordCount; 
 
-    private Integer price; // Êé±Ò¼Û¸ñ£¬Ä¬ÈÏ0
+    private Integer price; 
 
     @Column(name = "is_free")
-    private Boolean isFree; // ÊÇ·ñÃâ·Ñ£¬Ä¬ÈÏfalse
+    private Boolean isFree; 
 
-    private Float rating; // ÍÆ¼öÖµ£¬Ä¬ÈÏ0
+    private Float rating; 
 
     @Column(name = "read_count")
-    private Integer readCount; // ÔÄ¶ÁÈËÊı£¬Ä¬ÈÏ0
+    private Integer readCount; 
 
-    @Column(name = "created_at", updatable = false) // ²»ÔÊĞí¸üĞÂ
-    private LocalDateTime createdAt; // ´´½¨Ê±¼ä£¬Ä¬ÈÏµ±Ç°Ê±¼ä
+    @Column(name = "created_at", updatable = false) 
+    private LocalDateTime createdAt; 
 
-    // ×Ô¶¯Ìî³ä´´½¨Ê±¼ä£¨Èç¹ûÊı¾İ¿âÎ´ÉèÖÃÄ¬ÈÏÖµ£©
+    // Custom logic to set creation time and default values if not set by the database
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        // ³õÊ¼»¯Ä¬ÈÏÖµ£¨Èç¹ûÊı¾İ¿âÎ´ÉèÖÃÄ¬ÈÏÖµ£©
         if (price == null) {
             price = 0;
         }

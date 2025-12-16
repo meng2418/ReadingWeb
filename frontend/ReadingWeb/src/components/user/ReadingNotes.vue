@@ -3,7 +3,7 @@
 <template>
   <div class="notes-card">
     <div class="card-header">
-      <h3 class="card-title">我的笔记</h3>
+      <h3 class="card-title">我的划线</h3>
       <span class="view-all" @click="goToAllNotes"
         >查看全部 <ArrowRight class="icon-inline"
       /></span>

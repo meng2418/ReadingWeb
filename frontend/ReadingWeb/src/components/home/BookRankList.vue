@@ -33,30 +33,26 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useBookNavigation } from '@/composables/useBookNavigation'
+import type { BookListItem } from '@/types/book'
 
 const router = useRouter()
-
-// 定义书籍接口
-interface Book {
-  id?: number | string
-  cover: string
-  title: string
-  author: string
-  recommend: string
-}
+const { openBookDetail } = useBookNavigation()
 
 // 定义组件 Props 接口
 interface Props {
   ranktitle?: string
   desc?: string
-  books?: Book[]
-  tabId?: string // 新增：用于指定跳转到哪个榜单
+  books?: BookListItem[]
+  tabId?: string // 用于指定跳转到哪个榜单
+  openInNewTab?: boolean // 新增：是否在新标签页打开
 }
 // 使用解构，直接在解构中定义默认值
 const {
   ranktitle,
   desc = '最近一周热读书籍', // 直接赋值默认字符串
   tabId,
+  openInNewTab = true, // 默认在新标签页打开
   books = [
     // 直接赋值默认数组，不需要 () => [] 工厂函数，Vue 编译器会自动处理引用问题
     {
@@ -132,18 +128,14 @@ const {
   ],
 } = defineProps<Props>()
 
-// 查看全部点击事件
+// 查看全部点击事件 - 在当前页跳转
 const handleViewAll = (): void => {
   router.push(`/category?tab=${tabId}`)
 }
 
 // 书籍点击事件 - 跳转到书籍详情页
 const handleBookClick = (bookId?: number | string): void => {
-  if (bookId) {
-    router.push(`/bookdetail/${bookId}`)
-  } else {
-    router.push('/bookdetail')
-  }
+  openBookDetail(bookId, openInNewTab ? 'new-tab' : 'current')
 }
 </script>
 

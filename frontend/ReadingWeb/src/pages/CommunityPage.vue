@@ -10,6 +10,11 @@ import avatarImg from '@/img/avatar.jpg'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import CommentItem from '@/components/community/Mine/CommentItem.vue'
 import LikeItem from '@/components/community/Mine/LikeItem.vue'
+import Footer from '@/components/layout/Footer.vue'
+import { useTitle } from '@/stores/useTitle'
+import { usePostInteractions } from '@/composables/usePostInteractions'
+import type { Post } from '@/types/post'
+
 // 当前用户信息
 const currentUser = reactive({
   username: '阅读爱好者',
@@ -45,7 +50,7 @@ const topicsList = ref([
 ])
 
 // 帖子数据
-const posts = ref([
+const posts = ref<Post[]>([
   {
     id: 1,
     username: '书虫小王',
@@ -195,7 +200,33 @@ const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => (currentT
 // “我的”内部的二级 Tab
 const mineTab = ref<'like' | 'comment'>('comment')
 
-const filteredPosts = computed(() => {
+// 动态页面标题
+// 直接使用 computed
+const title = computed(() => {
+  let tabName = ''
+
+  switch (currentTab.value) {
+    case 'square':
+      tabName = '广场'
+      break
+    case 'following':
+      tabName = '关注'
+      break
+    case 'topics':
+      tabName = '话题'
+      break
+    case 'mine':
+      tabName = mineTab.value === 'like' ? '我的喜欢' : '我的评论'
+      break
+    default:
+      tabName = '首页'
+  }
+
+  return `微信读书社区 - ${tabName}`
+})
+useTitle(title)
+
+const filteredPosts = computed<Post[]>(() => {
   switch (currentTab.value) {
     case 'following':
       return posts.value.filter((p) => p.isFollowing)
@@ -211,26 +242,15 @@ const handleTopicClick = (topic: any) => {
 }
 // TODO: 等待接口文档确认
 
-// 新增：PostCard 事件处理函数
-// ============================
+// 统一：帖子交互逻辑（关注 / 点赞）
+const { updateFollow, updateLike } = usePostInteractions(posts)
 
-// 关注状态变化事件
 const handleFollowChange = (postId: number, isFollowing: boolean): void => {
-  // 更新对应帖子的关注状态
-  const post = posts.value.find((p) => p.id === postId)
-  if (post) {
-    post.isFollowing = isFollowing
-  }
+  updateFollow(postId, isFollowing)
 }
 
-// 点赞事件
 const handleLike = (postId: number, likeCount: number, isLiked: boolean): void => {
-  // 更新对应帖子的点赞状态
-  const post = posts.value.find((p) => p.id === postId)
-  if (post) {
-    post.likeCount = likeCount
-    post.isLiked = isLiked
-  }
+  updateLike(postId, likeCount, isLiked)
 }
 
 // 评论事件
@@ -331,6 +351,7 @@ const handleShare = (postId: number): void => {
         <HotTopics :topics="hotTopics" @topic-click="handleTopicClick" />
       </div>
     </div>
+    <Footer />
   </div>
 </template>
 

@@ -1,6 +1,6 @@
 <!--分类排行榜里的书籍卡片-->
 <template>
-  <div class="book-card-super-big" @click="goToBookDetail">
+  <div class="book-card-super-big" @click.stop="goToBookDetail">
     <!-- 图书封面 -->
     <div class="book-cover-container">
       <img :src="cover" :alt="title" class="book-cover" v-if="cover" />
@@ -33,49 +33,34 @@
   </div>
 </template>
 
-<script lang="ts">
-import { useRouter } from 'vue-router'
-export default {
-  name: 'BookCardSuperBig',
-  props: {
-    cover: {
-      type: String,
-      default: '',
-    },
-    title: {
-      type: String,
-      required: true,
-    },
-    author: {
-      type: String,
-      required: true,
-    },
-    readersCount: {
-      type: [String, Number],
-      default: '1021',
-    },
-    recommendationRate: {
-      type: [String, Number],
-      default: '93.6',
-    },
-    description: {
-      type: String,
-      default:
-        '作品简介Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan et viverra justo commodo. Proin sodales pulvinar sic tempor. Sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nam fermentum, nulla luctus pharetra vulputate, felis tellus mollis orci, sed rhoncus pronin sapien nunc accuan eget.',
-    },
-    scale: {
-      type: Number,
-      default: 1, // 默认 1 = 原尺寸
-    },
+<script setup lang="ts">
+import { useBookNavigation } from '@/composables/useBookNavigation'
+
+const props = withDefaults(
+  defineProps<{
+    cover?: string
+    title: string
+    author: string
+    readersCount?: string | number
+    recommendationRate?: string | number
+    description?: string
+    scale?: number
+  }>(),
+  {
+    cover: '',
+    readersCount: '1021',
+    recommendationRate: '93.6',
+    description:
+      '作品简介Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan et viverra justo commodo. Proin sodales pulvinar sic tempor. Sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nam fermentum, nulla luctus pharetra vulputate, felis tellus mollis orci, sed rhoncus pronin sapien nunc accuan eget.',
+    scale: 1,
   },
-  setup() {
-    const router = useRouter()
-    // 返回给模板使用
-    const goToBookDetail = () => {
-      router.push('/book')
-    }
-    return { goToBookDetail }
-  },
+)
+
+const { openInNewTab } = useBookNavigation()
+
+// 保持原行为：始终在新标签打开书籍详情（无指定ID时跳默认页）
+const goToBookDetail = () => {
+  openInNewTab()
 }
 </script>
 

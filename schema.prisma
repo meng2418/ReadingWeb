@@ -12,14 +12,14 @@ datasource db {
 // 核心信息表 (Primary Entities)
 // ===============================================
 
-model User_info {
-  userId               Int      @id @default(autoincrement())
+model UserInfo {
+  userId               Long      @id @default(autoincrement())
   username             String   @unique
-  email                String?  @unique
   phone                String?  @unique
   password             String?
   avatar               String?
   bio                  String?
+  memberEndDate        DateTime
   isMember             Boolean  @default(false)
   coins                Int      @default(0) // 书币
   totalReadingTime     Int      @default(0) // 总阅读时长(分钟)
@@ -38,41 +38,92 @@ model User_info {
   followers            Follow_info[]            @relation("Following")
   messages             Message_info[]
   readingStats         ReadingStatus_info[]
+  achievementLogs      AchievementLog_info[]
+  stat                 UserStat_info? // 新增一对一关联
   memberInfo           Member_info?
-  trialCardIncentive   TrialCardIncentive_info?
-  activatedTrialCard   TrialCard_info?          @relation("UserActiveTrialCard") // 激活的体验卡
+  trialBalance         TrialBalance_info?
+  bookAccesses         UserBookAccess_info[]
+  coinAccount          CoinAccount_info?
 }
 
-model LoginLog_info {
-  // 登录日志 ID，使用自增 ID
-  id          Int      @id @default(autoincrement())
+model CoinAccount_info {
+  accountId   Int         @id @default(autoincrement())
+  userId      Int         @unique 
+  balance     Int         @default(0) // 充值币余额
 
-  // 关联的用户ID，通常是必填项
-  userId      BigInt
+  user        User_info   @relation(fields: [userId], references: [userId])
+  transactions CoinTransaction_info[]
 
-  // 登录时间
+  @@map("coin_account_info")
+}
+
+model CoinTransaction_info {
+  transactionId Int         @id @default(autoincrement())
+  accountId     Int
+  amount        Int         // 交易数量 (充值: 正, 消费: 负)
+  type          String      // TRANSACTION_TYPE: PURCHASE, DEPOSIT, REWARD
+  description   String?
+  timestamp     DateTime    @default(now())
+
+  account       CoinAccount_info @relation(fields: [accountId], references: [accountId])
+
+  @@map("coin_transaction_info")
+}
+
+model UserStat_info {
+  userStatId              Int      @id @default(autoincrement())
+  userId              Int      @unique // 与 User_info 一对一关联
+  
+  // 累计阅读书籍数量
+  totalBooksCompleted Int      @default(0)
+  
+  // 累计笔记数量
+  totalNotesCount     Int      @default(0)
+  
+  // 累计阅读时长 (单位：分钟)
+  totalReadingDurationMinutes Int @default(0)
+
+  // 关系：UserStat 依赖 User
+  user                User_info @relation(fields: [userId], references: [userId])
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@map("user_stat_info")
+}
+
+model AchievementLog_info {
+  logId           Int                 @id @default(autoincrement())
+  userId          Int
+  
+  type            String
+  level           Int
+  description     String              @db.VarChar(255)
+  valueSnapshot   Int
+
+  achievedAt      DateTime            @default(now())
+
+  user            User_info           @relation(fields: [userId], references: [userId])
+
+  @@unique([userId, type, level]) 
+  @@map("achievement_log")
+}
+
+model LoginLogInfo {
+  loginLogid           Int      @id @default(autoincrement())
+  userId               Long
   loginTime   DateTime @default(now()) @map("login_time")
-
-  // 登录IP地址 (Java Entity中定义了长度64)
   ipAddress   String   @db.VarChar(64) @map("ip_address")
-
-  // 设备信息 (User-Agent) (Java Entity中定义了长度255)
   device      String   @db.VarChar(255)
-
-  // 登录状态 (SUCCESS, FAILED) (Java Entity中定义了长度20)
   status      String   @db.VarChar(20)
-
-  // 备注/失败原因 (Java Entity中定义了长度500)
   remarks     String?  @db.VarChar(500) // 失败时可能才有备注，所以设为可选
-
-  // 可选：建立与 User 模型的关系 (假设您的 User 模型名为 User)
-  // user        User     @relation(fields: [userId], references: [id]) 
+  user        User     @relation(fields: [userId], references: [userId]) 
   
   @@index([userId]) // 常用查询索引，方便按用户查找日志
   @@map("t_login_log") // 映射到数据库表名 t_login_log
 }
 
-model Author_info {
+model AuthorInfo {
   authorId Int      @id @default(autoincrement())
   name     String   @unique // 作者姓名，通常唯一
   bio      String?  @db.Text // 作者简介
@@ -82,7 +133,7 @@ model Author_info {
   books    Book_info[]
 }
 
-model Book_info {
+model BookInfo {
   bookId        Int           @id @default(autoincrement())
   title         String
   authorId      Int           // 外键，关联到作者表
@@ -112,13 +163,13 @@ model Book_info {
   comments      Comment_info[]
 }
 
-model Category_info {
+model CategoryInfo {
   categoryId Int       @id @default(autoincrement())
   name       String
   books      Book_info[] // 修正模型名
 }
 
-model Chapter_info {
+model ChapterInfo {
   chapterId Int                 @id @default(autoincrement())
   title     String
   content   String              @db.Text
@@ -138,7 +189,7 @@ model Chapter_info {
 // 用户行为表 (User Activities)
 // ===============================================
 
-model Bookshelf_info {
+model BookshelfInfo {
   bookshelfid Int       @id @default(autoincrement())
   userId      Int
   bookId      Int
@@ -153,7 +204,7 @@ model Bookshelf_info {
   @@unique([userId, bookId])
 }
 
-model ReadingProgress_info {
+model ReadingProgressInfo {
   readingprogressid Int       @id @default(autoincrement())
   userId            Int
   bookId            Int
@@ -170,7 +221,7 @@ model ReadingProgress_info {
   @@unique([userId, bookId])
 }
 
-model ReadingStatus_info {
+model ReadingStatusInfo {
   readingstatusId Int       @id @default(autoincrement())
   userId          Int
   date            DateTime  @default(now()) // 统计日期
@@ -180,13 +231,13 @@ model ReadingStatus_info {
   user            User_info @relation(fields: [userId], references: [userId])
 }
 
-model Note_info {
+model NoteInfo {
   noteId    Int          @id @default(autoincrement())
   userId    Int
   bookId    Int
   chapterId Int?
   content   String
-  type      String       @default("highlight") // highlight, comment
+  type      String       @default("highlight") // highlight, underline, wavy line
   color     String?      // 标注颜色
   page      Int?
   isPublic  Boolean      @default(false)
@@ -199,13 +250,12 @@ model Note_info {
   likes     Like_info[]
 }
 
-model Bookmark_info {
+model BookmarkInfo {
   bookmarkId Int          @id @default(autoincrement())
   userId     Int
   bookId     Int
   chapterId  Int?
   page       Int
-  note       String?
   createdAt  DateTime     @default(now())
 
   // 修正引用字段
@@ -214,30 +264,65 @@ model Bookmark_info {
   chapter    Chapter_info? @relation(fields: [chapterId], references: [chapterId])
 }
 
-model Post_info {
+model PostInfo {
   postId    Int          @id @default(autoincrement())
   userId    Int
-  bookId    Int?
   title     String
   content   String       @db.Text
-  topic     String?      // 话题分类
+  status   String?      // 帖子状态(例如：0-正常, 1-审核中, 2-已删除)
   isPublic  Boolean      @default(true)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
   // 修正引用字段
   user      User_info    @relation(fields: [userId], references: [userId])
-  book      Book_info?   @relation(fields: [bookId], references: [bookId])
+  topics      PostTopic_info[]
+  relatedBooks     PostBooknfo[]  
   comments  Comment_info[]
   likes     Like_info[]
 }
 
-model Comment_info {
+model PostBook {
+  postId        Int
+  bookId        Int
+
+  // 关系定义
+  post          Post_info       @relation(fields: [postId], references: [postId])
+  book          Book_info       @relation(fields: [bookId], references: [bookId])
+
+  // 复合主键
+  @@id([postId, bookId])
+  @@map("post_book_mapping")
+}
+
+model TopicInfo {
+  topicId   Int            @id @default(autoincrement())
+  topicName String 
+  description String
+
+  // 多对多关系的反向关联
+  posts       PostTopic_info[] 
+
+  @@map("topic_info")
+}
+
+model PostTopicInfo {
+  postId    Int
+  topicId   Int
+
+  post      PostInfo       @relation(fields: [postId], references: [postId])
+  topic     TopicInfo      @relation(fields: [topicId], references: [topicId])
+
+  @@id([postId, topicId])
+  @@map("post_topic_info")
+}
+
+model CommentInfo {
   commentId Int          @id @default(autoincrement())
   userId    Int
   postId    Int?
   noteId    Int?
-  parentId  Int?         // 回复的评论ID
+  parentcommentId  Int?         // 回复的评论ID
   content   String       @db.Text
   createdAt DateTime     @default(now())
 
@@ -252,7 +337,7 @@ model Comment_info {
   likes     Like_info[]
 }
 
-model Like_info {
+model LikeInfo {
   likeId    Int          @id @default(autoincrement())
   userId    Int
   postId    Int?
@@ -269,7 +354,7 @@ model Like_info {
   @@unique([userId, postId, commentId, noteId])
 }
 
-model Follow_info {
+model FollowInfo {
   followId    Int      @id @default(autoincrement())
   followerId  Int      // 关注者
   followingId Int      // 被关注者
@@ -282,72 +367,47 @@ model Follow_info {
   @@unique([followerId, followingId])
 }
 
-model Message_info {
-  messageId Int      @id @default(autoincrement())
-  userId    Int
-  type      String   // system, like, comment, follow
-  title     String
-  content   String
-  isRead    Boolean  @default(false)
-  relatedId Int?     // 相关实体ID
-  createdAt DateTime @default(now())
-
-  // 修正引用字段
-  user      User_info @relation(fields: [userId], references: [userId])
-}
 
 // ===============================================
 // 会员和体验卡表 (Membership & Trial)
 // ===============================================
 
 model Member_info {
-  memberId    Int      @id @default(autoincrement())
-  userId      Int      @unique
-  startDate   DateTime
-  endDate     DateTime
-  isAutoRenew Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  memberId      Int         @id @default(autoincrement())
+  userId        Int         @unique 
+  expireDate    DateTime    // 会员过期时间
+  level         Int         @default(1)
 
-  // 修正引用字段
-  user        User_info @relation(fields: [userId], references: [userId])
+  user          User_info   @relation(fields: [userId], references: [userId])
+
+  @@map("member_info")
 }
 
-model TrialCardIncentive_info {
-  incentiveId     Int            @id @default(autoincrement())
-  userId          Int            @unique // 确保每个用户最多只有一条记录
-  isEligible      Boolean        @default(true) // 是否满足条件
-  
-  // 实际发放的体验卡 ID，用于追踪
-  grantedCardId   Int?           @unique
-  grantedAt       DateTime       @default(now())
+model TrialBalance_info {
+  balanceId     Int         @id @default(autoincrement())
+  userId        Int         @unique
+  daysBalance   Int         @default(0) // 剩余体验天数
 
-  // 修正引用字段
-  user            User_info      @relation(fields: [userId], references: [userId])
-  grantedCard     TrialCard_info? @relation(fields: [grantedCardId], references: [cardId])
+  user          User_info   @relation(fields: [userId], references: [userId])
+  rewardLogs    TrialRewardLog_info[] 
+
+  @@map("trial_balance_info")
 }
 
-model TrialCard_info {
-  cardId            Int                       @id @default(autoincrement())
-  code              String                    @unique // 兑换码或系统生成码
-  durationDays      Int                       // 体验时长（天）
+model UserBookAccess_info {
+  accessId      Int         @id @default(autoincrement())
+  userId        Int
+  bookId        Int
+  purchaseTime  DateTime    @default(now()) 
   
-  // 激活信息
-  isActivated       Boolean                   @default(false)
-  activatedAt       DateTime?
-  
-  activatedByUserId Int?                      @unique
-  trialEndDate      DateTime?                 // 体验卡权益截止日期
+  // 假设 Book_info 实体存在
+  // book          Book_info   @relation(fields: [bookId], references: [bookId])
 
-  createdAt         DateTime                  @default(now())
-
-  // 修正引用字段
-  activatedByUser   User_info?                @relation("UserActiveTrialCard", fields: [activatedByUserId], references: [userId])
-  
-  // 关联激励记录 (已移除重复字段)
-  incentiveRecord   TrialCardIncentive_info? @relation("IncentiveCard")
+  @@unique([userId, bookId]) 
+  @@map("user_book_access_info")
 }
 
-model ChapterAccess_info {
+model ChapterAccessInfo {
   accessId      Int           @id @default(autoincrement())
   chapterId     Int           @unique
   
@@ -358,10 +418,9 @@ model ChapterAccess_info {
   chapter       Chapter_info @relation(fields: [chapterId], references: [chapterId])
 }
 
-model VerificationCode_info {
+model VerificationCodeInfo {
   vertificationcodeId Int      @id @default(autoincrement())
   phone               String?
-  email               String?
   code                String
   type                String   // login, register, reset
   expiresAt           DateTime

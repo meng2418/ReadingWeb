@@ -3,9 +3,7 @@
     <!-- 组件标题和换一批按钮 -->
     <div class="recommendations-header">
       <h3 class="section-title">相关推荐作品</h3>
-      <button class="refresh-button" @click="refreshRecommendations">
-        换一批
-      </button>
+      <button class="refresh-button" @click="refreshRecommendations">换一批</button>
     </div>
 
     <!-- 推荐作品列表 -->
@@ -14,10 +12,10 @@
         v-for="book in displayedBooks"
         :key="book.id"
         class="recommendation-item"
-        @click="selectBook(book)"
+        @click.stop="goToBookDetail(book)"
       >
         <div class="book-cover">
-          <img v-if="book.cover" :src="book.cover" :alt="book.title" @error="handleImageError">
+          <img v-if="book.cover" :src="book.cover" :alt="book.title" @error="handleImageError" />
           <div v-else class="cover-placeholder">
             <span>书籍封面</span>
           </div>
@@ -32,67 +30,77 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue'
+import { useBookNavigation } from '@/composables/useBookNavigation'
+import type { BookListItem } from '@/types/book'
 
 // 定义组件属性
 interface Props {
-  books: Book[];
-  maxDisplayCount?: number;
-}
-// 定义 Book 类型
-interface Book {
-  id: number;
-  title: string;
-  intro: string;
-  cover: string;
+  books: BookListItem[]
+  maxDisplayCount?: number
 }
 
 // 定义组件事件
 interface Emits {
-  (e: 'bookSelect', book: Book): void;
-  (e: 'refresh'): void;
+  (e: 'bookSelect', book: BookListItem): void
+  (e: 'refresh'): void
 }
 
 // 接收属性
 const props = withDefaults(defineProps<Props>(), {
-  maxDisplayCount: 3
-});
+  maxDisplayCount: 3,
+})
 
 // 定义事件
-const emit = defineEmits<Emits>();
+const emit = defineEmits<Emits>()
 
 // 响应式数据
-const currentIndex = ref(0);
+const currentIndex = ref(0)
+
+const { openInCurrent } = useBookNavigation()
 
 // 计算属性
 const displayedBooks = computed(() => {
-  const start = currentIndex.value;
-  const end = start + props.maxDisplayCount;
-  return props.books.slice(start, end);
-});
+  const start = currentIndex.value
+  const end = start + props.maxDisplayCount
+  return props.books.slice(start, end)
+})
 
 // 方法
 const refreshRecommendations = () => {
   // 循环展示推荐书籍
-  currentIndex.value = (currentIndex.value + props.maxDisplayCount) % props.books.length;
-  emit('refresh');
-};
+  currentIndex.value = (currentIndex.value + props.maxDisplayCount) % props.books.length
+  emit('refresh')
+}
 
-const selectBook = (book: Book) => {
-  console.log(`选择了书籍: ${book.title}`);
-  emit('bookSelect', book);
-};
+// 跳转到书籍详情页
+const goToBookDetail = (book: BookListItem): void => {
+  console.log(`选择了书籍: ${book.title}`)
+
+  // 触发事件通知父组件
+  emit('bookSelect', book)
+
+  // 然后跳转到详情页
+  // 优先使用 book.bookId，如果不存在则用 book.id
+  const bookId = book.bookId || book.id
+
+  if (bookId) {
+    openInCurrent(bookId)
+  } else {
+    openInCurrent()
+  }
+}
 
 // 图片加载失败处理
 const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  img.style.display = 'none';
-};
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+}
 
 // 生命周期
 onMounted(() => {
-  console.log('相关推荐作品组件已加载');
-});
+  console.log('相关推荐作品组件已加载')
+})
 </script>
 
 <style scoped>
@@ -102,9 +110,7 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
   margin-bottom: 20px;
-  /* 设置固定宽度，适合放在右侧 */
   width: 300px;
-  /* 高度自适应内容 */
   height: fit-content;
 }
 
@@ -220,7 +226,7 @@ onMounted(() => {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .related-recommendations {
-    width: 100%; /* 在移动设备上占满宽度 */
+    width: 100%;
     padding: 15px;
   }
 

@@ -1,7 +1,8 @@
 <template>
   <div class="topic-detail">
     <NavBar />
-    <FloatingAddButton :current-topic="topic" />  <!-- 添加发布按钮 -->
+    <FloatingAddButton :current-topic="topic" />
+    <!-- 添加发布按钮 -->
     <BackToTop />
     <!-- 话题头部 -->
     <div class="topic-header">
@@ -29,11 +30,7 @@
         </div>
 
         <div class="topic-actions">
-          <button
-            class="follow-btn"
-            :class="{ followed: isFollowing }"
-            @click="toggleFollow"
-          >
+          <button class="follow-btn" :class="{ followed: isFollowing }" @click="toggleFollow">
             {{ isFollowing ? '已关注' : '关注话题' }}
           </button>
         </div>
@@ -67,9 +64,7 @@
           />
 
           <!-- 加载更多 -->
-          <div v-if="hasMore" class="load-more" @click="loadMore">
-            加载更多...
-          </div>
+          <div v-if="hasMore" class="load-more" @click="loadMore">加载更多...</div>
 
           <!-- 空状态 -->
           <div v-else-if="sortedPosts.length === 0" class="empty-state">
@@ -103,9 +98,7 @@
         <div class="related-topics sidebar-card">
           <div class="related-topics-header">
             <h3 class="card-title">相关话题</h3>
-            <button class="refresh-btn" @click="refreshRelatedTopics">
-              换一批
-            </button>
+            <button class="refresh-btn" @click="refreshRelatedTopics">换一批</button>
           </div>
           <div
             v-for="relatedTopic in relatedTopics"
@@ -114,7 +107,7 @@
             @click="goToTopic(relatedTopic.id)"
           >
             <div class="related-topic-cover">
-              <img :src="relatedTopic.cover" alt="话题封面">
+              <img :src="relatedTopic.cover" alt="话题封面" />
             </div>
             <div class="related-topic-info">
               <h4>{{ relatedTopic.title }}</h4>
@@ -128,19 +121,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
-import { watch } from 'vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
-
+import { usePostInteractions } from '@/composables/usePostInteractions'
+import { usePostList } from '@/composables/usePostList'
+import type { Post } from '@/types/post'
 
 const route = useRoute()
 const router = useRouter()
 const topicId = route.params.id as string
-
 
 // 监听路由参数变化
 watch(
@@ -152,7 +145,7 @@ watch(
       // 滚动到顶部
       window.scrollTo(0, 0)
     }
-  }
+  },
 )
 
 // 模拟获取话题数据
@@ -161,7 +154,6 @@ const fetchTopicData = (id: string) => {
   // 这里实际项目中应该调用API获取对应id的话题数据
   // 更新 topic.value 和 posts.value
 }
-
 
 onMounted(() => {
   // 这里可以添加初始化数据获取的逻辑
@@ -176,18 +168,19 @@ onMounted(() => {
 const topic = ref({
   id: topicId,
   title: '每日读点小说',
-  name: '每日读点小说',  // 添加name属性，与发布按钮组件兼容
+  name: '每日读点小说', // 添加name属性，与发布按钮组件兼容
   description: '分享你最近阅读的小说，交流阅读心得',
-  fullDescription: '这是一个专注于小说阅读与分享的社区话题。无论你是喜欢经典文学、网络小说、还是国外名著，都可以在这里找到志同道合的朋友。欢迎大家分享阅读笔记、书评和推荐书单！',
+  fullDescription:
+    '这是一个专注于小说阅读与分享的社区话题。无论你是喜欢经典文学、网络小说、还是国外名著，都可以在这里找到志同道合的朋友。欢迎大家分享阅读笔记、书评和推荐书单！',
   cover: 'https://picsum.photos/800/400?random=1',
   postCount: 200,
   followerCount: 1500,
   dailyActive: 89,
   createTime: '2024-01-15',
-  manager: '文学社官方'
+  manager: '文学社官方',
 })
 
-const posts = ref([
+const posts = ref<Post[]>([
   {
     id: 1,
     username: '书虫小王',
@@ -195,7 +188,8 @@ const posts = ref([
     postTime: '2小时前',
     timestamp: new Date().getTime() - 2 * 60 * 60 * 1000, // 添加时间戳
     title: '《百年孤独》读后感',
-    content: '刚刚读完马尔克斯的《百年孤独》，这本书真的是一种奇妙的阅读体验。书中通过布恩迪亚家族几代人的命运，展现了时间的循环与宿命的荒诞。每个人都在追寻意义，但又被历史的轮回所吞没。尤其是书中的文字节奏，那种冷静而又充满诗意的叙述，让人不自觉地沉浸进去。读到最后，我甚至分不清哪些是真实，哪些是幻觉。魔幻与现实在这里不再有界限，而人的孤独似乎是永恒的。推荐每一个喜欢文学的人都读一读这本书。',
+    content:
+      '刚刚读完马尔克斯的《百年孤独》，这本书真的是一种奇妙的阅读体验。书中通过布恩迪亚家族几代人的命运，展现了时间的循环与宿命的荒诞。每个人都在追寻意义，但又被历史的轮回所吞没。尤其是书中的文字节奏，那种冷静而又充满诗意的叙述，让人不自觉地沉浸进去。读到最后，我甚至分不清哪些是真实，哪些是幻觉。魔幻与现实在这里不再有界限，而人的孤独似乎是永恒的。推荐每一个喜欢文学的人都读一读这本书。',
     likeCount: 128,
     commentCount: 23,
     isFollowing: false,
@@ -214,7 +208,8 @@ const posts = ref([
     postTime: '5小时前',
     timestamp: new Date().getTime() - 5 * 60 * 60 * 1000, // 添加时间戳
     title: '推荐几本近期读的好小说',
-    content: '最近读了《围城》《平凡的世界》和《活着》，每本都让我感触很深。《围城》的幽默讽刺，《平凡的世界》的厚重真实，《活着》的生命力量，都值得一读。特别是《活着》，虽然故事很沉重，但读完后对生命有了更深的理解。',
+    content:
+      '最近读了《围城》《平凡的世界》和《活着》，每本都让我感触很深。《围城》的幽默讽刺，《平凡的世界》的厚重真实，《活着》的生命力量，都值得一读。特别是《活着》，虽然故事很沉重，但读完后对生命有了更深的理解。',
     likeCount: 89,
     commentCount: 45,
     isFollowing: true,
@@ -228,7 +223,8 @@ const posts = ref([
     postTime: '昨天',
     timestamp: new Date().getTime() - 24 * 60 * 60 * 1000, // 添加时间戳
     title: '《红楼梦》人物分析：林黛玉',
-    content: '重读《红楼梦》，对林黛玉这个角色有了新的认识。她不仅仅是多愁善感的才女，更是一个有着独立思想和反抗精神的女性。在封建社会的背景下，她的悲剧命运让人唏嘘，但她的才情和个性却永远闪耀。',
+    content:
+      '重读《红楼梦》，对林黛玉这个角色有了新的认识。她不仅仅是多愁善感的才女，更是一个有着独立思想和反抗精神的女性。在封建社会的背景下，她的悲剧命运让人唏嘘，但她的才情和个性却永远闪耀。',
     likeCount: 156,
     commentCount: 42,
     isFollowing: false,
@@ -240,20 +236,21 @@ const posts = ref([
       cover: 'https://picsum.photos/100/150?random=2',
     },
   },
-    {
+  {
     id: 4,
     username: '推理小说迷',
     avatar: 'https://picsum.photos/100?random=13',
     postTime: '3小时前',
     timestamp: new Date().getTime() - 3 * 60 * 60 * 1000,
     title: '《白夜行》结局的震撼与思考',
-    content: '刚刚读完东野圭吾的《白夜行》，结局真的让我久久不能平静。两个主角之间的复杂关系，那种在黑暗中相互依存的情感，既让人心痛又让人深思。亮司和雪穗的命运交织，就像书名一样，永远在白夜中行走。这部作品不仅仅是推理小说，更是对人性深度的探索。',
+    content:
+      '刚刚读完东野圭吾的《白夜行》，结局真的让我久久不能平静。两个主角之间的复杂关系，那种在黑暗中相互依存的情感，既让人心痛又让人深思。亮司和雪穗的命运交织，就像书名一样，永远在白夜中行走。这部作品不仅仅是推理小说，更是对人性深度的探索。',
     likeCount: 95,
     commentCount: 18,
     isFollowing: true,
     isLiked: false,
-    book:null,
-    },
+    book: null,
+  },
   {
     id: 5,
     username: '古典文学爱好者',
@@ -261,7 +258,8 @@ const posts = ref([
     postTime: '1天前',
     timestamp: new Date().getTime() - 24 * 60 * 60 * 1000,
     title: '重读《傲慢与偏见》的新感悟',
-    content: '第三次阅读《傲慢与偏见》，每次都有不同的感受。年轻时只觉得这是个浪漫的爱情故事，现在却更能体会其中对阶级、婚姻和社会习俗的深刻批判。达西的傲慢与伊丽莎白的偏见，其实都是社会环境在他们身上的烙印。奥斯汀用幽默的笔触，写出了那个时代女性的困境与智慧。',
+    content:
+      '第三次阅读《傲慢与偏见》，每次都有不同的感受。年轻时只觉得这是个浪漫的爱情故事，现在却更能体会其中对阶级、婚姻和社会习俗的深刻批判。达西的傲慢与伊丽莎白的偏见，其实都是社会环境在他们身上的烙印。奥斯汀用幽默的笔触，写出了那个时代女性的困境与智慧。',
     likeCount: 112,
     commentCount: 27,
     isFollowing: false,
@@ -272,20 +270,14 @@ const posts = ref([
       author: '简·奥斯汀',
       cover: 'https://picsum.photos/100/150?random=4',
     },
-  }
+  },
 ])
 
 const isFollowing = ref(false)
-const currentFilter = ref('latest')
-const hasMore = ref(true)
-const page = ref(1)
-
-// 筛选选项
-const filterTabs = [
-  { value: 'latest', label: '最新' },
-  { value: 'hot', label: '热门' },
-  { value: 'featured', label: '精华' }
-]
+const { filterTabs, currentFilter, sortedPosts, hasMore, changeFilter, loadMore } = usePostList(
+  posts,
+  { pageSize: 10, initialFilter: 'latest' },
+)
 
 // 相关话题数据池
 const allRelatedTopics = ref([
@@ -296,33 +288,11 @@ const allRelatedTopics = ref([
   { id: '6', cover: 'https://picsum.photos/200?random=6', title: '推理与悬疑', postCount: 240 },
   { id: '7', cover: 'https://picsum.photos/200?random=7', title: '诗歌与散文', postCount: 142 },
   { id: '8', cover: 'https://picsum.photos/200?random=8', title: '新书速递', postCount: 75 },
-  { id: '9', cover: 'https://picsum.photos/200?random=9', title: '阅读打卡挑战', postCount: 310 }
+  { id: '9', cover: 'https://picsum.photos/200?random=9', title: '阅读打卡挑战', postCount: 310 },
 ])
 
 // 当前显示的相关话题
 const relatedTopics = ref(allRelatedTopics.value.slice(0, 3))
-
-// 计算属性 - 根据筛选条件排序帖子
-const sortedPosts = computed(() => {
-  const postsCopy = [...posts.value]
-
-  switch (currentFilter.value) {
-    case 'latest':
-      // 按发布时间倒序（时间戳越大越新）
-      return postsCopy.sort((a, b) => b.timestamp - a.timestamp)
-
-    case 'hot':
-      // 按评论数倒序
-      return postsCopy.sort((a, b) => b.commentCount - a.commentCount)
-
-    case 'featured':
-      // 按点赞数倒序
-      return postsCopy.sort((a, b) => b.likeCount - a.likeCount)
-
-    default:
-      return postsCopy
-  }
-})
 
 // 方法
 const toggleFollow = () => {
@@ -334,43 +304,28 @@ const toggleFollow = () => {
   }
 }
 
-const changeFilter = (filter: string) => {
-  currentFilter.value = filter
-  // 这里可以添加根据筛选条件重新获取帖子的逻辑
-}
-
-const loadMore = () => {
-  page.value++
-  // 这里可以添加加载更多帖子的逻辑
-}
-
 const goToTopic = (id: string) => {
   router.push(`/topicdetail/${id}`)
+  // 在新标签页打开话题详情页
+  window.open(`/topicdetail/${id}`, '_blank')
 }
 
 // 刷新相关话题
 const refreshRelatedTopics = () => {
   // 打乱数组并取前3个
-  const shuffled = [...allRelatedTopics.value]
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 3)
+  const shuffled = [...allRelatedTopics.value].sort(() => 0.5 - Math.random()).slice(0, 3)
   relatedTopics.value = shuffled
 }
 
-// PostCard 事件处理
+// PostCard 事件处理（统一封装）
+const { updateFollow, updateLike } = usePostInteractions(posts)
+
 const handleFollowChange = (postId: number, isFollowing: boolean) => {
-  const post = posts.value.find(p => p.id === postId)
-  if (post) {
-    post.isFollowing = isFollowing
-  }
+  updateFollow(postId, isFollowing)
 }
 
 const handleLike = (postId: number, likeCount: number, isLiked: boolean) => {
-  const post = posts.value.find(p => p.id === postId)
-  if (post) {
-    post.likeCount = likeCount
-    post.isLiked = isLiked
-  }
+  updateLike(postId, likeCount, isLiked)
 }
 
 const handleComment = (postId: number) => {
@@ -405,7 +360,7 @@ const handleComment = (postId: number) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.3));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.3));
 }
 
 .topic-info {
