@@ -18,28 +18,28 @@
       :notes="notes"
       :isDarkMode="isDarkMode"
     />
-
-    <div class="content-wrapper">
-      <ReaderContent
-        :pageData="displayedPageData"
-        :isDarkMode="isDarkMode"
-        :typography="typography"
-        :annotations="showThoughts ? annotations : annotations.filter((a) => a.type !== 'thought')"
-        :hasPrevChapter="currentChapterIndex > 0"
-        :hasNextChapter="currentChapterIndex < chapters.length - 1"
-        @addAnnotation="handleAddAnnotation"
-        @activeThought="handleActiveThought"
-        @prevChapter="goToPrevChapter"
-        @nextChapter="goToNextChapter"
-        @aiQuery="
-          (text) => {
-            aiSelectedText = text
-            aiPanelOpen = true
-          }
-        "
-        @textAction="handleTextAction"
-      />
-    </div>
+  <div class="content-wrapper">
+    <ReaderContent
+      :pageData="displayedPageData"
+      :isDarkMode="isDarkMode"
+      :typography="typography"
+      :annotations="showThoughts ? currentChapterAnnotations : currentChapterAnnotations.filter((a) => a.type !== 'thought')"
+      :hasPrevChapter="currentChapterIndex > 0"
+      :hasNextChapter="currentChapterIndex < chapters.length - 1"
+      @addAnnotation="handleAddAnnotation"
+      @deleteAnnotation="handleDeleteAnnotation"
+      @activeThought="handleActiveThought"
+      @prevChapter="goToPrevChapter"
+      @nextChapter="goToNextChapter"
+      @aiQuery="
+        (text) => {
+          aiSelectedText = text
+          aiPanelOpen = true
+        }
+      "
+      @textAction="handleTextAction"
+    />
+  </div>
 
     <FloatingMenu
       :isDarkMode="isDarkMode"
@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 // 组件路径 - 请根据实际项目路径确认
 import TopNavigation from '@/components/Reader/TopNavigation.vue'
@@ -188,6 +188,11 @@ const currentChapterIndex = computed(() => {
   return chapters.findIndex(chapter => chapter.id === currentChapterId.value)
 })
 
+// 计算当前章节的标注
+const currentChapterAnnotations = computed(() => {
+  return annotations.value.filter(ann => ann.chapterId === currentChapterId.value)
+})
+
 const goToPrevChapter = () => {
   const prevIndex = currentChapterIndex.value - 1
   if (prevIndex >= 0) {
@@ -259,6 +264,7 @@ const mockComments = [
   },
 ]
 
+// 修正初始标注，确保它们有正确的chapterId
 const initialAnnotations: Annotation[] = [
   {
     id: 'init-1',
@@ -315,16 +321,39 @@ const handleChapterSelect = (id: string) => {
 const handleActiveThought = (noteId: string, text: string) => {
   activeContext.value = { type: 'view', noteId, text }
 }
+// 新增：删除标注的处理函数
+const handleDeleteAnnotation = (annotationId: string) => {
+  // 从 annotations 中移除指定ID的标注
+  const index = annotations.value.findIndex(ann => ann.id === annotationId)
+  if (index !== -1) {
+    annotations.value.splice(index, 1)
+
+    // 同时删除对应的笔记（如果是想法标注）
+    const annotation = annotations.value[index]
+    if (annotation && annotation.type === 'thought' && annotation.noteId) {
+      const noteIndex = notes.value.findIndex(note => note.id === annotation.noteId)
+      if (noteIndex !== -1) {
+        notes.value.splice(noteIndex, 1)
+      }
+    }
+  }
+}
+
 
 const handleAddAnnotation = (newAnn: Omit<Annotation, 'id'>) => {
   const id = Date.now().toString()
-  const annotation = { ...newAnn, id }
+  // 确保标注使用当前章节ID
+  const annotation = {
+    ...newAnn,
+    id,
+    chapterId: currentChapterId.value // 确保使用当前章节ID
+  }
   annotations.value.push(annotation)
 
   if (['marker', 'wave', 'line'].includes(newAnn.type)) {
     const newNote: Note = {
       id: `note-${id}`,
-      chapterId: currentChapterId.value,
+      chapterId: currentChapterId.value, // 确保笔记也关联到当前章节
       quote:
         displayedPageData.value?.content[newAnn.pIndex]?.substring(newAnn.start, newAnn.end) || '',
       note: `[Highlight: ${newAnn.type}]`,
@@ -354,7 +383,7 @@ const handleThoughtsBubbleAction = (action: string) => {
 
   if (['marker', 'wave', 'line'].includes(action) && activeContext.value.range) {
     handleAddAnnotation({
-      chapterId: currentChapterId.value,
+      chapterId: currentChapterId.value, // 确保使用当前章节ID
       pIndex: activeContext.value.range.pIndex,
       start: activeContext.value.range.start,
       end: activeContext.value.range.end,
@@ -368,7 +397,7 @@ const submitNote = (noteContent: string) => {
     const noteId = Date.now().toString()
     const newNote: Note = {
       id: noteId,
-      chapterId: currentChapterId.value,
+      chapterId: currentChapterId.value, // 确保笔记关联到当前章节
       quote: activeContext.value.text,
       note: noteContent,
       date: new Date().toLocaleDateString(),
@@ -377,7 +406,7 @@ const submitNote = (noteContent: string) => {
 
     const newAnn: Annotation = {
       id: `ann-${noteId}`,
-      chapterId: currentChapterId.value,
+      chapterId: currentChapterId.value, // 确保标注关联到当前章节
       pIndex: activeContext.value.range.pIndex,
       start: activeContext.value.range.start,
       end: activeContext.value.range.end,

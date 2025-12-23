@@ -17,6 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'addAnnotation', annotation: Omit<Annotation, 'id'>): void
+  (e: 'deleteAnnotation', annotationId: string): void
   (e: 'activeThought', noteId: string, text: string): void
   (e: 'aiQuery', text: string): void
   (e: 'prevChapter'): void
@@ -35,11 +36,77 @@ const selection = ref<{
   pIndex: number
   startOffset: number
   endOffset: number
+  overlappingAnnotations: Annotation[] // 新增：重叠的标注
 } | null>(null)
 
 const articleRef = ref<HTMLElement | null>(null)
 
-// ... (Selection Logic - same as before) ...
+// 检测选中文本是否与现有标注重叠
+const checkOverlappingAnnotations = (pIndex: number, start: number, end: number): Annotation[] => {
+  const overlapping: Annotation[] = []
+
+  for (const annotation of props.annotations) {
+    // 检查是否在同一段落
+    if (annotation.pIndex !== pIndex) continue
+
+    // 计算重叠情况
+    const isOverlapping =
+      (start >= annotation.start && start <= annotation.end) || // 选中开始在标注内
+      (end >= annotation.start && end <= annotation.end) ||     // 选中结束在标注内
+      (start <= annotation.start && end >= annotation.end) ||   // 选中包含整个标注
+      (start >= annotation.start && end <= annotation.end)      // 标注包含整个选中
+
+    if (isOverlapping) {
+      overlapping.push(annotation)
+    }
+  }
+
+  return overlapping
+}
+
+// 处理标注点击（点击已划线的句子）
+const handleAnnotationClick = (e: MouseEvent, segmentInfo: {
+  text: string
+  pIndex: number
+  start: number
+  end: number
+}) => {
+  e.stopPropagation()
+
+  const target = e.target as HTMLElement
+  const rect = target.getBoundingClientRect()
+
+  // 检查是否有重叠的标注
+  const overlappingAnnotations = checkOverlappingAnnotations(
+    segmentInfo.pIndex,
+    segmentInfo.start,
+    segmentInfo.end
+  )
+
+  // 设置选中状态
+  selection.value = {
+    text: segmentInfo.text,
+    position: {
+      top: rect.top + rect.height / 2,
+      left: rect.left + rect.width / 2
+    },
+    pIndex: segmentInfo.pIndex,
+    startOffset: segmentInfo.start,
+    endOffset: segmentInfo.end,
+    overlappingAnnotations
+  }
+
+  // 如果是想法标注，不触发菜单，直接显示想法
+  const hasThought = overlappingAnnotations.some(ann => ann.type === 'thought')
+  if (hasThought) {
+    const thoughtAnnotation = overlappingAnnotations.find(ann => ann.type === 'thought')
+    if (thoughtAnnotation && thoughtAnnotation.noteId) {
+      emit('activeThought', thoughtAnnotation.noteId, segmentInfo.text)
+    }
+    selection.value = null // 清空选中状态，因为想法有独立的弹窗
+  }
+}
+
 const handleMouseUp = () => {
   const selectionObj = window.getSelection()
   if (!selectionObj || selectionObj.isCollapsed || selectionObj.rangeCount === 0) {
@@ -90,12 +157,17 @@ const handleMouseUp = () => {
     const startOffset = preCaretRange.toString().length
     const endOffset = startOffset + range.toString().length
     const rect = range.getBoundingClientRect()
+
+    // 检查是否有重叠的标注
+    const overlappingAnnotations = checkOverlappingAnnotations(pIndex, startOffset, endOffset)
+
     selection.value = {
       text,
       position: { top: rect.top, left: rect.left + rect.width / 2 },
       pIndex,
       startOffset,
       endOffset,
+      overlappingAnnotations // 保存重叠的标注
     }
   } catch (e) {
     console.error('Selection calculation failed', e)
@@ -139,6 +211,14 @@ const handleMenuAction = (action: string) => {
   } else if (action === 'ai') {
     emit('aiQuery', selection.value.text)
     selection.value = null
+  } else if (action === 'delete') {
+    // 删除所有重叠的标注
+    if (selection.value.overlappingAnnotations.length > 0) {
+      for (const annotation of selection.value.overlappingAnnotations) {
+        emit('deleteAnnotation', annotation.id)
+      }
+    }
+    selection.value = null
   }
 }
 
@@ -149,6 +229,10 @@ interface TextSegment {
   isThought: boolean
   noteId?: string
   hasAction: boolean
+  // 新增字段，用于标注点击
+  pIndex: number
+  start: number
+  end: number
 }
 
 const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
@@ -178,6 +262,9 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
         classes: [],
         isThought: false,
         hasAction: false,
+        pIndex,
+        start: 0,
+        end: text.length
       },
     ]
 
@@ -243,6 +330,11 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
         noteId = thoughtAnn.noteId
         isThought = true
       }
+
+      // 如果有标注（马克笔、波浪线、直线），添加点击样式
+      if (activeAnns.some(a => ['marker', 'wave', 'line'].includes(a.type))) {
+        classes.push('clickable-annotation')
+      }
     }
 
     segments.push({
@@ -252,12 +344,33 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
       isThought,
       noteId,
       hasAction,
+      pIndex,
+      start,
+      end
     })
   }
   return segments
 }
 
 const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
+  // 如果有标注（马克笔、波浪线、直线），则触发标注点击
+  const hasHighlight = seg.classes.some(c =>
+    c === 'highlight-marker' ||
+    c === 'highlight-wave' ||
+    c === 'highlight-line'
+  )
+
+  if (hasHighlight) {
+    handleAnnotationClick(e, {
+      text: seg.text,
+      pIndex: seg.pIndex,
+      start: seg.start,
+      end: seg.end
+    })
+    return
+  }
+
+  // 如果是想法标注，保留原有逻辑
   if (seg.hasAction) {
     e.stopPropagation()
     emit('activeThought', seg.noteId || 'default', seg.text)
@@ -336,7 +449,11 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
       </div>
     </div>
 
-    <SelectionMenu :position="selection?.position || null" @action="handleMenuAction" />
+    <SelectionMenu
+      :position="selection?.position || null"
+      :hasOverlap="!!selection?.overlappingAnnotations?.length"
+      @action="handleMenuAction"
+    />
   </main>
 </template>
 
@@ -562,6 +679,7 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   text-decoration-thickness: 2px;
   text-decoration-color: #fb7185;
   text-underline-offset: 4px;
+  cursor: pointer;
 }
 
 .highlight-line {
@@ -570,6 +688,18 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   text-decoration-thickness: 2px;
   text-decoration-color: #38bdf8;
   text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* 可点击标注样式 */
+.clickable-annotation {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clickable-annotation:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
 }
 
 .thought-icon-wrapper {
