@@ -265,7 +265,6 @@ const copyNote = async (note) => {
   display: flex;
   gap: 16px;
 }
-
 /* 自定义 Select 下拉 */
 .select-wrapper {
   position: relative;
@@ -316,7 +315,7 @@ const copyNote = async (note) => {
   gap: 20px;
 }
 
-/* 
+/*
   2. 取消 Hover 悬浮样式
   保持卡片扁平，仅保留基础阴影
 */

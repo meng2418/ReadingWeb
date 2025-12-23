@@ -7,17 +7,13 @@ import {
   Moon,
   Sun,
   MessageSquareQuote,
-  ScrollText,
-  BookOpen,
 } from 'lucide-vue-next'
-import type { ReadingMode } from './types'
 
 const props = defineProps<{
   isDarkMode: boolean
   activePanel: 'none' | 'toc' | 'typography' | 'notes'
   isAnnotationMode: boolean
   showThoughts: boolean
-  readingMode: ReadingMode
 }>()
 
 const emit = defineEmits<{
@@ -26,7 +22,6 @@ const emit = defineEmits<{
   (e: 'toggleTypography'): void
   (e: 'toggleAnnotation'): void
   (e: 'toggleThoughts'): void
-  (e: 'toggleReadingMode'): void
 }>()
 </script>
 
@@ -74,19 +69,6 @@ const emit = defineEmits<{
     >
       <MessageSquareQuote :size="20" />
       <span class="tooltip">想法 (Thoughts)</span>
-    </button>
-
-    <button
-      @click="$emit('toggleReadingMode')"
-      class="menu-btn"
-      :class="{ dark: isDarkMode }"
-      title="阅读模式"
-    >
-      <ScrollText v-if="readingMode === 'paged'" :size="20" />
-      <BookOpen v-else :size="20" />
-      <span class="tooltip">
-        {{ readingMode === 'paged' ? '切换上下滚动' : '切换左右翻页' }}
-      </span>
     </button>
 
     <button

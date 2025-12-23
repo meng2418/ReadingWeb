@@ -24,6 +24,7 @@ const formattedReaders = computed(() => {
 
 const handleViewDetail = () => {
   emit('view')
+
 }
 </script>
 

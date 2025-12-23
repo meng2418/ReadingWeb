@@ -15,7 +15,6 @@
           <span class="book-name">《{{ note.bookName }}》</span>
           <span class="note-date">{{ note.date }}</span>
         </div>
-
         <div class="note-content">
           <div class="quote-mark">“</div>
           <p>{{ note.content }}</p>

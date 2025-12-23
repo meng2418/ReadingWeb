@@ -519,7 +519,8 @@ function generateCategoryDataStructure(mainCategory: string): Record<string, Ran
 // 新增：生成分类数据函数（用于子分类）
 function generateCategoryData(mainCategory: string, subCategory: string): RankedBook[] {
   const data: RankedBook[] = []
-  for (let i = 1; i <= 50; i++) {
+  for (let i = 1; i <= 50
+  ; i++) {
     // 使用哈希函数生成唯一的数字id
     const uniqueId = stringToHash(`${mainCategory}-${subCategory}-${i}`)
     data.push({
