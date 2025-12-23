@@ -3,7 +3,7 @@
   <NavBar />
   <div class="profile-page">
     <section class="header-section">
-      <UserProfile />
+      <UserProfile :user="user" />
     </section>
 
     <section class="main-section">
@@ -22,6 +22,10 @@
 </template>
 
 <script setup>
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+import { useTitle } from '@/stores/useTitle'
 import NavBar from '@/components/layout/NavBar.vue'
 import UserProfile from '@/components/user/UserProfile.vue'
 import SidebarRankings from '@/components/user/SidebarRankings.vue'
@@ -29,6 +33,48 @@ import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
 import ReadingNotes from '@/components/user/ReadingNotes.vue'
 import ReadingThoughts from '@/components/user/ReadingThoughts.vue'
 import ReadingReviews from '@/components/user/ReadingReviews.vue'
+import { getUserProfile, getUserAccount, getFollowingList, getFollowersList } from '@/api/user'
+
+const route = useRoute()
+const user = ref({
+  nickname: '',
+  signature: '',
+  avatar: '',
+  stats: {
+    following: 0,
+    followers: 0,
+    posts: 0,
+  },
+  payCoin: 0,
+  giftVIP: 0,
+  isVip: false,
+  vipDays: 0,
+  vipEndTime: null,
+})
+
+onMounted(async () => {
+  const [profile, account] = await Promise.all([getUserProfile(), getUserAccount()])
+
+  user.value.nickname = profile.username
+  user.value.signature = profile.bio
+  user.value.avatar = profile.avatar
+  user.value.isVip = profile.isVip
+  user.value.payCoin = profile.coins
+
+  const followingList = await getFollowingList()
+  const followersList = await getFollowersList()
+  user.value.stats.following = followingList.length
+  user.value.stats.followers = followersList.length
+
+  user.value.isVip = account.isMember
+  user.value.vipEndTime = account.memberExpireAt
+})
+
+// 动态页面标题
+const title = computed(() =>
+  user.value.nickname ? `${user.value.nickname} - 个人主页` : '个人主页',
+)
+useTitle(title)
 </script>
 
 <style scoped>
