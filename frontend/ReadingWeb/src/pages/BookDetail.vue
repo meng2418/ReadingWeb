@@ -71,7 +71,10 @@ import AuthorInfoSection from '@/components/bookdetail/AuthorInfoSection.vue'
 import RelatedRecommendations from '@/components/bookdetail/RelatedRecommendations.vue'
 import UserReviews from '@/components/bookdetail/UserReviews.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
-import UserProfile from '@/components/user/UserProfile.vue'
+import { useTitle } from '@/stores/useTitle'
+import { computeRatingStats, countPublicReviews } from '@/composables/useReviews'
+import type { Review } from '@/types/review'
+import type { BookListItem } from '@/types/book'
 const route = useRoute()
 const userProfileRef = ref() // UserProfile组件引用
 // 在组件挂载时滚动到顶部
@@ -95,7 +98,9 @@ const handleOpenRechargeDialog = () => {
 // 修改：添加书籍ID和标题常量
 const bookId = 'book-123' // 书籍的唯一标识符
 const bookTitle = '少年Pi的奇幻漂流'
-
+// 动态页面标题
+const title = ref(`${bookTitle} - 书籍详情`)
+useTitle(title)
 // 定义相关类型
 interface Work {
   id: number
@@ -104,85 +109,27 @@ interface Work {
   cover?: string
 }
 
-interface Book {
-  id: number
-  title: string
+type RelatedBook = Required<Pick<BookListItem, 'id' | 'title' | 'cover'>> & {
   intro: string
-  cover: string
 }
-
-interface Review {
-  id: number
-  bookId?: string
-  userId?: string
-  userName: string
-  content: string
-  date: string
-  rating?: string
-  isPublic?: boolean
-  lastEditDate?: string
-}
-
 // 修改：计算推荐值统计数据
-const ratingStats = computed(() => {
-  try {
-    const publicReviews = JSON.parse(localStorage.getItem('publicReviews') || '{}')
-    const bookPublicReviews = publicReviews[bookId] || {}
-
-    let recommend = 70 // 默认值
-    let average = 20   // 默认值
-    let poor = 10      // 默认值
-
-    // 统计公开点评中的评分
-    Object.values(bookPublicReviews).forEach((review: any) => {
-      if (review.isPublic !== false) {
-        switch (review.rating) {
-          case 'recommend':
-            recommend++
-            break
-          case 'average':
-            average++
-            break
-          case 'poor':
-            poor++
-            break
-        }
-      }
-    })
-
-    return { recommend, average, poor }
-  } catch (error) {
-    console.error('计算评分统计失败:', error)
-    return { recommend: 70, average: 20, poor: 10 }
-  }
-})
+const ratingStats = computed(() =>
+  computeRatingStats(bookId, { recommend: 70, average: 20, poor: 10 }),
+)
 
 // 修改：计算总点评数
-const reviewCount = computed(() => {
-  try {
-    const publicReviews = JSON.parse(localStorage.getItem('publicReviews') || '{}')
-    const bookPublicReviews = publicReviews[bookId] || {}
-
-    // 计算公开点评数量
-    const publicCount = Object.values(bookPublicReviews)
-      .filter((review: any) => review.isPublic !== false)
-      .length
-
-    // 加上模拟数据中的点评数
-    return reviewsData.value.length + publicCount
-  } catch (error) {
-    console.error('计算点评数失败:', error)
-    return 100 // 默认值
-  }
-})
+const reviewCount = computed(() => countPublicReviews(bookId, reviewsData.value.length))
 
 // 监听路由变化，刷新数据
-watch(() => route.query, (newQuery) => {
-  if (newQuery.refresh === 'true') {
-    // 重新计算数据
-    console.log('刷新页面数据')
-  }
-})
+watch(
+  () => route.query,
+  (newQuery) => {
+    if (newQuery.refresh === 'true') {
+      // 重新计算数据
+      console.log('刷新页面数据')
+    }
+  },
+)
 
 // 作者信息数据
 const authorInfo = {
@@ -219,7 +166,7 @@ const authorWorks = [
 ]
 
 // 相关推荐作品数据
-const relatedBooks = ref([
+const relatedBooks = ref<RelatedBook[]>([
   {
     id: 1,
     title: '时光旅行者的妻子',
@@ -341,7 +288,7 @@ const reviewsData = ref<Review[]>([
     content:
       '这本书真的让我爱不释手，故事情节紧凑，人物塑造生动。作者的文字功底深厚，能够将复杂的情感用简单的语言表达出来。特别是主角的成长历程，让我感同身受。',
     date: '2023-10-15',
-    rating: 'recommend'
+    rating: 'recommend',
   },
   {
     id: 2,
@@ -349,7 +296,7 @@ const reviewsData = ref<Review[]>([
     content:
       '一开始是被封面吸引的，读完后发现内容更加精彩。作者对细节的把握非常到位，每一个场景都描绘得栩栩如生。虽然有些情节略显拖沓，但整体来说是一部值得推荐的作品。',
     date: '2023-10-12',
-    rating: 'average'
+    rating: 'average',
   },
   {
     id: 3,
@@ -357,7 +304,7 @@ const reviewsData = ref<Review[]>([
     content:
       '这本书让我重新找回了阅读的乐趣。故事情节虽然简单，但蕴含的哲理却很深刻。适合在安静的夜晚慢慢品味，每一章都能带来新的思考。',
     date: '2023-10-08',
-    rating: 'recommend'
+    rating: 'recommend',
   },
   {
     id: 4,
@@ -365,7 +312,7 @@ const reviewsData = ref<Review[]>([
     content:
       '非常喜欢这本书的叙事风格，作者用独特的视角讲述了一个平凡而又不平凡的故事。读完之后久久不能平静，强烈推荐给喜欢文学的朋友。',
     date: '2023-10-05',
-    rating: 'recommend'
+    rating: 'recommend',
   },
   {
     id: 5,
@@ -373,7 +320,7 @@ const reviewsData = ref<Review[]>([
     content:
       '这本书的人物关系处理得非常巧妙，每个角色都有自己鲜明的个性。故事情节跌宕起伏，让人一旦开始阅读就停不下来。',
     date: '2023-10-01',
-    rating: 'recommend'
+    rating: 'recommend',
   },
   {
     id: 6,
@@ -381,7 +328,7 @@ const reviewsData = ref<Review[]>([
     content:
       '作者的文笔细腻，能够精准地捕捉人物内心的微妙变化。虽然故事背景设定在特定的时代，但其中蕴含的情感却是普世的，容易引起共鸣。',
     date: '2023-09-28',
-    rating: 'average'
+    rating: 'average',
   },
   {
     id: 7,
@@ -389,7 +336,7 @@ const reviewsData = ref<Review[]>([
     content:
       '作为科幻爱好者，我认为这本书在科学设定上非常严谨，同时又没有忽视人文关怀。作者成功地在硬核科幻与情感表达之间找到了平衡点。',
     date: '2023-09-25',
-    rating: 'recommend'
+    rating: 'recommend',
   },
   {
     id: 8,
@@ -397,7 +344,7 @@ const reviewsData = ref<Review[]>([
     content:
       '从历史研究的角度来看，这本书对时代背景的还原相当准确。作者显然做了大量的资料收集工作，让读者能够身临其境地感受那个时代的气息。',
     date: '2023-09-22',
-    rating: 'recommend'
+    rating: 'recommend',
   },
   {
     id: 9,
@@ -405,7 +352,7 @@ const reviewsData = ref<Review[]>([
     content:
       '书中对人物心理的描写十分到位，特别是主角在面对困境时的心理变化过程，真实而细腻。这对我学习心理学很有启发。',
     date: '2023-09-18',
-    rating: 'average'
+    rating: 'average',
   },
   {
     id: 10,
@@ -413,7 +360,7 @@ const reviewsData = ref<Review[]>([
     content:
       '阅读这本书就像进行了一场心灵旅行。作者笔下的场景描写让我仿佛亲眼看到了那些风景，文字中充满了画面感。',
     date: '2023-09-15',
-    rating: 'recommend'
+    rating: 'recommend',
   },
 ])
 

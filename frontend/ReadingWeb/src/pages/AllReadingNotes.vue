@@ -24,7 +24,7 @@
       <div class="notes-grid">
         <div v-if="filteredNotes.length === 0" class="empty-state">
           <inbox class="icon-lg" />
-          <p>没有找到相关笔记</p>
+          <p>没有找到相关划线</p>
         </div>
 
         <div v-for="note in filteredNotes" :key="note.id" class="note-card">
@@ -33,7 +33,7 @@
               <Book class="icon-xs" />
               <span>{{ note.bookName }}</span>
             </div>
-            <span class="note-date">{{ formatDate(note.date) }}</span>
+            <span class="note-date">{{ formatNoteDate(note.date) }}</span>
           </div>
 
           <div class="card-body">
@@ -72,6 +72,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { formatDate as formatDisplayDate } from '@/composables/useReviews'
 // 新增 Check 图标
 import {
   ArrowLeft,
@@ -150,7 +151,7 @@ const bookList = computed(() => Array.from(new Set(allNotes.value.map((n) => n.b
 
 // 核心修改：增加排序逻辑 sort((a, b) => new Date(b.date) - new Date(a.date))
 const filteredNotes = computed(() => {
-  let result = allNotes.value.filter((note) => {
+  const result = allNotes.value.filter((note) => {
     const matchBook = selectedBook.value ? note.bookName === selectedBook.value : true
     const matchSearch =
       note.content.includes(searchQuery.value) || note.bookName.includes(searchQuery.value)
@@ -161,7 +162,7 @@ const filteredNotes = computed(() => {
   return result.sort((a, b) => new Date(b.date) - new Date(a.date))
 })
 
-const formatDate = (str) => str.replace('-', '.')
+const formatNoteDate = (str) => formatDisplayDate(str, { withTime: false, separator: '.' })
 
 const highlightText = (text) => {
   if (!searchQuery.value) return text

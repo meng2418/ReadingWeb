@@ -38,34 +38,16 @@
 <script setup lang="ts">
 import { Delete } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
-
-// 定义评级配置类型
-interface RatingConfig {
-  [key: string]: {
-    label: string
-    className: string
-  }
-}
-
-// 定义书评类型
-interface ReviewItem {
-  id: number
-  bookName: string
-  cover: string
-  rating: string
-  date: string
-  likes: number
-  content: string
-}
+import type { ReviewCardItem, RatingConfig } from '@/types/review'
 
 interface Props {
-  review: ReviewItem
+  review: ReviewCardItem
   ratingConfig: RatingConfig
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-  delete: [id: number]
+  delete: [id: number | string]
 }>()
 
 // 处理删除

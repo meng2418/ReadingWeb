@@ -90,6 +90,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import {
+  formatDate,
+  ensureCurrentUserId,
+  upsertUserReview,
+  upsertPublicReview,
+  removePublicReview,
+  removeUserReview,
+  getUserReview,
+} from '@/composables/useReviews'
+import type { Review } from '@/types/review'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,33 +117,17 @@ const canSubmit = computed(() => {
   return reviewText.value.trim().length > 0 && reviewText.value.length <= 1000
 })
 
-// 获取当前用户ID
-const getCurrentUserId = () => {
-  let userId = localStorage.getItem('currentUserId')
-
-  if (!userId) {
-    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-    localStorage.setItem('currentUserId', userId)
-  }
-
-  return userId
-}
-
 // 加载用户已有的点评（如果是编辑模式）
 const loadUserReview = () => {
   if (!bookId.value) return
 
   try {
-    const currentUserId = getCurrentUserId()
-    const userReviews = JSON.parse(localStorage.getItem('userReviews') || '{}')
-
-    if (userReviews[currentUserId] && userReviews[currentUserId][bookId.value]) {
-      const existingReview = userReviews[currentUserId][bookId.value]
-
-      // 填充表单
-      selectedRating.value = existingReview.rating
+    const currentUserId = ensureCurrentUserId()
+    const existingReview = getUserReview(bookId.value, currentUserId)
+    if (existingReview) {
+      selectedRating.value = existingReview.rating || selectedRating.value
       reviewText.value = existingReview.content
-      isPublic.value = existingReview.isPublic
+      isPublic.value = existingReview.isPublic ?? true
       isEditMode.value = true
     }
   } catch (error) {
@@ -167,64 +161,28 @@ const handleBack = () => {
 const handleSubmit = () => {
   if (!canSubmit.value) return
 
-  // 获取当前用户ID
-  const currentUserId = getCurrentUserId()
+  const currentUserId = ensureCurrentUserId()
+  const formattedDate = formatDate(Date.now())
 
-  // 获取当前时间
-  const now = new Date()
-  const formattedDate = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-
-  // 创建点评对象
-  const review = {
-    id: Date.now(), // 使用时间戳作为唯一ID
+  const review: Review = {
+    id: Date.now(),
     bookId: bookId.value,
     bookTitle: bookTitle.value,
     userId: currentUserId,
-    userName: '当前用户', // 这里应该是从登录状态获取的用户名
+    userName: '当前用户',
     rating: selectedRating.value,
     content: reviewText.value,
     isPublic: isPublic.value,
     date: formattedDate,
-    lastEditDate: formattedDate // 最后编辑时间
+    lastEditDate: formattedDate,
   }
 
   try {
-    // 获取现有的用户点评数据
-    const userReviews = JSON.parse(localStorage.getItem('userReviews') || '{}')
-
-    // 初始化用户数据
-    if (!userReviews[currentUserId]) {
-      userReviews[currentUserId] = {}
-    }
-
-    // 保存/更新当前书籍的点评
-    userReviews[currentUserId][bookId.value] = review
-
-    // 保存到localStorage
-    localStorage.setItem('userReviews', JSON.stringify(userReviews))
-
-    // 如果是公开的点评，还需要更新公共点评列表
+    upsertUserReview(review)
     if (isPublic.value) {
-      // 获取公共点评列表
-      const publicReviews = JSON.parse(localStorage.getItem('publicReviews') || '{}')
-
-      // 初始化书籍的公共点评列表
-      if (!publicReviews[bookId.value]) {
-        publicReviews[bookId.value] = {}
-      }
-
-      // 保存当前用户的公共点评（覆盖旧的）
-      publicReviews[bookId.value][currentUserId] = review
-
-      localStorage.setItem('publicReviews', JSON.stringify(publicReviews))
+      upsertPublicReview(bookId.value, review)
     } else {
-      // 如果改为不公开，从公共点评中移除
-      const publicReviews = JSON.parse(localStorage.getItem('publicReviews') || '{}')
-
-      if (publicReviews[bookId.value] && publicReviews[bookId.value][currentUserId]) {
-        delete publicReviews[bookId.value][currentUserId]
-        localStorage.setItem('publicReviews', JSON.stringify(publicReviews))
-      }
+      removePublicReview(bookId.value, currentUserId)
     }
 
     alert(isEditMode.value ? '点评更新成功！' : '点评发表成功！')
@@ -249,23 +207,9 @@ const handleDelete = () => {
   if (!confirm('确定要删除这条点评吗？')) return
 
   try {
-    const currentUserId = getCurrentUserId()
-
-    // 从用户点评中删除
-    const userReviews = JSON.parse(localStorage.getItem('userReviews') || '{}')
-
-    if (userReviews[currentUserId] && userReviews[currentUserId][bookId.value]) {
-      delete userReviews[currentUserId][bookId.value]
-      localStorage.setItem('userReviews', JSON.stringify(userReviews))
-    }
-
-    // 从公共点评中删除
-    const publicReviews = JSON.parse(localStorage.getItem('publicReviews') || '{}')
-
-    if (publicReviews[bookId.value] && publicReviews[bookId.value][currentUserId]) {
-      delete publicReviews[bookId.value][currentUserId]
-      localStorage.setItem('publicReviews', JSON.stringify(publicReviews))
-    }
+    const currentUserId = ensureCurrentUserId()
+    removeUserReview(bookId.value, currentUserId)
+    removePublicReview(bookId.value, currentUserId)
 
     alert('点评删除成功！')
 

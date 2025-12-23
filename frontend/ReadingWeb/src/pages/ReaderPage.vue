@@ -3,8 +3,6 @@
   <div class="app-container" :class="{ 'dark-mode': isDarkMode }">
     <TopNavigation title="她既想死，又想去巴黎" :isVisible="true" :isDarkMode="isDarkMode" />
 
-    <!-- SideMenu 已移除，如需恢复请 import 并注册组件 -->
-
     <TableOfContents
       :isOpen="activePanel === 'toc'"
       @close="closePanels"
@@ -23,13 +21,16 @@
 
     <div class="content-wrapper">
       <ReaderContent
-        :pageData="samplePageData"
+        :pageData="displayedPageData"
         :isDarkMode="isDarkMode"
         :typography="typography"
-        :readingMode="readingMode"
         :annotations="showThoughts ? annotations : annotations.filter((a) => a.type !== 'thought')"
+        :hasPrevChapter="currentChapterIndex > 0"
+        :hasNextChapter="currentChapterIndex < chapters.length - 1"
         @addAnnotation="handleAddAnnotation"
         @activeThought="handleActiveThought"
+        @prevChapter="goToPrevChapter"
+        @nextChapter="goToNextChapter"
         @aiQuery="
           (text) => {
             aiSelectedText = text
@@ -47,11 +48,9 @@
       @toggleTypography="togglePanel('typography')"
       @toggleAnnotation="togglePanel('notes')"
       @toggleThoughts="showThoughts = !showThoughts"
-      @toggleReadingMode="readingMode = readingMode === 'paged' ? 'scroll' : 'paged'"
       :activePanel="activePanel"
       :isAnnotationMode="activePanel === 'notes'"
       :showThoughts="showThoughts"
-      :readingMode="readingMode"
     />
 
     <TypographyPanel
@@ -81,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 // 组件路径 - 请根据实际项目路径确认
 import TopNavigation from '@/components/Reader/TopNavigation.vue'
@@ -96,35 +95,122 @@ import type {
   BookPage,
   TypographySettings,
   Chapter,
-  ReadingMode,
   Note,
   Comment,
   Annotation,
 } from '@/components/Reader/types'
 
-type ReadingMode = 'paged' | 'scroll'
 // --------------------------
 // 示例数据
 // --------------------------
-const samplePageData = {
-  chapter: '译者序：爱与艺术的交响乐',
-  content: [
-    '贝尔特 · 莫里索绘',
-    '你本应拥有另一种命运，值得更优秀的人、更纯粹的爱。我竭尽所能，想要向你证明我的爱意。可你渴望的，恰好是我唯一无法给予的。',
-    'Préface',
-    '1846年7月29日，巴黎一位著名雕塑家詹姆斯 · 普拉迪埃的工作室里，二十五岁的古斯塔夫 · 福楼拜与三十六岁的路易丝 · 科莱初次相逢。这并非一场偶然的邂逅，而是命运的交会。当时，福楼拜尚未崭露头角，1844年他因神经疾病放弃了法律学业，回到故乡克鲁瓦塞过着隐居般的生活，依靠家族遗产与母亲相伴；路易丝已是巴黎文学圈中的一颗明星，她以诗人和作家的身份活跃于沙龙，作品多次获得法兰西学院的嘉奖。她嫁给了音乐家伊波利特 · 科莱，但婚姻并未束缚她的情感与才华，她与哲学家维克托 · 库森等名流有着剪不断、理还乱的关系。',
-    '初见时，路易丝的美貌与活力令福楼拜心动。他后来在信中写道："你拥有能让人死而复生般的丰沛爱意。"她的金发、白皙的肌肤与自信的气质，与福楼拜日后笔下塑造的爱玛 · 包法利有着惊人的相似之处，而福楼拜的高大身材、深邃的眼神与文学热情，也吸引了这位比他年长十一岁的女性。他们迅速坠入爱河，开始了一段持续八年的激情与矛盾交织的恋情。这段关系不仅改变了他们的生活轨迹，也为文学史留下了宝贵的书信遗产。',
-    '恋情伊始，福楼拜与路易丝的交流主要通过书信完成。由于他不愿离开克鲁瓦塞，声称要陪伴年迈的母亲，他们的见面机会极为有限。1846年至1848年的两年间，他们仅在巴黎或芒特拉若利见到了六次。然而，距离并未冷却他们的热情，反而点燃了书信中的火焰。福楼拜的信件充满了浪漫的想象与炽烈的表白，如1846年8月14日的信中写道："我要让你沉溺在爱欲的沉醉之中……想要你在垂暮之年，回忆起这些短暂的时光时，干枯的骨骼仍能为之战栗，为之欣喜若狂。"这样的文字既展现了他对路易丝的渴望，也透露出一种将爱情艺术化、理想化的倾向。对于福楼拜而言，路易丝不仅是恋人，更是他文学创作的灵感缪斯与倾诉对象。',
-  ],
+// 模拟多章节内容
+const chapterContents = {
+  '1': {
+    title: '译者序：爱与艺术的交响乐',
+    paragraphs: [
+      '贝尔特 · 莫里索绘',
+      '你本应拥有另一种命运，值得更优秀的人、更纯粹的爱。我竭尽所能，想要向你证明我的爱意。可你渴望的，恰好是我唯一无法给予的。',
+      'Préface',
+      '1846年7月29日，巴黎一位著名雕塑家詹姆斯 · 普拉迪埃的工作室里，二十五岁的古斯塔夫 · 福楼拜与三十六岁的路易丝 · 科莱初次相逢。这并非一场偶然的邂逅，而是命运的交会。当时，福楼拜尚未崭露头角，1844年他因神经疾病放弃了法律学业，回到故乡克鲁瓦塞过着隐居般的生活，依靠家族遗产与母亲相伴；路易丝已是巴黎文学圈中的一颗明星，她以诗人和作家的身份活跃于沙龙，作品多次获得法兰西学院的嘉奖。她嫁给了音乐家伊波利特 · 科莱，但婚姻并未束缚她的情感与才华，她与哲学家维克托 · 库森等名流有着剪不断、理还乱的关系。',
+      '初见时，路易丝的美貌与活力令福楼拜心动。他后来在信中写道："你拥有能让人死而复生般的丰沛爱意。"她的金发、白皙的肌肤与自信的气质，与福楼拜日后笔下塑造的爱玛 · 包法利有着惊人的相似之处，而福楼拜的高大身材、深邃的眼神与文学热情，也吸引了这位比他年长十一岁的女性。他们迅速坠入爱河，开始了一段持续八年的激情与矛盾交织的恋情。这段关系不仅改变了他们的生活轨迹，也为文学史留下了宝贵的书信遗产。',
+      '恋情伊始，福楼拜与路易丝的交流主要通过书信完成。由于他不愿离开克鲁瓦塞，声称要陪伴年迈的母亲，他们的见面机会极为有限。1846年至1848年的两年间，他们仅在巴黎或芒特拉若利见到了六次。然而，距离并未冷却他们的热情，反而点燃了书信中的火焰。福楼拜的信件充满了浪漫的想象与炽烈的表白，如1846年8月14日的信中写道："我要让你沉溺在爱欲的沉醉之中……想要你在垂暮之年，回忆起这些短暂的时光时，干枯的骨骼仍能为之战栗，为之欣喜若狂。"这样的文字既展现了他对路易丝的渴望，也透露出一种将爱情艺术化、理想化的倾向。对于福楼拜而言，路易丝不仅是恋人，更是他文学创作的灵感缪斯与倾诉对象。',
+      '长夜的写作与清晨的重读成为福楼拜与路易丝的共同节奏。她在巴黎的社交圈子中纵横捭阖，而他在克鲁瓦塞的书房里反复打磨每一个句子。两条轨迹偶尔交汇，但更多时候，他们只能以文字为桥梁。在信中，福楼拜讨论如何在小说中保持"客观冷静的凝视"，又抱怨身体的病痛使他陷入虚弱。他甚至把写作比作"一场缓慢而壮丽的溺水"，既是享受也是折磨。',
+      '路易丝则在现实与幻想之间穿梭。她渴望与福楼拜在一起，但又无法舍弃巴黎的舞台。她写道："如果我离开，便不再是我自己；若我留下，又怕失去你。"这种摇摆让他们的信件中充满了质问与自责。福楼拜的回答往往冷静而坚定："我爱你，但我更爱真理与艺术。若写作是我的命运，你便是其中不可或缺的见证。"这种把情感与创作捆绑的态度，使他们的爱情呈现出一种近乎宗教的虔诚。',
+      '1848年革命爆发，巴黎陷入动荡，路易丝的收入锐减，生活压力骤增。她希望福楼拜能来巴黎共度难关，但他依旧选择留在克鲁瓦塞。这一次，他给出的理由不仅是母亲的健康，更是"文学需要宁静"。路易丝愤怒地指责他逃避现实，质疑他的爱是否只是为了文学服务。福楼拜则坚持，真正的爱应该让彼此成为更完整的人，而不是彼此的枷锁。',
+      '他们的争吵在信件中愈演愈烈，但每一次风暴过后，又会出现温柔的和解。福楼拜会寄去他最新完成的手稿片段，路易丝则回赠她的诗稿。互相批评、互相欣赏，构成了他们关系的基石。福楼拜常说："你是我最苛刻的读者，也是我最忠诚的读者。"而路易丝则回道："只有你能理解我在词句间藏下的颤抖。"这种双向的深度阅读，使他们的情感超越了简单的恋爱，转化为彼此的创作伙伴关系。',
+      '随着时间推移，他们都意识到激情终将退却，生活需要更稳固的支撑。路易丝提出分开一段时间，给彼此空间去思考未来。福楼拜接受了这个建议，并在信中写下："若我们注定要各自前行，我也希望在每一个黎明，你仍能听到我在纸上的回响。"这句话后来被许多评论家视为福楼拜写作观的缩影——文字是他与世界沟通的唯一方式，也是他保存感情的容器。',
+      '他们最终在1854年正式结束了情感关系，但书信往来并未终止。路易丝继续在巴黎发表诗作，福楼拜则完成了《包法利夫人》。当这部小说问世时，她写信祝贺，并坦言在爱玛身上看到了自己与无数女性的影子。福楼拜回应道："若没有你，我写不出她；若没有你，我也不会理解什么是真实的痛苦。"',
+      '回望这段关系，我们看到的不只是两个人的爱情史，更是十九世纪文学与现实交织的样本。他们在信件中不断探索艺术与生活的边界，既渴望彼此，又守护各自的独立。这种张力让他们的文字充满力量，也让后人得以窥见一个时代的情感密度。',
+      '或许，福楼拜与路易丝从未真正分开。文字让他们在不同的城市、不同的时间里持续相遇；文学让他们的灵魂在纸上永恒停驻。正如路易丝在分手后写下的那句话："当我翻开你的信，就像再次推开那扇通往夏日花园的门，那里有我未竟的青春，也有我们共同的梦。"',
+      '对读者而言，这些书信不仅是八年爱情的见证，也是理解福楼拜创作心路的钥匙。每一封信都是他思想的练习场，情感的宣泄口，也是文学形式的实验。正因如此，《福楼拜与科莱书信集》才会在出版后引起广泛关注，成为研究福楼拜乃至整个十九世纪法国文学的重要文献。',
+      '今天，当我们在数字屏幕上重读这些文字时，仍能感受到其中的温度与重量。它提醒我们：真正的阅读不仅是信息的获取，更是与作者、与过去、与自我进行的持续对话。微信读书的存在，正是让这种对话在新时代继续发生的桥梁。',
+    ]
+  },
+  '2': {
+    title: '第一章：初遇',
+    paragraphs: [
+      '1846年的那个夏日午后，巴黎的空气中弥漫着艺术与激情的味道。在詹姆斯·普拉迪埃的工作室里，阳光透过高窗洒在雕塑作品上，为这个充满创造力的空间增添了几分神圣感。正是在这样的氛围中，古斯塔夫·福楼拜第一次见到了路易丝·科莱。',
+      '那时的福楼拜，二十五岁，刚刚从法律学业的挫败中走出，回到克鲁瓦塞的家中。他身材高大，眼神深邃，眉宇间透露出对文学的执着与对生活的困惑。虽然尚未在文坛崭露头角，但他已经开始了自己的创作之路，每天都在书房中与文字搏斗，试图找到属于自己的声音。',
+      '而路易丝，三十六岁，已经是巴黎文学圈中的知名人物。她以诗人的身份活跃于各个沙龙，作品多次获得法兰西学院的嘉奖。她的美貌与才华同样出众，金发如瀑布般垂在肩上，白皙的肌肤在阳光下闪闪发光。她嫁给了音乐家伊波利特·科莱，但这段婚姻并没有束缚她的情感与创作。',
+      '当他们的目光第一次相遇时，时间仿佛静止了。福楼拜后来在信中回忆道："那一刻，我仿佛看到了另一个自己，一个在文字中寻找真理，在情感中寻找真实的灵魂。"而路易丝则被这个年轻作家的热情与才华所吸引，她感受到了某种共鸣，某种在文学与艺术中才能找到的理解。',
+      '他们的初次对话并不长，但每一句话都充满了深意。福楼拜谈到了他对文学的理想，对"客观冷静的凝视"的追求；路易丝则分享了她对诗歌的理解，对情感与形式的平衡。他们发现彼此在艺术理念上有着惊人的相似之处，都相信文字应该超越个人情感，成为探索人性与世界的工具。',
+      '然而，这次相遇也暴露了他们之间的差异。福楼拜更倾向于隐居式的创作，他需要宁静的环境来打磨每一个句子；而路易丝则活跃于社交圈，她需要外界的刺激来激发灵感。这种差异，在未来的岁月中，将成为他们关系中的主要矛盾。',
+    ]
+  },
+  '3': {
+    title: '第二章：书信的火焰',
+    paragraphs: [
+      '由于福楼拜不愿离开克鲁瓦塞，声称要陪伴年迈的母亲，他们的见面机会极为有限。1846年至1848年的两年间，他们仅在巴黎或芒特拉若利见到了六次。然而，距离并未冷却他们的热情，反而点燃了书信中的火焰。',
+      '福楼拜的信件充满了浪漫的想象与炽烈的表白。在1846年8月14日的信中，他写道："我要让你沉溺在爱欲的沉醉之中……想要你在垂暮之年，回忆起这些短暂的时光时，干枯的骨骼仍能为之战栗，为之欣喜若狂。"这样的文字既展现了他对路易丝的渴望，也透露出一种将爱情艺术化、理想化的倾向。',
+      '对于福楼拜而言，路易丝不仅是恋人，更是他文学创作的灵感缪斯与倾诉对象。他在信中讨论如何在小说中保持"客观冷静的凝视"，又抱怨身体的病痛使他陷入虚弱。他甚至把写作比作"一场缓慢而壮丽的溺水"，既是享受也是折磨。',
+      '路易丝的回信同样充满激情与智慧。她分享自己在巴黎的见闻，谈论文学与艺术，也表达对福楼拜的思念。她写道："如果我离开，便不再是我自己；若我留下，又怕失去你。"这种摇摆让他们的信件中充满了质问与自责。',
+      '福楼拜的回答往往冷静而坚定："我爱你，但我更爱真理与艺术。若写作是我的命运，你便是其中不可或缺的见证。"这种把情感与创作捆绑的态度，使他们的爱情呈现出一种近乎宗教的虔诚。',
+    ]
+  },
+  '4': {
+    title: '第三章：矛盾与和解',
+    paragraphs: [
+      '1848年革命爆发，巴黎陷入动荡，路易丝的收入锐减，生活压力骤增。她希望福楼拜能来巴黎共度难关，但他依旧选择留在克鲁瓦塞。这一次，他给出的理由不仅是母亲的健康，更是"文学需要宁静"。',
+      '路易丝愤怒地指责他逃避现实，质疑他的爱是否只是为了文学服务。福楼拜则坚持，真正的爱应该让彼此成为更完整的人，而不是彼此的枷锁。他们的争吵在信件中愈演愈烈，但每一次风暴过后，又会出现温柔的和解。',
+      '福楼拜会寄去他最新完成的手稿片段，路易丝则回赠她的诗稿。互相批评、互相欣赏，构成了他们关系的基石。福楼拜常说："你是我最苛刻的读者，也是我最忠诚的读者。"而路易丝则回道："只有你能理解我在词句间藏下的颤抖。"',
+      '这种双向的深度阅读，使他们的情感超越了简单的恋爱，转化为彼此的创作伙伴关系。他们在文字中找到了理解，也在理解中找到了继续前行的力量。',
+    ]
+  },
+  '5': {
+    title: '第四章：别离与永恒',
+    paragraphs: [
+      '随着时间推移，他们都意识到激情终将退却，生活需要更稳固的支撑。路易丝提出分开一段时间，给彼此空间去思考未来。福楼拜接受了这个建议，并在信中写下："若我们注定要各自前行，我也希望在每一个黎明，你仍能听到我在纸上的回响。"',
+      '这句话后来被许多评论家视为福楼拜写作观的缩影——文字是他与世界沟通的唯一方式，也是他保存感情的容器。他们最终在1854年正式结束了情感关系，但书信往来并未终止。',
+      '路易丝继续在巴黎发表诗作，福楼拜则完成了《包法利夫人》。当这部小说问世时，她写信祝贺，并坦言在爱玛身上看到了自己与无数女性的影子。福楼拜回应道："若没有你，我写不出她；若没有你，我也不会理解什么是真实的痛苦。"',
+      '回望这段关系，我们看到的不只是两个人的爱情史，更是十九世纪文学与现实交织的样本。他们在信件中不断探索艺术与生活的边界，既渴望彼此，又守护各自的独立。这种张力让他们的文字充满力量，也让后人得以窥见一个时代的情感密度。',
+      '或许，福楼拜与路易丝从未真正分开。文字让他们在不同的城市、不同的时间里持续相遇；文学让他们的灵魂在纸上永恒停驻。正如路易丝在分手后写下的那句话："当我翻开你的信，就像再次推开那扇通往夏日花园的门，那里有我未竟的青春，也有我们共同的梦。"',
+    ]
+  }
 }
 
 const chapters = [
   { id: '1', title: '译者序：爱与艺术的交响乐', page: 1 },
   { id: '2', title: '第一章：初遇', page: 5 },
-  { id: '3', title: '第二章：巴黎的诱惑', page: 12 },
-  { id: '4', title: '第三章：书信与誓言', page: 28 },
-  { id: '5', title: '第四章：别离之苦', page: 45 },
+  { id: '3', title: '第二章：书信的火焰', page: 12 },
+  { id: '4', title: '第三章：矛盾与和解', page: 28 },
+  { id: '5', title: '第四章：别离与永恒', page: 45 },
 ]
+
+const displayedPageData = computed<BookPage>(() => {
+  const chapterData = chapterContents[currentChapterId.value] || chapterContents['1']
+  return {
+    chapter: chapterData.title,
+    content: chapterData.paragraphs,
+  }
+})
+
+const currentChapterIndex = computed(() => {
+  return chapters.findIndex(chapter => chapter.id === currentChapterId.value)
+})
+
+const goToPrevChapter = () => {
+  const prevIndex = currentChapterIndex.value - 1
+  if (prevIndex >= 0) {
+    handleChapterSelect(chapters[prevIndex].id)
+    // 滚动到顶部
+    const article = document.querySelector('.reader-article')
+    if (article) {
+      article.scrollTop = 0
+    }
+  }
+}
+
+const goToNextChapter = () => {
+  const nextIndex = currentChapterIndex.value + 1
+  if (nextIndex < chapters.length) {
+    handleChapterSelect(chapters[nextIndex].id)
+    // 滚动到顶部
+    const article = document.querySelector('.reader-article')
+    if (article) {
+      article.scrollTop = 0
+    }
+  }
+}
 
 const mockNotes = [
   {
@@ -189,8 +275,7 @@ const initialAnnotations: Annotation[] = [
 const isDarkMode = ref(false)
 const activePanel = ref<'none' | 'toc' | 'typography' | 'notes'>('none')
 const showThoughts = ref(true)
-const readingMode = ref<ReadingMode>('paged')
-const notes = ref<Note[]>(mockNotes) // 修复：mockNotes 不是 ref
+const notes = ref<Note[]>(mockNotes)
 const annotations = ref<Annotation[]>(initialAnnotations)
 const aiPanelOpen = ref(false)
 const aiSelectedText = ref('')
@@ -208,8 +293,6 @@ const activeContext = ref<ActiveContext | null>(null)
 // Methods
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
-  // Body background handled by CSS in App or Global styles usually,
-  // but here we might toggle a class on body or just rely on the main div
   document.body.style.backgroundColor = !isDarkMode.value ? '#18181b' : '#f3f4f6'
 }
 
@@ -242,7 +325,8 @@ const handleAddAnnotation = (newAnn: Omit<Annotation, 'id'>) => {
     const newNote: Note = {
       id: `note-${id}`,
       chapterId: currentChapterId.value,
-      quote: samplePageData.content[newAnn.pIndex].substring(newAnn.start, newAnn.end),
+      quote:
+        displayedPageData.value?.content[newAnn.pIndex]?.substring(newAnn.start, newAnn.end) || '',
       note: `[Highlight: ${newAnn.type}]`,
       date: new Date().toLocaleDateString(),
     }
@@ -311,8 +395,8 @@ const submitNote = (noteContent: string) => {
 <style scoped>
 /* 应用容器样式 */
 .app-container {
-  height: 100vh; /* 强制占满一屏 */
-  overflow: hidden; /* 防止外层出现双重滚动条 */
+  height: 100vh;
+  overflow: hidden;
   transition:
     color 300ms,
     background-color 300ms;
@@ -330,11 +414,11 @@ const submitNote = (noteContent: string) => {
 
 /* 内容包装器：负责居中和分配剩余空间 */
 .content-wrapper {
-  flex: 1; /* 占满除了 TopNavigation 之外的空间 */
+  flex: 1;
   position: relative;
   display: flex;
   justify-content: center;
-  align-items: center; /* 垂直居中 */
+  align-items: center;
   overflow: hidden;
 }
 
@@ -344,7 +428,7 @@ const submitNote = (noteContent: string) => {
 */
 .reader-viewport {
   width: 100%;
-  max-width: 1400px; /* 限制最大宽度，避免在宽屏上太长 */
+  max-width: 1400px;
   height: calc(100vh - 90px);
   position: relative;
 }

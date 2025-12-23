@@ -24,7 +24,7 @@ const formattedReaders = computed(() => {
 
 const handleViewDetail = () => {
   emit('view')
-  router.push(`/authordetail/${props.id}`)
+
 }
 </script>
 

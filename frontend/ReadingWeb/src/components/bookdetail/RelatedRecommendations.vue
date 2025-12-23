@@ -3,9 +3,7 @@
     <!-- 组件标题和换一批按钮 -->
     <div class="recommendations-header">
       <h3 class="section-title">相关推荐作品</h3>
-      <button class="refresh-button" @click="refreshRecommendations">
-        换一批
-      </button>
+      <button class="refresh-button" @click="refreshRecommendations">换一批</button>
     </div>
 
     <!-- 推荐作品列表 -->
@@ -17,7 +15,7 @@
         @click.stop="goToBookDetail(book)"
       >
         <div class="book-cover">
-          <img v-if="book.cover" :src="book.cover" :alt="book.title" @error="handleImageError">
+          <img v-if="book.cover" :src="book.cover" :alt="book.title" @error="handleImageError" />
           <div v-else class="cover-placeholder">
             <span>书籍封面</span>
           </div>
@@ -32,96 +30,77 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue'
+import { useBookNavigation } from '@/composables/useBookNavigation'
+import type { BookListItem } from '@/types/book'
 
 // 定义组件属性
 interface Props {
-  books: Book[];
-  maxDisplayCount?: number;
-}
-
-// 定义 Book 类型
-interface Book {
-  id: number;
-  title: string;
-  intro: string;
-  cover: string;
-  bookId?: string | number;
+  books: BookListItem[]
+  maxDisplayCount?: number
 }
 
 // 定义组件事件
 interface Emits {
-  (e: 'bookSelect', book: Book): void;
-  (e: 'refresh'): void;
+  (e: 'bookSelect', book: BookListItem): void
+  (e: 'refresh'): void
 }
 
 // 接收属性
 const props = withDefaults(defineProps<Props>(), {
-  maxDisplayCount: 3
-});
+  maxDisplayCount: 3,
+})
 
 // 定义事件
-const emit = defineEmits<Emits>();
+const emit = defineEmits<Emits>()
 
 // 响应式数据
-const currentIndex = ref(0);
+const currentIndex = ref(0)
 
-// 初始化 router
-const router = useRouter();
+const { openInCurrent } = useBookNavigation()
 
 // 计算属性
 const displayedBooks = computed(() => {
-  const start = currentIndex.value;
-  const end = start + props.maxDisplayCount;
-  return props.books.slice(start, end);
-});
+  const start = currentIndex.value
+  const end = start + props.maxDisplayCount
+  return props.books.slice(start, end)
+})
 
 // 方法
 const refreshRecommendations = () => {
   // 循环展示推荐书籍
-  currentIndex.value = (currentIndex.value + props.maxDisplayCount) % props.books.length;
-  emit('refresh');
-};
+  currentIndex.value = (currentIndex.value + props.maxDisplayCount) % props.books.length
+  emit('refresh')
+}
 
 // 跳转到书籍详情页
-const goToBookDetail = (book: Book): void => {
-  console.log(`选择了书籍: ${book.title}`);
+const goToBookDetail = (book: BookListItem): void => {
+  console.log(`选择了书籍: ${book.title}`)
 
   // 触发事件通知父组件
-  emit('bookSelect', book);
+  emit('bookSelect', book)
 
   // 然后跳转到详情页
   // 优先使用 book.bookId，如果不存在则用 book.id
-  const bookId = book.bookId || book.id;
+  const bookId = book.bookId || book.id
 
-  // 详细的路由跳转，带错误处理
   if (bookId) {
-    console.log('正在跳转到书籍详情页，ID:', bookId);
-    router.push(`/bookdetail/${bookId}`).then(() => {
-      console.log('路由跳转成功');
-    }).catch((error) => {
-      console.error('路由跳转失败:', error);
-      console.error('尝试的路径:', `/bookdetail/${bookId}`);
-    });
+    openInCurrent(bookId)
   } else {
-    console.log('使用默认路径跳转');
-    router.push('/bookdetail').catch((error) => {
-      console.error('默认路径跳转失败:', error);
-    });
+    openInCurrent()
   }
-};
+}
 
 // 图片加载失败处理
 const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  img.style.display = 'none';
-};
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+}
 
 // 生命周期
 onMounted(() => {
-  console.log('相关推荐作品组件已加载');
-});
+  console.log('相关推荐作品组件已加载')
+})
 </script>
 
 <style scoped>

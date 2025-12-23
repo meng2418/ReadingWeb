@@ -11,11 +11,7 @@
 </template>
 
 <script setup lang="ts">
-// 导入 useRouter
-import { useRouter } from 'vue-router'
-
-// 初始化 router
-const router = useRouter()
+import { useBookNavigation } from '@/composables/useBookNavigation'
 
 // 定义 props - 添加 bookId 用于跳转
 interface Props {
@@ -36,24 +32,11 @@ const props = withDefaults(defineProps<Props>(), {
   openInNewTab: true, // 默认在新标签页打开
 })
 
-// 跳转到书籍详情页
+const { openBookDetail } = useBookNavigation()
+
+// 跳转到书籍详情页（保持原有新标签/当前页逻辑）
 const goToBookDetail = (): void => {
-  if (props.bookId) {
-    if (props.openInNewTab) {
-      // 在新标签页打开
-      window.open(`/bookdetail?id=${props.bookId}`, '_blank')
-    } else {
-      // 在当前页打开
-      router.push(`/bookdetail/${props.bookId}`)
-    }
-  } else {
-    // 如果没有bookId，跳转到默认详情页（备用方案）
-    if (props.openInNewTab) {
-      window.open('/bookdetail', '_blank')
-    } else {
-      router.push('/bookdetail')
-    }
-  }
+  openBookDetail(props.bookId, props.openInNewTab ? 'new-tab' : 'current')
 }
 </script>
 

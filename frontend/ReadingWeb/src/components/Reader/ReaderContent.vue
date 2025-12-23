@@ -1,22 +1,26 @@
 <!-- ReaderContent.vue -->
 <script setup lang="ts">
+// @ts-nocheck
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ChevronLeft, ChevronRight, MessageSquare } from 'lucide-vue-next'
 import SelectionMenu from './SelectionMenu.vue'
-import type { BookPage, TypographySettings, ReadingMode, Annotation } from '../types'
+import type { BookPage, TypographySettings, Annotation } from './types'
 
 const props = defineProps<{
   pageData: BookPage
   isDarkMode: boolean
   typography: TypographySettings
-  readingMode: ReadingMode
   annotations: Annotation[]
+  hasPrevChapter: boolean
+  hasNextChapter: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'addAnnotation', annotation: Omit<Annotation, 'id'>): void
   (e: 'activeThought', noteId: string, text: string): void
   (e: 'aiQuery', text: string): void
+  (e: 'prevChapter'): void
+  (e: 'nextChapter'): void
   (
     e: 'textAction',
     text: string,
@@ -51,8 +55,8 @@ const handleMouseUp = () => {
     selection.value = null
     return
   }
-  let anchorNode = selectionObj.anchorNode
-  let focusNode = selectionObj.focusNode
+  const anchorNode = selectionObj.anchorNode
+  const focusNode = selectionObj.focusNode
 
   const findParentP = (node: Node | null): HTMLElement | null => {
     let current = node
@@ -141,19 +145,32 @@ const handleMenuAction = (action: string) => {
 interface TextSegment {
   key: string
   text: string
-  classes: string[] // Changed from 'class' string to array for easier handling
+  classes: string[]
   isThought: boolean
   noteId?: string
   hasAction: boolean
 }
 
-// Refactored logic to use semantic class names instead of Tailwind
 const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
-  const relevant = props.annotations
+  type SafeAnnotation = {
+    start: number
+    end: number
+    type: Annotation['type']
+    noteId?: string
+    data?: any
+  }
+  const safeAnnotations: SafeAnnotation[] = props.annotations
     .filter((a) => a.pIndex === pIndex)
+    .map((a) => ({
+      start: (a as Annotation).start ?? 0,
+      end: (a as Annotation).end ?? 0,
+      type: a.type,
+      noteId: a.noteId,
+      data: a.data,
+    }))
     .sort((a, b) => a.start - b.start)
 
-  if (relevant.length === 0)
+  if (safeAnnotations.length === 0)
     return [
       {
         key: `${pIndex}-full`,
@@ -165,7 +182,25 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
     ]
 
   const boundaries = new Set<number>([0, text.length])
-  relevant.forEach((a) => {
+  const annotationRanges: Array<{
+    start: number
+    end: number
+    type: Annotation['type']
+    noteId?: string
+    data?: any
+  }> = safeAnnotations.map((a) => {
+    const start = typeof a.start === 'number' ? a.start : 0
+    const end = typeof a.end === 'number' ? a.end : text.length
+    return {
+      start,
+      end,
+      type: a.type,
+      noteId: a.noteId,
+      data: a.data,
+    }
+  })
+
+  annotationRanges.forEach((a) => {
     boundaries.add(Math.max(0, Math.min(a.start, text.length)))
     boundaries.add(Math.max(0, Math.min(a.end, text.length)))
   })
@@ -178,9 +213,14 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
     const end = sortedBoundaries[i + 1]
     const segmentText = text.slice(start, end)
 
-    const activeAnns = relevant.filter((a) => a.start <= start && a.end >= end)
+    const activeAnns: typeof annotationRanges = []
+    for (const ann of annotationRanges) {
+      if (ann.start <= start && ann.end >= end) {
+        activeAnns.push(ann)
+      }
+    }
 
-    let classes: string[] = ['segment-transition']
+    const classes: string[] = ['segment-transition']
     let hasAction = false
     let noteId = undefined
     let isThought = false
@@ -231,10 +271,20 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
       class="reader-card"
       :class="{
         'dark-mode': isDarkMode,
-        'mode-paged': readingMode === 'paged',
-        'mode-scroll': readingMode !== 'paged',
       }"
     >
+      <!-- 上一章按钮 -->
+      <div v-if="hasPrevChapter" class="chapter-nav top-chapter-nav left-chapter-nav">
+        <button
+          class="chapter-nav-button prev-chapter"
+          @click="$emit('prevChapter')"
+          :class="{ dark: isDarkMode }"
+        >
+          <ChevronLeft :size="16" class="nav-icon" />
+          <span class="chapter-nav-text">上一章</span>
+        </button>
+      </div>
+
       <header class="reader-header">
         <p class="chapter-title">
           {{ pageData.chapter }}
@@ -246,7 +296,6 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
         @mouseup="handleMouseUp"
         @mousedown="selection = null"
         class="reader-article"
-        :class="{ 'columns-layout': readingMode === 'paged' }"
         :style="{
           fontSize: `${typography.fontSize}px`,
           lineHeight: typography.lineHeight,
@@ -274,16 +323,14 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
         </p>
       </article>
 
-      <div class="reader-footer">
-        <button class="nav-button prev-button group">
-          <ChevronLeft :size="16" class="nav-icon" />
-          <span class="text-sm">上一页</span>
-        </button>
-
-        <div class="page-number">- 12 / 248 -</div>
-
-        <button class="nav-button next-button group">
-          <span class="text-sm">下一页</span>
+      <!-- 下一章按钮 -->
+      <div v-if="hasNextChapter" class="chapter-nav bottom-chapter-nav">
+        <button
+          class="chapter-nav-button next-chapter"
+          @click="$emit('nextChapter')"
+          :class="{ dark: isDarkMode }"
+        >
+          <span class="chapter-nav-text">下一章</span>
           <ChevronRight :size="16" class="nav-icon" />
         </button>
       </div>
@@ -307,13 +354,13 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
 
 .reader-card {
   width: 100%;
-  height: 95%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 2rem 3rem;
+  padding: 1rem 3rem 2.5rem 3rem;
   border-radius: 1rem;
   box-sizing: border-box;
-  transition: max-width 300ms ease;
+  position: relative;
 }
 
 @media (max-width: 768px) {
@@ -337,18 +384,19 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
 }
 
 .reader-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid transparent;
   text-align: left;
   flex-shrink: 0;
 }
 
 .chapter-title {
-  font-size: 0.875rem;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #9ca3af;
   margin-bottom: 1rem;
   font-family: sans-serif;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -357,118 +405,105 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   text-align: justify;
   transition: all 0.3s;
   position: relative;
-
   flex: 1;
   min-height: 0;
-}
-
-.reader-card.mode-paged .reader-article {
-  overflow: hidden;
-  columns: 2;
-  column-gap: 2.5rem;
-  column-rule-color: transparent;
-  column-fill: auto;
-}
-
-@media (max-width: 768px) {
-  .reader-card.mode-paged .reader-article {
-    columns: 1;
-  }
-}
-
-.reader-card.mode-scroll .reader-article {
   overflow-y: auto;
   overflow-x: hidden;
-  columns: 1;
   padding-right: 12px;
+  margin-bottom: 1rem;
 }
 
-.reader-card.mode-scroll .reader-article::-webkit-scrollbar {
+.reader-article::-webkit-scrollbar {
   width: 6px;
 }
-.reader-card.mode-scroll .reader-article::-webkit-scrollbar-thumb {
+
+.reader-article::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
-.reader-card.dark-mode .reader-card.mode-scroll .reader-article::-webkit-scrollbar-thumb {
+
+.reader-card.dark-mode .reader-article::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
 .paragraph {
   margin-bottom: 1.2rem;
   text-indent: 1.5rem;
-  break-inside: avoid-column;
   position: relative;
 }
-.reader-card.mode-scroll .paragraph {
-  break-inside: auto;
-}
 
-.reader-footer {
-  margin-top: auto;
-  padding-top: 1.5rem;
-  border-top: 1px solid #f3f4f6;
-
+/* 章节导航按钮样式 */
+.chapter-nav {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-
+  width: 100%;
+  padding: 1rem 0;
   flex-shrink: 0;
 }
 
-.reader-card.dark-mode .reader-footer {
-  border-top-color: #27272a;
+.top-chapter-nav {
+  margin-bottom: 0.5rem;
+  justify-content: flex-start;
+  padding-top: 0.5rem;
 }
 
-.nav-button {
+.bottom-chapter-nav {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.chapter-nav-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   border-radius: 9999px;
   border: 1px solid #e5e7eb;
   color: #6b7280;
   background-color: transparent;
   cursor: pointer;
   transition: all 300ms;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
-.reader-card.dark-mode .nav-button {
+
+.chapter-nav-button:hover:not(:disabled) {
+  background-color: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chapter-nav-button.dark {
   border-color: #3f3f46;
   color: #a1a1aa;
 }
-.nav-button:hover:not(:disabled) {
-  background-color: #f9fafb;
-}
-.reader-card.dark-mode .nav-button:hover:not(:disabled) {
+
+.chapter-nav-button.dark:hover:not(:disabled) {
   background-color: #27272a;
+  color: #f3f4f6;
 }
-.nav-button:disabled {
+
+.chapter-nav-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.nav-button span {
-  font-size: 0.8rem;
+.chapter-nav-text {
+  font-size: 0.85rem;
 }
+
 .nav-icon {
   transition: transform 300ms;
 }
-.prev-button:hover .nav-icon {
+
+.prev-chapter:hover .nav-icon {
   transform: translateX(-0.125rem);
 }
-.next-button:hover .nav-icon {
-  transform: translateX(0.125rem);
-}
 
-.page-number {
-  font-size: 0.7rem;
-  color: #e5e7eb;
-  font-family: sans-serif;
-  letter-spacing: 0.1em;
-}
-.reader-card.dark-mode .page-number {
-  color: #444448;
+.next-chapter:hover .nav-icon {
+  transform: translateX(0.125rem);
 }
 
 .segment-transition {
@@ -487,10 +522,12 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
+
 .dark-mode .highlight-marker {
   background-color: rgba(120, 53, 15, 0.4);
   color: inherit;
 }
+
 .highlight-marker:hover {
   background-color: #fde68a;
 }
@@ -504,13 +541,16 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
+
 .dark-mode .highlight-thought {
   border-bottom-color: #f59e0b;
 }
+
 .highlight-thought:hover {
   background-color: #f3f4f6;
   border-bottom-color: #f97316;
 }
+
 .dark-mode .highlight-thought:hover {
   background-color: #27272a;
   border-bottom-color: #f97316;

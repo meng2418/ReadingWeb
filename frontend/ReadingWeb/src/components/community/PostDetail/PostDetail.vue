@@ -79,9 +79,6 @@
             <Heart />
             <span v-if="likeCount" class="like-count">{{ likeCount }}</span>
           </button>
-          <!-- <button class="action-button" title="Comment">
-            <el-icon><Comment /></el-icon>
-          </button> -->
         </div>
       </div>
     </div>
@@ -91,8 +88,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import DefaultAvatar from '@/img/avatar.jpg'
-import { Comment, Share } from '@element-plus/icons-vue'
 import { Heart } from 'lucide-vue-next'
+import { useTitle } from '@/stores/useTitle'
 // 直接在组件内部定义 post 数据
 const post = ref({
   id: 1,
@@ -110,9 +107,11 @@ const post = ref({
   },
   timestamp: '2 hours ago',
   isEdited: false,
-  tags: ['房思琪的初恋乐园', '台湾文学', '林奕含'],
+  tags: ['台湾文学'],
 })
-
+// 动态页面标题
+const title = ref(`${post.value.title} - 帖子详情`)
+useTitle(title)
 // 响应式状态
 const isFollowing = ref(false)
 

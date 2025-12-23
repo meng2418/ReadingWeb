@@ -162,7 +162,7 @@ import RechargeDialog from '@/components/user/RechargeDialog.vue'
 import VipDialog from '@/components/user/VipDialog.vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-
+import { useTitle } from '@/stores/useTitle'
 // 添加路由实例
 const router = useRouter()
 
@@ -180,6 +180,9 @@ const user = ref({
   vipEndTime: null as string | null, // 会员到期时间
 })
 
+// 动态页面标题
+const title = ref(`${user.value.nickname} - 个人主页`)
+useTitle(title)
 // 跳转到UserPosts页面的对应标签页 - 在新标签页打开
 const goToUserPosts = (tab: string) => {
   // 在新标签页打开UserPosts页面，并传递tab参数
