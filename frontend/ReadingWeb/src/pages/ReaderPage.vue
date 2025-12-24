@@ -18,28 +18,42 @@
       :notes="notes"
       :isDarkMode="isDarkMode"
     />
-  <div class="content-wrapper">
-    <ReaderContent
-      :pageData="displayedPageData"
-      :isDarkMode="isDarkMode"
-      :typography="typography"
-      :annotations="showThoughts ? currentChapterAnnotations : currentChapterAnnotations.filter((a) => a.type !== 'thought')"
-      :hasPrevChapter="currentChapterIndex > 0"
-      :hasNextChapter="currentChapterIndex < chapters.length - 1"
-      @addAnnotation="handleAddAnnotation"
-      @deleteAnnotation="handleDeleteAnnotation"
-      @activeThought="handleActiveThought"
-      @prevChapter="goToPrevChapter"
-      @nextChapter="goToNextChapter"
-      @aiQuery="
-        (text) => {
-          aiSelectedText = text
-          aiPanelOpen = true
-        }
-      "
-      @textAction="handleTextAction"
-    />
-  </div>
+
+    <div class="content-wrapper">
+      <ReaderContent
+        :pageData="displayedPageData"
+        :isDarkMode="isDarkMode"
+        :typography="typography"
+        :annotations="showThoughts ? currentChapterAnnotations : currentChapterAnnotations.filter((a) => a.type !== 'thought')"
+        :hasPrevChapter="currentChapterIndex > 0"
+        :hasNextChapter="currentChapterIndex < chapters.length - 1"
+        :isLastChapter="isLastChapter"
+        :bookEndData="{
+          bookId: bookData.id,
+          bookTitle: bookData.title,
+          recommendationValue: bookData.recommendationValue,
+          reviewCount: bookData.reviewCount,
+          ratingStats: bookData.ratingStats,
+          initialCompleted: readingProgress.completed,
+          initialCompleteTime: readingProgress.completeTime
+        }"
+        @addAnnotation="handleAddAnnotation"
+        @deleteAnnotation="handleDeleteAnnotation"
+        @activeThought="handleActiveThought"
+        @prevChapter="goToPrevChapter"
+        @nextChapter="goToNextChapter"
+        @aiQuery="
+          (text) => {
+            aiSelectedText = text
+            aiPanelOpen = true
+          }
+        "
+        @textAction="handleTextAction"
+        @markComplete="handleMarkComplete"
+        @viewReviews="handleViewReviews"
+        @rateBook="handleRateBook"
+      />
+    </div>
 
     <FloatingMenu
       :isDarkMode="isDarkMode"
@@ -80,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 // 组件路径 - 请根据实际项目路径确认
 import TopNavigation from '@/components/Reader/TopNavigation.vue'
@@ -90,7 +104,7 @@ import TypographyPanel from '@/components/Reader/TypographyPanel.vue'
 import TableOfContents from '@/components/Reader/TableOfContents.vue'
 import NotesPanel from '@/components/Reader/NotesPanel.vue'
 import ThoughtsBubble from '@/components/Reader/ThoughtsBubble.vue'
-
+import AIAnalysisPanel from '@/components/Reader/AIAnalysisPanel.vue'
 import type {
   BookPage,
   TypographySettings,
@@ -186,6 +200,12 @@ const displayedPageData = computed<BookPage>(() => {
 
 const currentChapterIndex = computed(() => {
   return chapters.findIndex(chapter => chapter.id === currentChapterId.value)
+})
+
+// 计算是否是最后一章
+const isLastChapter = computed(() => {
+  // 假设最后一章是 '5'
+  return currentChapterId.value === '5'
 })
 
 // 计算当前章节的标注
@@ -288,6 +308,25 @@ const aiSelectedText = ref('')
 const typography = ref<TypographySettings>({ fontSize: 18, lineHeight: 1.8 })
 const currentChapterId = ref('1')
 
+// 添加书籍数据
+const bookData = ref({
+  id: 'book-123',
+  title: '她既想死，又想去巴黎',
+  recommendationValue: 90.5,
+  reviewCount: 256,
+  ratingStats: {
+    recommend: 70,
+    average: 20,
+    poor: 10
+  }
+})
+
+// 添加阅读进度
+const readingProgress = ref({
+  completed: false,
+  completeTime: null as string | null
+})
+
 interface ActiveContext {
   type: 'view' | 'create'
   range?: { pIndex: number; start: number; end: number }
@@ -321,6 +360,7 @@ const handleChapterSelect = (id: string) => {
 const handleActiveThought = (noteId: string, text: string) => {
   activeContext.value = { type: 'view', noteId, text }
 }
+
 // 新增：删除标注的处理函数
 const handleDeleteAnnotation = (annotationId: string) => {
   // 从 annotations 中移除指定ID的标注
@@ -338,7 +378,6 @@ const handleDeleteAnnotation = (annotationId: string) => {
     }
   }
 }
-
 
 const handleAddAnnotation = (newAnn: Omit<Annotation, 'id'>) => {
   const id = Date.now().toString()
@@ -418,6 +457,53 @@ const submitNote = (noteContent: string) => {
     activePanel.value = 'notes'
   }
   activeContext.value = null
+}
+
+// 添加标记完成的方法
+const handleMarkComplete = async (data: { bookId: string | number, completeTime: string }) => {
+  try {
+    // 这里可以调用API
+    readingProgress.value.completed = true
+    readingProgress.value.completeTime = data.completeTime
+
+    // 保存到本地存储
+    localStorage.setItem(`book_${bookData.value.id}_completed`, JSON.stringify({
+      completed: true,
+      completeTime: readingProgress.value.completeTime
+    }))
+
+    console.log('标记为已读完', data)
+  } catch (error) {
+    console.error('标记失败:', error)
+  }
+}
+
+const handleViewReviews = () => {
+  console.log('查看点评')
+  // 这里可以跳转到点评页面
+}
+
+const handleRateBook = (rating: string) => {
+  console.log('评分:', rating)
+  // 这里可以处理评分逻辑
+}
+
+// 组件挂载时加载阅读进度
+onMounted(() => {
+  loadReadingProgress()
+})
+
+const loadReadingProgress = () => {
+  const savedProgress = localStorage.getItem(`book_${bookData.value.id}_completed`)
+  if (savedProgress) {
+    try {
+      const progress = JSON.parse(savedProgress)
+      readingProgress.value.completed = progress.completed
+      readingProgress.value.completeTime = progress.completeTime
+    } catch (error) {
+      console.error('加载阅读进度失败:', error)
+    }
+  }
 }
 </script>
 

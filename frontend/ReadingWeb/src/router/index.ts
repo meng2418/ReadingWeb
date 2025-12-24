@@ -18,6 +18,7 @@ import WriteReview from '@/pages/WriteReview.vue'
 import AllReadingNotes from '@/pages/AllReadingNotes.vue'
 import AuthorDetail from '@/pages/AuthorDetail.vue'
 import SearchResultsPage from '@/pages/SearchResultsPage.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [

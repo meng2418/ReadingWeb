@@ -1,5 +1,5 @@
 <template>
-  <div class="book-recommendation-section">
+  <div class="book-recommendation-section" :class="{ 'dark-mode': isDarkMode }">
     <!-- 背景框 -->
     <div class="recommendation-box"></div>
 
@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router' // 修改：添加路由相关
+import { useRoute, useRouter } from 'vue-router'
 
 // 定义props
 interface Props {
@@ -82,8 +82,9 @@ interface Props {
     average: number
     poor: number
   }
-  bookId?: string // 修改：添加书籍ID参数
-  bookTitle?: string // 修改：添加书籍标题参数
+  bookId?: string
+  bookTitle?: string
+  isDarkMode?: boolean  // 添加深色模式props
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -95,7 +96,8 @@ const props = withDefaults(defineProps<Props>(), {
     poor: 10
   }),
   bookId: '',
-  bookTitle: ''
+  bookTitle: '',
+  isDarkMode: false  // 默认浅色模式
 })
 
 // 修改：获取路由实例
@@ -204,15 +206,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 样式保持不变，只添加新的类 */
 .book-recommendation-section {
   width: 800px;
   height: 220px;
   position: relative;
-  margin: 0; /* 移除外部边距 */
+  margin: 0;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box; /* 确保padding和border包含在尺寸内 */
+  box-sizing: border-box;
 }
 
 .recommendation-box {
@@ -225,6 +226,7 @@ onMounted(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   z-index: 1;
   box-sizing: border-box;
+  transition: all 0.3s ease;
 }
 
 /* 上半部分 */
@@ -232,7 +234,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   flex: 1;
-  padding: 18px 20px 0px 20px; /* 上右下左：上边距15px，下边距5px */
+  padding: 18px 20px 0px 20px;
   z-index: 2;
   position: relative;
   box-sizing: border-box;
@@ -252,6 +254,7 @@ onMounted(() => {
   font-size: 20px;
   color: #666;
   margin-bottom: 8px;
+  transition: color 0.3s ease;
 }
 
 .recommendation-percentage {
@@ -265,11 +268,13 @@ onMounted(() => {
   font-weight: bold;
   color: #000;
   line-height: 1;
+  transition: color 0.3s ease;
 }
 
 .percentage-symbol {
   font-size: 20px;
   color: #000;
+  transition: color 0.3s ease;
 }
 
 .review-count {
@@ -277,6 +282,7 @@ onMounted(() => {
   color: #666;
   cursor: pointer;
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 .review-count:hover {
@@ -302,6 +308,7 @@ onMounted(() => {
   font-size: 12px;
   color: #666;
   width: 30px;
+  transition: color 0.3s ease;
 }
 
 .progress-bar {
@@ -310,6 +317,7 @@ onMounted(() => {
   background-color: #f0f0f0;
   border-radius: 3px;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 .progress-fill {
@@ -335,6 +343,7 @@ onMounted(() => {
   color: #666;
   width: 25px;
   text-align: right;
+  transition: color 0.3s ease;
 }
 
 /* 下半部分 */
@@ -342,14 +351,14 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   gap: 20px;
-  padding: 5px 20px 15px 20px; /* 上右下左：上边距5px，下边距15px */
+  padding: 5px 20px 15px 20px;
   z-index: 2;
   position: relative;
   box-sizing: border-box;
 }
 
 .rating-button {
-  flex: 1; /* 让每个按钮平均分配空间 */
+  flex: 1;
   padding: 8px 24px;
   border: 1px solid #d0d0d0;
   border-radius: 8px;
@@ -377,6 +386,54 @@ onMounted(() => {
   background: #e6f7ff; /* 淡蓝色背景 */
   border-color: #91d5ff; /* 蓝色边框 */
   color: #1890ff; /* 蓝色文字 */
+}
+
+/* 深色模式样式 */
+.book-recommendation-section.dark-mode .recommendation-box {
+  background-color: #1e1e1e; /* 深色背景 */
+  border-color: #333; /* 深色边框 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.book-recommendation-section.dark-mode .recommendation-label,
+.book-recommendation-section.dark-mode .review-count,
+.book-recommendation-section.dark-mode .progress-label,
+.book-recommendation-section.dark-mode .progress-percentage {
+  color: #bbb; /* 浅灰色文字 */
+}
+
+.book-recommendation-section.dark-mode .percentage-number,
+.book-recommendation-section.dark-mode .percentage-symbol {
+  color: #eee; /* 更浅的文字颜色 */
+}
+
+.book-recommendation-section.dark-mode .review-count:hover {
+  color: #ddd; /* 浅色悬停 */
+}
+
+.book-recommendation-section.dark-mode .progress-bar {
+  background-color: #3a3a3a; /* 深色进度条背景 */
+}
+
+.book-recommendation-section.dark-mode .rating-button {
+  background: #2a2a2a; /* 深色按钮背景 */
+  border-color: #444; /* 深色按钮边框 */
+  color: #ccc; /* 浅色按钮文字 */
+}
+
+.book-recommendation-section.dark-mode .rating-button:hover {
+  background: #333; /* 深色悬停背景 */
+  border-color: #555; /* 深色悬停边框 */
+}
+
+.book-recommendation-section.dark-mode .rating-button:active {
+  background: #2a2a2a; /* 保持深色背景 */
+}
+
+.book-recommendation-section.dark-mode .rating-button.rated-active {
+  background: rgba(22, 119, 255, 0.2); /* 深色模式下的淡蓝色背景 */
+  border-color: rgba(22, 119, 255, 0.5); /* 深色模式下的蓝色边框 */
+  color: #66b3ff; /* 深色模式下的蓝色文字 */
 }
 
 /* 响应式调整 */
