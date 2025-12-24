@@ -47,85 +47,13 @@ interface Props {
   tabId?: string // 用于指定跳转到哪个榜单
   openInNewTab?: boolean // 新增：是否在新标签页打开
 }
-// 使用解构，直接在解构中定义默认值
+// 使用解构，直接在解构中定义默认值（books 改为由父组件传入）
 const {
   ranktitle,
   desc = '最近一周热读书籍', // 直接赋值默认字符串
   tabId,
   openInNewTab = true, // 默认在新标签页打开
-  books = [
-    // 直接赋值默认数组，不需要 () => [] 工厂函数，Vue 编译器会自动处理引用问题
-    {
-      id: 1,
-      cover: 'https://picsum.photos/seed/book1/200/300',
-      title: '书籍标题1',
-      author: '作者1',
-      recommend: '98%',
-    },
-    {
-      id: 2,
-      cover: 'https://picsum.photos/seed/book2/200/300',
-      title: '书籍标题2',
-      author: '作者2',
-      recommend: '97%',
-    },
-    {
-      id: 3,
-      cover: 'https://picsum.photos/seed/book3/200/300',
-      title: '书籍标题3',
-      author: '作者3',
-      recommend: '96%',
-    },
-    {
-      id: 4,
-      cover: 'https://picsum.photos/seed/book4/200/300',
-      title: '书籍标题4',
-      author: '作者4',
-      recommend: '95%',
-    },
-    {
-      id: 5,
-      cover: 'https://picsum.photos/seed/book5/200/300',
-      title: '书籍标题5',
-      author: '作者5',
-      recommend: '94%',
-    },
-    {
-      id: 6,
-      cover: 'https://picsum.photos/seed/book6/200/300',
-      title: '书籍标题6',
-      author: '作者6',
-      recommend: '93%',
-    },
-    {
-      id: 7,
-      cover: 'https://picsum.photos/seed/book7/200/300',
-      title: '书籍标题7',
-      author: '作者7',
-      recommend: '92%',
-    },
-    {
-      id: 8,
-      cover: 'https://picsum.photos/seed/book8/200/300',
-      title: '书籍标题8',
-      author: '作者8',
-      recommend: '91%',
-    },
-    {
-      id: 9,
-      cover: 'https://picsum.photos/seed/book9/200/300',
-      title: '书籍标题9',
-      author: '作者9',
-      recommend: '90%',
-    },
-    {
-      id: 10,
-      cover: 'https://picsum.photos/seed/book10/200/300',
-      title: '书籍标题10',
-      author: '作者10',
-      recommend: '89%',
-    },
-  ],
+  books = [],
 } = defineProps<Props>()
 
 // 查看全部点击事件 - 在当前页跳转

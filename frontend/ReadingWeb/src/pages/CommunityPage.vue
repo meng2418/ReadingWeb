@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import UserProfileCard from '@/components/community/UserProfileCard.vue'
@@ -13,6 +13,7 @@ import LikeItem from '@/components/community/Mine/LikeItem.vue'
 import Footer from '@/components/layout/Footer.vue'
 import { useTitle } from '@/stores/useTitle'
 import { usePostInteractions } from '@/composables/usePostInteractions'
+import { fetchCommunityPosts } from '@/api/community'
 import type { Post } from '@/types/post'
 
 // 当前用户信息
@@ -50,130 +51,28 @@ const topicsList = ref([
 ])
 
 // 帖子数据
-const posts = ref<Post[]>([
-  {
-    id: 1,
-    username: '书虫小王',
-    avatar: avatarImg,
-    postTime: '2小时前',
-    title: '《百年孤独》读后感',
-    content:
-      '刚刚读完马尔克斯的《百年孤独》，这本书真的是一种奇妙的阅读体验。书中通过布恩迪亚家族几代人的命运，展现了时间的循环与宿命的荒诞。每个人都在追寻意义，但又被历史的轮回所吞没。尤其是书中的文字节奏，那种冷静而又充满诗意的叙述，让人不自觉地沉浸进去。读到最后，我甚至分不清哪些是真实，哪些是幻觉。魔幻与现实在这里不再有界限，而人的孤独似乎是永恒的。推荐每一个喜欢文学的人都读一读这本书。',
-    likeCount: 128,
-    commentCount: 23,
-    shareCount: 8,
-    isFollowing: false,
-    isLiked: false,
-    book: {
-      id: 101,
-      title: '百年孤独',
-      author: '加西亚·马尔克斯',
-      cover: 'https://picsum.photos/100/150?random=1',
-    },
-  },
-  {
-    id: 2,
-    username: '文学青年',
-    avatar: avatarImg,
-    postTime: '4小时前',
-    title: '推荐几本值得一读的科幻小说',
-    content:
-      '最近迷上了科幻小说，推荐《三体》《银河系漫游指南》《基地》三部曲。这几本作品不仅有宏大的世界观，更在科幻设定中探讨了人性与社会的本质。特别是《三体》中对宇宙文明的思考，完全刷新了我的认知维度。',
-    likeCount: 89,
-    commentCount: 15,
-    shareCount: 12,
-    isFollowing: true,
-    isLiked: true,
-    book: null,
-  },
-  {
-    id: 3,
-    username: '历史爱好者',
-    avatar: avatarImg,
-    postTime: '昨天 19:30',
-    title: '读《万历十五年》有感',
-    content:
-      '黄仁宇先生的《万历十五年》用一种独特的视角解读了明朝的衰落。看似平淡的一年，却隐藏着帝国崩溃的伏笔。书中没有激烈的戏剧冲突，却通过几个关键人物的命运，展现了制度的僵化如何吞噬个人的努力。这种"大历史观"的写法，让我对历史有了新的理解。',
-    likeCount: 205,
-    commentCount: 37,
-    shareCount: 24,
-    isFollowing: true,
-    isLiked: false,
-    book: {
-      id: 102,
-      title: '万历十五年',
-      author: '黄仁宇',
-      cover: 'https://picsum.photos/100/150?random=2',
-    },
-  },
-  {
-    id: 4,
-    username: '职场新人',
-    avatar: avatarImg,
-    postTime: '3天前',
-    title: '《非暴力沟通》改变了我的职场关系',
-    content:
-      '入职半年一直苦于和同事沟通不畅，直到读了《非暴力沟通》。书中提出的"观察-感受-需要-请求"四步法，让我学会了如何真诚地表达自己，同时理解他人的需求。现在团队协作顺畅多了，推荐给所有职场人！',
-    likeCount: 156,
-    commentCount: 42,
-    shareCount: 31,
-    isFollowing: false,
-    isLiked: true,
-    book: {
-      id: 103,
-      title: '非暴力沟通',
-      author: '马歇尔·卢森堡',
-      cover: 'https://picsum.photos/100/150?random=3',
-    },
-  },
-])
-
-// 模拟5条评论数据（rightCardText长度不同，测试省略）
+onMounted(async () => {
+  posts.value = await fetchCommunityPosts()
+})
+const posts = ref<Post[]>([])
 const commentList = [
   {
     user: {
-      avatar: 'https://picsum.photos/id/1005/200', // 占位头像（随机图片）
-      username: '吴克天行者',
+      avatar: 'https://picsum.photos/id/1052/200',
+      username: '文学青年',
     },
-    rightCardText: '我操，V他乡遇故知，注那年夏天你啊啊啊啊啊啊啊没形状是一', // 长文本
-    content: '最后一句出处是支线任务 意见领袖',
-    time: '2025年8月31日 08:25',
+    content: '哈哈哈哈哈哈哈哈哈哈哈啊啊啊啊啊啊啊啊',
+    rightCardText: '作者的文笔非常优美，描写细腻，令人沉浸其中。',
+    time: '2025年8月30日 16:20',
   },
   {
     user: {
-      avatar: 'https://picsum.photos/id/1012/200',
-      username: '摸鱼达人',
+      avatar: 'https://picsum.photos/id/1052/200',
+      username: '文学青年',
     },
-    rightCardText: '短文本测试', // 短文本（不省略）
-    content: '这个支线任务还挺有意思的，推荐大家做',
-    time: '2025年8月30日 15:42',
-  },
-  {
-    user: {
-      avatar: 'https://picsum.photos/id/1027/200',
-      username: '游戏宅',
-    },
-    rightCardText: '当年玩的时候卡了好久，后来查攻略才知道这里有隐藏剧情，现在想起来还是很怀念', // 超长文本
-    content: '赞同！这段台词我记了好久',
-    time: '2025年8月29日 09:18',
-  },
-  {
-    user: {
-      avatar: 'https://picsum.photos/id/1074/200',
-      username: '剧情党',
-    },
-    rightCardText: '支线比主线还精彩系列，开发商太良心了', // 中等长度
-    content: '有没有类似的支线推荐？求安利',
-    time: '2025年8月28日 22:05',
-  },
-  {
-    user: {
-      avatar: 'https://picsum.photos/id/1084/200',
-      username: '路过打酱油',
-    },
-    rightCardText: '123456789012345678901234567890', // 纯数字长文本
-    content: '打卡，顺便问下楼主这游戏现在还能玩吗？',
-    time: '2025年8月27日 16:30',
+    content: 'aaaaaaaaaaaaaaaa啊啊啊啊啊啊啊啊',
+    rightCardText: '作者的文笔非常优美，描写细腻，令人沉浸其中。',
+    time: '2025年8月30日 16:20',
   },
 ]
 const likeList = [

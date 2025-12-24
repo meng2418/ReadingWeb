@@ -10,7 +10,6 @@
 
 <script setup lang="ts">
 import { formatDistanceToNow } from 'date-fns'
-import DefaultAvatar from '@/img/avatar.jpg' // 确保路径正确
 
 const props = defineProps<{
   user: {

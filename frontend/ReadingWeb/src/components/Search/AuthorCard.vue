@@ -1,30 +1,49 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const route = useRoute()
-const props = defineProps({
-  name: { type: String, required: true },
-  avatar: { type: String, required: true },
-  description: { type: String, default: '暂无简介' },
-  readersCount: { type: String, default: '0' },
-  works: { type: String, default: '' },
-})
 
-const emit = defineEmits(['view'])
+/** 作者代表作类型（如暂时不用可删除） */
+type AuthorWork = {
+  id: number
+  title: string
+}
 
+/** Props */
+const props = defineProps<{
+  id: number
+  name: string
+  avatar: string
+  description?: string
+  readersCount?: number
+  works?: string
+  openInNewTab?: boolean
+}>()
+
+/** Emits */
+const emit = defineEmits<{
+  viewAllWorks: []
+  workClick: [work: AuthorWork]
+}>()
+
+/** 关注数格式化 */
 const formattedReaders = computed(() => {
-  const count = parseInt(props.readersCount)
-  // 如果是 NaN 或 0，处理一下
-  if (isNaN(count)) return '0'
-  return count >= 10000 ? `${(count / 10000).toFixed(1)}w` : count.toString()
+  const count = props.readersCount ?? 0
+  return count >= 10000 ? `${(count / 10000).toFixed(1)}w` : String(count)
 })
 
+/** 查看详情 */
 const handleViewDetail = () => {
-  emit('view')
+  emit('viewAllWorks')
 
+  const url = `/authordetail/${props.id}`
+
+  if (props.openInNewTab) {
+    window.open(url, '_blank')
+  } else {
+    router.push(url)
+  }
 }
 </script>
 
@@ -36,22 +55,19 @@ const handleViewDetail = () => {
 
     <div class="author-right">
       <div class="header-row">
-        <div class="name-wrapper">
-          <h2 class="author-name">{{ name }}</h2>
-        </div>
+        <h2 class="author-name">{{ name }}</h2>
         <button class="detail-btn" @click="handleViewDetail">
-          查看详情
-          <span class="arrow">→</span>
+          查看详情 <span class="arrow">→</span>
         </button>
       </div>
 
       <div class="meta-row">
         <span class="meta-item">关注 {{ formattedReaders }}</span>
         <span class="meta-item divider">/</span>
-        <span class="meta-item works">代表作：{{ works }}</span>
+        <span class="meta-item works">代表作：{{ works || '暂无' }}</span>
       </div>
 
-      <p class="author-desc">{{ description }}</p>
+      <p class="author-desc">{{ description || '暂无简介' }}</p>
     </div>
   </div>
 </template>

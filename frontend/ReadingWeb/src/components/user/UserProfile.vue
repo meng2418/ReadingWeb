@@ -1,3 +1,4 @@
+<!--UserProfile.vue-->
 <template>
   <div class="user-profile-card" :style="cssVars">
     <div class="profile-header">
@@ -14,17 +15,14 @@
       </div>
 
       <div class="stats-row">
-        <!-- 修改关注为可点击按钮 -->
         <button class="stat-item stat-btn" @click="goToUserPosts('following')">
           <span class="num">{{ user.stats.following }}</span>
           <span class="label">关注</span>
         </button>
-        <!-- 修改粉丝为可点击按钮 -->
         <button class="stat-item stat-btn" @click="goToUserPosts('followers')">
           <span class="num">{{ user.stats.followers }}</span>
           <span class="label">粉丝</span>
         </button>
-        <!-- 修改发布为可点击按钮 -->
         <button class="stat-item stat-btn" @click="goToUserPosts('posts')">
           <span class="num">{{ user.stats.posts }}</span>
           <span class="label">发布</span>
@@ -52,7 +50,6 @@
         <span>充值币</span>
         <span class="coin-num">{{ user.payCoin }}</span>
       </div>
-      <!-- 会员按钮：保持样式不变，只修改文字 -->
       <button class="vip-btn" @click="openVipDialog">
         {{ getVipButtonText() }}
       </button>
@@ -148,41 +145,25 @@
     </transition>
   </div>
 
-  <!-- 充值弹窗 -->
   <RechargeDialog ref="rechargeDialogRef" @recharge-success="handleRechargeSuccess" />
 
-  <!-- 会员弹窗 -->
   <VipDialog ref="vipDialogRef" @purchase-success="handlePurchaseSuccess" />
 </template>
 
 <script setup lang="ts">
-import { Edit2, Palette } from 'lucide-vue-next'
+import { Edit2, Palette, X } from 'lucide-vue-next' // 导入 X 图标
 import { ref, computed } from 'vue'
 import RechargeDialog from '@/components/user/RechargeDialog.vue'
 import VipDialog from '@/components/user/VipDialog.vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { useTitle } from '@/stores/useTitle'
 // 添加路由实例
 const router = useRouter()
 
-// 个人信息数据
-const user = ref({
-  nickname: '幼稚园战神',
-  signature:
-    'B站有机生物，人工制造，含水分，碳包碳，小学毕业证，初中毕业证，高中毕业证，卒業証明書，会吃饭睡觉，不主持仪式不喜欢小男孩儿的神父（凑字数）',
-  avatar: 'https://picsum.photos/id/1027/200',
-  stats: { following: 10, followers: 1000, posts: 5 },
-  payCoin: 180,
-  giftVIP: 12,
-  isVip: false, // 是否会员
-  vipDays: 0, // 会员剩余天数
-  vipEndTime: null as string | null, // 会员到期时间
-})
+const props = defineProps<{
+  user: any
+}>()
 
-// 动态页面标题
-const title = ref(`${user.value.nickname} - 个人主页`)
-useTitle(title)
 // 跳转到UserPosts页面的对应标签页 - 在新标签页打开
 const goToUserPosts = (tab: string) => {
   // 在新标签页打开UserPosts页面，并传递tab参数
@@ -192,15 +173,15 @@ const goToUserPosts = (tab: string) => {
 // 充值弹窗
 const rechargeDialogRef = ref()
 const openRechargeDialog = () => {
-  rechargeDialogRef.value.open(user.value.payCoin)
+  // 移除 .value
+  rechargeDialogRef.value.open(props.user.payCoin)
 }
 
 const handleRechargeSuccess = (option: any) => {
   console.log('充值成功:', option)
-  // 更新用户的书币数量
-  user.value.payCoin += option.amount + (option.bonus || 0)
+  props.user.payCoin += option.amount + (option.bonus || 0)
   ElMessage.success(
-    `成功充值${option.amount}书币${option.bonus ? `，赠送${option.bonus}书币` : ''}`,
+    `成功充值${option.amount}书币${option.bonus ? '，赠送${option.bonus}书币' : ''}`,
   )
 }
 
@@ -229,22 +210,22 @@ const handlePurchaseSuccess = (plan: any) => {
     daysToAdd = match ? parseInt(match[0]) : 30
   }
 
-  // 更新会员状态
-  user.value.isVip = true
+  // 更新会员状态：移除 .value
+  props.user.isVip = true
 
-  // 计算新的会员到期时间
+  // 计算新的会员到期时间：移除 .value
   const now = new Date()
-  if (user.value.vipEndTime) {
+  if (props.user.vipEndTime) {
     // 如果已有会员，则在现有到期时间上累加
-    const endTime = new Date(user.value.vipEndTime)
+    const endTime = new Date(props.user.vipEndTime)
     endTime.setDate(endTime.getDate() + daysToAdd)
-    user.value.vipEndTime = endTime.toISOString()
-    user.value.vipDays = Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    props.user.vipEndTime = endTime.toISOString()
+    props.user.vipDays = Math.ceil((endTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   } else {
     // 如果没有会员，从今天开始计算
     now.setDate(now.getDate() + daysToAdd)
-    user.value.vipEndTime = now.toISOString()
-    user.value.vipDays = daysToAdd
+    props.user.vipEndTime = now.toISOString()
+    props.user.vipDays = daysToAdd
   }
 
   ElMessage.success(`成功开通${plan.name}，有效期${plan.duration}`)
@@ -252,14 +233,13 @@ const handlePurchaseSuccess = (plan: any) => {
 
 // 计算会员按钮显示的文字
 const getVipButtonText = () => {
-  if (user.value.isVip && user.value.vipDays > 0) {
-    return `会员卡 ${user.value.vipDays}天`
+  // 移除 .value
+  if (props.user.isVip && props.user.vipDays > 0) {
+    return `会员卡 ${props.user.vipDays}天`
   }
   return '成为会员'
 }
 // --- 主题配置 ---
-
-// 定义主题的详细颜色映射
 const themes = [
   {
     value: 'classic-white',
@@ -342,7 +322,8 @@ const themes = [
 // --- 状态管理 ---
 
 const editDialogVisible = ref(false)
-const editForm = ref({ ...user.value })
+// 移除 .value，直接复制 prop 对象
+const editForm = ref({ ...props.user })
 const fileInput = ref<HTMLInputElement | null>(null)
 const appearanceDrawerVisible = ref(false)
 
@@ -352,10 +333,6 @@ const activeThemeValue = ref(localStorage.getItem('theme') || 'classic-white')
 const previewThemeValue = ref(activeThemeValue.value)
 // 新增：用于存储待上传的 File 对象
 const tempAvatarFile = ref<File | null>(null)
-// --- 计算属性 ---
-
-// 核心：根据当前预览的主题，动态生成 CSS 变量对象
-// 这个对象绑定在最外层 div 上，实现换肤
 const cssVars = computed(() => {
   const current = themes.find((t) => t.value === previewThemeValue.value)
   return current ? current.colors : {}
@@ -373,7 +350,7 @@ const getThemePreviewStyle = (theme: any) => {
 
 // 打开编辑
 const openEditDialog = () => {
-  editForm.value = { ...user.value }
+  editForm.value = { ...props.user }
   editDialogVisible.value = true
 }
 
@@ -382,17 +359,14 @@ const handleEditConfirm = () => {
     ElMessage.warning('昵称不能为空')
     return
   }
-  user.value = { ...editForm.value }
-  // 2. 🔴 处理头像上传和更新
+  Object.assign(props.user, editForm.value)
+
+  // 处理头像上传和更新
   if (tempAvatarFile.value) {
     ElMessage.info('正在模拟上传新头像...')
-
-    // 实际应用：
-    // const permanentUrl = await uploadAvatarToApi(tempAvatarFile.value);
-    // user.value.avatar = permanentUrl;
-
-    // 演示代码：直接使用 DataURL 作为新的 Avatar URL (⚠️ 仅供演示)
-    user.value.avatar = editForm.value.avatar
+    // 演示代码：直接使用 DataURL 作为新的 Avatar URL
+    // 移除 .value
+    props.user.avatar = editForm.value.avatar
   }
   // 3. 清理状态并关闭
   tempAvatarFile.value = null // 清理临时文件
@@ -437,9 +411,6 @@ const handleThemePreview = (val: string) => {
 
 // 关闭抽屉（取消）
 const closeAppearanceDrawer = () => {
-  // 关闭时，如果不保存，界面会自动因为 previewThemeValue 变回 active 而恢复原样
-  // 但为了动画效果，我们先改值，再关窗，或者关窗后改值
-  // 这里逻辑是：只要没点保存，preview 应该回滚到 active
   if (previewThemeValue.value !== activeThemeValue.value) {
     previewThemeValue.value = activeThemeValue.value
   }
@@ -448,7 +419,6 @@ const closeAppearanceDrawer = () => {
 
 // 保存设置
 const handleAppearanceSave = () => {
-  // 确认修改：将预览值转正
   activeThemeValue.value = previewThemeValue.value
   localStorage.setItem('theme', activeThemeValue.value)
   ElMessage.success('外观设置已保存')

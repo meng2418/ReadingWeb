@@ -1,54 +1,43 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCard from '@/components/bookshelf/BookCardMiddle.vue'
 import { ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
 import Footer from '@/components/layout/Footer.vue'
+import { getBookshelfAll, type ShelfBook } from '@/api/bookshelf'
 
-const books = ref([
-  { id: 1, title: 'Vue 3 进阶实战', cover: 'https://picsum.photos/200/300?1', status: '读完' },
-  { id: 2, title: '深入浅出 TypeScript', cover: 'https://picsum.photos/200/300?2', status: '在读' },
-  { id: 3, title: '现代前端工程化', cover: 'https://picsum.photos/200/300?3', status: '未读' },
-  { id: 4, title: '前端架构设计', cover: 'https://picsum.photos/200/300?4', status: '读完' },
-  { id: 5, title: '算法图解', cover: 'https://picsum.photos/200/300?5', status: '在读' },
-  { id: 6, title: '计算机网络', cover: 'https://picsum.photos/200/300?6', status: '未读' },
-  { id: 7, title: '深入理解浏览器原理', cover: 'https://picsum.photos/200/300?7', status: '在读' },
-  { id: 8, title: 'JavaScript 权威指南', cover: 'https://picsum.photos/200/300?8', status: '读完' },
-  { id: 9, title: 'React 源码解析', cover: 'https://picsum.photos/200/300?9', status: '未读' },
-  { id: 10, title: 'Node.js 实战手册', cover: 'https://picsum.photos/200/300?10', status: '读完' },
-  { id: 11, title: 'Python 编程艺术', cover: 'https://picsum.photos/200/300?11', status: '在读' },
-  { id: 12, title: '操作系统真相还原', cover: 'https://picsum.photos/200/300?12', status: '未读' },
-  { id: 13, title: '数据库系统概念', cover: 'https://picsum.photos/200/300?13', status: '读完' },
-  { id: 14, title: 'Web 安全攻防', cover: 'https://picsum.photos/200/300?14', status: '在读' },
-  { id: 15, title: 'C++ Primer Plus', cover: 'https://picsum.photos/200/300?15', status: '读完' },
-  { id: 16, title: '人工智能导论', cover: 'https://picsum.photos/200/300?16', status: '未读' },
-  { id: 17, title: '机器学习实战', cover: 'https://picsum.photos/200/300?17', status: '在读' },
-  { id: 18, title: '深度学习入门', cover: 'https://picsum.photos/200/300?18', status: '读完' },
-  {
-    id: 19,
-    title: '数据结构与算法分析',
-    cover: 'https://picsum.photos/200/300?19',
-    status: '未读',
-  },
-  {
-    id: 20,
-    title: '重构：改善既有代码的设计',
-    cover: 'https://picsum.photos/200/300?20',
-    status: '在读',
-  },
-])
+// 全部书籍（只请求一次）
+const books = ref<ShelfBook[]>([])
 
-const filterStatus = ref('全部')
-const selectedBookIds = ref<number[]>([])
+// 当前筛选状态
+const filterStatus = ref<'全部' | '未读' | '在读' | '读完'>('全部')
+
+const selectedBookIds = ref<Array<string | number>>([])
 const isDeleteMode = ref(false)
+const loading = ref(false)
 
+// 前端筛选
 const filteredBooks = computed(() => {
   if (filterStatus.value === '全部') return books.value
   return books.value.filter((book) => book.status === filterStatus.value)
 })
 
-const setFilter = (status: string) => {
+// 只在页面初始化时请求一次
+const loadBooks = async () => {
+  loading.value = true
+  try {
+    books.value = await getBookshelfAll()
+    selectedBookIds.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const statuses: Array<'全部' | '未读' | '在读' | '读完'> = ['全部', '未读', '在读', '读完']
+
+// 只切换状态，不请求接口
+const setFilter = (status: '全部' | '未读' | '在读' | '读完') => {
   filterStatus.value = status
   selectedBookIds.value = []
 }
@@ -58,22 +47,31 @@ const toggleDeleteMode = () => {
   selectedBookIds.value = []
 }
 
-const toggleBookSelect = (bookId: number) => {
+const toggleBookSelect = (bookId: string | number) => {
   const index = selectedBookIds.value.findIndex((id) => id === bookId)
   index > -1 ? selectedBookIds.value.splice(index, 1) : selectedBookIds.value.push(bookId)
 }
 
 const deleteSelectedBooks = async () => {
+  if (selectedBookIds.value.length === 0) return
   try {
     await ElMessageBox.confirm(
       `确定要移除选中的 ${selectedBookIds.value.length} 本书吗？`,
       '删除确认',
-      { confirmButtonText: '确认删除', cancelButtonText: '取消', type: 'warning' },
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
     )
     books.value = books.value.filter((book) => !selectedBookIds.value.includes(book.id))
     selectedBookIds.value = []
-  } catch (error) {}
+  } catch {
+    // 用户取消
+  }
 }
+
+onMounted(loadBooks)
 </script>
 
 <template>
@@ -83,7 +81,7 @@ const deleteSelectedBooks = async () => {
       <div class="shelf-header">
         <div class="filter-bar">
           <button
-            v-for="status in ['全部', '未读', '在读', '读完']"
+            v-for="status in statuses"
             :key="status"
             :class="['filter-btn', { active: filterStatus === status }]"
             @click="setFilter(status)"
@@ -135,7 +133,6 @@ const deleteSelectedBooks = async () => {
         </div>
       </div>
     </div>
-    <Footer />
   </div>
 </template>
 

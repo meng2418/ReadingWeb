@@ -1,11 +1,7 @@
 <template>
   <div class="recent-read">
     <div class="cover-list">
-      <div
-        v-for="book in recentBooks"
-        :key="book.id"
-        class="cover-item"
-      >
+      <div v-for="book in books" :key="book.id" class="cover-item">
         <img :src="book.cover" :alt="book.title" class="cover-img" />
       </div>
     </div>
@@ -13,15 +9,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+interface RecentBook {
+  id: number | string
+  title: string
+  cover: string
+}
 
-// 临时模拟最近阅读数据
-const recentBooks = ref([
-  { id: 1, title: '书籍1', cover: 'https://picsum.photos/seed/book1/200/300' },
-  { id: 2, title: '书籍2', cover: 'https://picsum.photos/seed/book2/200/300' },
-  { id: 3, title: '书籍3', cover: 'https://picsum.photos/seed/book3/200/300' },
-  { id: 4, title: '书籍4', cover: 'https://picsum.photos/seed/book4/200/300' },
-])
+const props = defineProps<{
+  books: RecentBook[]
+}>()
 </script>
 
 <style scoped>

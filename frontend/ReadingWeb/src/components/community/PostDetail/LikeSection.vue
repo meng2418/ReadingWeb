@@ -24,7 +24,6 @@
 
 <script setup lang="ts">
 import LikeItem from './LikeItem.vue'
-import DefaultAvatar from '@/img/avatar.jpg' // 确保路径正确
 
 const props = defineProps<{
   likes: Array<{

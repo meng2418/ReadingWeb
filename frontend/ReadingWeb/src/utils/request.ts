@@ -1,7 +1,9 @@
+//src/utils/request.ts
 import axios from 'axios'
 
 const service = axios.create({
-  baseURL: 'http://localhost:3000/api', // 接口文档 servers.url
+  // 使用 OpenAPI 文档的服务器地址，方便本地联调
+  baseURL: 'https://m1.apifoxmock.com/m1/7605134-7343879-default',
   timeout: 5000,
 })
 

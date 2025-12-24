@@ -76,14 +76,12 @@ import { formatDate as formatDisplayDate } from '@/composables/useReviews'
 // 新增 Check 图标
 import {
   ArrowLeft,
-  Search,
   BookOpen,
   ChevronDown,
   Book,
   Quote,
   Bookmark,
   Copy,
-  FilePenLine,
   Inbox,
   Check,
 } from 'lucide-vue-next'

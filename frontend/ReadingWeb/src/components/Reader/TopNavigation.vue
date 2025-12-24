@@ -57,13 +57,12 @@ interface Props {
   // 添加 bookId 参数，用于构建详情页路由
   bookId?: string | number
 }
-
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  title: 'Vue 组件设计指南与精品开发',
+  bookId: '',
+})
 
 const userStore = useUserStore()
-// 测试数据
-userStore.login('TestUser', 'https://picsum.photos/id/1027/200')
-
 // --- 书架功能逻辑 ---
 // 状态：是否已在书架（实际项目中这里应该根据 API 返回的初始化数据来设定）
 const isAdded = ref(false)
@@ -130,6 +129,19 @@ const handleToggleLibrary = async () => {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+}
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.logo-link:hover .title-text {
+  text-decoration: underline;
 }
 
 /* 修改：书名链接样式 */
