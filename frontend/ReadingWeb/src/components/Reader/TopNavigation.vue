@@ -2,13 +2,13 @@
   <header :class="['top-bar', isDarkMode ? 'dark' : '']">
     <div class="nav-left">
       <div class="logo-container">
+        <BookOpen :size="18" />
+        <!-- 修改：书名添加跳转到书籍详情页的功能 -->
         <router-link
           :to="bookId ? `/bookdetail/${bookId}` : '/bookdetail'"
-          target="_blank"
-          class="logo-link"
+          class="nav-link book-title"
         >
-          <BookOpen :size="18" />
-          <span class="title-text">{{ title }}</span>
+          {{ title }}
         </router-link>
       </div>
 
@@ -47,14 +47,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-// 引入 Check 图标用于“已加入”状态
+// 引入 Check 图标用于"已加入"状态
 import { BookOpen, Library, User, Check } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 
 interface Props {
   title: string
   isDarkMode: boolean
-  bookId?: string
+  // 添加 bookId 参数，用于构建详情页路由
+  bookId?: string | number
 }
 const props = withDefaults(defineProps<Props>(), {
   title: 'Vue 组件设计指南与精品开发',
@@ -141,6 +142,24 @@ const handleToggleLibrary = async () => {
 
 .logo-link:hover .title-text {
   text-decoration: underline;
+}
+
+/* 修改：书名链接样式 */
+.book-title {
+  color: inherit;
+  text-decoration: none;
+  transition: color 300ms;
+  font-weight: 500;
+}
+
+.book-title:hover {
+  color: #000000;
+  /*text-decoration: underline;*/
+}
+
+/* 夜间模式下书名链接样式 */
+.dark .book-title:hover {
+  color: #e5e7eb;
 }
 
 /* --- 按钮基础样式 --- */

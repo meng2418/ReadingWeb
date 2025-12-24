@@ -1,9 +1,10 @@
+<!-- SelectionMenu.vue -->
 <template>
   <div v-if="position" class="selection-menu-container" :style="menuStyle" @mousedown.prevent>
     <div class="menu-arrow"></div>
 
     <button
-      v-for="action in actions"
+      v-for="action in menuActions"
       :key="action.id"
       @click.stop="() => onAction(action.id)"
       class="menu-item-btn"
@@ -18,7 +19,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Copy, Highlighter, Waves, Underline, MessageSquarePlus, Search } from 'lucide-vue-next'
+import { Copy, Highlighter, Waves, Underline, MessageSquarePlus, Search, Trash2 } from 'lucide-vue-next'
 
 interface Position {
   top: number
@@ -27,12 +28,14 @@ interface Position {
 
 interface Props {
   position: Position | null
+  hasOverlap: boolean
   onAction: (action: string) => void
 }
 
 const props = defineProps<Props>()
 
-const actions = [
+// 基础操作项
+const baseActions = [
   { id: 'copy', icon: Copy, label: '复制' },
   { id: 'marker', icon: Highlighter, label: '马克笔' },
   { id: 'wave', icon: Waves, label: '波浪线' },
@@ -40,6 +43,18 @@ const actions = [
   { id: 'thought', icon: MessageSquarePlus, label: '写想法' },
   { id: 'ai', icon: Search, label: 'AI问书' },
 ]
+
+// 删除操作项
+const deleteAction = { id: 'delete', icon: Trash2, label: '删除划线' }
+
+// 根据是否有重叠标注来构建菜单操作项
+const menuActions = computed(() => {
+  if (props.hasOverlap) {
+    // 如果有重叠，在基础操作项前添加删除选项
+    return [deleteAction, ...baseActions]
+  }
+  return baseActions
+})
 
 // 计算菜单的定位和动画样式
 const menuStyle = computed(() => {
@@ -134,6 +149,23 @@ const menuStyle = computed(() => {
 
 .menu-item-btn:hover .menu-item-icon {
   color: white;
+}
+
+/* 删除按钮的特殊样式 */
+.menu-item-btn:first-child .menu-item-icon {
+  color: #ef4444; /* 删除按钮使用红色 */
+}
+
+.menu-item-btn:first-child:hover .menu-item-icon {
+  color: #fca5a5; /* 删除按钮hover时使用浅红色 */
+}
+
+.menu-item-btn:first-child .menu-item-label {
+  color: #ef4444; /* 删除按钮标签使用红色 */
+}
+
+.menu-item-btn:first-child:hover .menu-item-label {
+  color: #fca5a5; /* 删除按钮标签hover时使用浅红色 */
 }
 
 /* 菜单项标签 */

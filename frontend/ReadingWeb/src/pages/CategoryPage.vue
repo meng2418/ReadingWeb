@@ -359,10 +359,120 @@ const switchSubCategory = async (id: string) => {
   await fetchBooks()
 }
 
-onMounted(async () => {
-  await fetchBooks()
-  window.scrollTo(0, 0)
-})
+// 新增：生成分类数据结构
+function generateCategoryDataStructure(mainCategory: string): Record<string, RankedBook[]> {
+  const subCategories = getSubCategories(mainCategory)
+  const result: Record<string, RankedBook[]> = {}
+
+  // 修复：使用 for...of 替代 forEach
+  for (const category of subCategories) {
+    result[category.id] = generateCategoryData(mainCategory, category.id)
+  }
+
+  return result
+}
+
+// 新增：生成分类数据函数（用于子分类）
+function generateCategoryData(mainCategory: string, subCategory: string): RankedBook[] {
+  const data: RankedBook[] = []
+  for (let i = 1; i <= 50; i++) {
+    // 使用哈希函数生成唯一的数字id
+    const uniqueId = stringToHash(`${mainCategory}-${subCategory}-${i}`)
+    data.push({
+      id: uniqueId,
+      cover: `https://picsum.photos/seed/${mainCategory}-${subCategory}-${i}/200/300`,
+      title: `${getSubCategoryTitle(mainCategory, subCategory)} ${i}`,
+      author: `${getSubCategoryAuthor(mainCategory, subCategory)} ${i}`,
+      recommend: `${(95 - i * 0.1).toFixed(1)}%`,
+      readersCount: (10000 - i * 100).toString(),
+      recommendationRate: 95 - i * 0.1,
+      description: `这是${getSubCategoryTitle(mainCategory, subCategory)}第${i}本书的详细描述。这是一本非常优秀的作品，专注于${getSubCategoryDescription(mainCategory, subCategory)}领域。`,
+    })
+  }
+  return data
+}
+
+function getTitleByType(type: string): string {
+  const titles: Record<string, string> = {
+    weekly: '周榜热门书籍',
+    monthly: '月榜精选书籍',
+    new: '新书推荐',
+    masterpiece: '经典神作',
+    novel: '精品小说',
+    history: '历史书籍',
+    art: '艺术书籍',
+    biography: '人物传记',
+    computer: '计算机书籍',
+    social_culture: '社会文化书籍',
+    economy_finance: '经济理财书籍',
+    children_books: '童书',
+    medical_health: '医学健康书籍',
+    literature: '文学作品',
+    philosophy_religion: '哲学宗教书籍',
+    psychology: '心理学书籍',
+    personal_development: '个人成长书籍',
+    politics_military: '政治军事书籍',
+    education_learning: '教育学习书籍',
+    science_technology: '科学技术书籍',
+    life_skills: '生活百科书籍',
+    periodicals: '期刊杂志',
+  }
+  return titles[type] || '书籍'
+}
+
+// 新增：获取子分类标题
+function getSubCategoryTitle(mainCategory: string, subCategory: string): string {
+  const subCategories = getSubCategories(mainCategory)
+  const category = subCategories.find((cat) => cat.id === subCategory)
+
+  if (category && category.name !== '全部') {
+    return category.name
+  }
+
+  // 如果找不到或为"全部"，返回主分类名称
+  return getTitleByType(mainCategory)
+}
+
+// 新增：获取子分类作者
+function getSubCategoryAuthor(mainCategory: string, subCategory: string): string {
+  const subCategories = getSubCategories(mainCategory)
+  const category = subCategories.find((cat) => cat.id === subCategory)
+
+  if (category && category.name !== '全部') {
+    return `${category.name}作者`
+  }
+
+  // 如果找不到或为"全部"，返回主分类作者
+  return `${getTitleByType(mainCategory)}作者`
+}
+
+// 新增：获取子分类描述 - 修复重复函数问题
+function getSubCategoryDescription(mainCategory: string, subCategory: string): string {
+  const subCategories = getSubCategories(mainCategory)
+  const category = subCategories.find((cat) => cat.id === subCategory)
+
+  if (category && category.name !== '全部') {
+    return `关于${category.name}的精选书籍`
+  }
+
+  // 如果找不到或为"全部"，返回主分类描述
+  return getTitleByType(mainCategory)
+}
+
+// 添加字符串到数字的哈希函数
+function stringToHash(str: string): number {
+  let hash = 0
+  if (str.length === 0) return hash
+
+  // 使用字符串迭代器，它会自动处理 Unicode 代理对
+  for (const char of str) {
+    const codePoint = char.codePointAt(0) || 0
+    hash = (hash << 5) - hash + codePoint
+    hash = hash & hash
+  }
+
+  return Math.abs(hash)
+}
 </script>
 
 <style scoped>

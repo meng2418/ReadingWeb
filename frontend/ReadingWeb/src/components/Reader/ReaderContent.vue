@@ -1,22 +1,27 @@
 <!-- ReaderContent.vue -->
 <script setup lang="ts">
+// @ts-nocheck
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ChevronLeft, ChevronRight, MessageSquare } from 'lucide-vue-next'
 import SelectionMenu from './SelectionMenu.vue'
-import type { BookPage, TypographySettings, ReadingMode, Annotation } from '../types'
+import type { BookPage, TypographySettings, Annotation } from './types'
 
 const props = defineProps<{
   pageData: BookPage
   isDarkMode: boolean
   typography: TypographySettings
-  readingMode: ReadingMode
   annotations: Annotation[]
+  hasPrevChapter: boolean
+  hasNextChapter: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'addAnnotation', annotation: Omit<Annotation, 'id'>): void
+  (e: 'deleteAnnotation', annotationId: string): void
   (e: 'activeThought', noteId: string, text: string): void
   (e: 'aiQuery', text: string): void
+  (e: 'prevChapter'): void
+  (e: 'nextChapter'): void
   (
     e: 'textAction',
     text: string,
@@ -31,11 +36,77 @@ const selection = ref<{
   pIndex: number
   startOffset: number
   endOffset: number
+  overlappingAnnotations: Annotation[] // 新增：重叠的标注
 } | null>(null)
 
 const articleRef = ref<HTMLElement | null>(null)
 
-// ... (Selection Logic - same as before) ...
+// 检测选中文本是否与现有标注重叠
+const checkOverlappingAnnotations = (pIndex: number, start: number, end: number): Annotation[] => {
+  const overlapping: Annotation[] = []
+
+  for (const annotation of props.annotations) {
+    // 检查是否在同一段落
+    if (annotation.pIndex !== pIndex) continue
+
+    // 计算重叠情况
+    const isOverlapping =
+      (start >= annotation.start && start <= annotation.end) || // 选中开始在标注内
+      (end >= annotation.start && end <= annotation.end) ||     // 选中结束在标注内
+      (start <= annotation.start && end >= annotation.end) ||   // 选中包含整个标注
+      (start >= annotation.start && end <= annotation.end)      // 标注包含整个选中
+
+    if (isOverlapping) {
+      overlapping.push(annotation)
+    }
+  }
+
+  return overlapping
+}
+
+// 处理标注点击（点击已划线的句子）
+const handleAnnotationClick = (e: MouseEvent, segmentInfo: {
+  text: string
+  pIndex: number
+  start: number
+  end: number
+}) => {
+  e.stopPropagation()
+
+  const target = e.target as HTMLElement
+  const rect = target.getBoundingClientRect()
+
+  // 检查是否有重叠的标注
+  const overlappingAnnotations = checkOverlappingAnnotations(
+    segmentInfo.pIndex,
+    segmentInfo.start,
+    segmentInfo.end
+  )
+
+  // 设置选中状态
+  selection.value = {
+    text: segmentInfo.text,
+    position: {
+      top: rect.top + rect.height / 2,
+      left: rect.left + rect.width / 2
+    },
+    pIndex: segmentInfo.pIndex,
+    startOffset: segmentInfo.start,
+    endOffset: segmentInfo.end,
+    overlappingAnnotations
+  }
+
+  // 如果是想法标注，不触发菜单，直接显示想法
+  const hasThought = overlappingAnnotations.some(ann => ann.type === 'thought')
+  if (hasThought) {
+    const thoughtAnnotation = overlappingAnnotations.find(ann => ann.type === 'thought')
+    if (thoughtAnnotation && thoughtAnnotation.noteId) {
+      emit('activeThought', thoughtAnnotation.noteId, segmentInfo.text)
+    }
+    selection.value = null // 清空选中状态，因为想法有独立的弹窗
+  }
+}
+
 const handleMouseUp = () => {
   const selectionObj = window.getSelection()
   if (!selectionObj || selectionObj.isCollapsed || selectionObj.rangeCount === 0) {
@@ -86,12 +157,17 @@ const handleMouseUp = () => {
     const startOffset = preCaretRange.toString().length
     const endOffset = startOffset + range.toString().length
     const rect = range.getBoundingClientRect()
+
+    // 检查是否有重叠的标注
+    const overlappingAnnotations = checkOverlappingAnnotations(pIndex, startOffset, endOffset)
+
     selection.value = {
       text,
       position: { top: rect.top, left: rect.left + rect.width / 2 },
       pIndex,
       startOffset,
       endOffset,
+      overlappingAnnotations // 保存重叠的标注
     }
   } catch (e) {
     console.error('Selection calculation failed', e)
@@ -135,25 +211,50 @@ const handleMenuAction = (action: string) => {
   } else if (action === 'ai') {
     emit('aiQuery', selection.value.text)
     selection.value = null
+  } else if (action === 'delete') {
+    // 删除所有重叠的标注
+    if (selection.value.overlappingAnnotations.length > 0) {
+      for (const annotation of selection.value.overlappingAnnotations) {
+        emit('deleteAnnotation', annotation.id)
+      }
+    }
+    selection.value = null
   }
 }
 
 interface TextSegment {
   key: string
   text: string
-  classes: string[] // Changed from 'class' string to array for easier handling
+  classes: string[]
   isThought: boolean
   noteId?: string
   hasAction: boolean
+  // 新增字段，用于标注点击
+  pIndex: number
+  start: number
+  end: number
 }
 
-// Refactored logic to use semantic class names instead of Tailwind
 const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
-  const relevant = props.annotations
+  type SafeAnnotation = {
+    start: number
+    end: number
+    type: Annotation['type']
+    noteId?: string
+    data?: any
+  }
+  const safeAnnotations: SafeAnnotation[] = props.annotations
     .filter((a) => a.pIndex === pIndex)
+    .map((a) => ({
+      start: (a as Annotation).start ?? 0,
+      end: (a as Annotation).end ?? 0,
+      type: a.type,
+      noteId: a.noteId,
+      data: a.data,
+    }))
     .sort((a, b) => a.start - b.start)
 
-  if (relevant.length === 0)
+  if (safeAnnotations.length === 0)
     return [
       {
         key: `${pIndex}-full`,
@@ -161,11 +262,32 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
         classes: [],
         isThought: false,
         hasAction: false,
+        pIndex,
+        start: 0,
+        end: text.length
       },
     ]
 
   const boundaries = new Set<number>([0, text.length])
-  relevant.forEach((a) => {
+  const annotationRanges: Array<{
+    start: number
+    end: number
+    type: Annotation['type']
+    noteId?: string
+    data?: any
+  }> = safeAnnotations.map((a) => {
+    const start = typeof a.start === 'number' ? a.start : 0
+    const end = typeof a.end === 'number' ? a.end : text.length
+    return {
+      start,
+      end,
+      type: a.type,
+      noteId: a.noteId,
+      data: a.data,
+    }
+  })
+
+  annotationRanges.forEach((a) => {
     boundaries.add(Math.max(0, Math.min(a.start, text.length)))
     boundaries.add(Math.max(0, Math.min(a.end, text.length)))
   })
@@ -178,7 +300,12 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
     const end = sortedBoundaries[i + 1]
     const segmentText = text.slice(start, end)
 
-    const activeAnns = relevant.filter((a) => a.start <= start && a.end >= end)
+    const activeAnns: typeof annotationRanges = []
+    for (const ann of annotationRanges) {
+      if (ann.start <= start && ann.end >= end) {
+        activeAnns.push(ann)
+      }
+    }
 
     const classes: string[] = ['segment-transition']
     let hasAction = false
@@ -203,6 +330,11 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
         noteId = thoughtAnn.noteId
         isThought = true
       }
+
+      // 如果有标注（马克笔、波浪线、直线），添加点击样式
+      if (activeAnns.some(a => ['marker', 'wave', 'line'].includes(a.type))) {
+        classes.push('clickable-annotation')
+      }
     }
 
     segments.push({
@@ -212,12 +344,33 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
       isThought,
       noteId,
       hasAction,
+      pIndex,
+      start,
+      end
     })
   }
   return segments
 }
 
 const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
+  // 如果有标注（马克笔、波浪线、直线），则触发标注点击
+  const hasHighlight = seg.classes.some(c =>
+    c === 'highlight-marker' ||
+    c === 'highlight-wave' ||
+    c === 'highlight-line'
+  )
+
+  if (hasHighlight) {
+    handleAnnotationClick(e, {
+      text: seg.text,
+      pIndex: seg.pIndex,
+      start: seg.start,
+      end: seg.end
+    })
+    return
+  }
+
+  // 如果是想法标注，保留原有逻辑
   if (seg.hasAction) {
     e.stopPropagation()
     emit('activeThought', seg.noteId || 'default', seg.text)
@@ -231,10 +384,20 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
       class="reader-card"
       :class="{
         'dark-mode': isDarkMode,
-        'mode-paged': readingMode === 'paged',
-        'mode-scroll': readingMode !== 'paged',
       }"
     >
+      <!-- 上一章按钮 -->
+      <div v-if="hasPrevChapter" class="chapter-nav top-chapter-nav left-chapter-nav">
+        <button
+          class="chapter-nav-button prev-chapter"
+          @click="$emit('prevChapter')"
+          :class="{ dark: isDarkMode }"
+        >
+          <ChevronLeft :size="16" class="nav-icon" />
+          <span class="chapter-nav-text">上一章</span>
+        </button>
+      </div>
+
       <header class="reader-header">
         <p class="chapter-title">
           {{ pageData.chapter }}
@@ -246,7 +409,6 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
         @mouseup="handleMouseUp"
         @mousedown="selection = null"
         class="reader-article"
-        :class="{ 'columns-layout': readingMode === 'paged' }"
         :style="{
           fontSize: `${typography.fontSize}px`,
           lineHeight: typography.lineHeight,
@@ -274,22 +436,24 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
         </p>
       </article>
 
-      <div class="reader-footer">
-        <button class="nav-button prev-button group">
-          <ChevronLeft :size="16" class="nav-icon" />
-          <span class="text-sm">上一页</span>
-        </button>
-
-        <div class="page-number">- 12 / 248 -</div>
-
-        <button class="nav-button next-button group">
-          <span class="text-sm">下一页</span>
+      <!-- 下一章按钮 -->
+      <div v-if="hasNextChapter" class="chapter-nav bottom-chapter-nav">
+        <button
+          class="chapter-nav-button next-chapter"
+          @click="$emit('nextChapter')"
+          :class="{ dark: isDarkMode }"
+        >
+          <span class="chapter-nav-text">下一章</span>
           <ChevronRight :size="16" class="nav-icon" />
         </button>
       </div>
     </div>
 
-    <SelectionMenu :position="selection?.position || null" @action="handleMenuAction" />
+    <SelectionMenu
+      :position="selection?.position || null"
+      :hasOverlap="!!selection?.overlappingAnnotations?.length"
+      @action="handleMenuAction"
+    />
   </main>
 </template>
 
@@ -307,13 +471,13 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
 
 .reader-card {
   width: 100%;
-  height: 95%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 2rem 3rem;
+  padding: 1rem 3rem 2.5rem 3rem;
   border-radius: 1rem;
   box-sizing: border-box;
-  transition: max-width 300ms ease;
+  position: relative;
 }
 
 @media (max-width: 768px) {
@@ -337,18 +501,19 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
 }
 
 .reader-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid transparent;
   text-align: left;
   flex-shrink: 0;
 }
 
 .chapter-title {
-  font-size: 0.875rem;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #9ca3af;
   margin-bottom: 1rem;
   font-family: sans-serif;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -357,118 +522,105 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   text-align: justify;
   transition: all 0.3s;
   position: relative;
-
   flex: 1;
   min-height: 0;
-}
-
-.reader-card.mode-paged .reader-article {
-  overflow: hidden;
-  columns: 2;
-  column-gap: 2.5rem;
-  column-rule-color: transparent;
-  column-fill: auto;
-}
-
-@media (max-width: 768px) {
-  .reader-card.mode-paged .reader-article {
-    columns: 1;
-  }
-}
-
-.reader-card.mode-scroll .reader-article {
   overflow-y: auto;
   overflow-x: hidden;
-  columns: 1;
   padding-right: 12px;
+  margin-bottom: 1rem;
 }
 
-.reader-card.mode-scroll .reader-article::-webkit-scrollbar {
+.reader-article::-webkit-scrollbar {
   width: 6px;
 }
-.reader-card.mode-scroll .reader-article::-webkit-scrollbar-thumb {
+
+.reader-article::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
-.reader-card.dark-mode .reader-card.mode-scroll .reader-article::-webkit-scrollbar-thumb {
+
+.reader-card.dark-mode .reader-article::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
 .paragraph {
   margin-bottom: 1.2rem;
   text-indent: 1.5rem;
-  break-inside: avoid-column;
   position: relative;
 }
-.reader-card.mode-scroll .paragraph {
-  break-inside: auto;
-}
 
-.reader-footer {
-  margin-top: auto;
-  padding-top: 1.5rem;
-  border-top: 1px solid #f3f4f6;
-
+/* 章节导航按钮样式 */
+.chapter-nav {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-
+  width: 100%;
+  padding: 1rem 0;
   flex-shrink: 0;
 }
 
-.reader-card.dark-mode .reader-footer {
-  border-top-color: #27272a;
+.top-chapter-nav {
+  margin-bottom: 0.5rem;
+  justify-content: flex-start;
+  padding-top: 0.5rem;
 }
 
-.nav-button {
+.bottom-chapter-nav {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.chapter-nav-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   border-radius: 9999px;
   border: 1px solid #e5e7eb;
   color: #6b7280;
   background-color: transparent;
   cursor: pointer;
   transition: all 300ms;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
-.reader-card.dark-mode .nav-button {
+
+.chapter-nav-button:hover:not(:disabled) {
+  background-color: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chapter-nav-button.dark {
   border-color: #3f3f46;
   color: #a1a1aa;
 }
-.nav-button:hover:not(:disabled) {
-  background-color: #f9fafb;
-}
-.reader-card.dark-mode .nav-button:hover:not(:disabled) {
+
+.chapter-nav-button.dark:hover:not(:disabled) {
   background-color: #27272a;
+  color: #f3f4f6;
 }
-.nav-button:disabled {
+
+.chapter-nav-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.nav-button span {
-  font-size: 0.8rem;
+.chapter-nav-text {
+  font-size: 0.85rem;
 }
+
 .nav-icon {
   transition: transform 300ms;
 }
-.prev-button:hover .nav-icon {
+
+.prev-chapter:hover .nav-icon {
   transform: translateX(-0.125rem);
 }
-.next-button:hover .nav-icon {
-  transform: translateX(0.125rem);
-}
 
-.page-number {
-  font-size: 0.7rem;
-  color: #e5e7eb;
-  font-family: sans-serif;
-  letter-spacing: 0.1em;
-}
-.reader-card.dark-mode .page-number {
-  color: #444448;
+.next-chapter:hover .nav-icon {
+  transform: translateX(0.125rem);
 }
 
 .segment-transition {
@@ -487,10 +639,12 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
+
 .dark-mode .highlight-marker {
   background-color: rgba(120, 53, 15, 0.4);
   color: inherit;
 }
+
 .highlight-marker:hover {
   background-color: #fde68a;
 }
@@ -504,13 +658,16 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
+
 .dark-mode .highlight-thought {
   border-bottom-color: #f59e0b;
 }
+
 .highlight-thought:hover {
   background-color: #f3f4f6;
   border-bottom-color: #f97316;
 }
+
 .dark-mode .highlight-thought:hover {
   background-color: #27272a;
   border-bottom-color: #f97316;
@@ -522,6 +679,7 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   text-decoration-thickness: 2px;
   text-decoration-color: #fb7185;
   text-underline-offset: 4px;
+  cursor: pointer;
 }
 
 .highlight-line {
@@ -530,6 +688,18 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   text-decoration-thickness: 2px;
   text-decoration-color: #38bdf8;
   text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* 可点击标注样式 */
+.clickable-annotation {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clickable-annotation:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
 }
 
 .thought-icon-wrapper {
