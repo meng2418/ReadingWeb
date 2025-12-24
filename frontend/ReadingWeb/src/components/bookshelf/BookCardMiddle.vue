@@ -42,8 +42,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  cover: 'https://picsum.photos/200/300?grayscale',
-  title: 'Vue 组件设计指南与精品开发',
+  cover: '',
+  title: '',
   isRead: true,
   bookId: '',
   disableJump: false,

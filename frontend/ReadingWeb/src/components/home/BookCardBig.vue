@@ -85,5 +85,9 @@ const goToBookDetail = (): void => {
   color: #999;
   font-size: 13px;
   margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 显示两行 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

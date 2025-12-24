@@ -1,33 +1,30 @@
-// Banner
-export interface HomeBanner {
-  id: number
-  image: string
-  link: string
-}
-
-// 接口原始书籍结构（非常重要：这是“接口事实”）
-export interface HomeBookRaw {
-  id: number
-  title: string
-  author: string
+// OpenAPI 中的 SimpleBook
+export interface SimpleBookRaw {
   cover: string
-  description: string
-  category: string
-  price: number
-  isFree: boolean
+  bookTitle: string
+  author: string
   rating: number
   readCount: number
+  description?: string
+  isFinished?: boolean
+  isInBookshelf?: boolean
+  hasStarted?: boolean
+  readingStatus?: 'not_started' | 'reading' | 'finished'
 }
 
-// 榜单
-export interface HomeRankingsRaw {
-  weekly: HomeBookRaw[]
-  monthly: HomeBookRaw[]
-}
+// 推荐书籍（/home/recommendations）
+export type HomeRecommendations = SimpleBookRaw[]
 
-// /home 接口整体返回
+// 榜单书籍（/home/rankings/{type}）
+export type HomeRanking = SimpleBookRaw[]
+
+// 聚合到首页所需的数据结构（前端自用）
 export interface HomeData {
-  banners: HomeBanner[]
-  recommendations: HomeBookRaw[]
-  rankings: HomeRankingsRaw
+  recommendations: HomeRecommendations
+  rankings: {
+    weekly: HomeRanking
+    monthly: HomeRanking
+    new: HomeRanking
+    masterpiece: HomeRanking
+  }
 }

@@ -3,41 +3,38 @@
     <NavBar />
     <BackToTop />
     <div class="category-container">
-      <!-- 左侧导航 -->
       <div class="left-nav">
         <div
-          v-for="tab in tabs"
+          v-for="tab in categories"
           :key="tab.id"
           class="nav-item"
-          :class="{ active: currentTab === tab.id }"
-          @click="switchTab(tab.id)"
+          :class="{ active: currentCategoryId === tab.id }"
+          @click="switchCategory(tab.id)"
         >
           {{ tab.name }}
         </div>
       </div>
 
-      <!-- 右侧内容 -->
       <div class="right-content">
         <div class="ranking-header">
-          <h1 class="ranking-title">{{ currentTabName }}</h1>
-          <!-- 添加分类标签栏 - 只在分类页面显示 -->
-          <div v-if="isCategoryTab" class="category-tabs">
-            <div
-              v-for="category in getSubCategories(currentTab)"
-              :key="category.id"
-              class="category-tab"
-              :class="{ active: currentCategory === category.id }"
-              @click="switchCategory(category.id)"
-            >
-              {{ category.name }}
-            </div>
+          <h1 class="ranking-title">{{ currentCategoryName }}</h1>
+        </div>
+
+        <div v-if="subCategoryList.length" class="category-tabs">
+          <div
+            v-for="category in subCategoryList"
+            :key="category.id"
+            class="category-tab"
+            :class="{ active: currentSubCategory === category.id }"
+            @click="switchSubCategory(category.id)"
+          >
+            {{ category.name }}
           </div>
         </div>
 
-        <!-- 书籍榜单 -->
         <div class="book-ranking">
           <div
-            v-for="(book, index) in currentRanking"
+            v-for="(book, index) in books.slice(0, displayCount)"
             :key="book.id"
             class="ranking-item"
             @click="goToBookDetail(book.id)"
@@ -48,11 +45,13 @@
               :cover="book.cover"
               :title="book.title"
               :author="book.author"
-              :readers-count="book.readersCount || '1021'"
-              :recommendation-rate="book.recommendationRate || book.recommend"
+              :readers-count="book.readersCount || '—'"
+              :recommendation-rate="book.recommendationRate || 0"
               :description="book.description || `${book.title}是一本优秀的作品，值得一读。`"
             />
           </div>
+          <div v-if="!books.length && !loading" class="empty">暂无数据</div>
+          <div v-if="loading" class="empty">加载中...</div>
         </div>
       </div>
     </div>
@@ -61,29 +60,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useBookNavigation } from '@/composables/useBookNavigation'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import Footer from '@/components/layout/Footer.vue'
-import type { BookListItem } from '@/types/book'
-import type { CategoryTab, SubCategory, RankedBook } from '@/types/category'
+import { useBookNavigation } from '@/composables/useBookNavigation'
+import type { CategoryTab, RankedBook, SubCategory } from '@/types/category'
+import { getCategoryBooks } from '@/api/categories'
 
-const route = useRoute()
-const router = useRouter()
-const { openBookDetail } = useBookNavigation()
-
-// 定义接口统一至 types/category.ts
-
-const goToBookDetail = (bookId: string | number) => {
-  console.log('跳转到书籍详情页，书籍ID:', bookId)
-  openBookDetail(bookId, 'both')
-}
-
-// 导航标签
-const tabs: CategoryTab[] = [
+// 固定分类（原有静态类别，避免被清空）
+const categories: CategoryTab[] = [
   { id: 'weekly', name: '周榜' },
   { id: 'monthly', name: '月榜' },
   { id: 'new', name: '新书榜' },
@@ -108,89 +95,24 @@ const tabs: CategoryTab[] = [
   { id: 'periodicals', name: '期刊杂志' },
 ]
 
-const currentTab = ref('weekly')
-const currentCategory = ref('all') // 当前选中的分类
+const currentCategoryId = ref<string | number>(categories[0]?.id ?? '')
+const currentSubCategory = ref<string>('all')
+const books = ref<RankedBook[]>([])
+const page = ref(1)
+const limit = ref(50) // 固定 50 本
+const total = ref(0)
+const loading = ref(false)
+const step = 20 // 每次加载多少本
+const displayCount = ref(step)
+const { openBookDetail } = useBookNavigation()
 
-// 监听路由参数变化
-watch(
-  () => route.query.tab,
-  (newTab) => {
-    if (newTab && tabs.some((tab) => tab.id === newTab)) {
-      currentTab.value = newTab as string
-      // 切换到分类时，重置当前分类为"全部"
-      if (isCategoryTab.value) {
-        currentCategory.value = 'all'
-      }
-    }
-  },
-)
-
-// 监听路由参数变化 - 分类
-watch(
-  () => route.query.category,
-  (newCategory) => {
-    if (newCategory) {
-      currentCategory.value = newCategory as string
-    } else if (isCategoryTab.value) {
-      currentCategory.value = 'all' // 修复：当没有category参数时，设置为默认值
-    }
-  },
-)
-
-// 组件挂载时检查参数
-onMounted(() => {
-  const tabParam = route.query.tab as string
-  const categoryParam = route.query.category as string
-
-  if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
-    currentTab.value = tabParam
-  }
-
-  if (categoryParam) {
-    currentCategory.value = categoryParam
-  } else if (isCategoryTab.value) {
-    currentCategory.value = 'all'
-  }
-
-  // 添加：页面加载时滚动到顶部
-  window.scrollTo(0, 0)
+const currentCategoryName = computed(() => {
+  const tab = categories.find((item) => item.id === currentCategoryId.value)
+  return tab?.name ?? '分类'
 })
 
-// 计算属性
-const currentTabName = computed(() => {
-  const tab = tabs.find((t) => t.id === currentTab.value)
-  return tab?.name || '周榜'
-})
-
-// 判断当前是否为分类标签（非榜单）
-const isCategoryTab = computed(() => {
-  const categoryTabs = [
-    'novel',
-    'history',
-    'art',
-    'biography',
-    'computer',
-    'social_culture',
-    'economy_finance',
-    'children_books',
-    'medical_health',
-    'literature',
-    'philosophy_religion',
-    'psychology',
-    'personal_development',
-    'politics_military',
-    'education_learning',
-    'science_technology',
-    'life_skills',
-    'periodicals',
-  ]
-  return categoryTabs.includes(currentTab.value)
-})
-
-// 获取子分类
 const getSubCategories = (tabId: string): SubCategory[] => {
   const subCategories: Record<string, SubCategory[]> = {
-    // 精品小说
     novel: [
       { id: 'all', name: '全部' },
       { id: 'social', name: '社会小说' },
@@ -214,7 +136,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'era', name: '年代小说' },
       { id: 'healing', name: '治愈小说' },
     ],
-    // 历史分类
     history: [
       { id: 'all', name: '全部' },
       { id: 'history_geography', name: '历史地理' },
@@ -227,8 +148,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'history_culture', name: '历史文化' },
       { id: 'modern_china', name: '中国近现代' },
     ],
-
-    // 文学分类
     literature: [
       { id: 'all', name: '全部' },
       { id: 'classical_literature', name: '古典文学' },
@@ -244,8 +163,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'foreign_literature', name: '外国文学' },
       { id: 'world_classics', name: '世界名著' },
     ],
-
-    // 艺术分类
     art: [
       { id: 'all', name: '全部' },
       { id: 'sculpture', name: '雕塑' },
@@ -262,8 +179,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'dance', name: '舞蹈' },
       { id: 'music', name: '音乐' },
     ],
-
-    // 人物传记分类
     biography: [
       { id: 'all', name: '全部' },
       { id: 'financial_figures', name: '财经人物' },
@@ -277,8 +192,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'artists', name: '艺术家' },
       { id: 'celebrities', name: '娱乐明星' },
     ],
-
-    // 哲学宗教分类
     philosophy_religion: [
       { id: 'all', name: '全部' },
       { id: 'eastern_philosophy', name: '东方哲学' },
@@ -292,7 +205,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'philosophical_works', name: '哲学著作' },
       { id: 'religion', name: '宗教' },
     ],
-    // 计算机分类
     computer: [
       { id: 'all', name: '全部' },
       { id: 'software_learning', name: '软件学习' },
@@ -303,8 +215,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'database', name: '数据库' },
       { id: 'image_video', name: '图像视频' },
     ],
-
-    // 心理分类
     psychology: [
       { id: 'all', name: '全部' },
       { id: 'cognition_behavior', name: '认知与行为' },
@@ -315,16 +225,12 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'social_psychology', name: '社会心理学' },
       { id: 'psychology_application', name: '心理学应用' },
     ],
-
-    // 社会文化分类
     social_culture: [
       { id: 'all', name: '全部' },
       { id: 'law', name: '法律' },
       { id: 'social_science', name: '社科' },
       { id: 'culture', name: '文化' },
     ],
-
-    // 经济理财分类
     economy_finance: [
       { id: 'all', name: '全部' },
       { id: 'financial_planning', name: '理财' },
@@ -332,16 +238,12 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'business', name: '商业' },
       { id: 'management', name: '管理' },
     ],
-
-    // 医学健康分类
     medical_health: [
       { id: 'all', name: '全部' },
       { id: 'health', name: '健康' },
       { id: 'gender_relations', name: '两性' },
       { id: 'medicine', name: '医学' },
     ],
-
-    // 生活百科分类
     life_skills: [
       { id: 'all', name: '全部' },
       { id: 'home_living', name: '居家' },
@@ -354,8 +256,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'sports', name: '体育' },
       { id: 'games', name: '游戏' },
     ],
-
-    // 科学技术分类
     science_technology: [
       { id: 'all', name: '全部' },
       { id: 'industrial_technology', name: '工业技术' },
@@ -364,8 +264,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'agriculture_forestry', name: '农林牧业' },
       { id: 'natural_science', name: '自然科学' },
     ],
-
-    // 教育学习分类
     education_learning: [
       { id: 'all', name: '全部' },
       { id: 'reference_books', name: '工具书' },
@@ -375,8 +273,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'foreign_languages', name: '外语' },
       { id: 'parenting', name: '育儿' },
     ],
-
-    // 童书分类
     children_books: [
       { id: 'all', name: '全部' },
       { id: 'children_literature', name: '儿童文学' },
@@ -385,8 +281,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'early_education', name: '幼儿启蒙' },
       { id: 'reading_reference', name: '阅读工具书' },
     ],
-
-    // 个人成长分类
     personal_development: [
       { id: 'all', name: '全部' },
       { id: 'communication', name: '沟通表达' },
@@ -397,15 +291,11 @@ const getSubCategories = (tabId: string): SubCategory[] => {
       { id: 'cognitive_thinking', name: '认知思维' },
       { id: 'women_growth', name: '女性成长' },
     ],
-
-    // 政治军事分类
     politics_military: [
       { id: 'all', name: '全部' },
       { id: 'military', name: '军事' },
       { id: 'politics', name: '政治' },
     ],
-
-    // 期刊杂志分类
     periodicals: [
       { id: 'all', name: '全部' },
       { id: 'finance', name: '财经' },
@@ -418,205 +308,61 @@ const getSubCategories = (tabId: string): SubCategory[] => {
   return subCategories[tabId] || []
 }
 
-// 切换分类标签
-const switchCategory = (categoryId: string) => {
-  currentCategory.value = categoryId
-  // 更新URL参数但不触发页面刷新
-  router.replace({ query: { tab: currentTab.value, category: categoryId } })
+const subCategoryList = computed(() => getSubCategories(String(currentCategoryId.value)))
+
+const goToBookDetail = (bookId: string | number) => {
+  openBookDetail(bookId, 'both')
 }
 
-// 定义排名数据类型
-type RankingsType = {
-  [key: string]: RankedBook[] | Record<string, RankedBook[]>
-}
-
-// 模拟数据 - 这里需要替换为真实的API数据
-// 修改：为每个主分类和子分类组合生成不同的数据
-const rankings: RankingsType = {
-  // 榜单数据保持不变
-  weekly: generateRankingData('weekly'),
-  monthly: generateRankingData('monthly'),
-  new: generateRankingData('new'),
-  masterpiece: generateRankingData('masterpiece'),
-
-  // 为每个主分类和子分类生成不同的数据
-  novel: generateCategoryDataStructure('novel'),
-  history: generateCategoryDataStructure('history'),
-  art: generateCategoryDataStructure('art'),
-  biography: generateCategoryDataStructure('biography'),
-  computer: generateCategoryDataStructure('computer'),
-  social_culture: generateCategoryDataStructure('social_culture'),
-  economy_finance: generateCategoryDataStructure('economy_finance'),
-  children_books: generateCategoryDataStructure('children_books'),
-  medical_health: generateCategoryDataStructure('medical_health'),
-  literature: generateCategoryDataStructure('literature'),
-  philosophy_religion: generateCategoryDataStructure('philosophy_religion'),
-  psychology: generateCategoryDataStructure('psychology'),
-  personal_development: generateCategoryDataStructure('personal_development'),
-  politics_military: generateCategoryDataStructure('politics_military'),
-  education_learning: generateCategoryDataStructure('education_learning'),
-  science_technology: generateCategoryDataStructure('science_technology'),
-  life_skills: generateCategoryDataStructure('life_skills'),
-  periodicals: generateCategoryDataStructure('periodicals'),
-}
-
-// 修改：根据当前标签和分类获取数据
-const currentRanking = computed((): RankedBook[] => {
-  const tab = currentTab.value
-
-  // 如果是榜单，直接返回数据
-  if (!isCategoryTab.value) {
-    return rankings[tab] as RankedBook[]
+const fetchBooks = async () => {
+  if (!currentCategoryId.value) return
+  loading.value = true
+  try {
+    const res = await getCategoryBooks(currentCategoryId.value, 1, limit.value)
+    books.value = res.list.slice(0, limit.value) // 最多 50
+    total.value = books.value.length
+    page.value = 1
+    displayCount.value = step
+  } finally {
+    loading.value = false
   }
+}
+const onScroll = () => {
+  if (loading.value) return
 
-  // 如果是分类，根据子分类获取数据
-  const categoryData = rankings[tab] as Record<string, RankedBook[]>
-  return categoryData[currentCategory.value] || categoryData.all || []
+  const scrollBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100
+
+  if (scrollBottom && displayCount.value < books.value.length) {
+    displayCount.value = Math.min(
+      displayCount.value + step,
+      books.value.length, // 👈 保证最多到 50
+    )
+  }
+}
+onMounted(() => {
+  window.addEventListener('scroll', onScroll)
 })
 
-// 切换标签
-const switchTab = (tabId: string) => {
-  currentTab.value = tabId
-  // 如果是分类标签，重置当前分类为"全部"
-  if (isCategoryTab.value) {
-    currentCategory.value = 'all'
-  }
-  // 更新URL参数但不触发页面刷新
-  router.replace({ query: { tab: tabId } })
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+})
+
+const switchCategory = async (id: string | number) => {
+  if (currentCategoryId.value === id) return
+  currentCategoryId.value = id
+  currentSubCategory.value = 'all'
+  await fetchBooks()
 }
 
-// 生成模拟数据函数（用于榜单）
-function generateRankingData(type: string): RankedBook[] {
-  const data: RankedBook[] = []
-  for (let i = 1; i <= 50; i++) {
-    data.push({
-      id: i,
-      cover: `https://picsum.photos/seed/${type}${i}/200/300`,
-      title: `${getTitleByType(type)} ${i}`,
-      author: `作者${i}`,
-      recommend: `${(95 - i * 0.1).toFixed(1)}%`,
-      readersCount: (10000 - i * 100).toString(),
-      recommendationRate: 95 - i * 0.1,
-      description: `这是${getTitleByType(type)}第${i}本书的详细描述。这是一本非常优秀的作品，故事情节引人入胜，人物形象鲜明，值得每一位读者细细品味。`,
-    })
-  }
-  return data
+const switchSubCategory = async (id: string) => {
+  currentSubCategory.value = id
+  await fetchBooks()
 }
 
-// 新增：生成分类数据结构
-function generateCategoryDataStructure(mainCategory: string): Record<string, RankedBook[]> {
-  const subCategories = getSubCategories(mainCategory)
-  const result: Record<string, RankedBook[]> = {}
-
-  // 修复：使用 for...of 替代 forEach
-  for (const category of subCategories) {
-    result[category.id] = generateCategoryData(mainCategory, category.id)
-  }
-
-  return result
-}
-
-// 新增：生成分类数据函数（用于子分类）
-function generateCategoryData(mainCategory: string, subCategory: string): RankedBook[] {
-  const data: RankedBook[] = []
-  for (let i = 1; i <= 50; i++) {
-    // 使用哈希函数生成唯一的数字id
-    const uniqueId = stringToHash(`${mainCategory}-${subCategory}-${i}`)
-    data.push({
-      id: uniqueId,
-      cover: `https://picsum.photos/seed/${mainCategory}-${subCategory}-${i}/200/300`,
-      title: `${getSubCategoryTitle(mainCategory, subCategory)} ${i}`,
-      author: `${getSubCategoryAuthor(mainCategory, subCategory)} ${i}`,
-      recommend: `${(95 - i * 0.1).toFixed(1)}%`,
-      readersCount: (10000 - i * 100).toString(),
-      recommendationRate: 95 - i * 0.1,
-      description: `这是${getSubCategoryTitle(mainCategory, subCategory)}第${i}本书的详细描述。这是一本非常优秀的作品，专注于${getSubCategoryDescription(mainCategory, subCategory)}领域。`,
-    })
-  }
-  return data
-}
-
-function getTitleByType(type: string): string {
-  const titles: Record<string, string> = {
-    weekly: '周榜热门书籍',
-    monthly: '月榜精选书籍',
-    new: '新书推荐',
-    masterpiece: '经典神作',
-    novel: '精品小说',
-    history: '历史书籍',
-    art: '艺术书籍',
-    biography: '人物传记',
-    computer: '计算机书籍',
-    social_culture: '社会文化书籍',
-    economy_finance: '经济理财书籍',
-    children_books: '童书',
-    medical_health: '医学健康书籍',
-    literature: '文学作品',
-    philosophy_religion: '哲学宗教书籍',
-    psychology: '心理学书籍',
-    personal_development: '个人成长书籍',
-    politics_military: '政治军事书籍',
-    education_learning: '教育学习书籍',
-    science_technology: '科学技术书籍',
-    life_skills: '生活百科书籍',
-    periodicals: '期刊杂志',
-  }
-  return titles[type] || '书籍'
-}
-
-// 新增：获取子分类标题
-function getSubCategoryTitle(mainCategory: string, subCategory: string): string {
-  const subCategories = getSubCategories(mainCategory)
-  const category = subCategories.find((cat) => cat.id === subCategory)
-
-  if (category && category.name !== '全部') {
-    return category.name
-  }
-
-  // 如果找不到或为"全部"，返回主分类名称
-  return getTitleByType(mainCategory)
-}
-
-// 新增：获取子分类作者
-function getSubCategoryAuthor(mainCategory: string, subCategory: string): string {
-  const subCategories = getSubCategories(mainCategory)
-  const category = subCategories.find((cat) => cat.id === subCategory)
-
-  if (category && category.name !== '全部') {
-    return `${category.name}作者`
-  }
-
-  // 如果找不到或为"全部"，返回主分类作者
-  return `${getTitleByType(mainCategory)}作者`
-}
-
-// 新增：获取子分类描述 - 修复重复函数问题
-function getSubCategoryDescription(mainCategory: string, subCategory: string): string {
-  const subCategories = getSubCategories(mainCategory)
-  const category = subCategories.find((cat) => cat.id === subCategory)
-
-  if (category && category.name !== '全部') {
-    return `关于${category.name}的精选书籍`
-  }
-
-  // 如果找不到或为"全部"，返回主分类描述
-  return getTitleByType(mainCategory)
-}
-
-// 添加字符串到数字的哈希函数
-function stringToHash(str: string): number {
-  let hash = 0
-  if (str.length === 0) return hash
-
-  // 使用字符串迭代器，它会自动处理 Unicode 代理对
-  for (const char of str) {
-    const codePoint = char.codePointAt(0) || 0
-    hash = (hash << 5) - hash + codePoint
-    hash = hash & hash
-  }
-
-  return Math.abs(hash)
-}
+onMounted(async () => {
+  await fetchBooks()
+  window.scrollTo(0, 0)
+})
 </script>
 
 <style scoped>
@@ -635,7 +381,6 @@ function stringToHash(str: string): number {
   background-color: white;
 }
 
-/* 左侧导航 */
 .left-nav {
   width: 160px;
   background: white;
@@ -651,7 +396,6 @@ function stringToHash(str: string): number {
   -ms-overflow-style: none;
 }
 
-/* 隐藏Webkit浏览器的滚动条 */
 .left-nav::-webkit-scrollbar {
   display: none;
 }
@@ -679,7 +423,6 @@ function stringToHash(str: string): number {
   font-weight: 600;
 }
 
-/* 右侧内容 */
 .right-content {
   flex: 1;
   background: white;
@@ -693,6 +436,9 @@ function stringToHash(str: string): number {
   margin-bottom: 0;
   box-shadow: none;
   border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .ranking-title {
@@ -701,7 +447,6 @@ function stringToHash(str: string): number {
   color: #333;
   margin: 16px 0 4px 0;
 }
-
 /* 分类标签栏样式 */
 .category-tabs {
   display: grid;
@@ -733,8 +478,6 @@ function stringToHash(str: string): number {
   font-weight: 600;
   background-color: transparent;
 }
-
-/* 书籍榜单 */
 .book-ranking {
   display: flex;
   flex-direction: column;
@@ -764,7 +507,7 @@ function stringToHash(str: string): number {
 
 .ranking-number {
   font-style: italic;
-  font-size: 20px;
+  font-size: 32px;
   font-weight: bold;
   color: #424242;
   min-width: 60px;
@@ -774,8 +517,36 @@ function stringToHash(str: string): number {
   flex-shrink: 0;
 }
 
-/* 响应式设计 */
-/* 中等屏幕调整 */
+.empty {
+  padding: 40px;
+  text-align: center;
+  color: #888;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-btn {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+
+.page-btn:disabled {
+  cursor: not-allowed;
+  color: #aaa;
+  border-color: #eee;
+}
+
+.page-text {
+  color: #555;
+}
+
 @media (max-width: 1200px) {
   .category-container {
     max-width: 90%;
@@ -783,23 +554,8 @@ function stringToHash(str: string): number {
   .left-nav {
     width: 150px;
   }
-  .nav-item {
-    padding: 20px 25px;
-    font-size: 20px;
-  }
-  .ranking-title {
-    font-size: 26px;
-  }
-  .category-tab {
-    font-size: 22px;
-  }
-  .ranking-number {
-    font-size: 25px;
-    min-width: 40px;
-  }
 }
 
-/* 平板设备调整 */
 @media (max-width: 992px) {
   .category-container {
     max-width: 98%;
@@ -807,26 +563,8 @@ function stringToHash(str: string): number {
   .left-nav {
     width: 180px;
   }
-  .nav-item {
-    padding: 18px 20px;
-    font-size: 18px;
-  }
-  .ranking-title {
-    font-size: 24px;
-  }
-  .category-tab {
-    font-size: 20px;
-  }
-  .category-tabs {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-  .ranking-number {
-    font-size: 30px;
-    min-width: 40px;
-  }
 }
 
-/* 小屏幕调整 - 改为垂直布局 */
 @media (max-width: 768px) {
   .category-container {
     max-width: 100%;
@@ -851,33 +589,13 @@ function stringToHash(str: string): number {
   }
   .ranking-header {
     padding: 20px;
-  }
-  .ranking-title {
-    font-size: 22px;
-  }
-  .category-tabs {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  .category-tab {
-    font-size: 18px;
-    padding: 14px 8px;
-  }
-  .ranking-item {
-    padding: 10px;
-    gap: 20px;
-  }
-  .ranking-number {
-    font-size: 25px;
-    min-width: 35px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 
-/* 超小屏幕调整 */
 @media (max-width: 576px) {
-  .category-tabs {
-    grid-template-columns: 1fr;
-  }
   .ranking-item {
     flex-direction: column;
     align-items: flex-start;

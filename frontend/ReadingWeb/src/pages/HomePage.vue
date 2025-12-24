@@ -17,6 +17,8 @@ const recentBooks = ref<RecentBook[]>([])
 const guessBooks = ref<GuessBook[]>([])
 const weeklyRank = ref<RankBook[]>([])
 const monthlyRank = ref<RankBook[]>([])
+const newRank = ref<RankBook[]>([])
+const masterpieceRank = ref<RankBook[]>([])
 
 onMounted(async () => {
   const data = await getHomeData()
@@ -25,6 +27,8 @@ onMounted(async () => {
   guessBooks.value = data.guessBooks
   weeklyRank.value = data.rankWeekly
   monthlyRank.value = data.rankMonthly
+  newRank.value = data.rankNew
+  masterpieceRank.value = data.rankMasterpiece
 })
 </script>
 
@@ -54,10 +58,15 @@ onMounted(async () => {
         />
 
         <!-- 新书榜 -->
-        <BookRankList ranktitle="新书榜" desc="最新上架书籍" tabId="new" :books="[]" />
+        <BookRankList ranktitle="新书榜" desc="最新上架书籍" tabId="new" :books="newRank" />
 
         <!-- 神作榜 -->
-        <BookRankList ranktitle="神作榜" desc="经典神作书籍" tabId="masterpiece" :books="[]" />
+        <BookRankList
+          ranktitle="神作榜"
+          desc="经典神作书籍"
+          tabId="masterpiece"
+          :books="masterpieceRank"
+        />
       </div>
     </div>
     <BackToTop />

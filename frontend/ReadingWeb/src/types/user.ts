@@ -16,7 +16,12 @@ export interface UserProfile {
   isVip: boolean
   coins: number
   totalReadingTime: number
-  createdAt: string
+  createdAt: string | null
+  followerCount?: number
+  followingCount?: number
+  postCount?: number
+  memberCardCount?: number
+  memberExpireDays?: number
 }
 
 export interface UserAccount {

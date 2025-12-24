@@ -33,7 +33,7 @@ import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
 import ReadingNotes from '@/components/user/ReadingNotes.vue'
 import ReadingThoughts from '@/components/user/ReadingThoughts.vue'
 import ReadingReviews from '@/components/user/ReadingReviews.vue'
-import { getUserProfile, getUserAccount, getFollowingList, getFollowersList } from '@/api/user'
+import { getUserProfile } from '@/api/user'
 
 const route = useRoute()
 const user = ref({
@@ -53,21 +53,19 @@ const user = ref({
 })
 
 onMounted(async () => {
-  const [profile, account] = await Promise.all([getUserProfile(), getUserAccount()])
+  const profile = await getUserProfile()
 
   user.value.nickname = profile.username
   user.value.signature = profile.bio
   user.value.avatar = profile.avatar
   user.value.isVip = profile.isVip
   user.value.payCoin = profile.coins
-
-  const followingList = await getFollowingList()
-  const followersList = await getFollowersList()
-  user.value.stats.following = followingList.length
-  user.value.stats.followers = followersList.length
-
-  user.value.isVip = account.isMember
-  user.value.vipEndTime = account.memberExpireAt
+  user.value.giftVIP = profile.memberCardCount ?? 0
+  user.value.vipDays = profile.memberExpireDays ?? 0
+  user.value.stats.following = profile.followingCount ?? 0
+  user.value.stats.followers = profile.followerCount ?? 0
+  user.value.stats.posts = profile.postCount ?? 0
+  user.value.vipEndTime = null
 })
 
 // 动态页面标题

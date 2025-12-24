@@ -5,34 +5,40 @@ import type { Post } from '@/types/post'
 
 const mapPost = (raw: any): Post => ({
   id: raw.postId,
-  username: `用户${raw.authorId}`, // ⚠️ 后端没给，只能兜底
-  avatar: undefined, // 可选字段
-  postTime: raw.createdAt,
-  timestamp: Date.parse(raw.createdAt),
+  username: raw.authorName ?? `用户${raw.postId}`,
+  avatar: raw.authorAvatar,
+  postTime: raw.publishTime,
+  timestamp: raw.publishTime ? Date.parse(raw.publishTime) : undefined,
 
-  title: raw.title,
+  title: raw.postTitle,
   content: raw.content,
 
-  likeCount: raw.likesCount,
-  commentCount: raw.commentsCount,
+  likeCount: raw.likeCount ?? 0,
+  commentCount: raw.commentCount ?? 0,
   shareCount: 0,
 
-  isFollowing: false, // UI 状态，后端一般不管
-  isLiked: false,
+  isFollowing: raw.isFollowingAuthor ?? false,
+  isLiked: raw.isLiked ?? false,
 
-  book: null, // 接口暂未提供
+  book: raw.mentionedBooks?.[0]
+    ? {
+        id: raw.mentionedBooks[0].bookId ?? raw.mentionedBooks[0].bookTitle,
+        title: raw.mentionedBooks[0].bookTitle,
+        author: raw.mentionedBooks[0].author,
+        cover: raw.mentionedBooks[0].cover,
+      }
+    : null,
 })
 
-export const getPosts = async () => {
-  const res = await request.get('/posts')
-  const data = res.data
-
-  const rawItems = Array.isArray(data.items) ? data.items : [data.items]
+export const getPosts = async (type: 'square' | 'following' = 'square', page = 1, limit = 20) => {
+  const res = await request.get('/posts', { params: { type, page, limit } })
+  const data = res?.data?.data ?? res?.data ?? []
+  const rawItems = Array.isArray(data) ? data : data.items ?? []
 
   return {
     list: rawItems.map(mapPost),
-    total: data.total,
-    page: data.page,
-    limit: data.limit,
+    total: data.total ?? rawItems.length,
+    page: data.page ?? page,
+    limit: data.limit ?? limit,
   }
 }
