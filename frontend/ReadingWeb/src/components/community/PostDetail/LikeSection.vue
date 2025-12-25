@@ -9,9 +9,13 @@
     <div class="like-list">
       <LikeItem
         v-for="like in likes"
-        :key="like.id"
-        :user="like.user"
-        :timestamp="like.timestamp"
+        :key="like.userId"
+        :user="{
+          id: like.userId,
+          name: like.username,
+          avatar: like.avatar,
+        }"
+        :timestamp="like.likeTime"
       />
     </div>
 
@@ -26,15 +30,7 @@
 import LikeItem from './LikeItem.vue'
 
 const props = defineProps<{
-  likes: Array<{
-    id: number // 点赞记录的唯一ID
-    user: {
-      id: number
-      name: string
-      avatar: string
-    }
-    timestamp: Date | string
-  }>
+  likes: any[] // 接收来自 PostDetailPage 的 rawData.likedUsers
 }>()
 
 // 计算点赞总数

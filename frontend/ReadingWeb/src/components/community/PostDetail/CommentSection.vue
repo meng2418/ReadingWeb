@@ -17,7 +17,7 @@
     <!-- Comment List -->
     <div class="comment-list">
       <CommentItem
-        v-for="comment in comments"
+        v-for="comment in formattedComments"
         :key="comment.id"
         :comment="comment"
         @add-reply="handleAddReply"
@@ -27,158 +27,67 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import CommentItem from './CommentItem.vue'
 import DefaultAvatar from '@/img/avatar.jpg'
 
-interface Reply {
-  id: number
-  author: {
-    name: string
-    avatar: string
-  }
-  content: string
-  timestamp: string
-  likes?: number
-  replies?: Reply[]
-}
+const props = defineProps<{
+  initialComments: any[] // 接收来自 PostDetailPage 的原始接口数据
+}>()
 
-interface Comment {
-  id: number
-  author: {
-    name: string
-    avatar: string
-  }
-  content: string
-  timestamp: string
-  likes: number
-  replies: Reply[]
-}
+// CommentSection.vue 里的核心逻辑
+const formattedComments = computed(() => {
+  // props.initialComments 是从 API 传进来的数组
+  return props.initialComments.map((item) => ({
+    id: item.id,
+    author: {
+      name: item.username, // <--- 必须确认 api/post.ts 里叫 username
+      avatar: item.avatar || DefaultAvatar,
+    },
+    content: item.content,
+    timestamp: item.commentTime, // <--- 必须确认 api/post.ts 里叫 commentTime
+    likes: item.likeCount,
+    replies: (item.replies || []).map((r: any) => ({
+      id: r.id,
+      author: { name: r.username, avatar: r.avatar || DefaultAvatar },
+      content: r.content,
+      timestamp: r.commentTime,
+    })),
+  }))
+})
 
 const currentUser = ref({
   name: 'Current User',
   avatar: DefaultAvatar,
 })
 
-const comments = ref<Comment[]>([
-  {
-    id: 1,
-    author: {
-      name: '爱丽儿',
-      avatar: DefaultAvatar,
-    },
-    content: '谢谢你，写下这些。',
-    timestamp: '2 hours ago',
-    likes: 15,
-    replies: [
-      {
-        id: 101,
-        author: {
-          name: '回南天',
-          avatar: DefaultAvatar,
-        },
-        content: '写得真好。',
-        timestamp: '1 hour ago',
-        likes: 5,
-        replies: [
-          // 示例数据：即使有深层数据，新逻辑下新回复也会添加到 Level 1 的 replies 中
-          // 且 CommentItem 组件会隐藏这些深层回复的渲染
-          {
-            id: 1001,
-            author: { name: '三毛', avatar: DefaultAvatar },
-            content: '很有共鸣。',
-            timestamp: '30 minutes ago',
-            likes: 0,
-            replies: [],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    author: {
-      name: '西红柿',
-      avatar: DefaultAvatar,
-    },
-    content: '还是应了那句话，好人不长命，祸害遗千年。',
-    timestamp: '5 hours ago',
-    likes: 8,
-    replies: [],
-  },
-])
-
 const input = ref('')
+
+// 4. 发送评论逻辑
 const sendComment = () => {
   const text = input.value.trim()
   if (!text) return
 
-  const newComment: Comment = {
-    id: Date.now(),
-    author: {
-      name: currentUser.value.name,
-      avatar: currentUser.value.avatar,
-    },
-    content: text,
-    timestamp: '刚刚',
-    likes: 0,
-    replies: [],
-  }
-  comments.value.unshift(newComment)
+  // 模拟发送请求...
+  console.log('提交到后端:', text)
   input.value = ''
 }
 
-// 辅助函数：递归查找 ID 是否存在于列表中
-function findInTree(list: Reply[] | undefined, targetId: number): boolean {
-  if (!list || list.length === 0) return false
-  for (const item of list) {
-    if (item.id === targetId) return true
-    if (item.replies && findInTree(item.replies, targetId)) return true
-  }
-  return false
-}
-
-// 修改后的回复处理逻辑：所有子回复都展平添加到一级评论的 replies 中
+// 5. 回复逻辑 (保持你的扁平化处理)
 const handleAddReply = (payload: { parentId: number; content: string }) => {
-  const newReply: Reply = {
-    id: Date.now(),
-    author: { name: currentUser.value.name, avatar: currentUser.value.avatar },
-    content: payload.content,
-    timestamp: '刚刚',
-    likes: 0,
-    replies: [],
-  }
-
-  let posted = false
-  for (const comment of comments.value) {
-    // 1. 如果是直接回复一级评论
-    if (comment.id === payload.parentId) {
-      if (!comment.replies) comment.replies = []
-      comment.replies.push(newReply)
-      posted = true
-      break
-    }
-
-    // 2. 如果是回复该一级评论下的子评论（任意深度）
-    // 我们的目标是把新回复加到一级评论的 replies 列表里，成为兄弟节点（扁平化）
-    if (findInTree(comment.replies, payload.parentId)) {
-      if (!comment.replies) comment.replies = []
-      comment.replies.push(newReply)
-      posted = true
-      break
-    }
-  }
-
-  if (!posted) {
-    // 如果未找到父级（例如已被删除），作为新的一级评论添加
-    const newRootComment: Comment = {
-      ...newReply,
-      likes: 0,
-      replies: [],
-    }
-    comments.value.unshift(newRootComment)
-  }
+  // 这里的处理逻辑建议通过 emit 告知父组件重新 fetch 接口数据
+  // 或者直接操作 props.rawComments (如果是 reactive 的)
+  console.log('添加回复到:', payload.parentId)
 }
+
+// // 辅助函数
+// function findInTree(list: Reply[] | undefined, targetId: number): boolean {
+//   if (!list || list.length === 0) return false
+//   for (const item of list) {
+//     if (item.id === targetId) return true
+//   }
+//   return false
+// }
 </script>
 
 <style scoped>
