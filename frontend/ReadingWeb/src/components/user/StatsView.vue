@@ -1,3 +1,4 @@
+<!--StatsView.vue-->
 <!--阅读统计视图，包含图表和阅读时长排行榜-->
 <template>
   <div class="stats-view">
@@ -6,20 +7,21 @@
       <Bar :data="chartData" :options="chartOptions" />
     </div>
     <!-- 阅读时长排行榜 -->
-    <ReadingTimeRank />
+    <ReadingTimeRank :topBooks="topBooks" />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js'
 import ReadingTimeRank from '@/components/user/ReadingTimeRank.vue'
-
+import type { TopBook } from '@/types/user'
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
 const props = defineProps({
   period: { type: String, default: 'week' }, // week | month | year | total
+  topBooks: { type: Array as () => TopBook[], default: () => [] },
 })
 
 /* ----------------------------
@@ -32,7 +34,7 @@ const labelsMap = {
   total: ['2019', '2020', '2021', '2022', '2023'],
 }
 
-// 测试数据（你之后可以替换）
+// 测试数据（你之后可以替换）这部分先不用管
 const fakeDataMap = {
   week: [30, 50, 90, 40, 60, 120, 10],
   month: [10, 30, 55, 80, 70, 60, 40],

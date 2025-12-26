@@ -1,3 +1,4 @@
+<!--ReadingTimeRank.vue-->
 <template>
   <!-- 阅读最久榜单 -->
   <div class="longest-read">
@@ -8,23 +9,18 @@
       <img :src="book.cover" alt="book cover" class="book-cover" />
 
       <div class="book-info">
-        <div class="book-name">{{ book.name }}</div>
-        <div class="read-time">{{ book.time }}</div>
+        <div class="book-name">{{ book.title }}</div>
+        <div class="read-time">{{ book.readingTime }}分钟</div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-/* ----------------------------
-   3. 阅读最久榜单（测试数据）
------------------------------ */
-import defaultCover from '@/img/cover.jpg'
-const topBooks = [
-  { cover: defaultCover, name: '不能承受的生命之轻', time: '120分钟' },
-  { cover: defaultCover, name: '百年孤独', time: '98分钟' },
-  { cover: defaultCover, name: '小王子', time: '80分钟' },
-]
+<script setup lang="ts">
+import type { TopBook } from '@/types/user'
+const props = defineProps({
+  topBooks: { type: Array as () => TopBook[], default: () => [] },
+})
 </script>
 
 <style scoped>

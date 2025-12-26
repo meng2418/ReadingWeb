@@ -1,3 +1,4 @@
+<!--CategoryPage.vue-->
 <template>
   <div class="category-page">
     <NavBar />
@@ -55,20 +56,18 @@
         </div>
       </div>
     </div>
-    <Footer />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
-import Footer from '@/components/layout/Footer.vue'
 import { useBookNavigation } from '@/composables/useBookNavigation'
 import type { CategoryTab, RankedBook, SubCategory } from '@/types/category'
 import { getCategoryBooks } from '@/api/categories'
-
+import { useRoute, useRouter } from 'vue-router'
 // 固定分类（原有静态类别，避免被清空）
 const categories: CategoryTab[] = [
   { id: 'weekly', name: '周榜' },
@@ -94,9 +93,14 @@ const categories: CategoryTab[] = [
   { id: 'life_skills', name: '生活百科' },
   { id: 'periodicals', name: '期刊杂志' },
 ]
-
-const currentCategoryId = ref<string | number>(categories[0]?.id ?? '')
-const currentSubCategory = ref<string>('all')
+const route = useRoute()
+const router = useRouter()
+const currentCategoryId = ref<string | number>(
+  typeof route.query.tab === 'string' ? (route.query.tab as string) : categories[0]?.id || '',
+)
+const currentSubCategory = ref<string>(
+  typeof route.query.subTab === 'string' ? (route.query.subTab as string) : 'all',
+)
 const books = ref<RankedBook[]>([])
 const page = ref(1)
 const limit = ref(50) // 固定 50 本
@@ -347,16 +351,33 @@ onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
 })
 
+// 监听路由参数变化并立即触发数据加载
+watch(
+  () => route.query,
+  (q) => {
+    const tab = typeof q.tab === 'string' ? q.tab : categories[0]?.id || ''
+    const sub = typeof q.subTab === 'string' ? q.subTab : 'all'
+    if (currentCategoryId.value !== tab) currentCategoryId.value = tab
+    if (currentSubCategory.value !== sub) currentSubCategory.value = sub
+    fetchBooks()
+  },
+  { immediate: true },
+)
+
 const switchCategory = async (id: string | number) => {
   if (currentCategoryId.value === id) return
-  currentCategoryId.value = id
-  currentSubCategory.value = 'all'
-  await fetchBooks()
+  router.push({
+    path: '/category',
+    query: { tab: String(id), subTab: 'all' },
+  })
 }
 
 const switchSubCategory = async (id: string) => {
-  currentSubCategory.value = id
-  await fetchBooks()
+  if (currentSubCategory.value === id) return
+  router.push({
+    path: '/category',
+    query: { tab: String(currentCategoryId.value), subTab: id },
+  })
 }
 
 // 新增：生成分类数据结构
@@ -485,7 +506,8 @@ function stringToHash(str: string): number {
 .category-container {
   display: flex;
   max-width: 80%;
-  margin: 0 auto;
+  min-height: 100vh;
+  margin: 16px auto;
   padding: 0;
   gap: 0;
   background-color: white;

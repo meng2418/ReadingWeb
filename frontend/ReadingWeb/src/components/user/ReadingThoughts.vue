@@ -36,7 +36,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, Quote } from 'lucide-vue-next'
@@ -49,43 +49,15 @@ const goToAllThoughts = () => {
   window.open(url, '_blank')
 }
 
-const thoughts = ref([
-  {
-    id: 1,
-    bookName: '置身事内',
-    date: '2025-05-20',
-    thought: '地方政府热衷开发区的本质是在经营土地。风险在于人口流入一旦停止，游戏就难以为继。',
-    quote: '土地财政的本质，是政府将未来的土地收益提前变现。',
-  },
-  {
-    id: 2,
-    bookName: '当尼采哭泣',
-    date: '2025-04-29',
-    thought: '布雷尔医生是我们大多数人的缩影，拥有世俗的成功，内心却充满对“未选生活”的恐惧。',
-    quote: '通过这一层层的面具，我看到了那个孤独的人。他不仅害怕死，更害怕生。',
-  },
-  {
-    id: 3,
-    bookName: '长安的荔枝',
-    date: '2025-02-15',
-    thought: '职场生存守则第一条：永远不要相信领导画的饼，除非饼已经在你嘴里了。',
-    quote: '流程，是弱者才遵守的规矩。',
-  },
-  {
-    id: 4,
-    bookName: '三体II',
-    date: '2025-01-10',
-    thought: '罗辑才是真正的面壁者，欺骗世界也欺骗自己，只为最后的对决。',
-    quote: '我有一个梦，也许有一天，灿烂的阳光能照进黑暗森林。',
-  },
-  {
-    id: 5,
-    bookName: '乌合之众',
-    date: '2024-12-05',
-    thought: '群体心理学揭示了个体在群体中的非理性行为，这对理解社会运动和大众行为至关重要。',
-    quote: '群体一旦形成，就会表现出一种特殊的心理状态，个体的理性被集体的情绪所取代。',
-  },
-])
+const props = defineProps<{
+  thoughts: Array<{
+    id: number | string
+    bookName: string
+    date: string
+    thought: string
+    quote?: string
+  }>
+}>()
 </script>
 
 <style scoped>

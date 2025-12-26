@@ -1,5 +1,98 @@
 <!-- ReadingDashboard.vue -->
-<!-- 阅读统计仪表盘，包含周/月/年/总的统计数据和阅历历史 -->
+<script setup lang="ts">
+import { ref, watch, computed, onMounted } from 'vue'
+import HistoryView from '@/components/user/HistoryView.vue'
+import ReadingStats from '@/components/user/ReadingStats.vue'
+import StatsView from '@/components/user/StatsView.vue'
+import { getTopBooks } from '@/api/profile'
+import type { TopBook } from '@/types/user'
+
+const props = defineProps({
+  initialTab: {
+    type: String,
+    default: 'week',
+  },
+  readingStats: {
+    type: Object,
+    default: null,
+  },
+  historyRecords: {
+    type: Array,
+    default: () => [],
+  },
+  topBooks: {
+    type: Array as () => TopBook[],
+    default: () => [],
+  },
+})
+
+const emit = defineEmits<{
+  (e: 'update:topBooks', books: TopBook[]): void
+}>()
+
+const currentTab = ref(props.initialTab)
+const localTopBooks = ref<TopBook[]>(props.topBooks) // 添加本地状态
+
+const tabs = [
+  { label: '周', key: 'week' },
+  { label: '月', key: 'month' },
+  { label: '年', key: 'year' },
+  { label: '总', key: 'total' },
+  { label: '阅历', key: 'history' },
+]
+
+// 监听父组件传递的 topBooks 变化
+watch(
+  () => props.topBooks,
+  (newBooks) => {
+    localTopBooks.value = newBooks
+  },
+)
+
+// 监听 tab 变化 → 重新获取数据
+watch(currentTab, async (tab) => {
+  if (tab === 'history') return
+  try {
+    const books = await getTopBooks(tab as any)
+    localTopBooks.value = books
+    emit('update:topBooks', books) // 通知父组件更新
+  } catch (error) {
+    console.error('获取榜单数据失败:', error)
+  }
+})
+
+const statsForPeriod = computed(() => {
+  const rs: any = props.readingStats || {}
+  const map = {
+    week: {
+      duration: rs.weeklyReadingTime ?? 0,
+      booksRead: rs.weeklyBooksRead ?? 0,
+      booksFinished: rs.weeklyBooksFinished ?? 0,
+      notes: rs.weeklyNoteCount ?? 0,
+    },
+    month: {
+      duration: rs.monthlyReadingTime ?? 0,
+      booksRead: rs.monthlyBooksRead ?? 0,
+      booksFinished: rs.monthlyBooksFinished ?? 0,
+      notes: rs.monthlyNoteCount ?? 0,
+    },
+    year: {
+      duration: rs.yearlyReadingTime ?? 0,
+      booksRead: rs.yearlyBooksRead ?? 0,
+      booksFinished: rs.yearlyBooksFinished ?? 0,
+      notes: rs.yearlyNoteCount ?? 0,
+    },
+    total: {
+      duration: rs.totalReadingTime ?? 0,
+      booksRead: rs.totalBooksRead ?? 0,
+      booksFinished: rs.totalBooksFinished ?? 0,
+      notes: rs.totalNoteCount ?? 0,
+    },
+  } as const
+  return map[currentTab.value as keyof typeof map] ?? map.week
+})
+</script>
+
 <template>
   <div class="dashboard-card">
     <div class="nav-tabs">
@@ -21,73 +114,13 @@
 
         <!-- 周/月/年/总 -> 显示统计数字和柱状图 -->
         <div v-else>
-          <ReadingStats :period="currentTab" />
-          <StatsView :period="currentTab" />
+          <ReadingStats :period="currentTab" :stats="statsForPeriod" />
+          <StatsView :period="currentTab" :topBooks="localTopBooks" />
         </div>
       </transition>
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, watch } from 'vue'
-import HistoryView from '@/components/user/HistoryView.vue'
-import ReadingStats from '@/components/user/ReadingStats.vue'
-import StatsView from '@/components/user/StatsView.vue'
-
-const props = defineProps({
-  initialTab: {
-    type: String,
-    default: 'week',
-  },
-})
-
-const currentTab = ref(props.initialTab)
-
-const tabs = [
-  { label: '周', key: 'week' },
-  { label: '月', key: 'month' },
-  { label: '年', key: 'year' },
-  { label: '总', key: 'total' },
-  { label: '阅历', key: 'history' }, // 这个Tab对应图1
-]
-const historyRecords = ref([
-  {
-    date: '2024-09-25',
-    type: 'reading', // reading | note | finishBook ...
-    statLabel: '累计阅读',
-    statValue: 60,
-    statUnit: '本书',
-    text: '那时，你正在阅读《呼啸山庄》。路一步一步向前走，书一页一页往后读。',
-  },
-  {
-    date: '2024-04-28',
-    type: 'note',
-    statLabel: '发表笔记',
-    statValue: 350,
-    statUnit: '条',
-    source: '在《当尼采哭泣》里，你留下划线：',
-    quote:
-      '尼采略略地笑着，“我知道她如何在这点上反应。她对传统婚姻显得并不宽容，她认为它是女性卖身契的一种委婉说法。”“就是她跟我说的话！”',
-  },
-  {
-    date: '2023-12-15',
-    type: 'finishBook',
-    statLabel: '完成图书',
-    statValue: 20,
-    statUnit: '本书',
-    text: '你完成了《追风筝的人》，感动于阿米尔和哈桑之间的深厚友谊。',
-  },
-])
-
-// 允许用户在个人中心内切换 tab，同时当路由变化时也跟着变
-watch(
-  () => props.initialTab,
-  (newTab) => {
-    if (newTab) currentTab.value = newTab
-  },
-)
-</script>
 
 <style scoped>
 .dashboard-card {

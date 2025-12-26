@@ -1,105 +1,70 @@
-<!-- ReadingNotes.vue -->
-<!-- 读书笔记展示组件 -->
+<!-- ReadingHighlights.vue -->
+<!-- 读书笔记(划线)展示组件 -->
 <template>
-  <div class="notes-card">
+  <div class="highlights-card">
     <div class="card-header">
       <h3 class="card-title">我的划线</h3>
-      <span class="view-all" @click="goToAllNotes"
+      <span class="view-all" @click="goToAllHighlights"
         >查看全部 <ArrowRight class="icon-inline"
       /></span>
     </div>
 
-    <div class="notes-list">
-      <div v-for="note in recentNotes" :key="note.id" class="note-item">
-        <div class="note-meta">
-          <span class="book-name">《{{ note.bookName }}》</span>
-          <span class="note-date">{{ note.date }}</span>
+    <div class="highlights-list">
+      <div v-for="highlight in recentHighlights" :key="highlight.id" class="highlight-item">
+        <div class="highlight-meta">
+          <span class="book-name">《{{ highlight.bookName }}》</span>
+          <span class="highlight-date">{{ highlight.date }}</span>
         </div>
-        <div class="note-content">
+        <div class="highlight-content">
           <div class="quote-mark">“</div>
-          <p>{{ note.content }}</p>
+          <p>{{ highlight.text }}</p>
         </div>
 
-        <div class="note-footer" v-if="note.chapter">
-          <span class="chapter-info">章节：{{ note.chapter }}</span>
+        <div class="highlight-footer" v-if="highlight.chapter">
+          <span class="chapter-info">章节：{{ highlight.chapter }}</span>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
+
 const router = useRouter()
-const goToAllNotes = () => {
-  router.push({ name: 'AllReadingNotes' })
+
+const goToAllHighlights = () => {
+  // 假设路由名称已更新或存在
+  router.push({ name: 'AllReadingHighlights' }).catch(() => {
+    // 如果路由不存在，暂时不做操作或跳转到默认页
+    console.warn('Route AllReadingHighlights not found')
+  })
 }
-// 模拟数据，实际使用时可以通过 props 传入或从 API 获取
-const notes = ref([
-  {
-    id: 1,
-    bookName: '当尼采哭泣',
-    date: '2024-04-28',
-    chapter: '第四章',
-    content: '尼采略略地笑着，“我知道她如何在这点上反应。她对传统婚姻显得并不宽容。”',
-  },
-  {
-    id: 2,
-    bookName: '置身事内',
-    date: '2024-03-15',
-    chapter: '第三章',
-    content: '土地金融的本质，是政府将未来的土地收益提前变现。',
-  },
-  {
-    id: 3,
-    bookName: '悉达多',
-    date: '2024-02-10',
-    chapter: '觉醒',
-    content: '知识可以传授，但智慧不能。人们可以寻见智慧，在生活中体现智慧。',
-  },
-  {
-    id: 4,
-    bookName: '悉达多',
-    date: '2024-02-12',
-    chapter: '船夫',
-    content: '河水在流，它一直在流，永远在流，然而它永远是那条河。',
-  },
-  {
-    id: 5,
-    bookName: '三体',
-    date: '2023-11-05',
-    chapter: '黑暗森林',
-    content: '给岁月以文明，而不是给文明以岁月。',
-  },
-  {
-    id: 6,
-    bookName: '最新测试',
-    date: '2025-12-03',
-    chapter: '测试章节',
-    content: '这条应该是最新的，排在最前面。',
-  },
-  {
-    id: 7,
-    bookName: '她既想死，又想去巴黎',
-    date: '2025-11-25',
-    chapter: '译者序',
-    content:
-      '你本应拥有另一种命运，值得更优秀的人、更纯粹的爱。我竭尽所能，想要向你证明我的爱意。可你渴望的，恰好是我唯一无法给予的。',
-  },
-])
+
+const props = defineProps<{
+  highlights: Array<{
+    id: number | string
+    bookName: string
+    date: string
+    text: string
+    chapter: string
+  }>
+}>()
+
 // 计算属性：排序 + 截取前3条
-const recentNotes = computed(() => {
-  return notes.value
-    .sort((a, b) => new Date(b.date) - new Date(a.date)) // 按日期倒序
+const recentHighlights = computed(() => {
+  const list = Array.isArray(props.highlights) ? props.highlights : []
+  return list
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // 按日期倒序
     .slice(0, 3) // 只取前3条
 })
 </script>
 
 <style scoped>
 /* 复用 Dashboard 的基础卡片样式 */
-.notes-card {
+.highlights-card {
   background: var(--card-bg, #fff); /* 默认白色，兼容暗黑模式变量 */
   border-radius: 16px;
   padding: 24px;
@@ -147,19 +112,19 @@ const recentNotes = computed(() => {
   stroke-width: 2px; /* 如果觉得图标太细，可以加粗（Lucide图标支持） */
 }
 
-.notes-list {
+.highlights-list {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.note-item {
+.highlight-item {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.note-meta {
+.highlight-meta {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
@@ -173,23 +138,23 @@ const recentNotes = computed(() => {
   border-radius: 4px;
 }
 
-.note-date {
+.highlight-date {
   color: var(--text-light, #999);
   font-size: 12px;
 }
 
-.note-content {
+.highlight-content {
   position: relative;
   padding-left: 16px;
   border-left: 3px solid #eee;
   transition: border-color 0.3s;
 }
 
-.note-item:hover .note-content {
+.highlight-item:hover .highlight-content {
   border-left-color: var(--primary-green, #42b983);
 }
 
-.note-content p {
+.highlight-content p {
   margin: 0;
   color: var(--text-main, #444);
   line-height: 1.6;
@@ -206,7 +171,7 @@ const recentNotes = computed(() => {
   line-height: 1;
 }
 
-.note-footer {
+.highlight-footer {
   text-align: right;
 }
 

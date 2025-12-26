@@ -1,3 +1,4 @@
+<!--SidebarRankings.vue -->
 <template>
   <div class="sidebar-card">
     <h3 class="title">阅读激励</h3>
