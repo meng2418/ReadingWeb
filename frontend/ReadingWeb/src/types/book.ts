@@ -1,3 +1,4 @@
+// src/types/book.ts
 export type BookId = string | number
 
 export interface BookBase {
@@ -28,9 +29,10 @@ export interface RecentBook {
 
 // 猜你喜欢书籍类型
 export type GuessBook = BookListItem & {
-  id: number
+  bookId: number
   cover: string
   author: string
+  title: string
   reason: string
 }
 

@@ -23,13 +23,13 @@
         <BookCardSuperBig
           v-for="work in allWorks"
           :key="work.id"
+          :book-id="work.id"
           :cover="work.cover"
           :title="work.title"
           :author="authorData.name"
           :readers-count="work.readersCount"
           :recommendation-rate="work.recommendationRate"
           :description="work.summary"
-          @click="handleBookClick(work)"
         />
       </div>
 
@@ -133,11 +133,7 @@ const fetchWorks = () => {
   // allWorks.value = response.data
 }
 
-// 作品点击事件
-const handleBookClick = (work: Work) => {
-  // 跳转到书籍详情页
-  openBookDetail(work.id, 'both')
-}
+// 作品点击事件由 BookCardSuperBig 组件处理：新标签打开书籍详情
 
 // 组件挂载时获取数据
 onMounted(() => {

@@ -19,7 +19,7 @@ interface Props {
   title?: string
   author?: string
   reason?: string
-  bookId?: string | number // 新增：书籍ID，用于路由跳转
+  bookId?: number
   openInNewTab?: boolean // 新增：是否在新标签页打开
 }
 
@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: '',
   author: '',
   reason: '',
-  bookId: '', // 默认值
+  bookId: 0, // 默认值
   openInNewTab: true, // 默认在新标签页打开
 })
 

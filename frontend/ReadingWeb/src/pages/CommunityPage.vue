@@ -13,7 +13,7 @@ import LikeItem from '@/components/community/Mine/LikeItem.vue'
 import Footer from '@/components/layout/Footer.vue'
 import { useTitle } from '@/stores/useTitle'
 import { usePostInteractions } from '@/composables/usePostInteractions'
-import { fetchCommunityPosts } from '@/api/community'
+import { fetchCommunityPosts, fetchMyComments, fetchMyLikes } from '@/api/community'
 import type { Post } from '@/types/post'
 
 // 当前用户信息
@@ -53,47 +53,12 @@ const topicsList = ref([
 // 帖子数据
 onMounted(async () => {
   posts.value = await fetchCommunityPosts()
+  commentList.value = await fetchMyComments()
+  likeList.value = await fetchMyLikes()
 })
 const posts = ref<Post[]>([])
-const commentList = [
-  {
-    user: {
-      avatar: 'https://picsum.photos/id/1052/200',
-      username: '文学青年',
-    },
-    content: '哈哈哈哈哈哈哈哈哈哈哈啊啊啊啊啊啊啊啊',
-    rightCardText: '作者的文笔非常优美，描写细腻，令人沉浸其中。',
-    time: '2025年8月30日 16:20',
-  },
-  {
-    user: {
-      avatar: 'https://picsum.photos/id/1052/200',
-      username: '文学青年',
-    },
-    content: 'aaaaaaaaaaaaaaaa啊啊啊啊啊啊啊啊',
-    rightCardText: '作者的文笔非常优美，描写细腻，令人沉浸其中。',
-    time: '2025年8月30日 16:20',
-  },
-]
-const likeList = [
-  {
-    user: {
-      avatar: 'https://picsum.photos/id/1084/200', // 占位头像（随机
-      username: '书评达人',
-    },
-    rightCardText:
-      '支线比主线还精彩系列，开发商太良心了.当年玩的时候卡了好久，后来查攻略才知道这里有隐藏剧情，现在想起来还是很怀念', // 长文本
-    time: '2025年8月31日 10:15',
-  },
-  {
-    user: {
-      avatar: 'https://picsum.photos/id/1074/200',
-      username: '文学爱好者',
-    },
-    rightCardText: '短文本测试',
-    time: '2025年8月30日 14:50',
-  },
-]
+const commentList = ref<any[]>([])
+const likeList = ref<any[]>([])
 const currentTab = ref<'square' | 'following' | 'topics' | 'mine'>('square')
 const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => (currentTab.value = tab)
 // “我的”内部的二级 Tab

@@ -2,7 +2,7 @@
   <div class="guess-you-like">
     <div class="header">
       <h2>猜你想看</h2>
-      <button @click="emit('change')" class="change-btn">换一批</button>
+      <button @click="emit('refresh')" class="change-btn">换一批</button>
     </div>
 
     <div class="book-cards-container">
@@ -13,7 +13,7 @@
         :title="book.title"
         :author="book.author"
         :reason="book.reason"
-        :book-id="book.id"
+        :book-id="book.bookId"
       />
     </div>
   </div>
@@ -21,21 +21,14 @@
 
 <script setup lang="ts">
 import BookCard from '@/components/home/BookCardBig.vue'
-import type { BookListItem } from '@/types/book'
-
-type GuessBook = BookListItem & {
-  id: number
-  cover: string
-  author: string
-  reason: string
-}
+import type { BookListItem, GuessBook } from '@/types/book'
 
 const props = defineProps<{
   books: GuessBook[]
 }>()
 
 const emit = defineEmits<{
-  (e: 'change'): void
+  (e: 'refresh'): void
 }>()
 </script>
 

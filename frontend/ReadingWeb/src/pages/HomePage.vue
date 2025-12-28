@@ -9,7 +9,7 @@ import ReadingTimeCard from '@/components/home/ReadingTimeCard.vue'
 import RecentRead from '@/components/home/RecentRead.vue'
 import Footer from '@/components/layout/Footer.vue'
 
-import { getHomeData } from '@/api/home'
+import { getHomeData, getGuessBooks } from '@/api/home'
 import type { GuessBook, RankBook, RecentBook } from '@/types/book'
 
 // ===== 状态 =====
@@ -30,6 +30,11 @@ onMounted(async () => {
   newRank.value = data.rankNew
   masterpieceRank.value = data.rankMasterpiece
 })
+
+const refreshGuessBooks = async () => {
+  const list = await getGuessBooks()
+  guessBooks.value = list
+}
 </script>
 
 <template>
@@ -43,7 +48,7 @@ onMounted(async () => {
         <RecentRead :books="recentBooks" />
       </div>
       <div class="guss-you-like">
-        <GuessYouLike :books="guessBooks" @change="refreshGuessBooks" />
+        <GuessYouLike :books="guessBooks" @refresh="refreshGuessBooks" />
       </div>
       <div class="book-rank">
         <!-- 周榜 -->
