@@ -59,14 +59,14 @@ const unwrap = <T>(res: any): T => res?.data?.data ?? []
    首页数据
    ======================= */
 export const getHomeData = async () => {
-  const [recommendRes, weeklyRes, monthlyRes, newRes, masterpieceRes, bookshelfRes] =
+  const [recommendRes, weeklyRes, monthlyRes, newRes, masterpieceRes, recentBooksData] =
     await Promise.all([
       request.get<GuessBookRaw[]>('/home/recommendations'),
       request.get<HomeRanking>('/home/rankings/weekly'),
       request.get<HomeRanking>('/home/rankings/monthly'),
       request.get<HomeRanking>('/home/rankings/new'),
       request.get<HomeRanking>('/home/rankings/masterpiece'),
-      request.get('/bookshelf'),
+      request.get('/home/recent-books'),
     ])
 
   const recommendations = unwrap<GuessBookRaw[]>(recommendRes)
@@ -74,15 +74,14 @@ export const getHomeData = async () => {
   const monthlyRank = unwrap<HomeRanking>(monthlyRes)
   const newRank = unwrap<HomeRanking>(newRes)
   const masterpieceRank = unwrap<HomeRanking>(masterpieceRes)
-  const bookshelf = unwrap<any[]>(bookshelfRes)
-
+  const recentBooksRaw = unwrap<any[]>(recentBooksData)
   return {
     guessBooks: recommendations.map(mapToGuessBook),
     rankWeekly: weeklyRank.map(mapToRankBook),
     rankMonthly: monthlyRank.map(mapToRankBook),
     rankNew: newRank.map(mapToRankBook),
     rankMasterpiece: masterpieceRank.map(mapToRankBook),
-    recentBooks: bookshelf.slice(0, 4).map(mapToRecentBook),
+    recentBooks: recentBooksRaw.map(mapToRecentBook),
   }
 }
 
