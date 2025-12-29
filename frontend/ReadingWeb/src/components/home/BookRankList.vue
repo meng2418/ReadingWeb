@@ -1,3 +1,4 @@
+<!--BookRankList.vue -->
 <template>
   <div class="book-rank-wrapper">
     <!-- 榜单标题部分 -->
@@ -58,7 +59,13 @@ const {
 
 // 查看全部点击事件 - 在当前页跳转
 const handleViewAll = (): void => {
-  router.push(`/category?tab=${tabId}`)
+  router.push({
+    path: '/category',
+    query: {
+      tab: tabId ?? 'weekly',
+      subTab: 'all',
+    },
+  })
 }
 
 // 书籍点击事件 - 跳转到书籍详情页

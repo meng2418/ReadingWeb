@@ -1,4 +1,4 @@
-<!-- views/AllReadingNotes.vue -->
+<!-- pages/AllReadingHighlights.vue -->
 <template>
   <div class="page-wrapper">
     <div class="content-container">
@@ -21,45 +21,45 @@
         </div>
       </header>
 
-      <div class="notes-grid">
-        <div v-if="filteredNotes.length === 0" class="empty-state">
+      <div class="highlights-grid">
+        <div v-if="filteredHighlights.length === 0" class="empty-state">
           <inbox class="icon-lg" />
           <p>没有找到相关划线</p>
         </div>
 
-        <div v-for="note in filteredNotes" :key="note.id" class="note-card">
+        <div v-for="highlight in filteredHighlights" :key="highlight.id" class="highlight-card">
           <div class="card-header">
             <div class="book-badge">
               <Book class="icon-xs" />
-              <span>{{ note.bookName }}</span>
+              <span>{{ highlight.bookName }}</span>
             </div>
-            <span class="note-date">{{ formatNoteDate(note.date) }}</span>
+            <span class="highlight-date">{{ formatHighlightDate(highlight.date) }}</span>
           </div>
 
           <div class="card-body">
             <Quote class="quote-icon-bg" />
-            <p class="note-text" v-html="highlightText(note.content)"></p>
+            <p class="highlight-text" v-html="highlightText(highlight.content)"></p>
           </div>
 
           <div class="card-footer">
             <span class="chapter-info">
-              <Bookmark class="icon-xs" v-if="note.chapter" />
-              {{ note.chapter || '全书' }}
+              <Bookmark class="icon-xs" v-if="highlight.chapter" />
+              {{ highlight.chapter || '全书' }}
             </span>
 
             <div class="action-buttons">
               <!-- 复制按钮：根据状态动态切换图标和颜色 -->
               <button
                 class="action-btn"
-                :class="{ 'success-btn': copiedId === note.id }"
+                :class="{ 'success-btn': copiedId === highlight.id }"
                 title="复制"
-                @click="copyNote(note)"
+                @click="copyHighlight(highlight)"
               >
                 <!-- 如果当前是复制成功状态，显示 Check，否则显示 Copy -->
-                <Check v-if="copiedId === note.id" class="icon-sm" />
+                <Check v-if="copiedId === highlight.id" class="icon-sm" />
                 <Copy v-else class="icon-sm" />
                 <!-- 可选：显示文字反馈 -->
-                <span v-if="copiedId === note.id" class="feedback-text">已复制</span>
+                <span v-if="copiedId === highlight.id" class="feedback-text">已复制</span>
               </button>
             </div>
           </div>
@@ -92,7 +92,7 @@ const selectedBook = ref('')
 const copiedId = ref(null) // 用于记录当前哪个笔记刚刚被复制
 
 // 模拟数据（顺序可以是乱的，前端会自动排）
-const allNotes = ref([
+const allHighlights = ref([
   {
     id: 1,
     bookName: '当尼采哭泣',
@@ -145,14 +145,15 @@ const allNotes = ref([
   },
 ])
 
-const bookList = computed(() => Array.from(new Set(allNotes.value.map((n) => n.bookName))))
+const bookList = computed(() => Array.from(new Set(allHighlights.value.map((n) => n.bookName))))
 
 // 核心修改：增加排序逻辑 sort((a, b) => new Date(b.date) - new Date(a.date))
-const filteredNotes = computed(() => {
-  const result = allNotes.value.filter((note) => {
-    const matchBook = selectedBook.value ? note.bookName === selectedBook.value : true
+const filteredHighlights = computed(() => {
+  const result = allHighlights.value.filter((highlight) => {
+    const matchBook = selectedBook.value ? highlight.bookName === selectedBook.value : true
     const matchSearch =
-      note.content.includes(searchQuery.value) || note.bookName.includes(searchQuery.value)
+      highlight.content.includes(searchQuery.value) ||
+      highlight.bookName.includes(searchQuery.value)
     return matchBook && matchSearch
   })
 
@@ -160,7 +161,7 @@ const filteredNotes = computed(() => {
   return result.sort((a, b) => new Date(b.date) - new Date(a.date))
 })
 
-const formatNoteDate = (str) => formatDisplayDate(str, { withTime: false, separator: '.' })
+const formatHighlightDate = (str) => formatDisplayDate(str, { withTime: false, separator: '.' })
 
 const highlightText = (text) => {
   if (!searchQuery.value) return text
@@ -169,11 +170,11 @@ const highlightText = (text) => {
 }
 
 // 核心修改：复制功能的反馈逻辑
-const copyNote = async (note) => {
+const copyHighlight = async (highlight) => {
   try {
-    await navigator.clipboard.writeText(note.content)
+    await navigator.clipboard.writeText(highlight.content)
     // 视觉反馈
-    copiedId.value = note.id
+    copiedId.value = highlight.id
     // 2秒后恢复原状
     setTimeout(() => {
       copiedId.value = null
@@ -201,6 +202,11 @@ const copyNote = async (note) => {
   align-items: center;
   justify-content: center;
   gap: 4px; /* 图标和文字的间距 */
+}
+
+.action-btn:hover {
+  color: var(--primary-green, #42b983);
+  background-color: rgba(66, 185, 131, 0.1);
 }
 
 /* 复制成功时的绿色状态 */
@@ -307,7 +313,7 @@ const copyNote = async (note) => {
 }
 
 /* 笔记列表 Grid */
-.notes-grid {
+.highlights-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 20px;
@@ -317,7 +323,7 @@ const copyNote = async (note) => {
   2. 取消 Hover 悬浮样式
   保持卡片扁平，仅保留基础阴影
 */
-.note-card {
+.highlight-card {
   background: #ffffff;
   border-radius: 12px;
   padding: 24px;
@@ -346,7 +352,7 @@ const copyNote = async (note) => {
   border-radius: 6px;
 }
 
-.note-date {
+.highlight-date {
   font-size: 13px;
   color: #999;
 }
@@ -369,7 +375,7 @@ const copyNote = async (note) => {
   z-index: 0;
 }
 
-.note-text {
+.highlight-text {
   position: relative;
   z-index: 1;
   color: #2c3e50;
@@ -399,24 +405,6 @@ const copyNote = async (note) => {
 .action-buttons {
   display: flex;
   gap: 12px;
-}
-
-.action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #9ca3af;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn:hover {
-  color: var(--primary-green, #42b983);
-  background-color: rgba(66, 185, 131, 0.1);
 }
 
 /* 图标通用尺寸 */

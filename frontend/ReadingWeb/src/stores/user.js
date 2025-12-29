@@ -1,37 +1,51 @@
-// stores/user.js
+// src/stores/user.js
 import { defineStore } from 'pinia'
+import { getProfileHome } from '@/api/profile'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
+    // =====================
     // 登录状态
+    // =====================
     isLoggedIn: false,
-    // 用户信息
+
+    // =====================
+    // 用户基础信息
+    // =====================
     userInfo: {
       name: '',
       avatar: '',
     },
-    // token令牌（新增）
+
+    // =====================
+    // token
+    // =====================
     token: localStorage.getItem('user_token') || null,
+
+    // =====================
+    // 阅读相关（新增）
+    // =====================
+    consecutiveReadingDays: 0, // 连续阅读天数（来自 /user/home）
   }),
 
   getters: {
-    // 计算属性：是否已认证（基于token）
+    // 是否已认证
     isAuthenticated: (state) => {
       return !!state.token
-    }
+    },
   },
 
   actions: {
-    // 登录方法（支持新格式）
+    // =====================
+    // 登录（新）
+    // =====================
     login(data) {
       const { token, userInfo } = data
 
-      // 更新状态
       this.token = token
       this.isLoggedIn = true
       this.userInfo = userInfo || { name: '', avatar: '' }
 
-      // 保存到本地存储
       localStorage.setItem('user_token', token)
       if (userInfo) {
         localStorage.setItem('user_info', JSON.stringify(userInfo))
@@ -40,31 +54,36 @@ export const useUserStore = defineStore('user', {
       console.log('用户登录成功:', this.userInfo.name)
     },
 
-    // 保持兼容性的登录方法
+    // =====================
+    // 登录（旧，兼容）
+    // =====================
     loginOld(name, avatar) {
-      const token = this.generateToken() // 生成模拟token
+      const token = this.generateToken()
       this.login({
         token,
-        userInfo: { name, avatar }
+        userInfo: { name, avatar },
       })
     },
 
+    // =====================
     // 退出登录
+    // =====================
     logout() {
       this.isLoggedIn = false
       this.token = null
       this.userInfo = { name: '', avatar: '' }
+      this.consecutiveReadingDays = 0
 
-      // 清除本地存储
       localStorage.removeItem('user_token')
       localStorage.removeItem('user_info')
 
       console.log('用户已退出登录')
     },
 
-    // 恢复会话（页面刷新时调用）
+    // =====================
+    // 恢复会话
+    // =====================
     restoreSession() {
-      // 从本地存储恢复会话
       const token = localStorage.getItem('user_token')
       const userInfoStr = localStorage.getItem('user_info')
 
@@ -85,14 +104,27 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 生成模拟token（用于测试）
+    // =====================
+    // 拉取用户主页数据（新增，关键）
+    // =====================
+    async fetchUserHome() {
+      try {
+        const data = await getProfileHome()
+        this.consecutiveReadingDays = data.consecutiveReadingDays ?? 0
+      } catch (e) {
+        console.error('获取用户主页数据失败:', e)
+      }
+    },
+
+    // =====================
+    // 工具方法
+    // =====================
     generateToken() {
       return 'mock_token_' + Date.now() + '_' + Math.random().toString(36).substr(2)
     },
 
-    // 检查登录状态
     checkLogin() {
       return this.isLoggedIn && !!this.token
-    }
-  }
+    },
+  },
 })

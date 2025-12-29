@@ -15,7 +15,7 @@ import TopicDetail from '@/pages/TopicDetail.vue'
 import UserPosts from '@/pages/UserPosts.vue'
 import ReaderPage from '@/pages/ReaderPage.vue'
 import WriteReview from '@/pages/WriteReview.vue'
-import AllReadingNotes from '@/pages/AllReadingNotes.vue'
+import AllReadingHighlights from '@/pages/AllReadingHighlights.vue'
 import AuthorDetail from '@/pages/AuthorDetail.vue'
 import SearchResultsPage from '@/pages/SearchResultsPage.vue'
 
@@ -53,10 +53,13 @@ const router = createRouter({
       meta: { title: '微信读书 - 忘记密码' },
     },
     {
-      path: '/category',
+      path: '/category/:categoryId?',
       name: 'Category',
       component: CategoryPage,
       meta: { title: '微信读书 - 分类' },
+      props: (route) => ({
+        categoryId: route.params.categoryId,
+      }),
     },
     {
       path: '/bookdetail/:id?',
@@ -103,9 +106,9 @@ const router = createRouter({
       meta: { requiresAuth: true, title: '书评编辑' }, // 需要登录
     },
     {
-      path: '/allreadingnotes',
-      name: 'AllReadingNotes',
-      component: AllReadingNotes,
+      path: '/allreadinghighlights',
+      name: 'AllReadingHighlights',
+      component: AllReadingHighlights,
       meta: { title: '微信读书 - 全部划线' },
     },
     {

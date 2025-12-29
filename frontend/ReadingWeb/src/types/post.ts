@@ -1,3 +1,4 @@
+// src/types/post.ts
 import type { BookListItem } from '@/types/book'
 
 // 用户在帖子中的简要信息

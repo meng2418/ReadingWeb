@@ -37,8 +37,7 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 
@@ -59,48 +58,17 @@ const ratingConfig = {
   bad: { label: '不行', className: 'tag-bad' },
 }
 
-const reviews = ref([
-  {
-    id: 1,
-    bookName: '置身事内',
-    cover: defaultCover,
-    rating: 'recommend', // 对应 ratingConfig 的 key
-    date: '2024-05-20',
-    likes: 128,
-    content:
-      '这本书彻底改变了我对宏观经济的看法。它不是枯燥的理论堆砌，而是从地方政府的微观视角切入。',
-  },
-  {
-    id: 2,
-    bookName: '当尼采哭泣',
-    cover:
-      'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=200',
-    rating: 'recommend',
-    date: '2024-04-15',
-    likes: 45,
-    content: '心理咨询的开山之作？欧文·亚隆把哲学和心理学融合得太完美了。',
-  },
-  {
-    id: 3,
-    bookName: '烂书示例', // 模拟数据
-    cover:
-      'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=200',
-    rating: 'bad',
-    date: '2024-02-10',
-    likes: 2,
-    content: '浪费时间的书，逻辑混乱，很多观点都站不住脚，不建议阅读。',
-  },
-  {
-    id: 4,
-    bookName: '普通读物', // 模拟数据
-    cover:
-      'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&q=80&w=200',
-    rating: 'average',
-    date: '2023-11-05',
-    likes: 12,
-    content: '还可以，作为消遣读读不错，但没有什么深度。',
-  },
-])
+const props = defineProps<{
+  reviews: Array<{
+    id: number | string
+    bookName: string
+    cover?: string
+    rating: 'recommend' | 'average' | 'bad'
+    date: string
+    likes: number
+    content: string
+  }>
+}>()
 </script>
 
 <style scoped>
