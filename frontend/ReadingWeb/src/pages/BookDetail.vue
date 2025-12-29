@@ -8,12 +8,12 @@
       <div class="main-content">
         <!-- 书籍基本信息组件 -->
         <BookDetailHeader
-          title="少年Pi的奇幻漂流"
-          author="扬·马特尔"
-          :description="bookDescription"
-          cover-image="https://picsum.photos/200/280?random=25"
-          :initial-bookshelf-status="false"
-          :stats="bookStats"
+          :title="bookTitle"
+          :author="bookDetail?.author || '未知作者'"
+          :description="bookDetail?.description || bookDescription"
+          :cover-image="bookDetail?.cover || 'https://picsum.photos/200/280?random=25'"
+          :initial-bookshelf-status="bookDetail?.isInBookshelf || false"
+          :stats="computedBookStats"
           @toggle-bookshelf="handleBookshelfToggle"
           @start-reading="handleStartReading"
           @stat-click="handleStatClick"
@@ -22,13 +22,10 @@
 
         <!-- 推荐值组件 -->
         <BookRecommendationSection
-          :recommendation-value="90.5"
-          :review-count="reviewCount"
-          :rating-stats="ratingStats"
-          :book-id="bookId"
-          :book-title="bookTitle"
+          :recommendation-value="computedRatingStats.recommend"
+          :review-count="computedReviewCount"
+          :rating-stats="computedRatingStats"
           @view-reviews="handleViewReviews"
-          @rate-book="handleRateBook"
         />
 
         <!-- 用户点评组件 -->
@@ -44,7 +41,7 @@
       <div class="sidebar">
         <!-- 作者信息组件 -->
         <AuthorInfoSection
-          :author="authorInfo"
+          :author="computedAuthorInfo"
           :works="authorWorks"
           @work-click="handleWorkClick"
           @view-all-works="handleViewAllWorks"
@@ -72,16 +69,37 @@ import RelatedRecommendations from '@/components/bookdetail/RelatedRecommendatio
 import UserReviews from '@/components/bookdetail/UserReviews.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import { useTitle } from '@/stores/useTitle'
-import { computeRatingStats, countPublicReviews } from '@/composables/useReviews'
+import { countPublicReviews } from '@/composables/useReviews'
 import type { Review } from '@/types/review'
 import type { BookListItem } from '@/types/book'
+import { getBookDetail } from '@/api/books'
+import type { BookDetail } from '@/api/books'
 const route = useRoute()
 const userProfileRef = ref() // UserProfile组件引用
-// 在组件挂载时滚动到顶部
-onMounted(() => {
+const bookDetail = ref<BookDetail | null>(null)
+const isLoading = ref(true)
+const error = ref<string | null>(null)
+
+// 在组件挂载时滚动到顶部并获取书籍详情
+onMounted(async () => {
   window.scrollTo({
     top: 0,
   })
+
+  try {
+    // 从路由参数获取bookId
+    const currentBookId = bookId.value
+    console.log('正在获取书籍详情，bookId:', currentBookId)
+    bookDetail.value = await getBookDetail(currentBookId)
+    console.log('获取到的书籍详情:', bookDetail.value)
+    console.log('作者信息:', bookDetail.value?.author)
+    console.log('标题信息:', bookDetail.value?.title)
+  } catch (err) {
+    console.error('获取书籍详情失败:', err)
+    error.value = '获取书籍详情失败'
+  } finally {
+    isLoading.value = false
+  }
 })
 
 // 处理打开充值弹窗
@@ -91,15 +109,22 @@ const handleOpenRechargeDialog = () => {
   if (userProfileRef.value) {
     // 假设UserProfile组件有一个方法可以打开充值弹窗
     // 你可能需要在UserProfile组件中添加一个公共方法来打开充值弹窗
-    userProfileRef.value.openRechargeDialog?.(userPayCoin.value)
+    // userProfileRef.value.openRechargeDialog?.(userPayCoin.value)
+    console.log('打开充值弹窗')
   }
 }
 
-// 修改：添加书籍ID和标题常量
-const bookId = 'book-123' // 书籍的唯一标识符
-const bookTitle = '少年Pi的奇幻漂流'
+// 修改：从API获取书籍详情
+const bookId = computed(() => {
+  const paramId = route.params.id
+  const queryId = route.query.bookId
+  return (Array.isArray(paramId) ? paramId[0] : paramId) ||
+         (Array.isArray(queryId) ? queryId[0] : queryId) ||
+         'book-123'
+})
+const bookTitle = computed(() => bookDetail.value?.title || '加载中...')
 // 动态页面标题
-const title = ref(`${bookTitle} - 书籍详情`)
+const title = ref(`${bookTitle.value} - 书籍详情`)
 useTitle(title)
 // 定义相关类型
 interface Work {
@@ -112,13 +137,51 @@ interface Work {
 type RelatedBook = Required<Pick<BookListItem, 'id' | 'title' | 'cover'>> & {
   intro: string
 }
-// 修改：计算推荐值统计数据
-const ratingStats = computed(() =>
-  computeRatingStats(bookId, { recommend: 70, average: 20, poor: 10 }),
-)
+// 修改：计算推荐值统计数据 - 直接使用API返回的百分比
+const computedRatingStats = computed(() => {
+  if (!bookDetail.value?.ratingDetail) {
+    console.log('使用默认评分统计数据')
+    return { recommend: 70, average: 20, poor: 10 }
+  }
+
+  console.log('API返回的评分详情:', bookDetail.value.ratingDetail)
+
+  // 获取API返回的百分比
+  let recommend = Math.round(bookDetail.value.ratingDetail.recommendPercent)
+  let average = Math.round(bookDetail.value.ratingDetail.averagePercent)
+  let poor = Math.round(bookDetail.value.ratingDetail.notRecommendPercent)
+
+  // 确保三个百分比加起来等于100%
+  const total = recommend + average + poor
+  if (total !== 100) {
+    // 如果不等于100%，按比例调整
+    const factor = 100 / total
+    recommend = Math.round(recommend * factor)
+    average = Math.round(average * factor)
+    poor = Math.round(poor * factor)
+
+    // 处理四舍五入误差，确保加起来正好是100%
+    const adjustedTotal = recommend + average + poor
+    if (adjustedTotal !== 100) {
+      // 将差值加到推荐上
+      recommend += (100 - adjustedTotal)
+    }
+  }
+
+  return {
+    recommend,
+    average,
+    poor,
+  }
+})
 
 // 修改：计算总点评数
-const reviewCount = computed(() => countPublicReviews(bookId, reviewsData.value.length))
+const computedReviewCount = computed(() => {
+  if (!bookDetail.value?.ratingCount) {
+    return countPublicReviews(bookId.value, reviewsData.value.length)
+  }
+  return countPublicReviews(bookId.value, bookDetail.value.ratingCount)
+})
 
 // 监听路由变化，刷新数据
 watch(
@@ -131,12 +194,12 @@ watch(
   },
 )
 
-// 作者信息数据
-const authorInfo = {
-  name: '扬·马特尔',
-  description:
+// 作者信息数据 - 从API获取
+const computedAuthorInfo = computed(() => ({
+  name: bookDetail.value?.author || '扬·马特尔',
+  description: bookDetail.value?.authorBio ||
     '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
-}
+}))
 
 const authorWorks = [
   {
@@ -268,17 +331,59 @@ const relatedBooks = ref<RelatedBook[]>([
 // 书籍描述
 const bookDescription = `《少年Pi的奇幻漂流》是加拿大作家扬·马特尔于2001年发表的虚构小说，描述一名印度男孩Pi在太平洋上与一只孟加拉虎同船而行的冒险故事。这部小说探讨了信仰、生存和人类与自然的关系等深刻主题，获得了2002年的布克奖及亚洲/太平洋美洲文学奖。`
 
-// 书籍统计信息
-const bookStats = {
-  readingCount: '18.3万人',
-  readingSubtitle: '7.6万人读完',
-  myReadingStatus: '在读',
-  myReadingSubtitle: '标记在读',
-  wordCount: '11.3万字',
-  publishInfo: '2021年7月出版',
-  experienceCardStatus: '体验卡可读',
-  priceInfo: '电子书价格49元',
-}
+// 书籍统计信息 - 从API数据计算
+const computedBookStats = computed(() => {
+  if (!bookDetail.value) {
+    return {
+      readingCount: '18.3万人',
+      readingSubtitle: '7.6万人读完',
+      myReadingStatus: '在读',
+      myReadingSubtitle: '标记在读',
+      wordCount: '11.3万字',
+      publishInfo: '2021年7月出版',
+      experienceCardStatus: '体验卡可读',
+      priceInfo: '电子书价格49元',
+    }
+  }
+
+  const { readingCount, finishedCount, readingStatus, wordCount, publishDate, isFreeForMember, price } = bookDetail.value
+
+  console.log('API返回的统计数据:', { readingCount, finishedCount, wordCount, readingStatus, publishDate, isFreeForMember, price })
+
+  // 格式化阅读状态
+  const getReadingStatusText = (status: string) => {
+    switch (status) {
+      case 'reading': return '在读'
+      case 'finished': return '读完'
+      default: return '未读'
+    }
+  }
+
+  const getReadingStatusSubtitle = (status: string) => {
+    switch (status) {
+      case 'reading': return '标记在读'
+      case 'finished': return '标记读完'
+      default: return '标记未读'
+    }
+  }
+
+  // 提供默认值以防API数据无效
+  const defaultReadingCount = 183000
+  const defaultFinishedCount = 76000
+  const defaultWordCount = 113000
+  const defaultPrice = 4900
+
+  return {
+    readingCount: readingCount > 0 ? `${(readingCount / 10000).toFixed(1)}万人` : `${(defaultReadingCount / 10000).toFixed(1)}万人`,
+    readingSubtitle: finishedCount > 0 ? `${(finishedCount / 10000).toFixed(1)}万人读完` : `${(defaultFinishedCount / 10000).toFixed(1)}万人读完`,
+    myReadingStatus: getReadingStatusText(readingStatus),
+    myReadingSubtitle: getReadingStatusSubtitle(readingStatus),
+    wordCount: wordCount > 0 ? `${(wordCount / 10000).toFixed(1)}万字` : `${(defaultWordCount / 10000).toFixed(1)}万字`,
+    publishInfo: publishDate ? `${new Date(publishDate).getFullYear()}年${new Date(publishDate).getMonth() + 1}月出版` : '2021年7月出版',
+    experienceCardStatus: isFreeForMember !== undefined ? (isFreeForMember ? '体验卡可读' : '需购买') : '体验卡可读',
+    priceInfo: price > 0 ? `电子书价格${(price / 100).toFixed(0)}元` : `电子书价格${(defaultPrice / 100).toFixed(0)}元`,
+  }
+})
 
 // 用户点评数据（模拟数据）
 const reviewsData = ref<Review[]>([
@@ -389,12 +494,9 @@ const handleViewReviews = () => {
   console.log('查看点评事件触发')
 }
 
-const handleRateBook = (rating: string) => {
-  console.log('评分事件触发:', rating)
-}
 
 // 相关推荐作品组件事件
-const handleBookSelect = (book: Book) => {
+const handleBookSelect = (book: BookListItem) => {
   console.log('选择了书籍:', book.title)
 }
 
@@ -456,6 +558,8 @@ const handleLoadMoreReviews = () => {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   margin-bottom: 0;
+  /* 调试样式 - 确保组件有适当的高度 */
+  min-height: 400px;
 }
 
 :deep(.book-recommendation-section) {

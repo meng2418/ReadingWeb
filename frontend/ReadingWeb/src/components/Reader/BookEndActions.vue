@@ -12,7 +12,6 @@
         class="mark-complete-btn"
         :class="{ 'completed': isCompleted }"
         @click="handleMarkComplete"
-        :disabled="isCompleted"
       >
         <span class="btn-content">
           <svg v-if="!isCompleted" class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -21,7 +20,7 @@
           <svg v-else class="icon-check-circle" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
           </svg>
-          {{ isCompleted ? '已读完' : '标记读完' }}
+          {{ isCompleted ? '已读' : '标记读完' }}
         </span>
       </button>
 
@@ -36,7 +35,7 @@
         :recommendation-value="recommendationValue"
         :review-count="reviewCount"
         :rating-stats="ratingStats"
-        :book-id="bookId"
+        :book-id="String(bookId)"
         :book-title="bookTitle"
         :is-dark-mode="isDarkMode"
         @viewReviews="$emit('viewReviews')"
@@ -81,7 +80,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 定义emit
 const emit = defineEmits<{
-  markComplete: [data: { bookId: string | number, completeTime: string }]
+  markComplete: [data: { bookId: string | number, completeTime: string | null }]
   viewReviews: []
   rateBook: [rating: string]
 }>()
@@ -101,12 +100,31 @@ watch(() => props.initialCompleteTime, (newVal) => {
 
 // 标记完成
 const handleMarkComplete = () => {
-  isCompleted.value = true
-  completeTime.value = new Date().toISOString()
-  emit('markComplete', {
-    bookId: props.bookId,
-    completeTime: completeTime.value
-  })
+  const confirmed = window.confirm(
+    isCompleted.value
+      ? '确定要取消标记已读吗？'
+      : '确定要标记为已读吗？'
+  )
+
+  if (!confirmed) return
+
+  if (isCompleted.value) {
+    // 取消标记已读
+    isCompleted.value = false
+    completeTime.value = null
+    emit('markComplete', {
+      bookId: props.bookId,
+      completeTime: null
+    })
+  } else {
+    // 标记为已读
+    isCompleted.value = true
+    completeTime.value = new Date().toISOString()
+    emit('markComplete', {
+      bookId: props.bookId,
+      completeTime: completeTime.value
+    })
+  }
 }
 
 // 格式化完成时间
@@ -175,9 +193,8 @@ const formatCompleteTime = (time: string) => {
   background-color: rgba(250, 250, 250, 0.8);
   transition: background-color 0.3s ease;
 }
-
 .mark-complete-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
   color: white;
   border: none;
   padding: 15px 40px;
@@ -195,35 +212,11 @@ const formatCompleteTime = (time: string) => {
 
 .mark-complete-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-}
-
-.mark-complete-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
 }
 
 .mark-complete-btn.completed {
   background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
-}
-
-.btn-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.icon-check, .icon-check-circle {
-  flex-shrink: 0;
-}
-
-.complete-time {
-  margin-top: 15px;
-  font-size: 14px;
-  color: #666;
-  font-style: italic;
-  transition: color 0.3s ease;
 }
 
 /* 深色模式样式 */
@@ -238,6 +231,21 @@ const formatCompleteTime = (time: string) => {
 
 .book-end-actions.dark-mode .mark-complete-section {
   background-color: rgba(40, 40, 40, 0.8);
+}
+
+/* 深色模式下的按钮样式 */
+.book-end-actions.dark-mode .mark-complete-btn {
+  background: linear-gradient(135deg, #494a49 0%, #252926 100%);
+  color: #e0e0e0;
+}
+
+.book-end-actions.dark-mode .mark-complete-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(46, 125, 50, 0.3);
+}
+
+.book-end-actions.dark-mode .mark-complete-btn.completed {
+  background: linear-gradient(135deg, #494a49 0%, #252926 100%);
+  color: #ffffff;
 }
 
 .book-end-actions.dark-mode .complete-time {
