@@ -57,6 +57,18 @@ public class BookEntity {
     @Column(name = "read_count")
     private Integer readCount; 
 
+    @Column(name = "is_published")
+    private Boolean isPublished = true; // 是否上架（上架/下架）
+
+    @Column(name = "is_member_only")
+    private Boolean isMemberOnly = false; // 是否会员专属
+
+    @Column(columnDefinition = "TEXT")
+    private String tags; // 标签（多个标签用逗号分隔）
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt; // 最后更新时间
+
     @Column(name = "created_at", updatable = false) 
     private LocalDateTime createdAt; 
 
@@ -66,11 +78,20 @@ public class BookEntity {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
         if (price == null) {
             price = 0;
         }
         if (isFree == null) {
             isFree = false;
+        }
+        if (isPublished == null) {
+            isPublished = true;
+        }
+        if (isMemberOnly == null) {
+            isMemberOnly = false;
         }
         if (rating == null) {
             rating = 0f;
@@ -78,5 +99,10 @@ public class BookEntity {
         if (readCount == null) {
             readCount = 0;
         }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }
