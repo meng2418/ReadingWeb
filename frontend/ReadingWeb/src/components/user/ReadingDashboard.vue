@@ -12,6 +12,10 @@ const props = defineProps({
     type: String,
     default: 'week',
   },
+  timelineData: {
+    type: Object,
+    default: null,
+  },
   readingStats: {
     type: Object,
     default: null,
@@ -40,7 +44,11 @@ const tabs = [
   { label: '总', key: 'total' },
   { label: '阅历', key: 'history' },
 ]
-
+// 根据当前 tab 提取对应的时间线数据列表
+const currentTimelineList = computed(() => {
+  if (!props.timelineData) return []
+  return props.timelineData[currentTab.value]?.list || []
+})
 // 监听父组件传递的 topBooks 变化
 watch(
   () => props.topBooks,
@@ -115,7 +123,11 @@ const statsForPeriod = computed(() => {
         <!-- 周/月/年/总 -> 显示统计数字和柱状图 -->
         <div v-else>
           <ReadingStats :period="currentTab" :stats="statsForPeriod" />
-          <StatsView :period="currentTab" :topBooks="localTopBooks" />
+          <StatsView
+            :period="currentTab"
+            :topBooks="localTopBooks"
+            :timelineList="currentTimelineList"
+          />
         </div>
       </transition>
     </div>

@@ -52,10 +52,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
 import { ElMessage } from 'element-plus' // 假设用Element Plus的提示组件（可选）
-import { postReadingReward } from '@/api/rewards'
+import { postReadingReward, fetchDailyReading } from '@/api/rewards'
 
 // 1. 响应式数据定义
-const todayRead = ref(46) // 用户今日阅读分钟数
+const todayRead = ref(0) // 用户今日阅读分钟数
 const dailyTasks = ref([
   { minutes: 5, claimed: false },
   { minutes: 30, claimed: false },
@@ -71,8 +71,9 @@ const streakTasks = ref([
 
 // 2. Pinia store（用于组件间共享giftVIP数据）
 const userStore = useUserStore()
-onMounted(() => {
+onMounted(async () => {
   userStore.fetchUserHome()
+  todayRead.value = await fetchDailyReading()
 })
 const streak = computed(() => userStore.consecutiveReadingDays)
 // 3. 工具方法
@@ -91,25 +92,20 @@ const getDailyProgress = (task) => {
 const claimReward = async (task, type) => {
   try {
     const value = type === 'daily' ? task.minutes : task.days
-
-    const reward = await postReadingReward(type, value)
+    await postReadingReward(type, value)
 
     // 标记已领取
     task.claimed = true
 
-    // 同步会员信息
-    userStore.isVip = reward.isMember
-    userStore.giftVIP += reward.rewardDays
-    userStore.vipExpireDate = reward.expireDate
-
-    ElMessage.success('成功领取2天体验卡！')
+    // 刷新用户信息
     await userStore.fetchUserHome()
+
+    ElMessage.success('领取成功')
   } catch (e) {
     ElMessage.error(e.message || '领取失败')
   }
 }
 
-// 4.5 分类型领取方法
 const claimDaily = (task) => claimReward(task, 'daily')
 const claimStreak = (task) => claimReward(task, 'streak')
 </script>

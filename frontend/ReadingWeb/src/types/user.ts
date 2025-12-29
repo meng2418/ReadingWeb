@@ -58,7 +58,7 @@ export interface UserHomeData {
   followingCount: number
   followerCount: number
   postCount: number
-  memberCardCount: number
+  experienceCardCount: number
   coinCount: number
   isMember: boolean
   memberExpireDays: number

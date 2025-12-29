@@ -16,6 +16,7 @@
           :initialTab="initialTab"
           :readingStats="readingStats"
           :historyRecords="historyRecords"
+          :timelineData="timelineData"
           :topBooks="topBooks"
         />
         <ReadingHighlights :highlights="highlights" />
@@ -47,6 +48,7 @@ import {
   getRecentBookReviews,
   getHistoryMilestones,
   getTopBooks,
+  getReadingTimeline,
 } from '@/api/profile'
 
 const route = useRoute()
@@ -71,25 +73,34 @@ const reviews = ref<any[]>([])
 const thoughts = ref<any[]>([])
 const historyRecords = ref<any[]>([])
 const topBooks = ref<TopBook[]>([])
+const timelineData = ref<any>(null)
 onMounted(async () => {
   const period = typeof route.query.tab === 'string' ? (route.query.tab as any) : 'week'
 
-  const [home, highlightsData, thoughtsData, reviewsRecent, historyRecordsData, topBooksData] =
-    await Promise.all([
-      getProfileHome(),
-      getRecentHighlights(),
-      getRecentNotes6(),
-      getRecentBookReviews(),
-      getHistoryMilestones(),
-      getTopBooks(period),
-    ])
+  const [
+    home,
+    highlightsData,
+    thoughtsData,
+    reviewsRecent,
+    historyRecordsData,
+    topBooksData,
+    timelineDataValue,
+  ] = await Promise.all([
+    getProfileHome(),
+    getRecentHighlights(),
+    getRecentNotes6(),
+    getRecentBookReviews(),
+    getHistoryMilestones(),
+    getTopBooks(period),
+    getReadingTimeline(),
+  ])
 
   user.value.nickname = home.username
   user.value.signature = home.bio
   user.value.avatar = home.avatar
   user.value.isVip = home.isMember
   user.value.payCoin = home.coinCount
-  user.value.giftVIP = home.memberCardCount ?? 0
+  user.value.giftVIP = home.experienceCardCount ?? 0
   user.value.vipDays = home.memberExpireDays ?? 0
   user.value.stats.following = home.followingCount ?? 0
   user.value.stats.followers = home.followerCount ?? 0
@@ -102,6 +113,7 @@ onMounted(async () => {
   reviews.value = reviewsRecent
   historyRecords.value = historyRecordsData
   topBooks.value = topBooksData
+  timelineData.value = timelineDataValue
 })
 
 // 动态页面标题

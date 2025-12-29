@@ -10,41 +10,40 @@ export enum RewardCode {
   UNAUTHORIZED = 401,
 }
 
-/** 接口返回 data */
-export interface ReadingRewardData {
-  rewardDays: number
-  expireDate: string
-  isMember: boolean
-}
-
-/** 接口完整返回 */
-export interface ReadingRewardResponse {
-  code: RewardCode
-  message: string
-  data: ReadingRewardData | null
-}
-
 /**
  * 领取阅读奖励
  */
-export const postReadingReward = async (
-  type: 'daily' | 'streak',
-  value: number,
-): Promise<ReadingRewardData> => {
-  const res = await request.post<ReadingRewardResponse>('/rewards/reading', { type, value })
+export const postReadingReward = async (type: 'daily' | 'streak', value: number): Promise<void> => {
+  const res = await request.post('/rewards/reading', { type, value })
 
-  const { code, message, data } = res.data
-
-  switch (code) {
-    case RewardCode.SUCCESS:
-      return data as ReadingRewardData
-
-    case RewardCode.UNAUTHORIZED:
-      // 未登录：统一交给上层处理
-      throw new Error('未登录或登录已过期')
-
-    case RewardCode.BAD_REQUEST:
-    default:
-      throw new Error(message || '请求失败')
+  if (res.data.code !== RewardCode.SUCCESS) {
+    throw new Error(res.data.message || '请求失败')
   }
+}
+
+/*=========================
+ *获取每日阅读时长
+ * ========================= */
+export interface DailyReadingStat {
+  date: string
+  readingTime: number // 单位：分钟
+}
+
+export interface DailyReadingResponse {
+  code: number
+  message: string
+  data: DailyReadingStat[]
+}
+
+/** 获取每日阅读时长 */
+export const fetchDailyReading = async (): Promise<number> => {
+  const res = await request.get<DailyReadingResponse>('/user/reading-stats/daily')
+  if (res.data.code !== 200) throw new Error(res.data.message || '获取阅读时长失败')
+
+  const stats = res.data.data ?? []
+
+  const today = new Date().toISOString().slice(0, 10) // 格式 'YYYY-MM-DD'
+  const todayStat = stats.find((item) => item.date === today)
+
+  return todayStat?.readingTime ?? 0
 }

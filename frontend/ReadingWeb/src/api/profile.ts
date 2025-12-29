@@ -19,7 +19,7 @@ export const getProfileHome = async (): Promise<UserHomeData> => {
     followingCount: raw.followingCount ?? 0,
     followerCount: raw.followerCount ?? 0,
     postCount: raw.postCount ?? 0,
-    memberCardCount: raw.memberCardCount ?? 0,
+    experienceCardCount: raw.experienceCardCount ?? 0,
     coinCount: raw.coinCount ?? 0,
     isMember: raw.isMember ?? false,
     memberExpireDays: raw.memberExpireDays ?? 0,
@@ -262,4 +262,12 @@ export const getTopBooks = async (
     title: item.bookTitle,
     readingTime: item.readingTime,
   }))
+}
+
+/* =========================
+ * 柱状图
+ * ========================= */
+
+export const getReadingTimeline = () => {
+  return request.get('/user/reading-stats/timeline').then(unwrap)
 }
