@@ -1,12 +1,12 @@
 package com.weread.controller.user;
 
 import com.weread.common.ApiResponse;
+import com.weread.dto.response.user.FollowResultResponse;
 import com.weread.dto.response.user.FollowingResponse;
 import com.weread.vo.user.UserWithFollowVO;
 import com.weread.entity.user.UserEntity;
 import com.weread.service.user.FollowService;
 
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +53,61 @@ public class FollowController {
         org.springframework.security.core.Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         System.out.println("Controller Authentication = " + auth);
         // 返回 HTTP 200
+        return ResponseEntity.ok(ApiResponse.ok(resp));
+    }
+
+    @GetMapping("/followers")
+    public ResponseEntity<ApiResponse<FollowingResponse>> getFollowers(
+        @RequestParam(required = false) String cursor,
+        @RequestParam(required = false, defaultValue = "20") int limit,
+        @AuthenticationPrincipal UserEntity loginUser) {
+
+        if (loginUser == null) {
+            return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ApiResponse<>(403, "未登录或 token 无效", null));
+        }
+
+        List<UserWithFollowVO> items = followService.getFollowers(loginUser.getUserId(), cursor, limit);
+
+        String nextCursor = items.isEmpty() ? null : items.get(items.size() - 1).getUserId().toString();
+        boolean hasMore = items.size() == limit;
+
+        FollowingResponse resp = new FollowingResponse();
+        resp.setItems(items);
+        resp.setHasMore(hasMore);
+        resp.setNextCursor(nextCursor);
+
+        return ResponseEntity.ok(ApiResponse.ok(resp));
+    }
+
+    @PostMapping("/follow/{userId}")
+    public ResponseEntity<ApiResponse<FollowResultResponse>> followUser(
+        @PathVariable Integer userId,
+        @AuthenticationPrincipal UserEntity loginUser) {
+
+        if (loginUser == null) {
+            return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ApiResponse<>(403, "未登录或 token 无效", null));
+        }
+
+        FollowResultResponse resp = followService.followUser(loginUser.getUserId(), userId);
+        return ResponseEntity.ok(ApiResponse.ok(resp));
+    }
+
+    @DeleteMapping("/follow/{userId}")
+    public ResponseEntity<ApiResponse<FollowResultResponse>> unfollowUser(
+        @PathVariable Integer userId,
+        @AuthenticationPrincipal UserEntity loginUser) {
+
+        if (loginUser == null) {
+            return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ApiResponse<>(403, "未登录或 token 无效", null));
+        }
+
+        FollowResultResponse resp = followService.unfollowUser(loginUser.getUserId(), userId);
         return ResponseEntity.ok(ApiResponse.ok(resp));
     }
 }

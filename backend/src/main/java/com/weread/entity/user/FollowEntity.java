@@ -29,4 +29,19 @@ public class FollowEntity {
 
     @CreatedDate
     private LocalDateTime createdAt;
+
+    public String getUsername() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getUsername'");
+    }
+
+    public String getAvatar() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAvatar'");
+    }
+
+    public String getBio() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getBio'");
+    }
 }

@@ -1,6 +1,7 @@
 package com.weread.service.user;
 
 import com.weread.vo.user.UserWithFollowVO;
+import com.weread.dto.response.user.FollowResultResponse;
 import java.util.List;
 
 public interface FollowService {
@@ -12,4 +13,12 @@ public interface FollowService {
      * @return 关注用户列表
      */
     List<UserWithFollowVO> getFollowingUsers(Integer userId, String cursor, int limit);
+
+    List<UserWithFollowVO> getFollowers(Integer userId, String cursor, int limit);
+
+    FollowResultResponse followUser(Integer loginUserId, Integer targetUserId);
+
+    FollowResultResponse unfollowUser(Integer loginUserId, Integer targetUserId);
+
+    FollowResultResponse getFollowResult(Integer loginUserId, Integer targetUserId);
 }
