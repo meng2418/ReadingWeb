@@ -403,6 +403,103 @@ components:
         chapterName:
           type: string
 
+    ChapterDetail:
+      type: object
+      properties:
+        chapterId:
+          type: integer
+          description: 章节ID
+        bookId:
+          type: integer
+          description: 书籍ID
+        title:
+          type: string
+          description: 章节标题
+        chapterNumber:
+          type: integer
+          description: 章节序号
+        content:
+          type: string
+          description: 章节正文内容
+        wordCount:
+          type: integer
+          description: 章节字数
+        isVip:
+          type: boolean
+          description: 是否VIP章节
+        isPublished:
+          type: boolean
+          description: 是否已发布
+        prevChapterId:
+          type: integer
+          nullable: true
+          description: 上一章ID
+        nextChapterId:
+          type: integer
+          nullable: true
+          description: 下一章ID
+        readCount:
+          type: integer
+          description: 阅读人数
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新时间
+
+    Bookmark:
+      type: object
+      properties:
+        bookmarkId:
+          type: integer
+          description: 书签ID
+        bookId:
+          type: integer
+          description: 书籍ID
+        bookTitle:
+          type: string
+          description: 书籍标题
+        chapterId:
+          type: integer
+          description: 章节ID
+        chapterTitle:
+          type: string
+          description: 章节标题
+        pageNumber:
+          type: integer
+          nullable: true
+          description: 页码
+        note:
+          type: string
+          nullable: true
+          description: 书签备注
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+
+    ReadingStat:
+      type: object
+      properties:
+        userId:
+          type: integer
+          description: 用户ID
+        todayReadingMinutes:
+          type: integer
+          description: 今日阅读时长（分钟）
+        totalReadingMinutes:
+          type: integer
+          description: 总阅读时长（分钟）
+        consecutiveDays:
+          type: integer
+          description: 连续阅读天数
+        totalBooksRead:
+          type: integer
+          description: 总阅读书籍数
+
     Note:
       type: object
       properties:
@@ -729,6 +826,195 @@ components:
                 type: string
                 enum: [post, comment]
             required: [targetId, targetType]
+
+    # ==================== 书籍管理相关 ====================
+    BookCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                minLength: 1
+                description: 书籍标题
+              authorId:
+                type: integer
+                description: 作者ID
+              cover:
+                type: string
+                format: uri
+                nullable: true
+                description: 封面URL
+              description:
+                type: string
+                nullable: true
+                description: 简介
+              categoryId:
+                type: integer
+                description: 分类ID
+              publisher:
+                type: string
+                nullable: true
+                description: 出版社
+              isbn:
+                type: string
+                nullable: true
+                description: ISBN号
+              price:
+                type: integer
+                default: 0
+                description: 价格（分）
+              isFree:
+                type: boolean
+                default: false
+                description: 是否免费
+              isMemberOnly:
+                type: boolean
+                default: false
+                description: 是否会员专属
+              tags:
+                type: string
+                nullable: true
+                description: 标签（逗号分隔）
+            required: [title, authorId, categoryId]
+
+    BookUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                nullable: true
+              authorId:
+                type: integer
+                nullable: true
+              cover:
+                type: string
+                format: uri
+                nullable: true
+              description:
+                type: string
+                nullable: true
+              categoryId:
+                type: integer
+                nullable: true
+              publisher:
+                type: string
+                nullable: true
+              isbn:
+                type: string
+                nullable: true
+              price:
+                type: integer
+                nullable: true
+              isFree:
+                type: boolean
+                nullable: true
+              isPublished:
+                type: boolean
+                nullable: true
+                description: 上架/下架
+              isMemberOnly:
+                type: boolean
+                nullable: true
+              tags:
+                type: string
+                nullable: true
+
+    ChapterCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                minLength: 1
+                description: 章节标题
+              chapterNumber:
+                type: integer
+                description: 章节序号
+              content:
+                type: string
+                minLength: 1
+                description: 章节正文内容
+              isVip:
+                type: boolean
+                default: false
+                description: 是否VIP章节
+              isPublished:
+                type: boolean
+                default: true
+                description: 是否发布
+            required: [title, chapterNumber, content]
+
+    BookmarkCreateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              bookId:
+                type: integer
+                description: 书籍ID
+              chapterId:
+                type: integer
+                description: 章节ID
+              pageNumber:
+                type: integer
+                nullable: true
+                description: 页码
+              note:
+                type: string
+                nullable: true
+                description: 书签备注
+            required: [bookId, chapterId]
+
+    NoteUpdateRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              content:
+                type: string
+                nullable: true
+                description: 笔记内容
+              isPublic:
+                type: boolean
+                nullable: true
+                description: 是否公开
+              color:
+                type: string
+                nullable: true
+                description: 标注颜色
+
+    ReadingRecordRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              bookId:
+                type: integer
+                description: 书籍ID
+              chapterId:
+                type: integer
+                description: 章节ID
+              pageNumber:
+                type: integer
+                nullable: true
+                description: 页码
+            required: [bookId, chapterId]
 
 paths:
   # ==================== 认证相关接口 ====================
@@ -1689,6 +1975,76 @@ paths:
           $ref: '#/components/schemas/ErrorResponse'
 
   # ==================== 阅读统计接口 ====================
+  /reading/statistics:
+    get:
+      summary: 获取阅读统计数据
+      description: 获取用户的阅读统计数据，包括单日阅读时长、总阅读时长、连续阅读天数等
+      tags: [阅读统计]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReadingStat'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /reading/duration:
+    post:
+      summary: 记录阅读时长
+      description: 记录用户阅读时长（分钟）
+      tags: [阅读统计]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: minutes
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          description: 阅读时长（分钟）
+      responses:
+        200:
+          description: 记录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /reading/progress:
+    post:
+      summary: 记录阅读进度
+      description: 记录用户当前阅读进度（书籍、章节、页码）
+      tags: [阅读统计]
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/ReadingRecordRequest'
+      responses:
+        200:
+          description: 记录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
   /user/reading-stats/top-books:
     get:
       summary: 获取用户周阅读最久3本
@@ -1938,6 +2294,32 @@ paths:
                       data:
                         $ref: '#/components/schemas/SearchResult'
 
+  # ==================== 书籍管理接口 ====================
+  /books:
+    post:
+      summary: 创建书籍
+      tags: [书籍管理]
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/BookCreateRequest'
+      responses:
+        201:
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BookDetail'
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
   # ==================== 书籍详情接口 ====================
   /books/{bookId}:
     get:
@@ -1963,6 +2345,93 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/BookDetail'
+
+    put:
+      summary: 更新书籍信息
+      tags: [书籍管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        $ref: '#/components/requestBodies/BookUpdateRequest'
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BookDetail'
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: 删除书籍
+      tags: [书籍管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功（软删除，设置为下架）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /books/{bookId}/status:
+    put:
+      summary: 更新书籍状态
+      tags: [书籍管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: isPublished
+          in: query
+          required: true
+          schema:
+            type: boolean
+          description: 是否上架（true=上架，false=下架）
+      responses:
+        200:
+          description: 状态更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
 
   /books/{bookId}/reviews:
     get:
@@ -2071,6 +2540,231 @@ paths:
                             description:
                               type: string
 
+  # ==================== 章节管理接口 ====================
+  /books/{bookId}/chapters:
+    post:
+      summary: 创建章节
+      tags: [章节管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        $ref: '#/components/requestBodies/ChapterCreateRequest'
+      responses:
+        201:
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChapterDetail'
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: 获取书籍所有章节
+      tags: [章节管理]
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChapterDetail'
+
+  /books/{bookId}/chapters/{chapterId}:
+    get:
+      summary: 获取章节详情
+      tags: [章节管理]
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChapterDetail'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: 更新章节
+      tags: [章节管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        $ref: '#/components/requestBodies/ChapterCreateRequest'
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChapterDetail'
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: 删除章节
+      tags: [章节管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /books/{bookId}/chapters/{chapterId}/prev:
+    get:
+      summary: 获取上一章
+      tags: [章节管理]
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: 当前章节序号
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChapterDetail'
+        404:
+          description: 没有上一章
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /books/{bookId}/chapters/{chapterId}/next:
+    get:
+      summary: 获取下一章
+      tags: [章节管理]
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: 当前章节序号
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChapterDetail'
+        404:
+          description: 没有下一章
+          $ref: '#/components/schemas/ErrorResponse'
+
   # ==================== 阅读器相关接口 ====================
   /reader/{bookId}/chapters:
     get:
@@ -2098,6 +2792,40 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Chapter'
+
+  /reader/{bookId}/chapters/{chapterId}:
+    get:
+      summary: 获取章节内容（在线阅读）
+      tags: [阅读器]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChapterDetail'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
 
   /reader/{bookId}/notes:
     get:
@@ -2245,6 +2973,187 @@ paths:
                                 format: date-time
         400:
           $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /notes/{noteId}:
+    put:
+      summary: 编辑笔记
+      tags: [书评笔记]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        $ref: '#/components/requestBodies/NoteUpdateRequest'
+      responses:
+        200:
+          description: 编辑成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          noteId:
+                            type: integer
+                          content:
+                            type: string
+                          isPublic:
+                            type: boolean
+                          color:
+                            type: string
+                          updatedAt:
+                            type: string
+                            format: date-time
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: 无权修改他人笔记
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: 删除笔记
+      tags: [书评笔记]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: 无权删除他人笔记
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== 书签管理接口 ====================
+  /bookmarks:
+    post:
+      summary: 添加书签
+      tags: [书签管理]
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/BookmarkCreateRequest'
+      responses:
+        201:
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Bookmark'
+        400:
+          description: 书签已存在或其他错误
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: 获取所有书签
+      description: 获取当前用户的所有书签列表
+      tags: [书签管理]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bookmark'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /bookmarks/{bookmarkId}:
+    delete:
+      summary: 删除书签
+      tags: [书签管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookmarkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: 无权删除他人书签
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /bookmarks/book/{bookId}:
+    get:
+      summary: 获取书籍书签
+      description: 获取指定书籍的所有书签
+      tags: [书签管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bookmark'
         401:
           $ref: '#/components/schemas/ErrorResponse'
 
