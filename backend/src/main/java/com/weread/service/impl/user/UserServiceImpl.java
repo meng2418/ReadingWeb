@@ -68,7 +68,7 @@ public class UserServiceImpl implements UserService {
     // ===========================================
 
     @Override
-    public UserDetailVO getUserProfile(Long userId) {
+    public UserDetailVO getUserProfile(Integer userId) {
         UserEntity user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("用户未找到"));
         
         // 实际应用中，这里需要将 UserEntity 转换为 UserDetailVO
@@ -84,7 +84,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateProfile(Long userId, ProfileUpdateDTO request) {
+    public void updateProfile(Integer userId, ProfileUpdateDTO request) {
         UserEntity user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("用户未找到"));
 
         if (request.getUsername() != null) {
@@ -101,7 +101,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updatePassword(Long userId, PasswordUpdateDTO request) {
+    public void updatePassword(Integer userId, PasswordUpdateDTO request) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("用户未找到"));
 
@@ -125,7 +125,7 @@ public class UserServiceImpl implements UserService {
     // ===========================================
 
     @Override
-    public List<LoginLogVO> getLoginLogs(Long userId, int page, int size) {
+    public List<LoginLogVO> getLoginLogs(Integer userId, int page, int size) {
         
         // 1. 业务逻辑：校验用户ID (确保用户存在)
         if (!userRepository.existsById(userId)) {
@@ -195,7 +195,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void followUser(Long followerId, Long followingId) {
+    public void followUser(Integer followerId, Integer followingId) {
         if (followerId.equals(followingId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不能关注自己。");
         }
@@ -227,7 +227,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional // 必须要有 @Transactional
-    public void unfollowUser(Long followerId, Long followingId) {
+    public void unfollowUser(Integer followerId, Integer followingId) {
     
         // 1. 查找关注记录
         Optional<FollowEntity> existingFollow = followRepository.findByFollowerIdAndFollowingId(followerId, followingId);
@@ -254,9 +254,9 @@ public class UserServiceImpl implements UserService {
      * @param currentUserId 当前登录用户ID (用于判断是否互相关注)
      * @param isFollowersList true表示正在查询粉丝列表 (FollowingId是目标用户)，false表示查询关注列表 (FollowerId是目标用户)
      */
-    private FollowListVO buildFollowListResponse(Page<FollowEntity> followPage, Long currentUserId, boolean isFollowersList) {
+    private FollowListVO buildFollowListResponse(Page<FollowEntity> followPage, Integer currentUserId, boolean isFollowersList) {
         
-        List<Long> targetUserIds = followPage.getContent().stream().map(entity -> isFollowersList ? entity.getFollowerId() : entity.getFollowingId()).toList();
+        List<Integer> targetUserIds = followPage.getContent().stream().map(entity -> isFollowersList ? entity.getFollowerId() : entity.getFollowingId()).toList();
 
         // 1. 批量查询目标用户信息
         List<UserEntity> targetUsers = userRepository.findAllById(targetUserIds);
@@ -300,7 +300,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public FollowListVO getFollowers(Long userId, int page, int limit, Long currentUserId) {
+    public FollowListVO getFollowers(Integer userId, int page, int limit, Integer currentUserId) {
         Pageable pageable = PageRequest.of(page - 1, limit);
         
         // 查找目标用户（userId）的粉丝列表 (即 FollowingId = userId)
@@ -310,7 +310,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public FollowListVO getFollowings(Long userId, int page, int limit, Long currentUserId) {
+    public FollowListVO getFollowings(Integer userId, int page, int limit, Integer currentUserId) {
         Pageable pageable = PageRequest.of(page - 1, limit);
         
         // 查找目标用户（userId）的关注列表 (即 FollowerId = userId)

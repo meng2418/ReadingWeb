@@ -38,7 +38,6 @@
             v-for="(book, index) in books.slice(0, displayCount)"
             :key="book.id"
             class="ranking-item"
-            @click="goToBookDetail(book.id)"
           >
             <div class="ranking-number">{{ index + 1 }}</div>
             <BookCardSuperBig
@@ -313,10 +312,6 @@ const getSubCategories = (tabId: string): SubCategory[] => {
 }
 
 const subCategoryList = computed(() => getSubCategories(String(currentCategoryId.value)))
-
-const goToBookDetail = (bookId: string | number) => {
-  openBookDetail(bookId, 'both')
-}
 
 const fetchBooks = async () => {
   if (!currentCategoryId.value) return

@@ -17,19 +17,19 @@ public class LikeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long likeId;
+    private Integer likeId;
 
     @Column(name = "post_id")
-    private Long postId; // 核心修改：帖子 ID 必须是 Long
+    private Integer postId; 
 
     @Column(name = "comment_id")
-    private Long commentId; // 核心修改：评论 ID 必须是 Long
-    
+    private Integer commentId; 
+
     @Column(name = "note_id")
-    private Integer noteId; // 保持 Integer (笔记 ID 是内容资产 ID)
+    private Integer noteId; 
 
     @Column(name = "user_id", nullable = false)
-    private Long userId; // 点赞的用户ID
+    private Integer userId; 
     
     @CreatedDate
     private LocalDateTime createdAt;

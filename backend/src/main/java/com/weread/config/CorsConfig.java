@@ -1,6 +1,5 @@
 package com.weread.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -12,30 +11,28 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${cors.allowed-origins:}") 
-    private List<String> allowedOrigins;
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(allowedOrigins);
+        // 支持所有 origin，包括空 Origin（Apifox 测试用）
+        configuration.addAllowedOriginPattern("*"); 
 
-        // Allowed methods
+        // 支持常用请求方法
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // Allowed headers
+        // 支持所有请求头
         configuration.addAllowedHeader("*");
 
-        // Allow credentials
+        // 允许携带 Cookie / Authorization
         configuration.setAllowCredentials(true);
 
-        // Max age for preflight requests (improves performance)
+        // 预检请求缓存时间
         configuration.setMaxAge(3600L);
 
-        // Apply CORS configuration to all paths
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 }

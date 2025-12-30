@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class UserDetailVO {
 
     /** 用户ID */
-    private Long userId;
+    private Integer userId;
 
     /** 用户名 (唯一标识，可能用于登录) */
     private String username;

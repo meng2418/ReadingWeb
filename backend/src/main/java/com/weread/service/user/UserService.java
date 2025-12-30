@@ -16,9 +16,9 @@ public interface UserService {
     // ===========================================
     // 1. 个人信息 (Profile Management)
     // ===========================================
-    UserDetailVO getUserProfile(Long userId);
-    void updateProfile(Long userId, ProfileUpdateDTO request);
-    void updatePassword(Long userId, PasswordUpdateDTO request);
+    UserDetailVO getUserProfile(Integer userId);
+    void updateProfile(Integer userId, ProfileUpdateDTO request);
+    void updatePassword(Integer userId, PasswordUpdateDTO request);
 
     // ===========================================
     // 2. 账号安全 (Account Security)
@@ -26,7 +26,7 @@ public interface UserService {
     // 假设您还需要 phone 相关的 send/bind/unbind 方法
 
     /** 分页查询用户的登录历史记录 */
-    List<LoginLogVO> getLoginLogs(Long userId, int page, int size);
+    List<LoginLogVO> getLoginLogs(Integer userId, int page, int size);
     
     // 原来的 3. 会员体系 和 4. 我的资产 部分已移除
 
@@ -35,14 +35,14 @@ public interface UserService {
      * @param followerId 关注者 ID (当前用户)
      * @param followingId 被关注者 ID (目标用户)
      */
-    void followUser(Long followerId, Long followingId);
+    void followUser(Integer followerId, Integer followingId);
 
     /**
      * 执行取消关注操作
      * @param followerId 关注者 ID (当前用户)
      * @param followingId 被关注者 ID (目标用户)
      */
-    void unfollowUser(Long followerId, Long followingId);
+    void unfollowUser(Integer followerId, Integer followingId);
 
     /**
      * 获取用户的粉丝列表 (带分页)
@@ -51,7 +51,7 @@ public interface UserService {
      * @param limit 限制数量
      * @param currentUserId 当前用户ID (用于检查是否互相关注)
      */
-    FollowListVO getFollowers(Long userId, int page, int limit, Long currentUserId);
+    FollowListVO getFollowers(Integer userId, int page, int limit, Integer currentUserId);
 
     /**
      * 获取用户的关注列表 (带分页)
@@ -60,5 +60,5 @@ public interface UserService {
      * @param limit 限制数量
      * @param currentUserId 当前用户ID (用于检查是否互相关注)
      */
-    FollowListVO getFollowings(Long userId, int page, int limit, Long currentUserId);
+    FollowListVO getFollowings(Integer userId, int page, int limit, Integer currentUserId);
 }

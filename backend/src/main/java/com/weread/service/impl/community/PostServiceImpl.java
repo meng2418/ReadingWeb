@@ -14,7 +14,6 @@ import com.weread.repository.community.PostRepository;
 import com.weread.repository.user.FollowRepository;
 import com.weread.service.book.BookService;
 import com.weread.service.community.PostService;
-import com.weread.service.community.CommunityService;
 import com.weread.vo.community.PostVO;
 import com.weread.vo.user.UserSummaryVO;
 
@@ -42,8 +41,8 @@ public class PostServiceImpl implements PostService {
     private final UserRepository userRepository;
 
     public PostServiceImpl(BookService bookService, PostRepository postRepository,
-                           FollowRepository followRepository, BookRepository bookRepository,
-                           LikeRepository likeRepository, UserRepository userRepository) {
+            FollowRepository followRepository, BookRepository bookRepository,
+            LikeRepository likeRepository, UserRepository userRepository) {
         this.bookService = bookService;
         this.postRepository = postRepository;
         this.followRepository = followRepository;
@@ -67,9 +66,12 @@ public class PostServiceImpl implements PostService {
         // Top Likers
         int limit = 3;
         Pageable pageable = PageRequest.of(0, limit);
-    
+
         // 适配 LikeEntity
-        List<Long> topLikerIds = likeRepository.findTopNUserIdsByPostId(entity.getPostId(), pageable);
+        List<Integer> topLikerIds = likeRepository.findTopNUserIdsByPostId(entity.getPostId(), pageable)
+                .stream()
+                .map(Math::toIntExact)
+                .toList();
 
         if (!topLikerIds.isEmpty()) {
             List<UserEntity> userEntities = userRepository.findAllById(topLikerIds);
@@ -81,7 +83,7 @@ public class PostServiceImpl implements PostService {
             vo.setTopLikers(Collections.emptyList());
         }
 
-       // 内容摘要
+        // 内容摘要
         if (entity.getContent() != null) {
             vo.setContentSummary(isDetail
                     ? entity.getContent()
@@ -110,7 +112,6 @@ public class PostServiceImpl implements PostService {
         return vo;
     }
 
-
     private UserSummaryVO convertToUserSummaryVO(UserEntity userEntity) {
         UserSummaryVO vo = new UserSummaryVO();
         vo.setUserId(userEntity.getUserId());
@@ -124,7 +125,7 @@ public class PostServiceImpl implements PostService {
     // ========================================================
     @Override
     @Transactional
-    public PostVO createPost(PostCreationDTO dto, Long authorId) {
+    public PostVO createPost(PostCreationDTO dto, Integer authorId) {
         PostEntity entity = new PostEntity();
         entity.setAuthorId(authorId);
         entity.setTitle(dto.getTitle());
@@ -154,7 +155,7 @@ public class PostServiceImpl implements PostService {
     // 2. 获取单个帖子
     // ========================================================
     @Override
-    public PostVO getPostById(Long postId) {
+    public PostVO getPostById(Integer postId) {
         PostEntity entity = postRepository.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "帖子不存在"));
 
@@ -170,19 +171,22 @@ public class PostServiceImpl implements PostService {
     // ========================================================
     @Override
     public PostListVO getPostList(int page, int limit, String type,
-                                  List<String> topics, Long currentUserId) {
+            List<String> topics, Integer currentUserId) {
 
         Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
         Specification<PostEntity> spec = Specification.where((root, query, cb) -> cb.equal(root.get("status"), 0));
 
         // 用户类型筛选
         if ("mine".equals(type)) {
-            if (currentUserId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请登录以查看我的帖子");
+            if (currentUserId == null)
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请登录以查看我的帖子");
             spec = spec.and((root, query, cb) -> cb.equal(root.get("authorId"), currentUserId));
         } else if ("following".equals(type)) {
-            if (currentUserId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请登录以查看关注的帖子");
-            List<Long> followedAuthorIds = this.getAllFollowedUserIds(currentUserId);
-            if (followedAuthorIds.isEmpty()) return new PostListVO(Collections.emptyList(), 0L, page, limit);
+            if (currentUserId == null)
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请登录以查看关注的帖子");
+            List<Integer> followedAuthorIds = this.getAllFollowedUserIds(currentUserId);
+            if (followedAuthorIds.isEmpty())
+                return new PostListVO(Collections.emptyList(), 0L, page, limit);
             spec = spec.and((root, query, cb) -> root.get("authorId").in(followedAuthorIds));
         }
 
@@ -204,7 +208,7 @@ public class PostServiceImpl implements PostService {
     // ========================================================
     // 辅助方法：获取用户关注列表 ID
     // ========================================================
-    private List<Long> getAllFollowedUserIds(Long currentUserId) {
+    private List<Integer> getAllFollowedUserIds(Integer currentUserId) {
         final int MAX_FOLLOWS_LIMIT = 5000;
         Pageable pageable = PageRequest.of(0, MAX_FOLLOWS_LIMIT);
         Page<FollowEntity> followPage = followRepository.findByFollowerId(currentUserId, pageable);

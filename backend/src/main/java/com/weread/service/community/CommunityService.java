@@ -24,7 +24,7 @@ public interface CommunityService {
      * @param dto 评论内容和父评论ID
      * @return 评论的VO
      */
-    CommentVO createComment(Long postId, Long userId, CommentCreationDTO dto);
+    CommentVO createComment(Integer postId, Integer userId, CommentCreationDTO dto);
 
     /**
      * 获取帖子的一级评论列表 (带分页)
@@ -34,7 +34,7 @@ public interface CommunityService {
      * @param currentUserId 当前登录用户ID (用于检查点赞状态)
      * @return 评论列表的分页响应
      */
-    CommentListVO getPostComments(Long postId, int page, int limit, Long currentUserId);
+    CommentListVO getPostComments(Integer postId, int page, int limit, Integer currentUserId);
     
     /**
      * 获取某条一级评论下的二级评论（回复）列表
@@ -42,7 +42,7 @@ public interface CommunityService {
      * @param currentUserId 当前登录用户ID (用于检查点赞状态)
      * @return 回复列表
      */
-    List<CommentVO> getCommentReplies(Long parentCommentId, int page, int limit, Long currentUserId);
+    List<CommentVO> getCommentReplies(Integer parentCommentId, int page, int limit, Integer currentUserId);
 
 
     // =========================================================
@@ -55,7 +55,7 @@ public interface CommunityService {
      * @param targetId 目标ID (帖子ID 或 评论ID)
      * @param userId 操作用户ID
      */
-    void likeTarget(String targetType, Long targetId, Long userId);
+    void likeTarget(String targetType, Integer targetId, Integer userId);
     
     /**
      * 对目标（帖子或评论）执行取消点赞操作
@@ -63,7 +63,7 @@ public interface CommunityService {
      * @param targetId 目标ID (帖子ID 或 评论ID)
      * @param userId 操作用户ID
      */
-    void unlikeTarget(String targetType, Long targetId, Long userId);
+    void unlikeTarget(String targetType, Integer targetId, Integer userId);
 
     /**
      * 获取目标的总赞数和点赞用户列表
@@ -72,7 +72,7 @@ public interface CommunityService {
      * @param limit 限制返回的点赞用户数量
      * @return 包含总赞数和部分点赞用户信息的响应对象
      */
-    LikeInfoVO getTargetLikes(String targetType, Long targetId, int limit);
+    LikeInfoVO getTargetLikes(String targetType, Integer targetId, int limit);
     
 
     

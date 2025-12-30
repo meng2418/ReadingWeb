@@ -17,9 +17,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final CorsConfig corsConfig;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, CorsConfig corsConfig) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.corsConfig = corsConfig;
     }
 
     @Bean
@@ -30,25 +32,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 禁用 CSRF，因为我们使用 JWT Token 且是无状态 API
             .csrf(AbstractHttpConfigurer::disable)
-            
-            // 配置授权规则
+            .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
             .authorizeHttpRequests(auth -> auth
-                // 允许所有对认证接口的访问，无需鉴权
-                .requestMatchers("/api/auth/**").permitAll() 
-                // 其他所有请求都需要认证（携带有效 Token）
-                .anyRequest().authenticated() 
+                // ⭐ 关键：放行 OPTIONS 预检请求
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+
+                // 登录相关
+                .requestMatchers("/auth/**").permitAll()
+
+                // 其他全部需要登录
+                .anyRequest().authenticated()
             )
-            
-            // 启用无状态 Session 策略
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            
-            // 添加 JWT 过滤器，它在 UsernamePasswordAuthenticationFilter 之前执行
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 }

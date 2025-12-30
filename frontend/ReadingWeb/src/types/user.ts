@@ -4,6 +4,7 @@ export interface FollowUser {
   avatar: string
   bio: string
   isFollowing?: boolean
+  isFollower?: boolean
 }
 
 export type FollowListUpdate = FollowUser[]

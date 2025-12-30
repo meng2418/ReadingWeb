@@ -9,8 +9,8 @@ import com.weread.vo.book.BookSummaryVO;
 
 @Data
 public class PostVO {
-    private Long postId;
-    private Long authorId;
+    private Integer postId;
+    private Integer authorId;
     private String title;
     // 列表页只返回部分内容，详情页返回全部
     private String contentSummary; 

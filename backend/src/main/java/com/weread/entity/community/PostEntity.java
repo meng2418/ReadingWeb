@@ -21,11 +21,11 @@ public class PostEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
-    private Long postId;
+    private Integer postId;
 
     // 关联用户 (author_id -> userId)
     @Column(name = "author_id", nullable = false)
-    private Long authorId;
+    private Integer authorId;
 
     private String title;
 

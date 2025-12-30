@@ -17,16 +17,31 @@ public class FollowEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long followId;
+    private Integer followId;
 
     // 关注者 ID：发起关注行为的用户
     @Column(name = "follower_id", nullable = false)
-    private Long followerId;
+    private Integer followerId;
 
     // 被关注者 ID：被关注的用户
     @Column(name = "following_id", nullable = false)
-    private Long followingId;
+    private Integer followingId;
 
     @CreatedDate
     private LocalDateTime createdAt;
+
+    public String getUsername() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getUsername'");
+    }
+
+    public String getAvatar() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAvatar'");
+    }
+
+    public String getBio() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getBio'");
+    }
 }

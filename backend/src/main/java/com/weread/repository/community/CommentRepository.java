@@ -9,25 +9,25 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
+public interface CommentRepository extends JpaRepository<CommentEntity, Integer> {
 
     /**
      * 查找一个帖子下所有一级评论 (按时间倒序)
      */
-    Page<CommentEntity> findByPostIdAndParentCommentIdIsNullOrderByCreatedAtDesc(Long postId, Pageable pageable);
+    Page<CommentEntity> findByPostIdAndParentCommentIdIsNullOrderByCreatedAtDesc(Integer postId, Pageable pageable);
 
     /**
      * 查找某条一级评论下的所有回复 (二级评论) (按时间升序)
      */
-    List<CommentEntity> findByParentCommentIdOrderByCreatedAtAsc(Long parentCommentId, Pageable pageable);
+    List<CommentEntity> findByParentCommentIdOrderByCreatedAtAsc(Integer parentCommentId, Pageable pageable);
 
     /**
      * 统计某个父评论下的回复总数
      */
-    long countByParentCommentId(Long parentCommentId);
+    long countByParentCommentId(Integer parentCommentId);
     
     /**
      * 统计一个帖子的评论总数
      */
-    long countByPostId(Long postId);
+    long countByPostId(Integer postId);
 }
