@@ -7,13 +7,13 @@ import java.util.List;
 
 @Data
 public class CommentVO {
-    private Long commentId;
-    private Long postId;
-    private Long parentCommentId; 
+    private Integer commentId;
+    private Integer postId;
+    private Integer parentCommentId; 
     
     private UserSummaryVO author; 
     private String content;
-    private long likesCount; 
+    private int likesCount; 
     private boolean isLiked; 
     private LocalDateTime createdAt;
 

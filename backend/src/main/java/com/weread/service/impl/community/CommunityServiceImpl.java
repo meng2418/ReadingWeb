@@ -44,7 +44,7 @@ public class CommunityServiceImpl implements CommunityService {
 
     @Override
     @Transactional
-    public CommentVO createComment(Long postId, Long userId, CommentCreationDTO dto) {
+    public CommentVO createComment(Integer postId, Integer userId, CommentCreationDTO dto) {
         // 验证帖子存在性
         postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
@@ -74,7 +74,7 @@ public class CommunityServiceImpl implements CommunityService {
     }
 
     @Override
-    public CommentListVO getPostComments(Long postId, int page, int limit, Long currentUserId) {
+    public CommentListVO getPostComments(Integer postId, int page, int limit, Integer currentUserId) {
         Pageable pageable = PageRequest.of(page - 1, limit);
 
         Page<CommentEntity> commentPage = commentRepository.findByPostIdAndParentCommentIdIsNullOrderByCreatedAtDesc(postId, pageable);
@@ -99,7 +99,7 @@ public class CommunityServiceImpl implements CommunityService {
     }
 
     @Override
-    public List<CommentVO> getCommentReplies(Long parentCommentId, int page, int limit, Long currentUserId) {
+    public List<CommentVO> getCommentReplies(Integer parentCommentId, int page, int limit, Integer currentUserId) {
         commentRepository.findById(parentCommentId).orElseThrow(() -> new IllegalArgumentException("Parent comment not found with ID: " + parentCommentId));
 
         Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").ascending());
@@ -109,7 +109,7 @@ public class CommunityServiceImpl implements CommunityService {
     }
 
     // --- 辅助方法 ---
-    private CommentVO convertToCommentVO(CommentEntity entity, Long currentUserId) {
+    private CommentVO convertToCommentVO(CommentEntity entity, Integer currentUserId) {
         CommentVO vo = new CommentVO();
         vo.setCommentId(entity.getCommentId());
         vo.setPostId(entity.getPostId());
@@ -131,7 +131,7 @@ public class CommunityServiceImpl implements CommunityService {
         return vo;
     }
 
-    private List<CommentVO> getTopReplies(Long parentCommentId, Long currentUserId, int limit) {
+    private List<CommentVO> getTopReplies(Integer parentCommentId, Integer currentUserId, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<CommentEntity> replies = commentRepository.findByParentCommentIdOrderByCreatedAtAsc(parentCommentId, pageable);
         return replies.stream().map(entity -> convertToCommentVO(entity, currentUserId)).toList();
@@ -147,12 +147,12 @@ public class CommunityServiceImpl implements CommunityService {
 
     // --- 点赞逻辑，适配 LikeEntity ---
     @Override
-    public LikeInfoVO getTargetLikes(String targetType, Long targetId, int limit) {
+    public LikeInfoVO getTargetLikes(String targetType, Integer targetId, int limit) {
         LikeInfoVO vo = new LikeInfoVO();
         vo.setLiked(false);
 
-        long totalLikes = 0;
-        List<Long> topLikerIds = List.of();
+        int totalLikes = 0;
+        List<Integer> topLikerIds = List.of();
 
         if ("POST".equals(targetType)) {
             totalLikes = likeRepository.countByPostId(targetId);
@@ -179,7 +179,7 @@ public class CommunityServiceImpl implements CommunityService {
 
     @Override
     @Transactional
-    public void likeTarget(String targetType, Long targetId, Long userId) {
+    public void likeTarget(String targetType, Integer targetId, Integer userId) {
         Optional<LikeEntity> existingLike = Optional.empty();
         if ("POST".equals(targetType)) {
             existingLike = likeRepository.findByPostIdAndUserId(targetId, userId);
@@ -204,7 +204,7 @@ public class CommunityServiceImpl implements CommunityService {
 
     @Override
     @Transactional
-    public void unlikeTarget(String targetType, Long targetId, Long userId) {
+    public void unlikeTarget(String targetType, Integer targetId, Integer userId) {
         Optional<LikeEntity> existingLike = Optional.empty();
         if ("POST".equals(targetType)) existingLike = likeRepository.findByPostIdAndUserId(targetId, userId);
         else if ("COMMENT".equals(targetType)) existingLike = likeRepository.findByCommentIdAndUserId(targetId, userId);
@@ -215,7 +215,7 @@ public class CommunityServiceImpl implements CommunityService {
         updateLikeCount(targetType, targetId, -1);
     }
 
-    private boolean updateLikeCount(String targetType, Long targetId, int change) {
+    private boolean updateLikeCount(String targetType, Integer targetId, int change) {
         if ("POST".equals(targetType)) {
             return postRepository.findById(targetId).map(post -> {
                 post.setLikesCount(post.getLikesCount() + change);

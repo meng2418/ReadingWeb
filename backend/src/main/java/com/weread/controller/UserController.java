@@ -20,8 +20,8 @@ public class UserController {
      */
     @PutMapping("/{followingId}/follow")
     public ResponseEntity<Void> followUser(
-        @PathVariable Long followingId,
-        @RequestAttribute("userId") Long followerId) { // 当前用户 ID
+        @PathVariable Integer followingId,
+        @RequestAttribute("userId") Integer followerId) { // 当前用户 ID
         
         userService.followUser(followerId, followingId);
         return ResponseEntity.ok().build();
@@ -32,8 +32,8 @@ public class UserController {
      */
     @DeleteMapping("/{followingId}/follow")
     public ResponseEntity<Void> unfollowUser(
-        @PathVariable Long followingId,
-        @RequestAttribute("userId") Long followerId) { // 当前用户 ID
+        @PathVariable Integer followingId,
+        @RequestAttribute("userId") Integer followerId) { // 当前用户 ID
         
         userService.unfollowUser(followerId, followingId);
         return ResponseEntity.noContent().build();
@@ -44,10 +44,10 @@ public class UserController {
      */
     @GetMapping("/{userId}/followers")
     public ResponseEntity<FollowListVO> getFollowers(
-        @PathVariable Long userId,
+        @PathVariable Integer userId,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "20") int limit,
-        @RequestAttribute(value = "userId", required = false) Long currentUserId) {
+        @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
 
         FollowListVO vo = userService.getFollowers(userId, page, limit, currentUserId);
         return ResponseEntity.ok(vo);
@@ -58,10 +58,10 @@ public class UserController {
      */
     @GetMapping("/{userId}/followings")
     public ResponseEntity<FollowListVO> getFollowings(
-        @PathVariable Long userId,
+        @PathVariable Integer userId,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "20") int limit,
-        @RequestAttribute(value = "userId", required = false) Long currentUserId) {
+        @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
         
         FollowListVO vo = userService.getFollowings(userId, page, limit, currentUserId);
         return ResponseEntity.ok(vo);

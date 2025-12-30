@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class FollowUserVO {
-    private Long userId;
+    private Integer userId;
     private String username;
     private String avatarUrl;
 
