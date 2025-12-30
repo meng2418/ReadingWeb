@@ -7,7 +7,7 @@
       <!-- 步骤指示器 -->
       <div class="fp-steps">
         <span :class="{ 'fp-step': true, 'fp-step--active': step === 1, 'fp-step--done': step > 1 }"
-          >1. 验证邮箱</span
+          >1. 验证手机</span
         >
         <span :class="{ 'fp-step': true, 'fp-step--active': step === 2, 'fp-step--done': step > 2 }"
           >2. 验证码</span
@@ -15,17 +15,18 @@
         <span :class="{ 'fp-step': true, 'fp-step--active': step === 3 }">3. 重置密码</span>
       </div>
 
-      <!-- 步骤1：输入邮箱 -->
+      <!-- 步骤1：输入手机号 -->
       <div v-if="step === 1" class="fp-form">
         <div class="fp-form-group">
-          <label class="fp-label">邮箱地址</label>
+          <label class="fp-label">手机号码</label>
           <input
-            type="email"
-            v-model="email"
-            placeholder="请输入注册邮箱"
-            :class="{ 'fp-input': true, 'fp-input--error': errors.email }"
+            type="tel"
+            v-model="phone"
+            placeholder="请输入注册手机号"
+            maxlength="11"
+            :class="{ 'fp-input': true, 'fp-input--error': errors.phone }"
           />
-          <p class="fp-error" v-if="errors.email">{{ errors.email }}</p>
+          <p class="fp-error" v-if="errors.phone">{{ errors.phone }}</p>
         </div>
         <button class="fp-btn" @click="nextStep">发送验证码</button>
       </div>
@@ -34,18 +35,21 @@
       <div v-if="step === 2" class="fp-form">
         <div class="fp-form-group">
           <label class="fp-label">验证码</label>
-          <input
-            type="text"
-            v-model="code"
-            placeholder="请输入6位验证码"
-            :class="{ 'fp-input': true, 'fp-input--error': errors.code }"
-          />
-          <p class="fp-error" v-if="errors.code">{{ errors.code }}</p>
-          <div class="fp-code-info">
-            <span>验证码已发送至 {{ email }}</span>
-            <button @click="resendCode" :disabled="resendDisabled" class="fp-resend">
+          <div class="fp-code-input-group">
+            <input
+              type="text"
+              v-model="code"
+              placeholder="请输入6位验证码"
+              maxlength="6"
+              :class="{ 'fp-input': true, 'fp-input--error': errors.code }"
+            />
+            <button @click="sendCode" :disabled="resendDisabled" class="fp-send-code">
               {{ resendText }}
             </button>
+          </div>
+          <p class="fp-error" v-if="errors.code">{{ errors.code }}</p>
+          <div class="fp-code-info">
+            <span>验证码已发送至 {{ maskedPhone }}</span>
           </div>
         </div>
         <div class="fp-btn-group">
@@ -58,23 +62,33 @@
       <div v-if="step === 3" class="fp-form">
         <div class="fp-form-group">
           <label class="fp-label">新密码</label>
-          <input
-            :type="showPwd ? 'text' : 'password'"
-            v-model="newPwd"
-            placeholder="请设置新密码"
-            :class="{ 'fp-input': true, 'fp-input--error': errors.newPwd }"
-          />
+          <div class="fp-password-group">
+            <input
+              :type="showPwd ? 'text' : 'password'"
+              v-model="newPwd"
+              placeholder="请设置新密码"
+              :class="{ 'fp-input': true, 'fp-input--error': errors.newPwd }"
+            />
+            <button @click="toggleShowPwd" class="fp-toggle-pwd">
+              {{ showPwd ? '隐藏' : '显示' }}
+            </button>
+          </div>
           <p class="fp-error" v-if="errors.newPwd">{{ errors.newPwd }}</p>
         </div>
 
         <div class="fp-form-group">
           <label class="fp-label">确认密码</label>
-          <input
-            :type="showPwd ? 'text' : 'password'"
-            v-model="confirmPwd"
-            placeholder="请再次输入密码"
-            :class="{ 'fp-input': true, 'fp-input--error': errors.confirmPwd }"
-          />
+          <div class="fp-password-group">
+            <input
+              :type="showPwd ? 'text' : 'password'"
+              v-model="confirmPwd"
+              placeholder="请再次输入密码"
+              :class="{ 'fp-input': true, 'fp-input--error': errors.confirmPwd }"
+            />
+            <button @click="toggleShowPwd" class="fp-toggle-pwd">
+              {{ showPwd ? '隐藏' : '显示' }}
+            </button>
+          </div>
           <p class="fp-error" v-if="errors.confirmPwd">{{ errors.confirmPwd }}</p>
         </div>
 
@@ -107,7 +121,7 @@ const router = useRouter()
 
 // 响应式数据
 const step = ref(1)
-const email = ref('')
+const phone = ref('')
 const code = ref('')
 const newPwd = ref('')
 const confirmPwd = ref('')
@@ -118,7 +132,7 @@ const resendSeconds = ref(60)
 
 // 错误信息对象
 const errors = reactive({
-  email: '',
+  phone: '',
   code: '',
   newPwd: '',
   confirmPwd: '',
@@ -127,7 +141,7 @@ const errors = reactive({
 // 计算属性
 const stepDesc = computed(() => {
   const descs = [
-    '请输入您注册的邮箱，我们将发送验证码',
+    '请输入您注册的手机号，我们将发送验证码',
     '请输入收到的验证码进行验证',
     '请设置您的新密码',
   ]
@@ -135,14 +149,21 @@ const stepDesc = computed(() => {
 })
 
 const resendText = computed(() => {
-  return resendDisabled.value ? `重新发送(${resendSeconds.value}s)` : '重新发送'
+  return resendDisabled.value ? `重新发送(${resendSeconds.value}s)` : '发送验证码'
+})
+
+const maskedPhone = computed(() => {
+  if (phone.value.length >= 7) {
+    return phone.value.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+  }
+  return phone.value
 })
 
 // 方法
 const nextStep = () => {
-  if (step.value === 1 && validateEmail()) {
+  if (step.value === 1 && validatePhone()) {
+    sendCode()
     step.value = 2
-    startResendTimer()
   } else if (step.value === 2 && validateCode()) {
     step.value = 3
   }
@@ -152,14 +173,14 @@ const prevStep = () => {
   if (step.value > 1) step.value--
 }
 
-const validateEmail = () => {
-  errors.email = ''
-  if (!email.value) {
-    errors.email = '请输入邮箱'
+const validatePhone = () => {
+  errors.phone = ''
+  if (!phone.value) {
+    errors.phone = '请输入手机号'
     return false
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    errors.email = '邮箱格式不正确'
+  if (!/^1[3-9]\d{9}$/.test(phone.value)) {
+    errors.phone = '手机号格式不正确'
     return false
   }
   return true
@@ -171,8 +192,8 @@ const validateCode = () => {
     errors.code = '请输入验证码'
     return false
   }
-  if (code.value.length !== 6) {
-    errors.code = '验证码长度为6位'
+  if (!/^\d{6}$/.test(code.value)) {
+    errors.code = '验证码为6位数字'
     return false
   }
   return true
@@ -194,36 +215,48 @@ const validatePassword = () => {
   return valid
 }
 
+const sendCode = () => {
+  if (step.value === 1 && !validatePhone()) {
+    return
+  }
+
+  // 这里应该调用发送验证码的API
+  console.log(`向 ${phone.value} 发送验证码`)
+
+  // 启动重发计时器
+  startResendTimer()
+}
+
 const resetPassword = () => {
   if (validatePassword()) {
+    // 这里应该调用重置密码的API
+    console.log('重置密码:', { phone: phone.value, newPwd: newPwd.value })
+
     setTimeout(() => {
       success.value = true
     }, 800)
   }
 }
 
-const resendCode = () => {
-  if (!resendDisabled.value) {
-    code.value = ''
-    startResendTimer()
-  }
+const toggleShowPwd = () => {
+  showPwd.value = !showPwd.value
 }
 
 const startResendTimer = () => {
   resendDisabled.value = true
+  resendSeconds.value = 60
+
   const timer = setInterval(() => {
     resendSeconds.value--
     if (resendSeconds.value <= 0) {
       clearInterval(timer)
       resendDisabled.value = false
-      resendSeconds.value = 60
     }
   }, 1000)
 }
 
 const toLogin = () => {
   router.push('/login')
-  console.log('前往登录页')
 }
 </script>
 
@@ -413,5 +446,49 @@ const toLogin = () => {
   color: #999;
   margin-top: 10px;
   font-size: 12px;
+}
+
+/* 新增的样式，你可以整合到你的CSS文件中 */
+.fp-code-input-group {
+  display: flex;
+  gap: 12px;
+}
+
+.fp-send-code {
+  min-width: 120px;
+  padding: 0 16px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.fp-send-code:disabled {
+  background-color: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.fp-password-group {
+  position: relative;
+}
+
+.fp-toggle-pwd {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.fp-code-info {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
 }
 </style>

@@ -14,7 +14,22 @@
     <div class="stats-grid">
       <div class="card" v-for="(v, k) in stats" :key="k">
         <div class="label">{{ labels[k] }}</div>
-        <div class="value">{{ v }}</div>
+        <div class="value">
+          <!-- 情况1：处理阅读时长 (分钟转换) -->
+          <template v-if="k === 'duration'">
+            <template v-if="Math.floor(v / 60) > 0">
+              {{ Math.floor(v / 60) }}<span class="unit"> 小时 </span>
+            </template>
+            <template v-if="v % 60 > 0 || v === 0">
+              {{ v % 60 }}<span class="unit"> 分钟 </span>
+            </template>
+          </template>
+
+          <!-- 情况2：处理其他带单位的数值 -->
+          <template v-else>
+            {{ v }}<span class="unit">{{ units[k] }} </span>
+          </template>
+        </div>
       </div>
     </div>
   </div>
@@ -46,12 +61,17 @@ const labels = {
   notes: '笔记数量',
 }
 
+// 新增：定义对应字段的单位
+const units = {
+  booksRead: ' 本',
+  booksFinished: ' 本',
+  notes: ' 条',
+}
+
 // -----------------------------
-// 时间区间（示例：你可接入真实数据）
+// 时间区间逻辑
 // -----------------------------
 const currentIndex = ref(0)
-
-// 假数据：你可改成从后端获取
 const weekRanges = ['9月22日 - 9月28日', '9月15日 - 9月21日']
 const monthRanges = ['2025年9月', '2025年8月']
 const yearRanges = ['2025年', '2024年']
@@ -82,16 +102,16 @@ function getRange() {
 </script>
 
 <style scoped>
+/* --- 保持您的原始样式不变 --- */
 .stats-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* 时间选择器独占第一行 */
 .date-selector {
   font-size: 14px;
-  color: var(--text-light);
+  color: var(--text-light); /* 保持变量使用 */
   display: flex;
   align-items: center;
 }
@@ -110,7 +130,6 @@ function getRange() {
   margin-left: 6px;
 }
 
-/* 第二行开始是卡片区 */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -131,9 +150,18 @@ function getRange() {
   font-size: 14px;
   color: #666;
 }
+
 .value {
   margin-top: 6px;
   font-size: 22px;
   font-weight: 600;
+}
+
+/* --- 新增：单位的样式，与 .label 保持一致 --- */
+.unit {
+  font-size: 14px; /* 与 label 一致 */
+  color: #666; /* 与 label 一致 */
+  font-weight: normal; /* 抵消 value 的粗体 */
+  margin-left: 2px; /* 稍微拉开一点间距 */
 }
 </style>

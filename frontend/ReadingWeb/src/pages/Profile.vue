@@ -12,28 +12,44 @@
       </aside>
 
       <main class="right-dashboard">
-        <ReadingDashboard :initialTab="$route.query.tab" />
-        <ReadingNotes />
-        <ReadingThoughts />
-        <ReadingReviews />
+        <ReadingDashboard
+          :initialTab="initialTab"
+          :readingStats="readingStats"
+          :historyRecords="historyRecords"
+          :timelineData="timelineData"
+          :topBooks="topBooks"
+        />
+        <ReadingHighlights :highlights="highlights" />
+        <ReadingThoughts :thoughts="thoughts" />
+        <ReadingReviews :reviews="reviews" />
       </main>
     </section>
   </div>
+  <Footer />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-
+import type { TopBook } from '@/types/user'
 import { useTitle } from '@/stores/useTitle'
 import NavBar from '@/components/layout/NavBar.vue'
 import UserProfile from '@/components/user/UserProfile.vue'
 import SidebarRankings from '@/components/user/SidebarRankings.vue'
 import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
-import ReadingNotes from '@/components/user/ReadingNotes.vue'
+import ReadingHighlights from '@/components/user/ReadingHighlights.vue'
 import ReadingThoughts from '@/components/user/ReadingThoughts.vue'
 import ReadingReviews from '@/components/user/ReadingReviews.vue'
-import { getUserProfile } from '@/api/user'
+import Footer from '@/components/layout/Footer.vue'
+import {
+  getProfileHome,
+  getRecentHighlights,
+  getRecentNotes6,
+  getRecentBookReviews,
+  getHistoryMilestones,
+  getTopBooks,
+  getReadingTimeline,
+} from '@/api/profile'
 
 const route = useRoute()
 const user = ref({
@@ -51,21 +67,53 @@ const user = ref({
   vipDays: 0,
   vipEndTime: null,
 })
-
+const readingStats = ref<any>(null)
+const highlights = ref<any[]>([])
+const reviews = ref<any[]>([])
+const thoughts = ref<any[]>([])
+const historyRecords = ref<any[]>([])
+const topBooks = ref<TopBook[]>([])
+const timelineData = ref<any>(null)
 onMounted(async () => {
-  const profile = await getUserProfile()
+  const period = typeof route.query.tab === 'string' ? (route.query.tab as any) : 'week'
 
-  user.value.nickname = profile.username
-  user.value.signature = profile.bio
-  user.value.avatar = profile.avatar
-  user.value.isVip = profile.isVip
-  user.value.payCoin = profile.coins
-  user.value.giftVIP = profile.memberCardCount ?? 0
-  user.value.vipDays = profile.memberExpireDays ?? 0
-  user.value.stats.following = profile.followingCount ?? 0
-  user.value.stats.followers = profile.followerCount ?? 0
-  user.value.stats.posts = profile.postCount ?? 0
+  const [
+    home,
+    highlightsData,
+    thoughtsData,
+    reviewsRecent,
+    historyRecordsData,
+    topBooksData,
+    timelineDataValue,
+  ] = await Promise.all([
+    getProfileHome(),
+    getRecentHighlights(),
+    getRecentNotes6(),
+    getRecentBookReviews(),
+    getHistoryMilestones(),
+    getTopBooks(period),
+    getReadingTimeline(),
+  ])
+
+  user.value.nickname = home.username
+  user.value.signature = home.bio
+  user.value.avatar = home.avatar
+  user.value.isVip = home.isMember
+  user.value.payCoin = home.coinCount
+  user.value.giftVIP = home.experienceCardCount ?? 0
+  user.value.vipDays = home.memberExpireDays ?? 0
+  user.value.stats.following = home.followingCount ?? 0
+  user.value.stats.followers = home.followerCount ?? 0
+  user.value.stats.posts = home.postCount ?? 0
   user.value.vipEndTime = null
+
+  readingStats.value = home.readingStats
+  highlights.value = highlightsData
+  thoughts.value = thoughtsData
+  reviews.value = reviewsRecent
+  historyRecords.value = historyRecordsData
+  topBooks.value = topBooksData
+  timelineData.value = timelineDataValue
 })
 
 // 动态页面标题
@@ -73,6 +121,7 @@ const title = computed(() =>
   user.value.nickname ? `${user.value.nickname} - 个人主页` : '个人主页',
 )
 useTitle(title)
+const initialTab = computed(() => (typeof route.query.tab === 'string' ? route.query.tab : 'week'))
 </script>
 
 <style scoped>

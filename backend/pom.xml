@@ -21,6 +21,7 @@
             <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
             <maven.compiler.source>17</maven.compiler.source>
             <maven.compiler.target>17</maven.compiler.target>
+        <lombok.version>1.18.24</lombok.version>
         <java.version>17</java.version>
     </properties>
 
@@ -102,6 +103,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
 
@@ -118,23 +120,28 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-        
-        <!-- Spring Data JPA（自动引入兼容 Jakarta 的 Hibernate） -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        
-        <!-- Swagger/OpenAPI -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.1.0</version>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version> <!-- 稳定版本，兼容Spring Boot 3.5.7和JDK17 -->
+                <configuration>
+                    <!-- 对应项目JDK版本（Spring Boot 3.5.7要求JDK17+，与你的项目一致） -->
+                    <release>17</release>
+                    <encoding>UTF-8</encoding> <!-- 统一编码，避免中文乱码和编译异常 -->
+                    <!-- 配置Lombok注解处理器，解决getter/setter/builder等方法找不到的问题 -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version> <!-- 引用lombok版本变量，保持统一 -->
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

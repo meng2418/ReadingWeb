@@ -38,6 +38,7 @@ import { useBookNavigation } from '@/composables/useBookNavigation'
 
 const props = withDefaults(
   defineProps<{
+    bookId?: string | number
     cover?: string
     title: string
     author: string
@@ -60,7 +61,7 @@ const { openInNewTab } = useBookNavigation()
 
 // 保持原行为：始终在新标签打开书籍详情（无指定ID时跳默认页）
 const goToBookDetail = () => {
-  openInNewTab()
+  openInNewTab(props.bookId)
 }
 </script>
 

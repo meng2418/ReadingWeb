@@ -88,7 +88,7 @@ public class BookshelfServiceImplTest {
         assertEquals("cover.jpg", result.getCoverUrl());
         assertEquals("reading", result.getStatus());
         assertNotNull(result.getAddedAt());
-        assertEquals("�鼮�ѳɹ����ӵ����", result.getMessage());
+        assertEquals("图书已成功添加到书架", result.getMessage());
 
         // 5. ��֤��������
         verify(bookRepository, times(1)).findById(bookId);
@@ -111,7 +111,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.addBookToShelf(dto, userId);
         });
-        assertEquals("�鼮���������", exception.getMessage());
+        assertEquals("图书已在书架中", exception.getMessage());
 
         // 4. ��֤δ���ñ��淽��
         verify(bookshelfRepository, never()).save(any());
@@ -131,7 +131,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.addBookToShelf(dto, userId);
         });
-        assertEquals("�鼮������", exception.getMessage());
+        assertEquals("图书不存在", exception.getMessage());
     }
 
     // ====================== ���� removeBookFromShelf ���� ======================
@@ -153,7 +153,7 @@ public class BookshelfServiceImplTest {
         String result = bookshelfService.removeBookFromShelf(bookId, userId);
 
         // 3. ��֤���
-        assertEquals("�鼮�Ѵ�����Ƴ����Ķ�������ͬ�����", result);
+        assertEquals("图书已成功从书架移除，阅读进度已同步删除", result);
 
         // 4. ��֤ɾ������
         verify(bookshelfRepository, times(1)).delete(mockShelf);
@@ -169,7 +169,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.removeBookFromShelf(bookId, userId);
         });
-        assertEquals("�鼮��������У��޷��Ƴ�", exception.getMessage());
+        assertEquals("图书不在书架中，无法移除", exception.getMessage());
 
         // 3. ��֤δִ��ɾ��
         verify(bookshelfRepository, never()).delete(any());
@@ -202,7 +202,7 @@ public class BookshelfServiceImplTest {
         assertNotNull(result);
         assertEquals(bookId, result.getBookId());
         assertEquals("finished", result.getStatus());
-        assertEquals("�Ķ�״̬�Ѹ���", result.getMessage());
+        assertEquals("阅读状态已更新", result.getMessage());
 
         // 5. ��֤���²���
         verify(bookshelfRepository, times(1)).updateBookStatus(eq(userId), eq(bookId), eq("finished"),
@@ -224,7 +224,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateBookStatus(dto, userId);
         });
-        assertEquals("״̬����Ϊ reading/unread/finished", exception.getMessage());
+        assertEquals("状态必须为 reading/unread/finished", exception.getMessage());
     }
 
     @Test
@@ -240,7 +240,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateBookStatus(dto, userId);
         });
-        assertEquals("�鼮���������", exception.getMessage());
+        assertEquals("图书不在书架中", exception.getMessage());
     }
 
     // ====================== ���� updateReadingProgress ���� ======================
@@ -269,7 +269,7 @@ public class BookshelfServiceImplTest {
         assertEquals(120, result.getCurrentPage());
         assertEquals(0.6f, result.getProgress());
         assertNotNull(result.getLastReadTime());
-        assertEquals("�Ķ������Ѹ���", result.getMessage());
+        assertEquals("阅读进度已更新", result.getMessage());
 
         // 5. ��֤���²���
         verify(progressRepository, times(1)).updateProgress(
@@ -291,7 +291,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateReadingProgress(dto, userId);
         });
-        assertEquals("����ֵ������ 0-1 ֮��", exception.getMessage());
+        assertEquals("进度值必须在 0-1 之间", exception.getMessage());
     }
 
     @Test
@@ -309,7 +309,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateReadingProgress(dto, userId);
         });
-        assertEquals("ҳ�����Ϊ������", exception.getMessage());
+        assertEquals("页码必须为正整数", exception.getMessage());
     }
 
     @Test
@@ -325,7 +325,7 @@ public class BookshelfServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             bookshelfService.updateReadingProgress(dto, userId);
         });
-        assertEquals("�鼮��������У��޷����½���", exception.getMessage());
+        assertEquals("图书不在书架中，无法更新进度", exception.getMessage());
     }
 
     // ====================== ���� getUserBooks ���� ======================
@@ -405,6 +405,7 @@ public class BookshelfServiceImplTest {
         book2.setAuthorId(authorId); // ͳһʹ��ͬһ�� authorId
 
         // ���� stub������ѯ authorId=2001 ʱ���� mock ����
+        when(bookshelfRepository.findByUserId(userId)).thenReturn(List.of(shelf1, shelf2));
         when(bookRepository.findById(bookId)).thenReturn(Optional.of(book1));
         when(bookRepository.findById(1002)).thenReturn(Optional.of(book2));
         when(authorRepository.findById(authorId)).thenReturn(Optional.of(new AuthorEntity())); // ƥ�� authorId=2001
@@ -434,3 +435,5 @@ public class BookshelfServiceImplTest {
         assertTrue(result.isEmpty());
     }
 }
+
+

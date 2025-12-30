@@ -1,3 +1,4 @@
+<!-- src/components/user/HistoryView.vue -->
 <template>
   <div class="history-view">
     <div class="timeline-list">

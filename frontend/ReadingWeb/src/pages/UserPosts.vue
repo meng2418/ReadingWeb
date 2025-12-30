@@ -1,3 +1,4 @@
+<!---src/pages/UserPosts.vue-->
 <template>
   <div class="user-posts-page">
     <NavBar />

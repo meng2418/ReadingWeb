@@ -1,44 +1,79 @@
-//src/api/userPosts.ts
 import request from '@/utils/request'
-// src/api/posts.ts
 import type { Post } from '@/types/post'
 
-const mapPost = (raw: any): Post => ({
-  id: raw.postId,
-  username: raw.authorName ?? `用户${raw.postId}`,
-  avatar: raw.authorAvatar,
-  postTime: raw.publishTime,
-  timestamp: raw.publishTime ? Date.parse(raw.publishTime) : undefined,
+/**
+ * 接口返回原始结构（后端）
+ */
+interface UserPostsRaw {
+  posts: any[]
+  hasMore: boolean
+  nextCursor?: string
+  postCount: number
+  commentCount: number
+  likeCount: number
+}
 
-  title: raw.postTitle,
-  content: raw.content,
+interface UserPostsResponse {
+  code: number
+  message: string
+  data: UserPostsRaw
+}
 
-  likeCount: raw.likeCount ?? 0,
-  commentCount: raw.commentCount ?? 0,
-  shareCount: 0,
+/**
+ * 前端真正使用的返回结构
+ */
+export interface GetUserPostsResult {
+  list: Post[]
+  total: number
+  hasMore: boolean
+  nextCursor?: string
+}
 
-  isFollowing: raw.isFollowingAuthor ?? false,
-  isLiked: raw.isLiked ?? false,
+/**
+ * 获取「我的帖子」
+ */
+export async function getPosts(params?: {
+  cursor?: string
+  limit?: number
+}): Promise<GetUserPostsResult> {
+  const res = await request.get<UserPostsResponse>('/user/posts', {
+    params,
+  })
 
-  book: raw.mentionedBooks?.[0]
-    ? {
-        id: raw.mentionedBooks[0].bookId ?? raw.mentionedBooks[0].bookTitle,
-        title: raw.mentionedBooks[0].bookTitle,
-        author: raw.mentionedBooks[0].author,
-        cover: raw.mentionedBooks[0].cover,
-      }
-    : null,
-})
-
-export const getPosts = async (type: 'square' | 'following' = 'square', page = 1, limit = 20) => {
-  const res = await request.get('/posts', { params: { type, page, limit } })
-  const data = res?.data?.data ?? res?.data ?? []
-  const rawItems = Array.isArray(data) ? data : data.items ?? []
+  const raw = res.data.data
 
   return {
-    list: rawItems.map(mapPost),
-    total: data.total ?? rawItems.length,
-    page: data.page ?? page,
-    limit: data.limit ?? limit,
+    list: raw.posts.map(mapPost),
+    total: raw.postCount,
+    hasMore: raw.hasMore,
+    nextCursor: raw.nextCursor,
+  }
+}
+
+/**
+ * 后端字段 → Post 类型映射
+ */
+function mapPost(item: any): Post {
+  return {
+    id: item.postId,
+    username: item.authorName,
+    avatar: item.authorAvatar,
+    postTime: item.publishTime,
+    content: item.content,
+    title: item.postTitle,
+
+    likeCount: item.likeCount,
+    commentCount: item.commentCount,
+    isLiked: item.isLiked,
+    isFollowing: item.isFollowingAuthor,
+
+    // 当前 PostCard 只展示一个书，取第一个即可
+    book: item.mentionedBooks?.length
+      ? {
+          title: item.mentionedBooks[0].bookTitle,
+          author: item.mentionedBooks[0].authorName,
+          cover: item.mentionedBooks[0].cover,
+        }
+      : null,
   }
 }
