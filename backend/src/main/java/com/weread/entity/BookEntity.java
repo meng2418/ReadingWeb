@@ -58,7 +58,7 @@ public class BookEntity {
     private Integer readCount; 
 
     @Column(name = "created_at", updatable = false) 
-    private LocalDateTime createdAt; 
+    private LocalDateTime createdAt;   //需要一个最近打开时间
 
     // Custom logic to set creation time and default values if not set by the database
     @PrePersist

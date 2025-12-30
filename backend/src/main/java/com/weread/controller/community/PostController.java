@@ -13,7 +13,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/posts")
+@RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
 
@@ -31,7 +31,7 @@ public class PostController {
      */
     @PostMapping
     public ResponseEntity<PostVO> createPost(
-            @RequestAttribute(value = "userId", required = true) Long userId, 
+            @RequestAttribute(value = "userId", required = true) Integer userId, 
             @Valid @RequestBody PostCreationDTO dto) {
         
         // userId 必须存在才能发帖，如果 required=true，则未登录用户将收到 401/403 错误（由安全框架处理）
@@ -46,7 +46,7 @@ public class PostController {
      * @return PostVO 帖子详情
      */
     @GetMapping("/{postId}")
-    public ResponseEntity<PostVO> getPostDetail(@PathVariable Long postId) {
+    public ResponseEntity<PostVO> getPostDetail(@PathVariable Integer postId) {
         
         PostVO post = postService.getPostById(postId);
         
@@ -73,7 +73,7 @@ public class PostController {
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "LATEST") String type,
             @RequestParam(required = false) List<String> hashtags,
-            @RequestAttribute(value = "userId", required = false) Long currentUserId) {
+            @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
         
         return postService.getPostList(page, limit, type, hashtags, currentUserId);
     }

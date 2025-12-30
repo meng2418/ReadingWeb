@@ -17,25 +17,25 @@ public class CommentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long commentId;
+    private Integer commentId;
 
     @Column(name = "post_id", nullable = false)
-    private Long postId;
+    private Integer postId;
 
-    // 关键修正：将类型从 Integer 改为 Long，以匹配 NoteEntity 的主键类型
+    
     @Column(name = "note_id")
-    private Long noteId; 
+    private Integer noteId; 
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private Integer userId;
 
     @Column(name = "parent_comment_id")
-    private Long parentCommentId;
+    private Integer parentCommentId;
 
     @Lob
     private String content;
 
-    private long likesCount = 0;
+    private int likesCount = 0;
     private int status = 0;
     private int replyCount = 0;
 

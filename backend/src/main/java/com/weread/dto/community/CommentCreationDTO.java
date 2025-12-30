@@ -18,5 +18,5 @@ public class CommentCreationDTO {
      * 父评论ID。如果为 null，则表示这是一级评论。
      * 如果有值，则表示是对某条评论的回复 (二级评论)。
      */
-    private Long parentCommentId; 
+    private Integer parentCommentId; 
 }

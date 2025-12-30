@@ -13,7 +13,7 @@ public class BookEntityTest {
     public void setUp() {
         book = new BookEntity();
         book.setTitle("测试书籍");
-        book.setAuthorId(1);
+        book.setAuthorId(1L);
         book.setCategoryId(1);
     }
     
