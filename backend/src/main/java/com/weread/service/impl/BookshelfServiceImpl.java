@@ -11,6 +11,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 书架服务实现类
+ * 提供图书添加到书架、移除、状态更新、阅读进度更新等功能
+ */
 @Service
 @RequiredArgsConstructor
 public class BookshelfServiceImpl implements BookshelfService {
@@ -23,20 +27,20 @@ public class BookshelfServiceImpl implements BookshelfService {
     @Override
     @Transactional
     public BookAddVO addBookToShelf(BookAddDTO dto, Long userId) {
-        // 1. 校验图书是否存在 (bookId 是 Integer)
+        // 1. 校验是否已加入书架（先检查书架，避免不必要的图书查询）
         Integer bookId = dto.getBookId();
-        BookEntity book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("图书不存在"));
-
-        // 2. 校验是否已加入书架
         if (bookshelfRepository.findByUserIdAndBookId(userId, bookId).isPresent()) {
             throw new RuntimeException("图书已在书架中");
         }
 
+        // 2. 校验图书是否存在
+        BookEntity book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("图书不存在"));
+
         // 3. 保存书架记录
         BookshelfEntity shelfEntity = new BookshelfEntity();
-        shelfEntity.setUserId(userId);      // userId 是 Long
-        shelfEntity.setBookId(bookId);      // bookId 是 Integer
+        shelfEntity.setUserId(userId);
+        shelfEntity.setBookId(bookId);
         shelfEntity.setStatus(dto.getStatus());
         bookshelfRepository.save(shelfEntity);
 
@@ -46,14 +50,13 @@ public class BookshelfServiceImpl implements BookshelfService {
         progressEntity.setBookId(bookId);
         progressRepository.save(progressEntity);
 
-        // 5. 查作者
-        Long authorIdLong = book.getAuthorId();
-        if (authorIdLong == null) {
+        // 5. 查询作者信息
+        Long authorId = book.getAuthorId();
+        if (authorId == null) {
             throw new RuntimeException("图书作者信息缺失");
         }
-        
 
-        AuthorEntity author = authorRepository.findById(authorIdLong)
+        AuthorEntity author = authorRepository.findById(authorId)
                 .orElseThrow(() -> new RuntimeException("作者信息不存在"));
 
         // 6. 封装返回值
@@ -68,72 +71,71 @@ public class BookshelfServiceImpl implements BookshelfService {
         return vo;
     }
 
-
     @Override
     @Transactional
     public String removeBookFromShelf(Integer bookId, Long userId) {
-        // 1. У���鼮�Ƿ��������
+        // 1. 校验图书是否在书架中
         BookshelfEntity shelfEntity = bookshelfRepository.findByUserIdAndBookId(userId, bookId)
-                .orElseThrow(() -> new RuntimeException("�鼮��������У��޷��Ƴ�"));
+                .orElseThrow(() -> new RuntimeException("图书不在书架中，无法移除"));
 
-        // 2. ɾ����ܹ�����¼
+        // 2. 删除书架记录
         bookshelfRepository.delete(shelfEntity);
 
-        // 3. ɾ���������Ķ����ȼ�¼
+        // 3. 删除对应的阅读进度记录
         progressRepository.findByUserIdAndBookId(userId, bookId)
                 .ifPresent(progressRepository::delete);
 
-        return "�鼮�Ѵ�����Ƴ����Ķ�������ͬ�����";
+        return "图书已成功从书架移除，阅读进度已同步删除";
     }
 
     @Override
     @Transactional
     public BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId) {
-        // 1. У���鼮�������
-        BookshelfEntity shelfEntity = bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId())
-                .orElseThrow(() -> new RuntimeException("�鼮���������"));
+        // 1. 校验图书是否在书架中
+        bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId())
+                .orElseThrow(() -> new RuntimeException("图书不在书架中"));
 
-        // 2. У��״̬�Ϸ���
+        // 2. 校验状态合法性
         if (!List.of("reading", "unread", "finished").contains(dto.getStatus())) {
-            throw new RuntimeException("״̬����Ϊ reading/unread/finished");
+            throw new RuntimeException("状态必须为 reading/unread/finished");
         }
 
-        // 3. ��������е�״̬����ͬ������Ķ�ʱ��
+        // 3. 更新书架中的状态，同时更新最后阅读时间
         LocalDateTime now = LocalDateTime.now();
         bookshelfRepository.updateBookStatus(userId, dto.getBookId(), dto.getStatus(), now);
 
-        // 4. ͬ�����½��ȱ�������Ķ�ʱ��
+        // 4. 同步更新进度表的最后阅读时间
         progressRepository.findByUserIdAndBookId(userId, dto.getBookId())
                 .ifPresent(progress -> {
                     progress.setLastReadAt(now);
                     progressRepository.save(progress);
                 });
 
-        // 5. ��װ���ؽ��
+        // 5. 封装返回结果
         BookStatusVO vo = new BookStatusVO();
         vo.setBookId(dto.getBookId());
         vo.setStatus(dto.getStatus());
-        vo.setMessage("�Ķ�״̬�Ѹ���");
+        vo.setMessage("阅读状态已更新");
         return vo;
     }
 
     @Override
     @Transactional
     public ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId) {
-        // 1. У���鼮�������
+        // 1. 校验图书是否在书架中
         if (bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId()).isEmpty()) {
-            throw new RuntimeException("�鼮��������У��޷����½���");
+            throw new RuntimeException("图书不在书架中，无法更新进度");
         }
 
-        // 2. У������Ϸ���
+        // 2. 校验进度合法性
         if (dto.getProgress() == null || dto.getProgress() < 0 || dto.getProgress() > 1) {
-            throw new RuntimeException("����ֵ������ 0-1 ֮��");
+            throw new RuntimeException("进度值必须在 0-1 之间");
         }
         if (dto.getCurrentPage() == null || dto.getCurrentPage() < 1) {
-            throw new RuntimeException("ҳ�����Ϊ������");
+            throw new RuntimeException("页码必须为正整数");
         }
 
-        // 3. ���½��ȱ�
+        // 3. 更新进度表
         LocalDateTime now = LocalDateTime.now();
         progressRepository.updateProgress(
                 userId,
@@ -143,27 +145,26 @@ public class BookshelfServiceImpl implements BookshelfService {
                 dto.getProgress(),
                 now);
 
-        // 4. ͬ��������ܱ�������Ķ�ʱ��
+        // 4. 同步更新书架表的最后阅读时间
         bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId())
                 .ifPresent(shelf -> {
                     shelf.setLastReadAt(now);
                     bookshelfRepository.save(shelf);
                 });
 
-        // 5. ��װ���ؽ��
+        // 5. 封装返回结果
         ReadingProgressVO vo = new ReadingProgressVO();
         vo.setBookId(dto.getBookId());
         vo.setChapterId(dto.getChapterId());
         vo.setCurrentPage(dto.getCurrentPage());
         vo.setProgress(dto.getProgress());
         vo.setLastReadTime(now);
-        vo.setMessage("�Ķ������Ѹ���");
+        vo.setMessage("阅读进度已更新");
         return vo;
     }
 
     @Override
     public List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId) {
-
         // 1. 查询书架记录，可按状态过滤
         List<BookshelfEntity> shelfEntities;
 
@@ -175,19 +176,17 @@ public class BookshelfServiceImpl implements BookshelfService {
 
         // 2. 转换为VO
         return shelfEntities.stream().map(shelf -> {
-
-            // === 获取图书 ===
+            // === 获取图书信息 ===
             Integer bookId = shelf.getBookId();
             BookEntity book = bookRepository.findById(bookId)
                     .orElseThrow(() -> new RuntimeException("图书不存在: " + bookId));
 
-            // === 获取作者 (注意类型 Integer -> Long 转换) ===
+            // === 获取作者信息 ===
             Long authorId = book.getAuthorId();
             if (authorId == null) {
                 throw new RuntimeException("图书缺少作者字段：" + bookId);
             }
 
-            
             AuthorEntity author = authorRepository.findById(authorId)
                     .orElseThrow(() -> new RuntimeException("作者不存在：" + authorId));
 
