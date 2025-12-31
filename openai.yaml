@@ -52,7 +52,7 @@ components:
         bookTitle:
           type: string
           description: 书名
-        author:
+        authorName:
           type: string
           description: 作者名
         rating:
@@ -122,6 +122,29 @@ components:
               type: string
               description: 作者简介
 
+    UserWithFollowVO:
+      type: object
+      properties:
+        userId:
+          type: integer
+        username:
+          type: string
+        avatar:
+          type: string
+          format: uri
+        bio:
+          type: string
+        isFollowing:
+          type: boolean
+          description: 当前用户是否关注ta
+        isFollower:
+          type: boolean
+          description: ta是否关注当前用户
+        followerCount:
+          type: integer
+        followingCount:
+          type: integer
+
     # ==================== 用户相关 ====================
     UserSimpleVO:
       type: object
@@ -185,46 +208,30 @@ components:
             totalReadingTime:
               type: integer
               description: 总阅读时长（分钟）
-            weeklyBooksRead:
-              type: array
-              description: 本周读过的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
-            monthlyBooksRead:
-              type: array
-              description: 本月读过的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
-            yearlyBooksRead:
-              type: array
-              description: 今年读过的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
-            totalBooksRead:
-              type: array
-              description: 总共读过的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
-            weeklyBooksFinished:
-              type: array
-              description: 本周读完的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
-            monthlyBooksFinished:
-              type: array
-              description: 本月读完的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
-            yearlyBooksFinished:
-              type: array
-              description: 今年读完的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
-            totalBooksFinished:
-              type: array
-              description: 总共读完的书籍列表
-              items:
-                $ref: '#/components/schemas/SimpleBook'
+            weeklyReadCount:
+              type: integer
+              description: 周读过的书数量
+            monthlyReadCount:
+              type: integer
+              description: 月读过的书数量
+            yearlyReadCount:
+              type: integer
+              description: 年读过的书数量
+            totalReadCount:
+              type: integer
+              description: 总读过的书数量
+            weeklyFinishedCount:
+              type: integer
+              description: 周读完的书数量
+            monthlyFinishedCount:
+              type: integer
+              description: 月读完的书数量
+            yearlyFinishedCount:
+              type: integer
+              description: 年读完的书数量
+            totalFinishedCount:
+              type: integer
+              description: 总读完的书数量
             weeklyNoteCount:
               type: integer
               description: 周笔记数量
@@ -298,7 +305,7 @@ components:
           type: string
           format: uri
           description: 话题图片
-        name:
+        topicName:
           type: string
           description: 话题名称
         postCount:
@@ -334,7 +341,7 @@ components:
               image:
                 type: string
                 format: uri
-              name:
+              topicName:
                 type: string
               postCount:
                 type: integer
@@ -366,7 +373,19 @@ components:
         isLiked:
           type: boolean
           description: 是否已点赞
-
+        # 回复目标用户信息
+        replyToUsername:
+          type: string
+          nullable: true
+          description: "被回复的用户名，null表示不是回复评论"
+        replyToUserId:
+          type: integer
+          nullable: true
+          description: "被回复的用户ID"
+        # 简单层级标识（可选）
+        isReply:
+          type: boolean
+          description: "是否是回复评论（replyToUsername不为null）"
     # ==================== 搜索相关 ====================
     SearchResult:
       type: object
@@ -385,12 +404,15 @@ components:
                 format: uri
               followerCount:
                 type: integer
-              name:
+              authorName:
                 type: string
-              representativeWork:
-                type: string
-              bio:
-                type: string
+              representativeWorks:
+                type: array  
+                items:
+                  type: string
+                  description: "代表作列表，如 ['活着', '许三观卖血记']"
+              authorBio:
+                    type: string
 
     # ==================== 阅读相关 ====================
     Chapter:
@@ -406,29 +428,49 @@ components:
     Note:
       type: object
       properties:
-        quote:
-          type: string
-          description: 引用内容
-        noteCount:
+        markId:
           type: integer
-          description: 笔记数
-        noteTime:
-          type: string
-          format: date-time
-          description: 笔记时间
-
-    Highlight:
-      type: object
-      properties:
+        bookId:
+          type: integer
         bookTitle:
           type: string
-        content:
-          type: string
+        chapterId:
+          type: integer
+          nullable: true
         chapterName:
           type: string
-        highlightDate:
+          nullable: true
+        quote:
           type: string
-          format: date
+          description: "标记的原文"
+        startIndex:
+          type: integer
+          description: "起始位置（字符索引）"
+        endIndex:
+          type: integer
+          description: "结束位置"
+        pageNumber:
+          type: integer
+          nullable: true
+          description: "所在页码"
+        # 划线类型（可多选）
+        lineType:
+          type: array
+          items:
+            type: string
+            enum: [marker, wavy, underline]
+          nullable: true
+          description: "划线类型数组，可同时有多个类型"
+        # 笔记内容（可选）
+        thought:
+          type: string
+          nullable: true
+          description: "笔记内容，null表示没有笔记"
+        noteCreatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: "笔记创建日期"
 
     BookNote:
       type: object
@@ -468,8 +510,22 @@ components:
         cover:
           type: string
           format: uri
-        title:
+        bookTitle:
           type: string
+        readingTime:
+          type: integer
+          description: 阅读时长（分钟）
+    ReadingTimeStatItem:
+      type: object
+      properties:
+        time:
+          type: string
+          description: |
+            时间标识：
+            - daily: 2024-01-15
+            - monthly: 2024-01
+            - yearly: 2024
+          example: "2024-01"
         readingTime:
           type: integer
           description: 阅读时长（分钟）
@@ -506,7 +562,7 @@ components:
           type: array
           items:
             type: string
-            enum: [wechat, alipay, unionpay]
+            enum: [wechat, alipay, balance, card]
           description: 支付方式
 
   requestBodies:
@@ -602,7 +658,9 @@ components:
                 enum: [recommend, average, not_recommend]
               content:
                 type: string
-                minLength: 10
+                minLength: 1
+                maxLength: 1000
+                description: "评论内容，1-1000字"
               isPublic:
                 type: boolean
                 default: true
@@ -619,15 +677,30 @@ components:
                 type: integer
               chapterId:
                 type: integer
+                nullable: true
               quote:
                 type: string
-              lineType:
-                type: string
-                enum: [marker, wavy, straight]
+              startIndex:
+                type: integer
+              endIndex:
+                type: integer
+              pageNumber:
+                type: integer
+                nullable: true
+              # 划线类型相关（可选）
+              addLineTypes:
+                type: array
+                items:
+                  type: string
+                  enum: [marker, wavy, underline]
+                nullable: true  # 可以为null
+                description: "要添加的划线类型，null或空数组表示不添加划线"
+              # 笔记内容相关（可选）
               noteContent:
                 type: string
-            required: [bookId, quote, noteContent]
-
+                nullable: true
+                description: "笔记内容，null表示不添加笔记"
+            required: [bookId, quote, startIndex, endIndex]
     PublishPostRequest:
       required: true
       content:
@@ -645,11 +718,11 @@ components:
                 type: array
                 items:
                   type: integer
-              hashtags:
+              topics:
                 type: array
                 items:
                   type: string
-            required: [title, content]
+            required: [topicTitle, content]
 
     PublishCommentRequest:
       required: true
@@ -663,10 +736,11 @@ components:
               content:
                 type: string
                 minLength: 1
-              parentId:
+              replyToCommentId:
                 type: integer
                 nullable: true
-            required: [postId, content]
+                description: "回复的评论ID，null表示直接评论帖子"
+                required: [postId, content]
 
     # ==================== 用户操作相关 ====================
     UpdateProfileRequest:
@@ -729,6 +803,27 @@ components:
                 type: string
                 enum: [post, comment]
             required: [targetId, targetType]
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: 页码
+
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: 每页数量
 
 paths:
   # ==================== 认证相关接口 ====================
@@ -908,11 +1003,48 @@ paths:
                         properties:
                           weeklyReadingTime:
                             type: integer
+                            description: 本周阅读时长（分钟）
+                            example: 360  # 表示6小时
                           monthlyReadingTime:
                             type: integer
+                            description: 本月阅读时长（分钟）
+                            example: 1500  # 表示25小时
+                          yearlyReadingTime:
+                            type: integer
+                            description: 今年阅读时长（分钟）
+                            example: 8760  # 表示146小时
                           totalReadingTime:
                             type: integer
-
+                            description: 总阅读时长（分钟）
+                            example: 28800  # 表示480小时
+  /home/recent-books:
+    get:
+      summary: 获取最近阅读的4本书
+      tags: [首页]
+      description: 获取用户最近阅读的4本书（按最后阅读时间倒序），只返回封面
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        maxItems: 4
+                        items:
+                          type: object
+                          properties:
+                            bookId:
+                              type: integer
+                            cover:
+                              type: string
+                              format: uri
   /home/recommendations:
     get:
       summary: 获取猜你想看书籍（6本）
@@ -1065,8 +1197,10 @@ paths:
                             - $ref: '#/components/schemas/SimpleBook'
                             - type: object
                               properties:
-                                isFinished:
-                                  type: boolean
+                                readingStatus:
+                                  type: string
+                                  enum: [unread, reading, finished]
+                                  description: 阅读状态
 
   /bookshelf/{status}:
     get:
@@ -1101,7 +1235,32 @@ paths:
                               format: uri
                             title:
                               type: string
-
+  /bookshelf/batch-remove:
+    delete:
+      summary: 批量从书架移除书籍
+      tags: [书架]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookIds]
+              properties:
+                bookIds:
+                  type: array
+                  items:
+                    type: integer
+                  description: "要移除的书籍ID列表"
+      responses:
+        200:
+          description: 批量移除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
   # ==================== 社区相关接口 ====================
   /posts:
     get:
@@ -1132,14 +1291,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Post'
+                $ref: '#/components/schemas/ApiResponse'
 
     post:
       summary: 发布帖子
@@ -1154,12 +1306,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/Post'
+                $ref: '#/components/schemas/ApiResponse'
 
   /posts/{postId}:
     get:
@@ -1185,7 +1332,43 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/Post'
-
+    delete:
+      summary: 删除帖子
+      description: 只能删除自己的帖子
+      tags: [删除操作]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deletedPostId:
+                            type: integer
+                          remainingPostCount:
+                            type: integer
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: 无权限删除此帖子
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 帖子不存在
+          $ref: '#/components/schemas/ErrorResponse'
   /posts/{postId}/like:
     post:
       summary: 点赞帖子
@@ -1339,7 +1522,6 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Comment'
-
     post:
       summary: 发布帖子评论
       tags: [社区]
@@ -1389,7 +1571,151 @@ paths:
           $ref: '#/components/schemas/ErrorResponse'
         404:
           $ref: '#/components/schemas/ErrorResponse'
+  /comments/{commentId}/like:
+    post:
+      summary: 点赞评论
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 点赞成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          isLiked:
+                            type: boolean
+                          likeCount:
+                            type: integer
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
 
+    delete:
+      summary: 取消点赞评论
+      tags: [社区]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 取消点赞成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          isLiked:
+                            type: boolean
+                          likeCount:
+                            type: integer
+        400:
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          $ref: '#/components/schemas/ErrorResponse'
+  /comments/{commentId}/reply:
+    post:
+      summary: 回复评论
+      tags: [社区]
+      description: 回复指定的评论
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: "要回复的评论ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  description: "回复内容"
+      responses:
+        201:
+          description: 回复成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          comment:
+                            type: object
+                            properties:
+                              commentId:
+                                type: integer
+                              userId:
+                                type: integer
+                              username:
+                                type: string
+                              avatar:
+                                type: string
+                                format: uri
+                              content:
+                                type: string
+                              commentTime:
+                                type: string
+                                format: date-time
+                              replyToUsername:
+                                type: string
+                                nullable: true
+                                description: "被回复的用户名"
+                              parentCommentId:
+                                type: integer
+                                nullable: true
+                          replyCount:
+                            type: integer
+                            description: "父评论的回复总数"
+        400:
+          description: 参数错误或不能回复自己
+          $ref: '#/components/schemas/ErrorResponse'
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 评论不存在
+          $ref: '#/components/schemas/ErrorResponse'
   /posts/{postId}/related-books:
     get:
       summary: 获取帖子相关书籍列表
@@ -1428,7 +1754,7 @@ paths:
                               type: string
         404:
           $ref: '#/components/schemas/ErrorResponse'
-
+  
   /topics/hot:
     get:
       summary: 获取热门话题列表10个
@@ -1445,12 +1771,12 @@ paths:
                     properties:
                       data:
                         type: array
+                        maxItems: 10  
                         items:
                           type: object
                           properties:
                             name:
                               type: string
-
   /topics/{topicId}:
     get:
       summary: 获取话题详情页
@@ -1529,16 +1855,157 @@ paths:
                                       image:
                                         type: string
                                         format: uri
-                                      name:
+                                      topicName:
                                         type: string
                                       postCount:
                                         type: integer
-
-  # ==================== 用户中心接口 ====================
-  /user/profile:
+  # ==================== 消息通知接口 ====================
+  /messages/my-posts/comments:
     get:
-      summary: 获取个人资料
-      tags: [用户中心]
+      summary: 获取我的帖子的评论瀑布流
+      tags: [消息通知]
+      description: 瀑布流方式获取其他用户对我发布的帖子的评论
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: "游标，第一次请求不传"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          comments:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                commentId:
+                                  type: integer
+                                postId:
+                                  type: integer
+                                postTitle:
+                                  type: string
+                                commenter:
+                                  type: object
+                                  properties:
+                                    userId:
+                                      type: integer
+                                    username:
+                                      type: string
+                                    avatar:
+                                      type: string
+                                      format: uri
+                                commentContent:
+                                  type: string
+                                commentTime:
+                                  type: string
+                                  format: date-time
+                                parentCommentId:
+                                  type: integer
+                                  nullable: true
+                                parentCommentContent:
+                                  type: string
+                                  nullable: true
+                          hasMore:
+                            type: boolean
+                          nextCursor:
+                            type: string
+                            nullable: true
+  /messages/likes:
+    get:
+      summary: 获取我的点赞瀑布流
+      tags: [消息通知]
+      description: 瀑布流方式获取其他用户对我的帖子或评论的点赞
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: "游标，第一次请求不传"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          likes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                likeId:
+                                  type: integer
+                                targetType:
+                                  type: string
+                                  enum: [post, comment]
+                                targetId:
+                                  type: integer
+                                postTitle:
+                                  type: string
+                                commentContent:
+                                  type: string
+                                liker:
+                                  type: object
+                                  properties:
+                                    userId:
+                                      type: integer
+                                    username:
+                                      type: string
+                                    avatar:
+                                      type: string
+                                      format: uri
+                                likeTime:
+                                  type: string
+                                  format: date-time
+                          hasMore:
+                            type: boolean
+                          nextCursor:
+                            type: string
+                            nullable: true
+  # ==================== 个人中心接口 ====================
+  /user/home:
+    get:
+      summary: 获取登录用户个人中心
+      tags: [个人中心]
       security:
         - bearerAuth: []
       responses:
@@ -1553,7 +2020,6 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/UserProfile'
-
     put:
       summary: 编辑个人信息
       tags: [个人中心]
@@ -1592,19 +2058,43 @@ paths:
                       data:
                         type: object
                         properties:
-                          user:
-                            $ref: '#/components/schemas/UserProfile'
+                          data:
+                            type: object
+                            properties:
+                              username:
+                                type: string
+                              avatar:
+                                type: string
+                                format: uri
+                              bio:
+                                type: string
+                                nullable: true
         400:
           $ref: '#/components/schemas/ErrorResponse'
         401:
           $ref: '#/components/schemas/ErrorResponse'
-
-  /user/home:
+  # ==================== 关注/粉丝接口 ====================
+  /user/following:
     get:
-      summary: 获取登录用户个人中心
-      tags: [用户中心]
+      summary: 获取登录用户关注瀑布流
+      tags: [用户关系]
       security:
         - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: "游标，第一次请求不传，后续传上次返回的nextCursor"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
       responses:
         200:
           description: 成功
@@ -1616,12 +2106,69 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/UserProfile'
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/UserWithFollowVO'
+                          hasMore:
+                            type: boolean
+                            description: "是否还有更多数据"
+                          nextCursor:
+                            type: string
+                            nullable: true
+                            description: "下一次请求的游标"
 
+  /user/followers:
+    get:
+      summary: 获取登录用户粉丝瀑布流
+      tags: [用户关系]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: "游标，第一次请求不传，后续传上次返回的nextCursor"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/UserWithFollowVO'
+                          hasMore:
+                            type: boolean
+                            description: "是否还有更多数据"
+                          nextCursor:
+                            type: string
+                            nullable: true
+                            description: "下一次请求的游标"
   /user/follow/{userId}:
     post:
       summary: 关注用户
-      tags: [用户]
+      tags: [用户关系]
       security:
         - bearerAuth: []
       parameters:
@@ -1647,15 +2194,17 @@ paths:
                             type: boolean
                           followingCount:
                             type: integer
+                            description: "当前用户的关注数"
                           followerCount:
                             type: integer
+                            description: "被关注用户的粉丝数"
         400:
           $ref: '#/components/schemas/ErrorResponse'
         401:
           $ref: '#/components/schemas/ErrorResponse'
     delete:
       summary: 取消关注用户
-      tags: [用户]
+      tags: [用户关系]
       security:
         - bearerAuth: []
       parameters:
@@ -1681,8 +2230,10 @@ paths:
                             type: boolean
                           followingCount:
                             type: integer
+                            description: "当前用户的关注数"
                           followerCount:
                             type: integer
+                            description: "被关注用户的粉丝数"
         400:
           $ref: '#/components/schemas/ErrorResponse'
         401:
@@ -1691,10 +2242,27 @@ paths:
   # ==================== 阅读统计接口 ====================
   /user/reading-stats/top-books:
     get:
-      summary: 获取用户周阅读最久3本
-      tags: [阅读统计]
+      summary: 获取用户特定时间段阅读最久的3本书
+      tags: [个人中心]
+      description: |
+        获取用户在不同时间段内阅读时间最长的3本书。
+        默认返回本周的数据。
       security:
         - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [week, month, year, total]
+            default: week
+          description: |
+            时间段：
+            - week: 本周
+            - month: 本月  
+            - year: 今年
+            - total: 总计
       responses:
         200:
           description: 成功
@@ -1706,11 +2274,32 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/ReadingRecord'
+                        type: object
+                        properties:
+                          period:
+                            type: string
+                            enum: [week, month, year, total]
+                            description: "查询的时间段"
+                          topBooks:
+                            type: array
+                            maxItems: 3
+                            items:
+                              type: object
+                              properties:
+                                bookId:
+                                  type: integer
+                                cover:
+                                  type: string
+                                  format: uri
+                                bookTitle:
+                                  type: string
+                                readingTime:
+                                  type: integer
+                                  description: "在该时间段内的阅读时长（分钟）"
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
 
-  /user/highlights/recent3:
+  /user/highlights/recent:
     get:
       summary: 获取用户最新的3条划线
       description: 返回用户最新的3条划线记录，包括马克笔、波浪线、下划线三种类型
@@ -1731,11 +2320,85 @@ paths:
                         type: array
                         maxItems: 3
                         items:
-                          $ref: '#/components/schemas/Highlight'
+                          $ref: '#/components/schemas/Note'
         401:
           $ref: '#/components/schemas/ErrorResponse'
-
-  /user/notes/recent6:
+  /user/latest-milestones:
+    get:
+      summary: 获取用户阅历最新里程碑
+      tags: [个人中心]
+      description: |
+        返回用户每种里程碑类型的最新一条记录（只显示最新达到的里程碑）：
+        1. 累计阅读本数里程碑（只显示最新达到的20/40/60...）
+        2. 笔记数量里程碑（只显示最新达到的50/100/150...）
+        3. 读完本数里程碑（只显示最新达到的10/20/30...）
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          totalReadingMilestone:
+                            type: object
+                            nullable: true
+                            properties:
+                              targetCount:
+                                type: integer
+                                example: 40
+                              achievedBookTitle:
+                                type: string
+                                nullable: true
+                              achievedAt:
+                                type: string
+                                format: date-time
+                              message:
+                                type: string
+                                example: "恭喜！您已累计阅读40本书"
+                          noteCountMilestone:
+                            type: object
+                            nullable: true
+                            properties:
+                              targetCount:
+                                type: integer
+                                example: 50
+                              achievedBookTitle:
+                                type: string
+                                nullable: true
+                              achievedNoteContent:
+                                type: string
+                                nullable: true
+                              achievedAt:
+                                type: string
+                                format: date-time
+                              message:
+                                type: string
+                                example: "恭喜！您已创作50条笔记"
+                          finishedReadingMilestone:
+                            type: object
+                            nullable: true
+                            properties:
+                              targetCount:
+                                type: integer
+                                example: 10
+                              achievedBookTitle:
+                                type: string
+                                nullable: true
+                              achievedAt:
+                                type: string
+                                format: date-time
+                              message:
+                                type: string
+                                example: "恭喜！您已读完10本书"
+  /user/notes/recent:
     get:
       summary: 获取用户最新的6条笔记
       tags: [个人中心]
@@ -1758,8 +2421,161 @@ paths:
                           $ref: '#/components/schemas/BookNote'
         401:
           $ref: '#/components/schemas/ErrorResponse'
+  /user/posts:
+    get:
+      summary: 获取登录用户帖子瀑布流
+      tags: [个人中心]
+      description: 瀑布流方式获取用户发布的帖子
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: "游标，第一次请求不传，后续传上次返回的nextCursor"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            maximum: 20
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          posts:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Post'
+                          hasMore:
+                            type: boolean
+                          nextCursor:
+                            type: string
+                            nullable: true
+                          postCount:
+                            type: integer
+                            description: "用户总帖子数"
+                          commentCount:
+                            type: integer
+                            description: "用户所有帖子的总评论数"
+                          likeCount:
+                            type: integer
+                            description: "用户所有帖子的总点赞数"
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
 
-  /user/book-reviews/recent4:
+  /user/notes:
+    get:
+      summary: 获取登录用户笔记瀑布流
+      tags: [个人中心]
+      description: 瀑布流方式获取用户的所有笔记
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: "游标，第一次请求不传，后续传上次返回的nextCursor"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          notes:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Note'
+                          hasMore:
+                            type: boolean
+                          nextCursor:
+                            type: string
+                            nullable: true
+                          noteCount:
+                              type: integer
+                              description: "用户总笔记数"
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+  /user/book-reviews:
+    get:
+      summary: 获取登录用户书评瀑布流
+      tags: [个人中心]
+      description: 瀑布流方式获取用户的所有书评
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+          description: "游标，第一次请求不传，后续传上次返回的nextCursor"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            maximum: 20
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          reviews:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/BookReview'
+                          hasMore:
+                            type: boolean
+                          nextCursor:
+                            type: string
+                            nullable: true
+                          reviewCount:
+                            type: integer
+                            description: "用户总书评数"
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+  /user/book-reviews/recent:
     get:
       summary: 获取用户最新的4条书评
       tags: [个人中心]
@@ -1876,16 +2692,34 @@ paths:
           $ref: '#/components/schemas/ErrorResponse'
         401:
           $ref: '#/components/schemas/ErrorResponse'
-
-  /rewards/reading:
-    post:
-      summary: 领取阅读激励
-      tags: [阅读激励]
+          
+  /user/reading-stats:
+    get:
+      summary: 获取用户阅读时长统计
+      tags: [个人中心]
+      description: |
+        获取用户在不同时间维度（每日 / 每月 / 每年）的阅读时长统计数据，
+        前端可根据返回数据自行绘制柱形图
       security:
         - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: 统计维度
+          schema:
+            type: string
+            enum: [daily, monthly, yearly]
+        - name: year
+          in: query
+          required: false
+          description: 查询指定年份（monthly / daily 时使用）
+          schema:
+            type: integer
+            example: 2024
       responses:
         200:
-          description: 领取成功
+          description: 成功
           content:
             application/json:
               schema:
@@ -1894,18 +2728,26 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: object
-                        properties:
-                          rewardDays:
-                            type: integer
-                          expireDate:
-                            type: string
-                            format: date
-                          isMember:
-                            type: boolean
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ReadingTimeStatItem'
+
+  /rewards/reading:
+    post:
+      summary: 领取阅读激励
+      tags: [个人中心]
+      description: 用户点击领取按钮，获得体验卡
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 领取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'  
         400:
-          $ref: '#/components/schemas/ErrorResponse'
-        401:
+          description: 今日已领取过或不符合领取条件
           $ref: '#/components/schemas/ErrorResponse'
 
   # ==================== 搜索相关接口 ====================
@@ -1988,6 +2830,7 @@ paths:
                     properties:
                       data:
                         type: array
+                        maxItems: 3 
                         items:
                           type: object
                           properties:
@@ -1998,13 +2841,12 @@ paths:
                               type: string
                             rating:
                               type: string
-                              enum: [recommend, average, not_recommend]
+                              enum: [recommend, average,  not_recommend]
                             reviewTime:
                               type: string
                               format: date-time
                             content:
                               type: string
-
   /books/{bookId}/author-works:
     get:
       summary: 获取作者代表作3部
@@ -2027,6 +2869,7 @@ paths:
                     properties:
                       data:
                         type: array
+                        maxItems: 3  
                         items:
                           type: object
                           properties:
@@ -2037,7 +2880,73 @@ paths:
                               type: string
                             description:
                               type: string
-
+  /authors/{authorId}:
+    get:
+      summary: 获取作者详情
+      tags: [书籍详情]
+      description: 获取作者的详细信息及其所有作品列表
+      parameters:
+        - name: authorId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          authorId:
+                            type: integer
+                          authorName:
+                            type: string
+                          authorBio:
+                            type: string
+                            description: "作者简介"
+                          followerCount:
+                            type: integer
+                            description: "粉丝数"
+                          isFollowing:
+                            type: boolean
+                            description: "当前用户是否已关注该作者"
+                          works:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                bookId:
+                                  type: integer
+                                bookTitle:
+                                  type: string
+                                authorName:
+                                  type: string
+                                cover:
+                                  type: string
+                                  format: uri
+                                rating:
+                                  type: number
+                                  format: float
+                                  description: "推荐值"
+                                readCount:
+                                  type: integer
+                                  description: "今日阅读人数"
+                                description:
+                                  type: string
+                                  description: "作品简介"
+                          workCount:
+                            type: integer
+                            description: "作品总数"
+        404:
+          description: 作者不存在
+          $ref: '#/components/schemas/ErrorResponse'
   /books/{bookId}/related:
     get:
       summary: 获取相关推荐作品3部
@@ -2060,6 +2969,7 @@ paths:
                     properties:
                       data:
                         type: array
+                        maxItems: 3  
                         items:
                           type: object
                           properties:
@@ -2098,7 +3008,211 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Chapter'
-
+  /books/{bookId}/chapters/{chapterId}:
+    get:
+      summary: 获取章节信息和内容
+      tags: [阅读器]
+      description: 一次性获取章节的正文、页数、体验卡要求等信息
+      security:
+        - bearerAuth: []  # 需要认证（判断是否已解锁）
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          # 基本信息
+                          chapterId:
+                            type: integer
+                          chapterTitle:
+                            type: string
+                          chapterNumber:
+                            type: integer
+                            example: 5
+                          # 内容相关
+                          content:
+                            type: string
+                            description: "章节正文"
+                          totalWords:
+                            type: integer
+                            example: 3500
+                          totalPages:
+                            type: integer
+                            example: 7
+                          wordsPerPage:
+                            type: integer
+                            example: 500
+                            description: "每页字数（根据用户阅读设置）"
+                          #收费相关
+                          requireExperienceCard:
+                            type: boolean
+                            description: "是否需要体验卡"
+                          isLocked:
+                            type: boolean
+                            description: "当前用户是否已解锁"
+                          # 导航相关
+                          prevChapterId:
+                            type: integer
+                            nullable: true
+                          nextChapterId:
+                            type: integer
+                            nullable: true
+                          #阅读进度
+                          lastReadPosition:
+                            type: integer
+                            nullable: true
+                            description: "上次阅读到的位置（字符索引）"
+        403:
+          description: 需要解锁但用户未解锁
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                    example: "本章需要解锁"
+                  data:
+                    type: object
+                    properties:
+                      requireExperienceCard:
+                        type: boolean
+                      canUseExperienceCard:
+                        type: boolean
+        404:
+          description: 章节不存在
+  /books/{bookId}/chapters/{chapterId}/notes:
+    get:
+      summary: 获取章节笔记列表
+      tags: [阅读器]
+      description: 获取指定章节的所有笔记（包括划线、笔记内容等）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            noteId:
+                              type: integer
+                            quote:
+                              type: string
+                              description: "引用的原文"
+                            startIndex:
+                              type: integer
+                              description: "原文起始位置"
+                            endIndex:
+                              type: integer
+                              description: "原文结束位置"
+                            lineType:
+                              type: array
+                              items:
+                                type: string
+                                enum: [marker, wavy, underline]
+                              nullable: true
+                              description: "划线类型，null表示无划线"
+                            thought:
+                              type: string
+                              nullable: true
+                              description: "想法，null表示只有划线无笔记"
+                            createdAt:
+                              type: string
+                              format: date-time
+                            pageNumber:
+                              type: integer
+                              nullable: true
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+  /books/{bookId}/mark-finished:
+    put:
+      summary: 标记书籍为已读完
+      tags: [阅读器]
+      description: 用户点击"读完"按钮，更新阅读状态为已读
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 标记成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          bookId:
+                            type: integer
+                          newStatus:
+                            type: string
+                            enum: [finished]
+                            example: "finished"
+                          finishedAt:
+                            type: string
+                            format: date-time
+                          totalFinishedBooks:
+                            type: integer
+                            description: 用户总共读完的书籍数量
+                          milestoneAchieved:
+                            type: boolean
+                            description: 是否达到里程碑（如第10本、第50本、第100本）
+                          milestoneMessage:
+                            type: string
+                            nullable: true
+                            description: 里程碑提示信息，如"恭喜！您已读完100本书！"
+        404:
+          description: 书籍不存在
+        400:
+          description: 书籍已是完成状态或其他错误
   /reader/{bookId}/notes:
     get:
       summary: 获取笔记列表
@@ -2130,7 +3244,7 @@ paths:
   /book-reviews:
     post:
       summary: 发布书评
-      tags: [书评笔记]
+      tags: [书籍详情]
       security:
         - bearerAuth: []
       requestBody:
@@ -2173,6 +3287,10 @@ paths:
                                 type: integer
                               book:
                                 $ref: '#/components/schemas/SimpleBook'
+                              avatar:
+                                type: string
+                              username:
+                                type: string
                               rating:
                                 type: string
                               content:
@@ -2186,11 +3304,48 @@ paths:
           $ref: '#/components/schemas/ErrorResponse'
         401:
           $ref: '#/components/schemas/ErrorResponse'
-
+  /book-reviews/{reviewId}:
+    delete:
+      summary: 删除书评
+      description: 只能删除自己的书评
+      tags: [删除操作]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deletedReviewId:
+                            type: integer
+                          remainingReviewCount:
+                            type: integer
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: 无权限删除此书评
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 书评不存在
+          $ref: '#/components/schemas/ErrorResponse'
   /notes:
     post:
       summary: 发布笔记
-      tags: [书评笔记]
+      tags: [阅读器]
       security:
         - bearerAuth: []
       requestBody:
@@ -2199,7 +3354,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [bookId, quote, noteContent]
+              required: [bookId, quote]
               properties:
                 bookId:
                   type: integer
@@ -2247,12 +3402,49 @@ paths:
           $ref: '#/components/schemas/ErrorResponse'
         401:
           $ref: '#/components/schemas/ErrorResponse'
-
+  /notes/{noteId}:
+    delete:
+      summary: 删除笔记
+      description: 只能删除自己的笔记
+      tags: [删除操作]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deletedNoteId:
+                            type: integer
+                          remainingNoteCount:
+                            type: integer
+        401:
+          $ref: '#/components/schemas/ErrorResponse'
+        403:
+          description: 无权限删除此笔记
+          $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 笔记不存在
+          $ref: '#/components/schemas/ErrorResponse'
   # ==================== 点赞相关接口 ====================
   /likes:
     post:
-      summary: 点赞/取赞
-      tags: [点赞]
+      summary: 点赞/取赞帖子或者评论
+      tags: [社区]
       security:
         - bearerAuth: []
       requestBody:
