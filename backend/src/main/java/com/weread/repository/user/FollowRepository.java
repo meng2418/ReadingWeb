@@ -57,4 +57,6 @@ public interface FollowRepository extends JpaRepository<FollowEntity, Integer> {
      * 获取某个用户（userId）的关注列表（ta 关注了谁）
      */
     Page<FollowEntity> findByFollowerId(Integer followerId, Pageable pageable);
+
+    Boolean existsByUserIdAndTopicId(Integer currentUserId, Integer topicId);
 }

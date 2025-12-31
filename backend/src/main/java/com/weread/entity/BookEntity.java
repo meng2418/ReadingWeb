@@ -105,4 +105,9 @@ public class BookEntity {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    public String getAuthorName() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAuthorName'");
+    }
 }

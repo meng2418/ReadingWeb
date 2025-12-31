@@ -3,6 +3,8 @@ package com.weread.service.community;
 import com.weread.dto.community.PostCreationDTO;
 import com.weread.vo.community.PostListVO;
 import com.weread.vo.community.PostVO;
+import com.weread.vo.community.TopicPostVO;
+
 import java.util.List;
 
 public interface PostService {
@@ -33,4 +35,6 @@ public interface PostService {
      */
     PostListVO getPostList(int page, int limit, String type, 
                            List<String> topics, Integer currentUserId);
+
+    List<TopicPostVO> getTopicPosts(Integer topicId, String sort, Integer cursor, Integer limit, Integer currentUserId);
 }
