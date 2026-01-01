@@ -11,10 +11,9 @@ public interface MembershipService {
     
     /**
      * 获取所有会员套餐列表
-     * @param showType 显示类型：all-全部，active-仅启用，hot-热门
      * @return 套餐列表
      */
-    List<MembershipPackageVO> getMembershipPackages(String showType);
+    List<MembershipPackageVO> getMembershipPackages();
     
     /**
      * 获取会员支付页信息

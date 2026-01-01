@@ -25,14 +25,9 @@ public class MembershipServiceImpl implements MembershipService {
     
     @Override
     @Transactional(readOnly = true)
-    public List<MembershipPackageVO> getMembershipPackages(String showType) {
-        List<MembershipPackageEntity> packages;
-        
-        if ("hot".equals(showType)) {
-            packages = membershipPackageRepository.findByIsActiveTrueAndIsHotTrueOrderByDisplayOrderAsc();
-        } else {
-            packages = membershipPackageRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
-        }
+    public List<MembershipPackageVO> getMembershipPackages() {
+        // 直接查询所有启用的套餐
+        List<MembershipPackageEntity> packages = membershipPackageRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
         
         return packages.stream()
                 .map(this::convertToVO)
