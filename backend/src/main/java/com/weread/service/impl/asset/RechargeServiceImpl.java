@@ -85,11 +85,8 @@ public class RechargeServiceImpl implements RechargeService {
         // 6. 构建响应
         RechargeResponseVO response = new RechargeResponseVO();
         response.setOrderId(order.getOrderNo());
-        response.setPayAmount(order.getPayAmount());
         response.setCoinAmount(order.getCoinAmount());
         response.setBonusCoins(order.getBonusCoins());
-        response.setCurrentCoins(currentCoins);
-        response.setPaymentMethod(order.getPaymentMethod().getCode());
         
         // 7. 根据支付方式生成支付信息
         if ("wechat".equals(request.getPaymentMethod())) {
