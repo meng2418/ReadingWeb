@@ -48,3 +48,18 @@ export const getBookshelfByStatus = async (
     status: statusMap[status],
   }))
 }
+
+/**
+ * 批量移除书架书籍
+ * @param ids 书籍ID数组
+ */
+export function batchRemoveBooks(ids: (string | number)[]) {
+  return request({
+    url: '/bookshelf/batch-remove',
+    method: 'delete',
+    // 这里的 key 必须叫 bookIds，与你提供的文档一致
+    data: {
+      bookIds: ids,
+    },
+  })
+}

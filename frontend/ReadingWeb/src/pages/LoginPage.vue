@@ -3,7 +3,8 @@
 import { ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import axios from 'axios'
+import { login } from '@/api/auth'
+import type { LoginParams } from '@/api/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,7 +36,7 @@ function handleSignUp() {
   isSignUp.value = true
 }
 
-// 点击 "登录" 按钮（异步函数）
+// 点击 "登录" 按钮，视图切换，非登录
 function handleLogin() {
   isSignUp.value = false
 }
@@ -48,27 +49,109 @@ function toggleCaptchaLogin() {
   code.value = ''
 }
 
+//验证码
+import { sendVerificationCode } from '@/api/auth'
 // 发送验证码（登录）
-function sendCode() {
-  if (!phone.value || phone.value.trim().length < 6) {
-    globalThis.alert('请输入有效的手机号')
+async function sendCode() {
+  if (!phone.value) {
+    alert('请输入手机号')
     return
   }
-  globalThis.alert(`已向 ${phone.value} 发送验证码（模拟）`)
+
+  try {
+    await sendVerificationCode({ phone: phone.value })
+    alert('验证码已发送')
+  } catch (e: any) {
+    alert(e?.response?.data?.message || '发送验证码失败')
+  }
 }
 
 // 发送验证码（注册）
-function sendSignUpCode() {
-  if (!signUpPhone.value || signUpPhone.value.trim().length < 6) {
-    globalThis.alert('请输入有效的手机号')
+async function sendSignUpCode() {
+  if (!signUpPhone.value) {
+    alert('请输入手机号')
     return
   }
-  globalThis.alert(`已向 ${signUpPhone.value} 发送验证码（模拟）`)
+
+  try {
+    await sendVerificationCode({ phone: signUpPhone.value })
+    alert('验证码已发送')
+  } catch (e: any) {
+    alert(e?.response?.data?.message || '发送验证码失败')
+  }
 }
 
 // 忘记密码跳转
 function goForgetPassword() {
   router.push('/forget-password')
+}
+
+//登录
+async function submitLogin() {
+  if (!phone.value) {
+    alert('请输入手机号')
+    return
+  }
+
+  const payload: LoginParams = {
+    phone: phone.value,
+    type: isCaptchaLogin.value ? 'verificationCode' : 'password',
+    password: isCaptchaLogin.value ? null : password.value,
+    verificationCode: isCaptchaLogin.value ? code.value : null,
+  }
+
+  try {
+    const res = await login(payload)
+    userStore.setUser(res.data.data)
+    router.push('/')
+  } catch (err: any) {
+    alert(err?.response?.data?.message || '登录失败')
+  }
+}
+
+//注册
+import { register } from '@/api/auth'
+
+async function submitRegister() {
+  if (!signUpUsername.value) {
+    alert('请输入用户名')
+    return
+  }
+  if (!signUpPhone.value) {
+    alert('请输入手机号')
+    return
+  }
+  if (!signUpPassword.value || !signUpConfirmPassword.value) {
+    alert('请输入密码')
+    return
+  }
+  if (signUpPassword.value !== signUpConfirmPassword.value) {
+    alert('两次密码不一致')
+    return
+  }
+  if (!signUpCode.value) {
+    alert('请输入验证码')
+    return
+  }
+
+  const payload = {
+    username: signUpUsername.value,
+    phone: signUpPhone.value,
+    password: signUpPassword.value,
+    confirmPassword: signUpConfirmPassword.value,
+    verificationCode: signUpCode.value,
+  }
+
+  try {
+    await register(payload)
+    alert('注册成功，请登录')
+
+    // 切回登录页
+    isSignUp.value = false
+    isCaptchaLogin.value = false
+  } catch (e: any) {
+    alert(e?.response?.data?.message || '注册失败')
+  }
 }
 </script>
 
@@ -101,7 +184,7 @@ function goForgetPassword() {
         <!-- 登录表单 -->
         <div class="user_forms-login">
           <h2 class="forms_title">登录</h2>
-          <form class="forms_form">
+          <form class="forms_form" @submit.prevent="submitLogin">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
                 <input
@@ -161,7 +244,7 @@ function goForgetPassword() {
         <!-- 注册表单 -->
         <div class="user_forms-signup">
           <h2 class="forms_title">注册</h2>
-          <form class="forms_form">
+          <form class="forms_form" @submit.prevent="submitRegister">
             <fieldset class="forms_fieldset">
               <!-- 用户名 -->
               <div class="forms_field">

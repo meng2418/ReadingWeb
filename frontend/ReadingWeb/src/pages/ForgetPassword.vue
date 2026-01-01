@@ -94,7 +94,7 @@
 
         <div class="fp-btn-group">
           <button @click="prevStep" class="fp-btn fp-btn--secondary">返回</button>
-          <button @click="resetPassword" class="fp-btn">完成重置</button>
+          <button @click="handleResetPassword" class="fp-btn">完成重置</button>
         </div>
       </div>
 
@@ -116,6 +116,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+// 1. 使用 as 重命名导入的 API 函数，避免与本地函数冲突
+import { sendVerificationCode as apiSendCode, resetPassword as apiResetPassword } from '@/api/auth'
 
 const router = useRouter()
 
@@ -215,26 +217,32 @@ const validatePassword = () => {
   return valid
 }
 
-const sendCode = () => {
-  if (step.value === 1 && !validatePhone()) {
-    return
+const sendCode = async () => {
+  if (!validatePhone()) return
+
+  try {
+    // 2. 修复：API 接收的是 SendCodeParams 对象，而不是字符串
+    await apiSendCode({ phone: phone.value })
+    startResendTimer()
+  } catch (e) {
+    errors.phone = '验证码发送失败'
   }
-
-  // 这里应该调用发送验证码的API
-  console.log(`向 ${phone.value} 发送验证码`)
-
-  // 启动重发计时器
-  startResendTimer()
 }
 
-const resetPassword = () => {
-  if (validatePassword()) {
-    // 这里应该调用重置密码的API
-    console.log('重置密码:', { phone: phone.value, newPwd: newPwd.value })
+const handleResetPassword = async () => {
+  if (!validatePassword()) return
 
-    setTimeout(() => {
-      success.value = true
-    }, 800)
+  try {
+    // 3. 修复：调用重命名后的 API 函数，并传入正确的对象参数
+    await apiResetPassword({
+      phone: phone.value,
+      verificationCode: code.value,
+      newPassword: newPwd.value,
+      confirmPassword: confirmPwd.value,
+    })
+    success.value = true
+  } catch (e) {
+    errors.newPwd = '重置密码失败'
   }
 }
 
