@@ -3,6 +3,8 @@ package com.weread.service.community;
 import com.weread.dto.community.PostCreationDTO;
 import com.weread.vo.community.PostListVO;
 import com.weread.vo.community.PostVO;
+import com.weread.vo.community.TopicPostVO;
+
 import java.util.List;
 
 public interface PostService {
@@ -13,14 +15,14 @@ public interface PostService {
      * @param authorId 作者用户 ID
      * @return 创建后的帖子 VO
      */
-    PostVO createPost(PostCreationDTO dto, Long authorId);
+    PostVO createPost(PostCreationDTO dto, Integer authorId);
 
     /**
      * 获取单个帖子详情
      * @param postId 帖子 ID
      * @return 帖子 VO
      */
-    PostVO getPostById(Long postId);
+    PostVO getPostById(Integer postId);
 
     /**
      * 获取帖子列表并根据类型和标签筛选
@@ -32,5 +34,7 @@ public interface PostService {
      * @return 帖子列表 VO
      */
     PostListVO getPostList(int page, int limit, String type, 
-                           List<String> topics, Long currentUserId);
+                           List<String> topics, Integer currentUserId);
+
+    List<TopicPostVO> getTopicPosts(Integer topicId, String sort, Integer cursor, Integer limit, Integer currentUserId);
 }

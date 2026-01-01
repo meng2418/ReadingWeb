@@ -18,44 +18,18 @@ public class DtoConverterImpl implements DtoConverter {
     public LoginLogVO toLoginLogVO(LoginLogEntity entity) {
         // 实际：使用 BeanUtils 或 MapStruct/ModelMapper 进行属性映射
         return new LoginLogVO(
-            entity.getLoginLogId(),
-            entity.getLoginTime(),
-            entity.getIpAddress(),
-            entity.getLoginLocation(),
-            entity.getDevice(),
-            entity.getStatus()
-        );
+                entity.getLoginLogId(),
+                entity.getLoginTime(),
+                entity.getIpAddress(),
+                entity.getLoginLocation(),
+                entity.getDevice(),
+                entity.getStatus());
     }
-    
-    @Override
-    public UserDetailVO toUserDetailVO(UserEntity entity) {
-        // 示例：这里需要映射所有 UserDetailVO 字段
-        return new UserDetailVO(
-            entity.getUserId(),
-            entity.getUsername(),
-            entity.getAvatar(),
-            entity.getBio(),
-            entity.getPhone(),
-            entity.getCreatedAt(),
-            entity.getIsMember(),
-            entity.getMemberEndDate(), 
-            entity.getCoins()
-        );
-    }
-
-    
-    
-    
 
     
 
     // --- 订单/充值相关 ---
-    
-    
 
     // 订单创建 helper 2 (充值)
-    
-    
 
-    
 }

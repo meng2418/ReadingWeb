@@ -17,68 +17,59 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class JwtUtil {
 
-    // Access Token 过期时间：默认 7 天
-    @Value("${jwt.expiration:604800000}") 
-    private long expiration; 
+    @Value("${jwt.expiration:604800000}") // 7天
+    private long expiration;
 
-    // Refresh Token 过期时间：默认 30 天
-    @Value("${jwt.refreshExpiration:2592000000}") // 30 days in milliseconds
+    @Value("${jwt.refreshExpiration:2592000000}") // 30天
     private long refreshExpiration;
 
-    @Value("${jwt.secret:default-secret-key-that-is-very-long-and-secure-and-must-be-changed-in-production}")
+    @Value("${jwt.secret:}")
     private String secret;
 
+    private Key signingKey;
+
+    // 初始化 key
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        if (signingKey == null) {
+            if (secret != null && secret.getBytes().length >= 32) {
+                // 配置 secret 足够长，使用配置
+                signingKey = Keys.hmacShaKeyFor(secret.getBytes());
+            } else {
+                // secret 太短或为空，自动生成一个安全 key
+                signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+                System.out.println("⚠️ JWT secret 太短，已自动生成安全 key（仅开发环境）");
+            }
+        }
+        return signingKey;
     }
 
-    /**
-     * 【内部使用】创建不同过期时间的基础 JWT Token。
-     * @param subject Token的主体（通常是手机号）
-     * @param userId 用户ID
-     * @param claims 附加信息
-     * @param expirationMillis Token过期时间（毫秒）
-     * @return JWT String
-     */
-    private String createToken(String subject, Long userId, Map<String, Object> claims, long expirationMillis) {
-        if (claims == null) {
-            claims = new HashMap<>();
-        }
+    private String createToken(String subject, Integer userId, Map<String, Object> claims, long expirationMillis) {
+        if (claims == null) claims = new HashMap<>();
         claims.put("userId", userId);
-        
         Date now = new Date();
-        Date validity = new Date(now.getTime() + expirationMillis);
+        Date valid = new Date(now.getTime() + expirationMillis);
 
         return Jwts.builder()
-            .setClaims(claims)
-            .setSubject(subject)
-            .setIssuedAt(now)
-            .setExpiration(validity)
-            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-            .compact();
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(now)
+                .setExpiration(valid)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
-    /**
-     * 【对外接口】生成 Access Token 和 Refresh Token，并封装为 TokenInfo。
-     * @param phone 手机号
-     * @param userId 用户ID
-     * @return 包含双 Token 和过期时间的 TokenInfo
-     */
-    public TokenInfo generateTokenInfo(String phone, Long userId) {
-        
-        // 1. 生成 Access Token (包含类型标记)
+    public TokenInfo generateTokenInfo(String phone, Integer userId) {
+        // Access token
         Map<String, Object> accessClaims = new HashMap<>();
         accessClaims.put("type", "ACCESS");
         String accessToken = createToken(phone, userId, accessClaims, expiration);
 
-        // 2. 生成 Refresh Token (包含类型标记)
+        // Refresh token
         Map<String, Object> refreshClaims = new HashMap<>();
         refreshClaims.put("type", "REFRESH");
         String refreshToken = createToken(phone, userId, refreshClaims, refreshExpiration);
 
-        // 3. 计算 AccessToken 的有效期（秒）
         Long expiresInSeconds = TimeUnit.MILLISECONDS.toSeconds(expiration);
-
         return new TokenInfo(accessToken, refreshToken, expiresInSeconds);
     }
 
@@ -90,26 +81,16 @@ public class JwtUtil {
                 .getBody();
     }
 
-    /**
-     * 从 Token 中提取手机号 (作为 Subject)
-     */
     public String extractPhone(String token) {
         return extractAllClaims(token).getSubject();
     }
-    
-    /**
-     * 检查 Token 是否过期
-     */
+
     private Boolean isTokenExpired(String token) {
         return extractAllClaims(token).getExpiration().before(new Date());
     }
 
-    /**
-     * 验证 Token 是否有效
-     */
     public boolean validateToken(String token, UserDetails userDetails) {
         String phone = extractPhone(token);
-        // 1. 手机号是否匹配 2. Token 是否过期
-        return (phone.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return phone.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 }

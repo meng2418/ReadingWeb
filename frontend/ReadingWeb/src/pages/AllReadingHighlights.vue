@@ -22,6 +22,9 @@
       </header>
 
       <div class="highlights-grid">
+        <!-- 加载状态 -->
+        <div v-if="isLoading" class="loading-state">加载中...</div>
+
         <div v-if="filteredHighlights.length === 0" class="empty-state">
           <inbox class="icon-lg" />
           <p>没有找到相关划线</p>
@@ -70,9 +73,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { formatDate as formatDisplayDate } from '@/composables/useReviews'
+import { getUserNotes } from '@/api/notes'
 // 新增 Check 图标
 import {
   ArrowLeft,
@@ -91,60 +95,35 @@ const searchQuery = ref('')
 const selectedBook = ref('')
 const copiedId = ref(null) // 用于记录当前哪个笔记刚刚被复制
 
-// 模拟数据（顺序可以是乱的，前端会自动排）
-const allHighlights = ref([
-  {
-    id: 1,
-    bookName: '当尼采哭泣',
-    date: '2024-04-28',
-    chapter: '第四章',
-    content: '尼采略略地笑着，“我知道她如何在这点上反应。她对传统婚姻显得并不宽容。”',
-  },
-  {
-    id: 2,
-    bookName: '置身事内',
-    date: '2024-03-15',
-    chapter: '第三章',
-    content: '土地金融的本质，是政府将未来的土地收益提前变现。',
-  },
-  {
-    id: 3,
-    bookName: '悉达多',
-    date: '2024-02-10',
-    chapter: '觉醒',
-    content: '知识可以传授，但智慧不能。人们可以寻见智慧，在生活中体现智慧。',
-  },
-  {
-    id: 4,
-    bookName: '悉达多',
-    date: '2024-02-12',
-    chapter: '船夫',
-    content: '河水在流，它一直在流，永远在流，然而它永远是那条河。',
-  },
-  {
-    id: 5,
-    bookName: '三体',
-    date: '2023-11-05',
-    chapter: '黑暗森林',
-    content: '给岁月以文明，而不是给文明以岁月。',
-  },
-  {
-    id: 6,
-    bookName: '最新测试',
-    date: '2025-12-03',
-    chapter: null,
-    content: '这条应该是最新的，排在最前面。',
-  },
-  {
-    id: 7,
-    bookName: '她既想死，又想去巴黎',
-    date: '2025-11-25',
-    chapter: '译者序',
-    content:
-      '你本应拥有另一种命运，值得更优秀的人、更纯粹的爱。我竭尽所能，想要向你证明我的爱意。可你渴望的，恰好是我唯一无法给予的。',
-  },
-])
+const allHighlights = ref([])
+const isLoading = ref(true)
 
+const fetchNotes = async () => {
+  try {
+    isLoading.value = true
+    const notes = await getUserNotes()
+
+    // 调试用：console.log(notes) 看看数据有没有出来
+
+    allHighlights.value = notes
+      .filter((n) => n.noteType === 'highlight') // 只取划线
+      .map((n) => ({
+        id: n.markId,
+        bookName: n.bookTitle,
+        date: n.noteCreatedAt,
+        chapter: n.chapterName || '全书',
+        content: n.quote, // 重要：后端划线内容字段是 quote
+      }))
+  } catch (err) {
+    console.error('加载划线失败:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchNotes()
+})
 const bookList = computed(() => Array.from(new Set(allHighlights.value.map((n) => n.bookName))))
 
 // 核心修改：增加排序逻辑 sort((a, b) => new Date(b.date) - new Date(a.date))

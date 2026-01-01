@@ -109,13 +109,22 @@
             </div>
           </div>
 
-          <!-- 关注列表 - 使用 UserList 组件 -->
-          <div v-if="currentTab === 'following'" class="user-list-wrapper">
+          <!-- 关注列表 -->
+          <div
+            v-if="currentTab === 'following'"
+            class="user-list-wrapper"
+            v-loading="isLoadingRelations"
+          >
             <UserList type="following" :users="followingList" @update="handleFollowingUpdate" />
+            <!-- 如果关注人数很多，可以在这里添加“查看更多”按钮（配合 hasMore） -->
           </div>
 
-          <!-- 粉丝列表 - 使用 UserList 组件 -->
-          <div v-if="currentTab === 'followers'" class="user-list-wrapper">
+          <!-- 粉丝列表 -->
+          <div
+            v-if="currentTab === 'followers'"
+            class="user-list-wrapper"
+            v-loading="isLoadingRelations"
+          >
             <UserList type="followers" :users="followersList" @update="handleFollowersUpdate" />
           </div>
 
@@ -200,6 +209,8 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Delete, Edit, User, UserFilled, ChatLineSquare, Star } from '@element-plus/icons-vue'
+
+// 组件导入
 import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
@@ -207,315 +218,23 @@ import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import ThoughtCard from '@/components/userposts/ThoughtCard.vue'
 import ReviewCard from '@/components/userposts/ReviewCard.vue'
 import UserList from '@/components/userposts/UserList.vue'
+
+// 类型定义与 API
 import type { Post } from '@/types/post'
 import type { FollowUser } from '@/types/user'
 import type { ReviewCardItem, RatingConfig } from '@/types/review'
 import { useTitle } from '@/stores/useTitle'
 import { getPosts } from '@/api/userPosts'
+import { getUserNotes } from '@/api/notes'
+import { getUserReviews } from '@/api/bookreview'
+import { getFollowingList, getFollowersList } from '@/api/userRelations'
+
+/* -----------------------------------------
+     1. 基础配置与导航状态
+  ----------------------------------------- */
 const props = defineProps<{ id?: string }>()
 const route = useRoute()
-
-// 当前选中的标签页
 const currentTab = ref('posts')
-
-// 切换标签页
-const switchTab = (tab: string) => {
-  currentTab.value = tab
-}
-
-// 跳转到发布页面
-const goToCreatePost = () => {
-  console.log('跳转到发布页面')
-  // router.push('/create-post')
-}
-
-// 跳转到创建想法页面
-const goToCreateThought = () => {
-  console.log('跳转到创建想法页面')
-  // router.push('/create-thought')
-}
-
-// 跳转到创建书评页面
-const goToCreateReview = () => {
-  console.log('跳转到创建书评页面')
-  // router.push('/create-review')
-}
-
-// 用户统计信息
-const userStats = ref({
-  postCount: 8,
-  followingCount: 24,
-  followerCount: 156,
-})
-
-// 计算总点赞数
-const totalLikes = computed(() => {
-  return userPosts.value.reduce((sum, post) => sum + post.likeCount, 0)
-})
-
-// 计算总评论数
-const totalComments = computed(() => {
-  return userPosts.value.reduce((sum, post) => sum + post.commentCount, 0)
-})
-
-// 用户发布的帖子数据
-const userPosts = ref<Post[]>([])
-onMounted(async () => {
-  window.scrollTo(0, 0)
-  const tabParam = route.query.tab as string
-  if (tabParam && ['posts', 'following', 'followers', 'thoughts', 'reviews'].includes(tabParam)) {
-    currentTab.value = tabParam
-  }
-  const res = await getPosts()
-  userPosts.value = res.list
-  userStats.value.postCount = res.total
-})
-
-// 想法数据
-const thoughts = ref([
-  {
-    id: 1,
-    bookName: '置身事内',
-    date: '2025-05-20',
-    thought:
-      '地方政府热衷开发区的本质是在经营土地。风险在于人口流入一旦停止，游戏就难以为继。作者通过详实的案例和数据，揭示了地方政府与土地财政之间的紧密关系，让我对中国的经济运作有了更深入的理解。这种发展模式的可持续性值得思考。',
-    quote: '土地财政的本质，是政府将未来的土地收益提前变现。',
-  },
-  {
-    id: 2,
-    bookName: '当尼采哭泣',
-    date: '2025-04-29',
-    thought:
-      '布雷尔医生是我们大多数人的缩影，拥有世俗的成功，内心却充满对"未选生活"的恐惧。欧文·亚隆通过这部小说展现了心理治疗的魅力，尼采与布雷尔之间的对话充满了哲学智慧。每个人都在某种程度上害怕过自己真正想要的生活，这种恐惧往往源于对未知的担忧和对现有安全感的依恋。',
-    quote: '通过这一层层的面具，我看到了那个孤独的人。他不仅害怕死，更害怕生。',
-  },
-  {
-    id: 3,
-    bookName: '长安的荔枝',
-    date: '2025-02-15',
-    thought:
-      '职场生存守则第一条：永远不要相信领导画的饼，除非饼已经在你嘴里了。马伯庸通过唐代小吏的故事，生动展现了古代职场的种种规则。虽然时代不同，但人性与职场规则的本质并没有太大变化。这本书让我反思现代职场中的种种现象，以及如何在复杂的环境中保持自己的原则。',
-    quote: '流程，是弱者才遵守的规矩。',
-  },
-  {
-    id: 4,
-    bookName: '三体II',
-    date: '2025-01-10',
-    thought:
-      '罗辑才是真正的面壁者，欺骗世界也欺骗自己，只为最后的对决。黑暗森林理论让我重新思考宇宙文明之间的关系。刘慈欣的想象力令人惊叹，他将宏大的宇宙观与细腻的人性描写完美结合。这本书不仅是一部科幻作品，更是对人类社会、道德和文明的深刻思考。',
-    quote: '我有一个梦，也许有一天，灿烂的阳光能照进黑暗森林。',
-  },
-])
-
-// 书评数据
-const defaultCover =
-  'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=300'
-
-// 定义评级对应的配置
-const ratingConfig: RatingConfig = {
-  recommend: { label: '推荐', className: 'tag-recommend' },
-  average: { label: '一般', className: 'tag-average' },
-  bad: { label: '不行', className: 'tag-bad' },
-}
-
-const reviews = ref<ReviewCardItem[]>([
-  {
-    id: 1,
-    userName: '当前用户',
-    bookName: '置身事内',
-    cover: defaultCover,
-    rating: 'recommend',
-    date: '2024-05-20',
-    likes: 128,
-    content:
-      '这本书彻底改变了我对宏观经济的看法。它不是枯燥的理论堆砌，而是从地方政府的微观视角切入，通过详实的案例和数据，揭示了中国经济发展背后的真实逻辑。作者兰小欢教授用通俗易懂的语言，将复杂的政治经济学问题讲得深入浅出。特别值得一提的是，书中对地方政府与土地财政关系的分析，让我对城市化进程有了全新的认识。这本书不仅适合经济学专业的学生，也适合所有关心中国发展的普通读者。',
-  },
-  {
-    id: 2,
-    userName: '当前用户',
-    bookName: '当尼采哭泣',
-    cover:
-      'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=300',
-    rating: 'recommend',
-    date: '2024-04-15',
-    likes: 45,
-    content:
-      '欧文·亚隆将哲学和心理学融合得太完美了。这本书不仅是一部小说，更是一本心理治疗和哲学思考的杰作。作者虚构了尼采与布雷尔医生的会面，通过他们之间的对话，探讨了存在、孤独、自由、责任等深刻的哲学命题。书中的对话充满智慧，每一句话都值得反复品味。作为心理咨询的开山之作，它展现了心理治疗的魅力与深度。读完后，我不禁反思自己的人生选择和对生活的态度。',
-  },
-  {
-    id: 3,
-    userName: '当前用户',
-    bookName: '长安的荔枝',
-    cover:
-      'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=300',
-    rating: 'recommend',
-    date: '2024-02-10',
-    likes: 89,
-    content:
-      '马伯庸用一个小人物的视角，展现了大唐盛世的另一面。故事围绕"一骑红尘妃子笑，无人知是荔枝来"展开，讲述了小吏李善德如何克服重重困难，将鲜荔枝从岭南运到长安的惊险历程。这本书不仅是一部历史小说，更是一部职场生存指南。作者通过古代的故事，反映了现代职场的种种现象。书中的智慧和幽默让我在阅读过程中既感受到历史的厚重，又不乏轻松的阅读体验。',
-  },
-])
-
-// 关注列表数据
-const followingList = ref<FollowUser[]>([
-  {
-    id: 1,
-    username: '鱼鹅来了',
-    avatar: 'https://picsum.photos/100?random=10',
-    bio: '每天18点开播 请多多关注我 Q群1032791648',
-    isFollowing: true,
-  },
-  {
-    id: 2,
-    username: 'Borseronie',
-    avatar: 'https://picsum.photos/100?random=11',
-    bio: '成为砂砾、成为羽毛、成为狼。',
-    isFollowing: true,
-  },
-  {
-    id: 3,
-    username: '哔哩哔哩会员购',
-    avatar: 'https://picsum.photos/100?random=12',
-    bio: '【关注网购】每日为你传递最新的手办周边...',
-    isFollowing: true,
-  },
-  {
-    id: 4,
-    username: '哔哩哔哩漫画',
-    avatar: 'https://picsum.photos/100?random=13',
-    bio: '漫画授权，联动合作，品牌联名请发送邮件...',
-    isFollowing: true,
-  },
-  {
-    id: 5,
-    username: '读书达人小王',
-    avatar: 'https://picsum.photos/100?random=14',
-    bio: '每周读一本书，分享读书笔记',
-    isFollowing: true,
-  },
-  {
-    id: 6,
-    username: '文学爱好者小李',
-    avatar: 'https://picsum.photos/100?random=15',
-    bio: '专注于经典文学作品的解读',
-    isFollowing: true,
-  },
-])
-
-// 粉丝列表数据
-const followersList = ref<FollowUser[]>([
-  {
-    id: 7,
-    username: '新读者',
-    avatar: 'https://picsum.photos/100?random=16',
-    bio: '刚刚开始阅读之旅的新手',
-    isFollowing: true,
-  },
-  {
-    id: 8,
-    username: '书虫小张',
-    avatar: 'https://picsum.photos/100?random=17',
-    bio: '每天都要读书的忠实读者',
-    isFollowing: false,
-  },
-  {
-    id: 9,
-    username: '文学评论家',
-    avatar: 'https://picsum.photos/100?random=18',
-    bio: '专业文学评论，深度解析作品',
-    isFollowing: true,
-  },
-  {
-    id: 10,
-    username: '读书分享者',
-    avatar: 'https://picsum.photos/100?random=19',
-    bio: '分享好书，交流心得',
-    isFollowing: false,
-  },
-  {
-    id: 11,
-    username: '小说爱好者',
-    avatar: 'https://picsum.photos/100?random=20',
-    bio: '热爱各种类型的小说',
-    isFollowing: false,
-  },
-  {
-    id: 12,
-    username: '历史书迷',
-    avatar: 'https://picsum.photos/100?random=21',
-    bio: '专注于历史类书籍的阅读',
-    isFollowing: true,
-  },
-])
-
-// 处理点赞
-const handleLike = (postId: number, likeCount: number, isLiked: boolean) => {
-  const post = userPosts.value.find((p) => p.id === postId)
-  if (post) {
-    post.likeCount = likeCount
-    post.isLiked = isLiked
-  }
-}
-
-// 处理评论
-const handleComment = () => {
-  console.log('跳转到评论页面')
-}
-
-// 删除帖子
-const handleDeletePost = async (postId: number) => {
-  userPosts.value = userPosts.value.filter((post) => post.id !== postId)
-  userStats.value.postCount = userPosts.value.length
-  ElMessage.success('帖子删除成功')
-}
-
-// 删除想法
-const handleDeleteThought = (thoughtId: number) => {
-  thoughts.value = thoughts.value.filter((thought) => thought.id !== thoughtId)
-  ElMessage.success('想法删除成功')
-}
-
-// 删除书评
-const handleDeleteReview = (id: string | number) => {
-  reviews.value = reviews.value.filter((review) => review.id !== id)
-  ElMessage.success('书评删除成功')
-}
-
-// 更新关注列表
-const handleFollowingUpdate = (updatedUsers: FollowUser[]) => {
-  followingList.value = updatedUsers
-  userStats.value.followingCount = updatedUsers.length
-}
-
-// 更新粉丝列表
-const handleFollowersUpdate = (updatedUsers: FollowUser[]) => {
-  followersList.value = updatedUsers
-  userStats.value.followerCount = updatedUsers.length
-}
-
-// 监听路由参数变化，以便从UserProfileCard跳转时能切换到对应标签页
-onMounted(() => {
-  window.scrollTo(0, 0)
-
-  // 检查是否有tab参数
-  const tabParam = route.query.tab as string
-  if (tabParam && ['posts', 'following', 'followers', 'thoughts', 'reviews'].includes(tabParam)) {
-    currentTab.value = tabParam
-  }
-})
-
-// 监听路由变化
-watch(
-  () => route.query.tab,
-  (newTab) => {
-    if (
-      newTab &&
-      ['posts', 'following', 'followers', 'thoughts', 'reviews'].includes(newTab as string)
-    ) {
-      currentTab.value = newTab as string
-    }
-  },
-)
 
 const tabTitleMap: Record<string, string> = {
   posts: '我的发布',
@@ -525,12 +244,195 @@ const tabTitleMap: Record<string, string> = {
   reviews: '我的书评',
 }
 
-const pageTitle = computed(() => {
-  const tabTitle = tabTitleMap[currentTab.value] || '个人中心'
-  return `微信读书 - ${tabTitle}`
+// 切换标签页
+const switchTab = (tab: string) => {
+  currentTab.value = tab
+}
+
+/* -----------------------------------------
+     2. 业务数据状态
+  ----------------------------------------- */
+// 用户统计信息
+const userStats = ref({
+  postCount: 0,
+  followingCount: 0,
+  followerCount: 0,
 })
 
+// 帖子数据
+const userPosts = ref<Post[]>([])
+const isLoadingPosts = ref(false)
+
+// 想法数据
+const thoughts = ref<any[]>([])
+const isLoadingThoughts = ref(false)
+
+// 书评数据
+const reviews = ref<ReviewCardItem[]>([])
+const reviewTotalCount = ref(0)
+const isLoadingReviews = ref(false)
+const ratingConfig: RatingConfig = {
+  recommend: { label: '推荐', className: 'tag-recommend' },
+  average: { label: '一般', className: 'tag-average' },
+  bad: { label: '不行', className: 'tag-bad' },
+}
+
+// 用户关系数据 (关注/粉丝)
+const followingList = ref<FollowUser[]>([])
+const followersList = ref<FollowUser[]>([])
+const isLoadingRelations = ref(false)
+
+/* -----------------------------------------
+     3. 计算属性
+  ----------------------------------------- */
+const totalLikes = computed(() => userPosts.value.reduce((sum, post) => sum + post.likeCount, 0))
+const totalComments = computed(() =>
+  userPosts.value.reduce((sum, post) => sum + post.commentCount, 0),
+)
+const pageTitle = computed(() => `微信读书 - ${tabTitleMap[currentTab.value] || '个人中心'}`)
+
 useTitle(pageTitle)
+
+/* -----------------------------------------
+     4. 数据请求函数
+  ----------------------------------------- */
+// 获取帖子
+const fetchUserPosts = async () => {
+  try {
+    isLoadingPosts.value = true
+    const res = await getPosts()
+    userPosts.value = res.list
+    userStats.value.postCount = res.total
+  } catch (err) {
+    console.error('获取帖子失败:', err)
+  } finally {
+    isLoadingPosts.value = false
+  }
+}
+
+// 获取想法
+const fetchUserThoughts = async () => {
+  try {
+    isLoadingThoughts.value = true
+    const allNotes = await getUserNotes()
+    thoughts.value = allNotes
+      .filter((n: any) => n.noteType === 'thought')
+      .map((n: any) => ({
+        id: n.markId,
+        bookName: n.bookTitle,
+        date: n.noteCreatedAt,
+        thought: n.noteContent,
+        quote: n.quote,
+      }))
+  } catch (err) {
+    console.error('获取想法失败:', err)
+  } finally {
+    isLoadingThoughts.value = false
+  }
+}
+
+// 获取书评
+const fetchUserReviews = async () => {
+  try {
+    isLoadingReviews.value = true
+    const data = await getUserReviews()
+    reviews.value = data.reviews
+    reviewTotalCount.value = data.totalCount
+  } catch (err) {
+    console.error('获取书评失败:', err)
+  } finally {
+    isLoadingReviews.value = false
+  }
+}
+
+// 获取关注与粉丝
+const fetchUserRelations = async () => {
+  try {
+    isLoadingRelations.value = true
+    const [followingRes, followersRes] = await Promise.all([getFollowingList(), getFollowersList()])
+    followingList.value = followingRes.items
+    followersList.value = followersRes.items
+    userStats.value.followingCount = followingRes.items.length
+    userStats.value.followerCount = followersRes.items.length
+  } catch (err) {
+    console.error('获取用户关系失败:', err)
+  } finally {
+    isLoadingRelations.value = false
+  }
+}
+
+/* -----------------------------------------
+     5. 事件处理函数
+  ----------------------------------------- */
+// 点赞/评论
+const handleLike = (postId: number, likeCount: number, isLiked: boolean) => {
+  const post = userPosts.value.find((p) => p.id === postId)
+  if (post) {
+    post.likeCount = likeCount
+    post.isLiked = isLiked
+  }
+}
+const handleComment = () => console.log('跳转到评论页面')
+
+// 删除操作
+const handleDeletePost = async (postId: number) => {
+  userPosts.value = userPosts.value.filter((post) => post.id !== postId)
+  userStats.value.postCount = userPosts.value.length
+  ElMessage.success('帖子删除成功')
+}
+const handleDeleteThought = (thoughtId: number) => {
+  thoughts.value = thoughts.value.filter((thought) => thought.id !== thoughtId)
+  ElMessage.success('想法删除成功')
+}
+const handleDeleteReview = (id: string | number) => {
+  reviews.value = reviews.value.filter((review) => review.id !== id)
+  ElMessage.success('书评删除成功')
+}
+
+// 关系列表更新
+const handleFollowingUpdate = (updatedUsers: FollowUser[]) => {
+  followingList.value = updatedUsers
+  userStats.value.followingCount = updatedUsers.length
+}
+const handleFollowersUpdate = (updatedUsers: FollowUser[]) => {
+  followersList.value = updatedUsers
+}
+
+// 模拟跳转
+const goToCreatePost = () => console.log('跳转到发布页面')
+const goToCreateThought = () => console.log('跳转到记录想法页面')
+const goToCreateReview = () => console.log('跳转到撰写书评页面')
+
+/* -----------------------------------------
+     6. 生命周期与监听
+  ----------------------------------------- */
+onMounted(async () => {
+  window.scrollTo(0, 0)
+
+  // 1. 同步 URL 参数中的 Tab
+  const tabParam = route.query.tab as string
+  if (tabParam && tabTitleMap[tabParam]) {
+    currentTab.value = tabParam
+  }
+
+  // 2. 初始数据加载
+  await Promise.all([
+    fetchUserPosts(),
+    fetchUserThoughts(),
+    fetchUserReviews(),
+    fetchUserRelations(),
+  ])
+})
+
+// 监听路由 Tab 参数变化
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (newTab && tabTitleMap[newTab as string]) {
+      currentTab.value = newTab as string
+    }
+  },
+)
 </script>
 
 <style scoped>

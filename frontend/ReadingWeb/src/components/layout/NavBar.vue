@@ -70,15 +70,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { getProfileHome } from '@/api/profile' // 引入获取用户信息的接口
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, ArrowDown, User, SwitchButton } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const defaultAvatar = 'https://picsum.photos/id/1027/200'
+// --- 新增：组件挂载时获取最新用户信息 ---
+onMounted(async () => {
+  // 如果已经登录，且当前 store 里没头像（或者想每次刷新都同步一下）
+  if (userStore.isLoggedIn) {
+    try {
+      const profileData = await getProfileHome()
+      userStore.userInfo = {
+        ...userStore.userInfo,
+        name: profileData.username, // 将接口的 username 映射到 store 的 name
+        avatar: profileData.avatar,
+      }
+    } catch (error) {
+      console.error('获取导航栏用户信息失败:', error)
+    }
+  }
+})
 
 const searchInput = ref('')
 

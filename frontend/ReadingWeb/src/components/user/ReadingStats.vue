@@ -18,10 +18,10 @@
           <!-- 情况1：处理阅读时长 (分钟转换) -->
           <template v-if="k === 'duration'">
             <template v-if="Math.floor(v / 60) > 0">
-              {{ Math.floor(v / 60) }}<span class="unit">小时</span>
+              {{ Math.floor(v / 60) }}<span class="unit"> 小时 </span>
             </template>
             <template v-if="v % 60 > 0 || v === 0">
-              {{ v % 60 }}<span class="unit">分钟</span>
+              {{ v % 60 }}<span class="unit"> 分钟 </span>
             </template>
           </template>
 
@@ -63,9 +63,9 @@ const labels = {
 
 // 新增：定义对应字段的单位
 const units = {
-  booksRead: '本',
-  booksFinished: '本',
-  notes: '条',
+  booksRead: ' 本',
+  booksFinished: ' 本',
+  notes: ' 条',
 }
 
 // -----------------------------

@@ -27,8 +27,8 @@ public class CommunityController {
      */
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<CommentVO> createComment(
-        @PathVariable Long postId,
-        @RequestAttribute("userId") Long userId, // 从 JWT/Filter 中获取当前用户ID
+        @PathVariable Integer postId,
+        @RequestAttribute("userId") Integer userId, // 从 JWT/Filter 中获取当前用户ID
         @RequestBody @Valid CommentCreationDTO dto) {
         
         CommentVO commentVO = communityService.createComment(postId, userId, dto);
@@ -40,10 +40,10 @@ public class CommunityController {
      */
     @GetMapping("/pesponseosts/{postId}/comments")
     public ResponseEntity<CommentListVO> getPostComments(
-        @PathVariable Long postId,
+        @PathVariable Integer postId,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "10") int limit,
-        @RequestAttribute(value = "userId", required = false) Long currentUserId) { // currentUserId 可选
+        @RequestAttribute(value = "userId", required = false) Integer currentUserId) { // currentUserId 可选
         
         CommentListVO vo = communityService.getPostComments(postId, page, limit, currentUserId);
         return ResponseEntity.ok(vo);
@@ -54,10 +54,10 @@ public class CommunityController {
      */
     @GetMapping("/comments/{commentId}/replies")
     public ResponseEntity<List<CommentVO>> getCommentReplies(
-        @PathVariable Long commentId,
+        @PathVariable Integer commentId,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "10") int limit,
-        @RequestAttribute(value = "userId", required = false) Long currentUserId) {
+        @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
         
         List<CommentVO> replies = communityService.getCommentReplies(commentId, page, limit, currentUserId);
         return ResponseEntity.ok(replies);

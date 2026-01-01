@@ -9,44 +9,44 @@ import com.weread.entity.user.UserEntity;
 
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<UserEntity, Long> {
+public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     Optional<UserEntity> findByPhone(String phone);
     boolean existsByPhone(String phone);
-    Optional<UserEntity> findByUserId(Long userId);
+    Optional<UserEntity> findByUserId(Integer userId);
     
     /**
      * 【新增】更新用户的 isMember 状态
      */
     @Modifying
     @Query("UPDATE UserEntity u SET u.isMember = :isMemberStatus WHERE u.userId = :userId")
-    int updateIsMemberStatus(@Param("userId") Long userId, @Param("isMemberStatus") Boolean isMemberStatus);
+    int updateIsMemberStatus(@Param("userId") Integer userId, @Param("isMemberStatus") Boolean isMemberStatus);
 
     /**
      * 关注者（follower）的关注数 (followingCount) +1
      */
     @Modifying
     @Query("UPDATE UserEntity u SET u.followingCount = u.followingCount + 1 WHERE u.userId = :userId")
-    void incrementFollowingCount(@Param("userId") Long userId);
+    void incrementFollowingCount(@Param("userId") Integer userId);
 
     /**
      * 被关注者（following）的粉丝数 (followerCount) +1
      */
     @Modifying
     @Query("UPDATE UserEntity u SET u.followerCount = u.followerCount + 1 WHERE u.userId = :userId")
-    void incrementFollowerCount(@Param("userId") Long userId);
+    void incrementFollowerCount(@Param("userId") Integer userId);
 
     /**
      * 关注者（follower）的关注数 (followingCount) -1
      */
     @Modifying
     @Query("UPDATE UserEntity u SET u.followingCount = u.followingCount - 1 WHERE u.userId = :userId AND u.followingCount > 0")
-    void decrementFollowingCount(@Param("userId") Long userId);
+    void decrementFollowingCount(@Param("userId") Integer userId);
 
     /**
      * 被关注者（following）的粉丝数 (followerCount) -1
      */
     @Modifying
     @Query("UPDATE UserEntity u SET u.followerCount = u.followerCount - 1 WHERE u.userId = :userId AND u.followerCount > 0")
-    void decrementFollowerCount(@Param("userId") Long userId);
+    void decrementFollowerCount(@Param("userId") Integer userId);
     
 }

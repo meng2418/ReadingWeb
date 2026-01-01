@@ -15,7 +15,7 @@ public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long userId;
+    private Integer userId;
 
     @Column(name = "username", unique = true, nullable = false, length = 255)
     private String username;
@@ -36,7 +36,7 @@ public class UserEntity {
     private Boolean isMember = false;
 
     @Column(name = "member_end_date", nullable = false)
-    private LocalDateTime memberEndDate;
+    private LocalDateTime memberEndDate=LocalDateTime.now();
 
     @Column(name = "coins", nullable = false)
     private Integer coins = 0;

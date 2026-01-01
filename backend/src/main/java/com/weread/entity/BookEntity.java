@@ -70,7 +70,7 @@ public class BookEntity {
     private LocalDateTime updatedAt; // 最后更新时间
 
     @Column(name = "created_at", updatable = false) 
-    private LocalDateTime createdAt; 
+    private LocalDateTime createdAt;   //需要一个最近打开时间
 
     // Custom logic to set creation time and default values if not set by the database
     @PrePersist
@@ -104,5 +104,10 @@ public class BookEntity {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public String getAuthorName() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAuthorName'");
     }
 }
