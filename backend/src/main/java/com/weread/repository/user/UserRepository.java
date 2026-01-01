@@ -7,12 +7,14 @@ import org.springframework.data.repository.query.Param;
 
 import com.weread.entity.user.UserEntity;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     Optional<UserEntity> findByPhone(String phone);
     boolean existsByPhone(String phone);
     Optional<UserEntity> findByUserId(Integer userId);
+    Optional<UserEntity> findByUsername(String username);
     
     /**
      * 【新增】更新用户的 isMember 状态
@@ -62,5 +64,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     @Modifying
     @Query("UPDATE UserEntity u SET u.coins = u.coins - :amount, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userOd = :userId AND u.coins >= :amount")
     int deductCoins(@Param("userId") Integer userId, @Param("amount") Integer amount);
-    
+    boolean existsByUsername(String username);
+    void updateLastLoginTime(Integer userId, LocalDateTime now);    
 }

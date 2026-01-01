@@ -58,4 +58,9 @@ public class UserEntity {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public Object getMembershipExpireAt() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getMembershipExpireAt'");
+    }
 }
