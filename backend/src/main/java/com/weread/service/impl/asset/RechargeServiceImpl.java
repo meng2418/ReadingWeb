@@ -3,7 +3,6 @@ package com.weread.service.impl.asset;
 import com.weread.dto.asset.RechargeRequestDTO;
 import com.weread.entity.asset.RechargeOrderEntity;
 import com.weread.entity.asset.RechargePackageEntity;
-import com.weread.entity.user.UserEntity;
 import com.weread.repository.asset.RechargeOrderRepository;
 import com.weread.repository.asset.RechargePackageRepository;
 import com.weread.repository.user.UserRepository;
@@ -18,7 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -74,13 +72,6 @@ public class RechargeServiceImpl implements RechargeService {
         // 4. 保存订单
         order = rechargeOrderRepository.save(order);
         
-        // 5. 获取当前用户币数 - 检查UserRepository中的方法
-        Integer currentCoins = userRepository.findCoinsByUserId(userId)
-            .orElseGet(() -> {
-                // 如果直接查询coins不存在，使用findById获取用户
-                Optional<UserEntity> user = userRepository.findById(userId);
-                return user.map(UserEntity::getCoins).orElse(0);
-            });
         
         // 6. 构建响应
         RechargeResponseVO response = new RechargeResponseVO();
@@ -88,12 +79,6 @@ public class RechargeServiceImpl implements RechargeService {
         response.setCoinAmount(order.getCoinAmount());
         response.setBonusCoins(order.getBonusCoins());
         
-        // 7. 根据支付方式生成支付信息
-        if ("wechat".equals(request.getPaymentMethod())) {
-            // response.setPayUrl(generateWechatPayUrl(order));
-        } else if ("alipay".equals(request.getPaymentMethod())) {
-            // response.setPayUrl(generateAlipayUrl(order));
-        }
         
         return response;
     }
