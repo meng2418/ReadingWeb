@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RechargePackageRepository extends JpaRepository<RechargePackageEntity, Integer> {
@@ -17,5 +18,6 @@ public interface RechargePackageRepository extends JpaRepository<RechargePackage
     /**
      * 根据ID获取启用的充值套餐
      */
-    RechargePackageEntity findByPackageIdAndIsActiveTrue(Integer packageId);
+    // 正确的方法声明：返回 Optional<RechargePackageEntity>
+    Optional<RechargePackageEntity> findByPackageIdAndIsActiveTrue(Integer packageId);
 }

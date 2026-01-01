@@ -45,4 +45,8 @@ public class RechargePackageEntity {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    
+
+    
 }

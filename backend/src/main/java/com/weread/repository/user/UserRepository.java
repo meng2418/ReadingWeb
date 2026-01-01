@@ -48,5 +48,19 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     @Modifying
     @Query("UPDATE UserEntity u SET u.followerCount = u.followerCount - 1 WHERE u.userId = :userId AND u.followerCount > 0")
     void decrementFollowerCount(@Param("userId") Integer userId);
+
+    // 查询用户币数
+    @Query("SELECT u.coins FROM UserEntity u WHERE u.userId = :userId")
+    Optional<Integer> findCoinsByUserId(@Param("userId") Integer userId);
+    
+    // 增加用户币数
+    @Modifying
+    @Query("UPDATE UserEntity u SET u.coins = u.coins + :amount, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId")
+    int addCoins(@Param("userId") Integer userId, @Param("amount") Integer amount);
+    
+    // 扣减用户币数（需要确保余额充足）
+    @Modifying
+    @Query("UPDATE UserEntity u SET u.coins = u.coins - :amount, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userOd = :userId AND u.coins >= :amount")
+    int deductCoins(@Param("userId") Integer userId, @Param("amount") Integer amount);
     
 }
