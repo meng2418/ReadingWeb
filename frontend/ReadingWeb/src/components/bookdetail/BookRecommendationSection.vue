@@ -41,11 +41,38 @@
       </div>
     </div>
 
+    <!-- 下半部分：三个按钮横向排列 -->
+    <div class="bottom-section">
+      <!-- 修改：根据用户评分状态添加active类 -->
+      <button
+        class="rating-button recommend"
+        :class="{ 'rated-active': userHasReviewed && userReview?.rating === 'recommend' }"
+        @click="handleRate('recommend')"
+      >
+        {{ userHasReviewed && userReview?.rating === 'recommend' ? '已推荐' : '推荐' }}
+      </button>
+      <button
+        class="rating-button average"
+        :class="{ 'rated-active': userHasReviewed && userReview?.rating === 'average' }"
+        @click="handleRate('average')"
+      >
+        {{ userHasReviewed && userReview?.rating === 'average' ? '已评一般' : '一般' }}
+      </button>
+      <button
+        class="rating-button poor"
+        :class="{ 'rated-active': userHasReviewed && userReview?.rating === 'poor' }"
+        @click="handleRate('poor')"
+      >
+        {{ userHasReviewed && userReview?.rating === 'poor' ? '已评不行' : '不行' }}
+      </button>
+    </div>
   </div>
+
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 // 定义props
 interface Props {
@@ -56,6 +83,8 @@ interface Props {
     average: number
     poor: number
   }
+  bookId?: string
+  bookTitle?: string
   isDarkMode?: boolean  // 添加深色模式props
 }
 
@@ -67,12 +96,23 @@ const props = withDefaults(defineProps<Props>(), {
     average: 20,
     poor: 10
   }),
+  bookId: '',
+  bookTitle: '',
   isDarkMode: false  // 默认浅色模式
 })
+
+// 修改：获取路由实例
+const route = useRoute()
+const router = useRouter()
+
+// 修改：添加响应式数据跟踪用户评分
+const userHasReviewed = ref(false)
+const userReview = ref<{ rating?: string } | null>(null)
 
 // 定义事件
 const emit = defineEmits<{
   viewReviews: []
+  rateBook: [rating: string]
 }>()
 
 // 计算各评分选项的百分比 - 直接使用传递的百分比数据
@@ -91,7 +131,73 @@ const handleViewReviews = () => {
   emit('viewReviews')
 }
 
+// 修改：检查用户是否已评分
+const checkUserReview = () => {
+  if (!props.bookId) return
+
+  try {
+    // 获取当前用户ID（这里用固定用户，实际项目中应该从登录状态获取）
+    const currentUserId = getCurrentUserId()
+
+    // 从localStorage获取用户的所有点评
+    const userReviews = JSON.parse(localStorage.getItem('userReviews') || '{}')
+
+    if (userReviews[currentUserId] && userReviews[currentUserId][props.bookId]) {
+      userHasReviewed.value = true
+      userReview.value = userReviews[currentUserId][props.bookId]
+    } else {
+      userHasReviewed.value = false
+      userReview.value = null
+    }
+  } catch (error) {
+    console.error('检查用户点评失败:', error)
+    userHasReviewed.value = false
+    userReview.value = null
+  }
+}
+
+// 获取当前用户ID（简化版，实际项目中应该从登录状态获取）
+const getCurrentUserId = () => {
+  // 尝试从localStorage获取用户ID
+  let userId = localStorage.getItem('currentUserId')
+
+  // 如果没有用户ID，创建一个新的（模拟新用户）
+  if (!userId) {
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    localStorage.setItem('currentUserId', userId)
+  }
+
+  return userId
+}
+
 // 评分
+const handleRate = (rating: string) => {
+  console.log('评分:', rating)
+  emit('rateBook', rating)
+
+  // 修改：跳转到写点评页面时传递书籍信息和编辑模式
+  router.push({
+    path: '/writereview',
+    query: {
+      bookId: props.bookId,
+      bookTitle: props.bookTitle,
+      rating: rating,
+      editMode: userHasReviewed.value ? 'true' : 'false'
+    }
+  })
+}
+
+// 修改：监听路由变化，检查评分状态
+watch(() => route.query, (newQuery) => {
+  if (newQuery.refresh === 'true') {
+    checkUserReview()
+  }
+}, { immediate: true })
+
+// 修改：组件挂载时检查评分状态
+onMounted(() => {
+  checkUserReview()
+})
 </script>
 
 <style scoped>

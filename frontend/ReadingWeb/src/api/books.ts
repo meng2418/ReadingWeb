@@ -79,73 +79,114 @@ const mapBookDetail = (raw: BookDetailRaw, bookId: string | number): BookDetail 
   authorBio: raw.authorBio,
 })
 
+export interface BookReview {
+  avatar: string
+  username: string
+  rating: 'recommend' | 'average' | 'not_recommend'
+  reviewTime: string
+  content: string
+}
+
+export interface AuthorWork {
+  cover: string
+  bookTitle: string
+  description: string
+}
+
+export interface RelatedBook {
+  cover: string
+  title: string
+  description: string
+}
+
+export interface AuthorDetail {
+  id: number
+  name: string
+  description: string
+  worksCount: number
+}
+
+export interface AuthorWorkWithId {
+  id: number
+  title: string
+  summary: string
+  cover?: string
+  readersCount: number
+  recommendationRate: number
+  authorName?: string
+}
+
+// 作者详情接口响应类型
+export interface AuthorDetailResponse {
+  authorId: number
+  authorName: string
+  authorBio: string
+  followerCount: number
+  isFollowing: boolean
+  works: Array<{
+    bookId: number
+    bookTitle: string
+    authorName: string
+    cover: string
+    rating: number
+    readCount: number
+    description: string
+  }>
+  workCount: number
+}
+
+export const getBookReviews = async (bookId: string | number): Promise<BookReview[]> => {
+  const res = await request.get<BookReview[]>(`/books/${bookId}/reviews`)
+  return unwrap(res)
+}
+
+export const getAuthorWorks = async (bookId: string | number): Promise<AuthorWork[]> => {
+  const res = await request.get<AuthorWork[]>(`/books/${bookId}/author-works`)
+  return unwrap(res)
+}
+
+export const getRelatedBooks = async (bookId: string | number): Promise<RelatedBook[]> => {
+  const res = await request.get<RelatedBook[]>(`/books/${bookId}/related`)
+  return unwrap(res)
+}
+
 export const getBookDetail = async (bookId: string | number): Promise<BookDetail> => {
-  try {
-    const res = await request.get<BookDetailRaw>(`/books/${bookId}`)
-    const rawData = unwrap(res)
+  const res = await request.get<BookDetailRaw>(`/books/${bookId}`)
+  const rawData = unwrap(res)
+  return mapBookDetail(rawData, bookId)
+}
 
-    // 如果API没有返回数据，使用默认数据进行测试
-    if (!rawData || !rawData.bookTitle) {
-      console.log('API没有返回有效数据，使用默认数据')
-      const mockData: BookDetailRaw = {
-        cover: 'https://picsum.photos/200/280?random=25',
-        bookTitle: '少年Pi的奇幻漂流',
-        author: '扬·马特尔',
-        rating: 90.5,
-        readCount: 183000,
-        description: '《少年Pi的奇幻漂流》是加拿大作家扬·马特尔于2001年发表的虚构小说，描述一名印度男孩Pi在太平洋上与一只孟加拉虎同船而行的冒险故事。这部小说探讨了信仰、生存和人类与自然的关系等深刻主题，获得了2002年的布克奖及亚洲/太平洋美洲文学奖。',
-        isFinished: false,
-        isInBookshelf: false,
-        hasStarted: true,
-        readingCount: 183000,
-        finishedCount: 76000,
-        readingStatus: 'reading',
-        wordCount: 113000,
-        publishDate: '2021-07-01',
-        isFreeForMember: true,
-        price: 4900,
-        ratingDetail: {
-          recommendPercent: 70,
-          averagePercent: 20,
-          notRecommendPercent: 10,
-        },
-        ratingCount: 1250,
-        authorBio: '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
-      }
-      return mapBookDetail(mockData, bookId)
-    }
+/**
+ * 获取作者详情
+ */
+export const getAuthorDetail = async (authorId: number): Promise<AuthorDetail> => {
+  const res = await request.get<AuthorDetailResponse>(`/authors/${authorId}`)
+  const data = unwrap(res)
 
-    return mapBookDetail(rawData, bookId)
-  } catch (error) {
-    console.error('获取书籍详情失败，使用默认数据:', error)
-
-    // 返回默认数据以确保界面能正常显示
-    const defaultData: BookDetailRaw = {
-      cover: 'https://picsum.photos/200/280?random=25',
-      bookTitle: '少年Pi的奇幻漂流',
-      author: '扬·马特尔',
-      rating: 90.5,
-      readCount: 183000,
-      description: '《少年Pi的奇幻漂流》是加拿大作家扬·马特尔于2001年发表的虚构小说，描述一名印度男孩Pi在太平洋上与一只孟加拉虎同船而行的冒险故事。这部小说探讨了信仰、生存和人类与自然的关系等深刻主题，获得了2002年的布克奖及亚洲/太平洋美洲文学奖。',
-      isFinished: false,
-      isInBookshelf: false,
-      hasStarted: true,
-      readingCount: 183000,
-      finishedCount: 76000,
-      readingStatus: 'reading',
-      wordCount: 113000,
-      publishDate: '2021-07-01',
-      isFreeForMember: true,
-      price: 4900,
-      ratingDetail: {
-        recommendPercent: 70,
-        averagePercent: 20,
-        notRecommendPercent: 10,
-      },
-      ratingCount: 1250,
-      authorBio: '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
-    }
-
-    return mapBookDetail(defaultData, bookId)
+  // 将接口数据映射为前端需要的格式
+  return {
+    id: data.authorId,
+    name: data.authorName,
+    description: data.authorBio,
+    worksCount: data.workCount
   }
+}
+
+/**
+ * 获取作者所有作品
+ */
+export const getAuthorAllWorks = async (authorId: number): Promise<AuthorWorkWithId[]> => {
+  const res = await request.get<AuthorDetailResponse>(`/authors/${authorId}`)
+  const data = unwrap(res)
+
+  // 将接口数据映射为前端需要的格式
+  return data.works.map(work => ({
+    id: work.bookId,
+    title: work.bookTitle,
+    summary: work.description,
+    cover: work.cover,
+    readersCount: work.readCount,
+    recommendationRate: work.rating,
+    authorName: work.authorName
+  }))
 }
