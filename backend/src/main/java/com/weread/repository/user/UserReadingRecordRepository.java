@@ -45,5 +45,11 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
     List<Object[]> findMonthlyStatsByUserIdAndDateRange(@Param("userId") Integer userId,
                                                        @Param("startDate") LocalDate startDate,
                                                        @Param("endDate") LocalDate endDate);
+
+    Integer countDistinctBooksByUserId(Integer userId);
+
+    List<Object[]> findTopBooksByUserIdAndPeriod(Integer userId, LocalDate startDate, LocalDate endDate, int i);
+
+    Integer countFinishedBooksByUserId(Integer userId);
 }
 

@@ -1,14 +1,23 @@
 package com.weread.service.impl.user;
 
 import com.weread.entity.user.UserReadingRecordEntity;
+import com.weread.entity.user.ReadingMilestoneEntity;
 import com.weread.entity.user.ReadingRewardEntity;
+import com.weread.entity.BookEntity;
 import com.weread.entity.asset.MemberCardEntity;
 import com.weread.repository.user.UserReadingRecordRepository;
 import com.weread.repository.user.ReadingRewardRepository;
+import com.weread.repository.BookRepository;
 import com.weread.repository.asset.MemberCardRepository;
+import com.weread.repository.user.ReadingMilestoneRepository;
+import com.weread.repository.note.NoteRepository;
 import com.weread.service.user.ReadingService;
+import com.weread.vo.user.MilestoneVO;
 import com.weread.vo.user.ReadingTimeStatItemVO;
 import com.weread.vo.user.TodayReadingTimeVO;
+import com.weread.vo.user.TopBooksVO;
+
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,6 +31,7 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +41,9 @@ public class ReadingServiceImpl implements ReadingService {
     private final UserReadingRecordRepository readingRecordRepository;
     private final ReadingRewardRepository readingRewardRepository;
     private final MemberCardRepository memberCardRepository;
+    private final ReadingMilestoneRepository readingMilestoneRepository;
+    private final BookRepository bookRepository; 
+    private final NoteRepository noteRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -259,5 +272,256 @@ public class ReadingServiceImpl implements ReadingService {
         // 这里实现更新连续阅读天数的逻辑
         // 可以查询最近几天的阅读记录，计算连续天数
         log.debug("更新用户 {} 的连续阅读天数", userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TopBooksVO getTopBooksByPeriod(Integer userId, String period) {
+        TopBooksVO vo = new TopBooksVO();
+        vo.setPeriod(period);
+        
+        LocalDate startDate = getStartDateByPeriod(period);
+        LocalDate endDate = LocalDate.now();
+        
+        // 查询该时间段内阅读时间最长的书籍
+        List<Object[]> topBooksData = readingRecordRepository.findTopBooksByUserIdAndPeriod(
+                userId, startDate, endDate, 3);
+        
+        TopBooksVO.TopBookItem[] topBooks = new TopBooksVO.TopBookItem[Math.min(topBooksData.size(), 3)];
+        
+        for (int i = 0; i < Math.min(topBooksData.size(), 3); i++) {
+            Object[] data = topBooksData.get(i);
+            TopBooksVO.TopBookItem item = new TopBooksVO.TopBookItem();
+            item.setBookId((Integer) data[0]);
+            item.setBookTitle((String) data[1]);
+            item.setReadingTime(((Number) data[2]).intValue());
+            
+            // 获取书籍封面和其他信息
+            Optional<BookEntity> bookOpt = bookRepository.findById(item.getBookId());
+            if (bookOpt.isPresent()) {
+                BookEntity book = bookOpt.get();
+                item.setCover(book.getCover());
+                item.setAuthorName(book.getAuthorName());
+                item.setCategoryId(book.getCategoryId());
+            }
+            
+            topBooks[i] = item;
+        }
+        
+        vo.setTopBooks(topBooks);
+        return vo;
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public MilestoneVO getLatestMilestones(Integer userId) {
+        MilestoneVO vo = new MilestoneVO();
+        
+        // 获取累计阅读里程碑
+        Optional<ReadingMilestoneEntity> totalReadingOpt = readingMilestoneRepository
+                .findTopByUserIdAndMilestoneTypeAndIsLatestTrueOrderByTargetCountDesc(
+                        userId, "total_reading");
+        totalReadingOpt.ifPresent(milestone -> {
+            MilestoneVO.TotalReadingMilestone m = new MilestoneVO.TotalReadingMilestone();
+            m.setTargetCount(milestone.getTargetCount());
+            m.setAchievedBookTitle(milestone.getBookTitle());
+            m.setAchievedAt(milestone.getAchievedAt());
+            m.setMessage(milestone.getMessage());
+            vo.setTotalReadingMilestone(m);
+        });
+        
+        // 获取笔记数量里程碑
+        Optional<ReadingMilestoneEntity> noteCountOpt = readingMilestoneRepository
+                .findTopByUserIdAndMilestoneTypeAndIsLatestTrueOrderByTargetCountDesc(
+                        userId, "note_count");
+        noteCountOpt.ifPresent(milestone -> {
+            MilestoneVO.NoteCountMilestone m = new MilestoneVO.NoteCountMilestone();
+            m.setTargetCount(milestone.getTargetCount());
+            m.setAchievedBookTitle(milestone.getBookTitle());
+            m.setAchievedNoteContent(milestone.getNoteContentPreview());
+            m.setAchievedAt(milestone.getAchievedAt());
+            m.setMessage(milestone.getMessage());
+            vo.setNoteCountMilestone(m);
+        });
+        
+        // 获取读完本数里程碑
+        Optional<ReadingMilestoneEntity> finishedReadingOpt = readingMilestoneRepository
+                .findTopByUserIdAndMilestoneTypeAndIsLatestTrueOrderByTargetCountDesc(
+                        userId, "finished_reading");
+        finishedReadingOpt.ifPresent(milestone -> {
+            MilestoneVO.FinishedReadingMilestone m = new MilestoneVO.FinishedReadingMilestone();
+            m.setTargetCount(milestone.getTargetCount());
+            m.setAchievedBookTitle(milestone.getBookTitle());
+            m.setAchievedAt(milestone.getAchievedAt());
+            m.setMessage(milestone.getMessage());
+            vo.setFinishedReadingMilestone(m);
+        });
+        
+        return vo;
+    }
+    
+    @Override
+    @Transactional
+    public void checkAndUpdateMilestones(Integer userId, String actionType, Object data) {
+        // 根据actionType更新对应的里程碑
+        switch (actionType) {
+            case "read_book":
+                updateTotalReadingMilestone(userId, data);
+                break;
+            case "add_note":
+                updateNoteCountMilestone(userId, data);
+                break;
+            case "finish_book":
+                updateFinishedReadingMilestone(userId, data);
+                break;
+        }
+    }
+    
+    // ============ 私有方法 ============
+    
+    private LocalDate getStartDateByPeriod(String period) {
+        LocalDate today = LocalDate.now();
+        
+        switch (period.toLowerCase()) {
+            case "week":
+                return today.minusDays(today.getDayOfWeek().getValue() - 1); // 本周一
+            case "month":
+                return today.withDayOfMonth(1); // 本月第一天
+            case "year":
+                return today.withDayOfYear(1); // 本年第一天
+            case "total":
+                return LocalDate.of(2000, 1, 1); // 很早的日期，表示全部
+            default:
+                return today.minusDays(today.getDayOfWeek().getValue() - 1); // 默认本周
+        }
+    }
+    
+    private void updateTotalReadingMilestone(Integer userId, Object data) {
+        // 获取用户累计阅读的书籍数量
+        Integer totalBooksRead = readingRecordRepository.countDistinctBooksByUserId(userId);
+        
+        // 里程碑阈值：20, 40, 60, 80, 100, 150, 200, 300, 500...
+        Integer[] milestones = {20, 40, 60, 80, 100, 150, 200, 300, 500};
+        
+        for (int milestone : milestones) {
+            if (totalBooksRead >= milestone) {
+                // 检查是否已经记录过这个里程碑
+                boolean exists = readingMilestoneRepository.existsByUserIdAndMilestoneTypeAndTargetCount(
+                        userId, "total_reading", milestone);
+                
+                if (!exists) {
+                    // 将之前的里程碑标记为非最新
+                    readingMilestoneRepository.markAllAsNotLatest(userId, "total_reading");
+                    
+                    // 创建新的里程碑记录
+                    ReadingMilestoneEntity milestoneEntity = new ReadingMilestoneEntity();
+                    milestoneEntity.setUserId(userId);
+                    milestoneEntity.setMilestoneType("total_reading");
+                    milestoneEntity.setTargetCount(milestone);
+                    milestoneEntity.setMessage(String.format("恭喜！您已累计阅读%d本书", milestone));
+                    milestoneEntity.setAchievedAt(LocalDateTime.now());
+                    milestoneEntity.setIsLatest(true);
+                    
+                    // 如果是书籍数据，设置书籍信息
+                    if (data instanceof BookData) {
+                        BookData bookData = (BookData) data;
+                        milestoneEntity.setBookId(bookData.getBookId());
+                        milestoneEntity.setBookTitle(bookData.getBookTitle());
+                    }
+                    
+                    readingMilestoneRepository.save(milestoneEntity);
+                }
+            }
+        }
+    }
+    
+    private void updateNoteCountMilestone(Integer userId, Object data) {
+        // 获取用户笔记总数
+        Integer totalNotes = noteRepository.countByUserId(userId);
+        
+        // 里程碑阈值：50, 100, 150, 200, 300, 500, 1000...
+        Integer[] milestones = {50, 100, 150, 200, 300, 500, 1000};
+        
+        for (int milestone : milestones) {
+            if (totalNotes >= milestone) {
+                boolean exists = readingMilestoneRepository.existsByUserIdAndMilestoneTypeAndTargetCount(
+                        userId, "note_count", milestone);
+                
+                if (!exists) {
+                    readingMilestoneRepository.markAllAsNotLatest(userId, "note_count");
+                    
+                    ReadingMilestoneEntity milestoneEntity = new ReadingMilestoneEntity();
+                    milestoneEntity.setUserId(userId);
+                    milestoneEntity.setMilestoneType("note_count");
+                    milestoneEntity.setTargetCount(milestone);
+                    milestoneEntity.setMessage(String.format("恭喜！您已创作%d条笔记", milestone));
+                    milestoneEntity.setAchievedAt(LocalDateTime.now());
+                    milestoneEntity.setIsLatest(true);
+                    
+                    // 如果是笔记数据，设置笔记信息
+                    if (data instanceof NoteData) {
+                        NoteData noteData = (NoteData) data;
+                        milestoneEntity.setNoteId(noteData.getNoteId());
+                        milestoneEntity.setNoteContentPreview(noteData.getContentPreview());
+                        milestoneEntity.setBookId(noteData.getBookId());
+                        milestoneEntity.setBookTitle(noteData.getBookTitle());
+                    }
+                    
+                    readingMilestoneRepository.save(milestoneEntity);
+                }
+            }
+        }
+    }
+    
+    private void updateFinishedReadingMilestone(Integer userId, Object data) {
+        // 获取用户读完的书籍数量
+        Integer finishedBooks = readingRecordRepository.countFinishedBooksByUserId(userId);
+        
+        // 里程碑阈值：10, 20, 30, 50, 100, 200...
+        Integer[] milestones = {10, 20, 30, 50, 100, 200};
+        
+        for (int milestone : milestones) {
+            if (finishedBooks >= milestone) {
+                boolean exists = readingMilestoneRepository.existsByUserIdAndMilestoneTypeAndTargetCount(
+                        userId, "finished_reading", milestone);
+                
+                if (!exists) {
+                    readingMilestoneRepository.markAllAsNotLatest(userId, "finished_reading");
+                    
+                    ReadingMilestoneEntity milestoneEntity = new ReadingMilestoneEntity();
+                    milestoneEntity.setUserId(userId);
+                    milestoneEntity.setMilestoneType("finished_reading");
+                    milestoneEntity.setTargetCount(milestone);
+                    milestoneEntity.setMessage(String.format("恭喜！您已读完%d本书", milestone));
+                    milestoneEntity.setAchievedAt(LocalDateTime.now());
+                    milestoneEntity.setIsLatest(true);
+                    
+                    // 如果是完成阅读数据，设置书籍信息
+                    if (data instanceof BookData) {
+                        BookData bookData = (BookData) data;
+                        milestoneEntity.setBookId(bookData.getBookId());
+                        milestoneEntity.setBookTitle(bookData.getBookTitle());
+                    }
+                    
+                    readingMilestoneRepository.save(milestoneEntity);
+                }
+            }
+        }
+    }
+    
+    // 辅助类
+    @Data
+    public static class BookData {
+        private Integer bookId;
+        private String bookTitle;
+        private String author;
+    }
+    
+    @Data
+    public static class NoteData {
+        private Long noteId;
+        private String contentPreview;
+        private Integer bookId;
+        private String bookTitle;
     }
 }

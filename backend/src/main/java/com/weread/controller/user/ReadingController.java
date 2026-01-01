@@ -2,6 +2,8 @@ package com.weread.controller.user;
 
 import com.weread.service.user.ReadingService;
 import com.weread.vo.user.TodayReadingTimeVO;
+import com.weread.vo.user.TopBooksVO;
+import com.weread.vo.user.MilestoneVO;
 import com.weread.vo.user.ReadingTimeStatItemVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -54,6 +56,41 @@ public class ReadingController {
         response.put("code", 200);
         response.put("message", "success");
         response.put("data", stats);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "获取用户特定时间段阅读最久的3本书")
+    @GetMapping("/reading-stats/top-books")
+    public ResponseEntity<Map<String, Object>> getTopBooksByPeriod(
+            @Parameter(description = "用户ID", hidden = true)
+            @RequestAttribute Integer userId,
+            @Parameter(description = "时间段：week-本周，month-本月，year-今年，total-总计", 
+                       example = "week")
+            @RequestParam(required = false, defaultValue = "week") String period) {
+        
+        TopBooksVO result = readingService.getTopBooksByPeriod(userId, period);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", result);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @Operation(summary = "获取用户阅历最新里程碑")
+    @GetMapping("/latest-milestones")
+    public ResponseEntity<Map<String, Object>> getLatestMilestones(
+            @Parameter(description = "用户ID", hidden = true)
+            @RequestAttribute Integer userId) {
+        
+        MilestoneVO result = readingService.getLatestMilestones(userId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", result);
         
         return ResponseEntity.ok(response);
     }
