@@ -1,13 +1,47 @@
 package com.weread.repository.community;
 
 import com.weread.entity.community.TopicEntity;
+
+import io.lettuce.core.dynamic.annotation.Param;
+
+import org.springdoc.core.converters.models.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
 
 // 话题仓库
-public interface TopicRepository extends JpaRepository<TopicEntity, Long> {
-    Optional<TopicEntity> findByName(String name);
-    List<TopicEntity> findByNameIn(List<String> names);
+public interface TopicRepository extends JpaRepository<TopicEntity, Integer> {
+    Optional<TopicEntity> findByTopicName(String topicName);
+    List<TopicEntity> findByTopicNameIn(List<String> topicNames);
+
+    /**
+     * 瀑布流分页查询
+     * @param cursor 游标（最后一个topicId）
+     * @param pageable 分页信息
+     * @return 话题列表
+     */
+    @Query("SELECT t FROM TopicEntity t " +
+           "WHERE (:cursor IS NULL OR t.topicId > :cursor) " +
+           "ORDER BY t.topicId ASC")
+    List<TopicEntity> findTopicsByCursor(
+            @Param("cursor") Integer cursor,
+            PageRequest pageable);
+    
+    /**
+     * 检查指定游标后是否还有更多数据
+     * @param cursor 游标
+     * @return 是否还有更多数据
+     */
+    @Query("SELECT COUNT(t) > 0 FROM TopicEntity t " +
+           "WHERE t.topicId > :cursor")
+    boolean existsMoreAfterCursor(@Param("cursor") Integer cursor);
+
+    @Query("SELECT t FROM TopicEntity t " +
+        "ORDER BY t.postCount DESC, t.topicId DESC")
+    List<TopicEntity> findHotTopics(PageRequest pageable);
+    List<TopicEntity> findRelatedTopics(Integer topicId, int i);
+    List<TopicEntity> findRelatedTopicsByPostId(Integer postId, Integer currentTopicId, int i);
 }

@@ -25,4 +25,6 @@ public interface NoteRepository extends JpaRepository<NoteEntity, Long> {
      * 查询某一章节的笔记（包括私有和公开的）
      */
     List<NoteEntity> findByChapterIdOrderByCreatedAtDesc(Integer chapterId);
+
+    Integer countByUserId(Integer userId);
 }

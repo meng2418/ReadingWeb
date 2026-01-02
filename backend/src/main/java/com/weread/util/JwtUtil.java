@@ -93,4 +93,13 @@ public class JwtUtil {
         String phone = extractPhone(token);
         return phone.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
+
+    public Integer getUserIdFromToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return claims.get("userId", Integer.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
