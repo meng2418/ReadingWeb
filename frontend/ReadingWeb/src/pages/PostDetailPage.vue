@@ -28,7 +28,12 @@
         </div>
 
         <div class="interaction-content">
-          <CommentSection v-if="isCommentTabActive" :postId="postId" :initialComments="comments" />
+          <CommentSection
+            v-if="isCommentTabActive"
+            :postId="postId"
+            :initialComments="comments"
+            @add-reply="handleAddReply"
+          />
           <LikeSection v-else :likes="likedData.likedUsers" />
         </div>
       </div>
@@ -66,12 +71,14 @@ import CommentSection from '@/components/community/PostDetail/CommentSection.vue
 import PostBook from '@/components/community/PostDetail/PostBook.vue'
 import LikeSection from '@/components/community/PostDetail/LikeSection.vue'
 // 引入修改后的 API 方法
-import { getPostDetail, getPostComments, getPostLikes } from '@/api/post'
-
+import { getPostDetail, getPostComments, getPostLikes, replyComment } from '@/api/post'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 import type { PostDetailResponse } from '@/api/post'
 
 const route = useRoute()
 const postId = route.params.id as string
+const userStore = useUserStore()
 
 const post = ref<PostDetailResponse | null>(null)
 const loaded = ref(false)
@@ -116,6 +123,55 @@ const handleFollowUpdate = (isFollowing: boolean) => {
     post.value.isFollowingAuthor = isFollowing
   }
 }
+
+// 处理添加回复（结合 API 的正确写法）
+const handleAddReply = async (payload: { parentId: number; content: string }) => {
+  try {
+    // 2. 修正函数名：使用 replyComment
+    // 3. 修正参数：直接使用本地的 postId，而不是 props.postId
+    // 注意：根据你的 api 定义，replyComment 接收 (parentId, content)
+    const resData = await replyComment(payload.parentId, payload.content)
+
+    // 4. 从接口返回的响应中获取真实的评论数据
+    // 你在 api/post.ts 里定义的返回结构是 res.data.data，在函数里 return res.data.data
+    // 所以这里的 resData 就是那个包含了 { comment: {...} } 的对象
+    const realComment = resData.comment
+
+    // 5. 构造要显示在界面上的对象
+    const newReply = {
+      id: realComment.commentId,
+      username: realComment.username,
+      avatar: realComment.avatar,
+      content: realComment.content,
+      commentTime: realComment.commentTime,
+      replies: [],
+    }
+
+    // 6. 插入到界面
+    const parentComment = comments.value.find((c) => c.id === payload.parentId)
+    if (parentComment) {
+      if (!parentComment.replies) parentComment.replies = []
+      parentComment.replies.push(newReply)
+      ElMessage.success('回复成功')
+    }
+  } catch (error) {
+    console.error('回复失败:', error)
+    ElMessage.error('回复失败，请稍后再试')
+  }
+}
+
+// 刷新评论列表（保留但不使用，用于其他场景）
+const refreshComments = async () => {
+  try {
+    const commentRes = await getPostComments(postId)
+    comments.value = commentRes
+    // 确保数据被更新（Vue 的响应式系统会自动处理，但这里明确赋值确保更新）
+  } catch (error) {
+    console.error('刷新评论列表失败', error)
+    // 刷新失败时不显示错误提示，因为回复本身可能已经成功
+  }
+}
+
 const fetchAllData = async () => {
   try {
     const [postRes, commentRes, likeRes] = await Promise.all([

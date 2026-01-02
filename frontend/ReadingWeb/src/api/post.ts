@@ -1,3 +1,4 @@
+// src/api/post.ts
 import request from '@/utils/request'
 
 // 定义接口返回的类型（可选，方便排查）
@@ -81,4 +82,42 @@ export const getPostLikes = async (postId: string | number) => {
       likeTime: user.likeTime,
     })),
   }
+}
+
+/** 回复评论的请求参数 */
+export interface ReplyCommentRequest {
+  content: string
+}
+
+/** 回复评论的响应结构 */
+export interface ReplyCommentResponse {
+  code: number
+  data: {
+    comment: {
+      avatar: string
+      commentId: number
+      commentTime: string
+      content: string
+      parentCommentId: number
+      replyToUsername: string
+      userId: number
+      username: string
+      [property: string]: any
+    }
+    replyCount: number
+    [property: string]: any
+  }
+  message: string
+  [property: string]: any
+}
+
+/** 回复评论 */
+export const replyComment = async (
+  commentId: number,
+  content: string,
+): Promise<ReplyCommentResponse['data']> => {
+  const res = await request.post<ReplyCommentResponse>(`/comments/${commentId}/reply`, {
+    content,
+  })
+  return res.data.data
 }
