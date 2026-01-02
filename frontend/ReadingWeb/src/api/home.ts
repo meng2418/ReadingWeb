@@ -38,7 +38,7 @@ const mapToRankBook = (raw: SimpleBookRaw, index: number): RankBook => ({
   title: raw.bookTitle,
   author: raw.author,
   cover: raw.cover,
-  recommend: raw.rating ? `${Number(raw.rating).toFixed(1)} 分` : '-',
+  recommend: raw.rating ? `${Number(raw.rating)} %` : '-',
 })
 
 /* =======================

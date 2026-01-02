@@ -41,3 +41,13 @@ export const getFollowersList = async () => {
     nextCursor: data.nextCursor,
   }
 }
+
+/** 关注用户 */
+export const followUserApi = (userId: string | number) => {
+  return request.post(`/user/follow/${userId}`)
+}
+
+/** 取消关注用户 */
+export const unfollowUserApi = (userId: string | number) => {
+  return request.delete(`/user/follow/${userId}`)
+}

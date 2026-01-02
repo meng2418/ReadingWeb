@@ -52,7 +52,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
 import { ElMessage } from 'element-plus' // 假设用Element Plus的提示组件（可选）
-import { postReadingReward, fetchDailyReading } from '@/api/rewards'
+import { postReadingReward, getTodayReadingTime } from '@/api/rewards'
 
 // 1. 响应式数据定义
 const todayRead = ref(0) // 用户今日阅读分钟数
@@ -73,7 +73,8 @@ const streakTasks = ref([
 const userStore = useUserStore()
 onMounted(async () => {
   userStore.fetchUserHome()
-  todayRead.value = await fetchDailyReading()
+  const res = await getTodayReadingTime()
+  todayRead.value = res.data.data.readingTime ?? 0
 })
 const streak = computed(() => userStore.consecutiveReadingDays)
 // 3. 工具方法

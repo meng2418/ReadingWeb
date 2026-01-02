@@ -132,7 +132,7 @@ const router = createRouter({
 // 路由守卫：登录拦截
 router.beforeEach(async (to, from, next) => {
   if (to.meta.title) {
-    document.title = to.meta.title
+    document.title = to.meta.title as string
   }
   next()
   // 获取用户状态

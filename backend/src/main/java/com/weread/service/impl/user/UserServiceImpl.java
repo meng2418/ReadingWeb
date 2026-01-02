@@ -1,197 +1,170 @@
 package com.weread.service.impl.user;
 
-
+import com.weread.dto.user.UpdateProfileDTO;
 import com.weread.entity.user.FollowEntity;
-import com.weread.entity.user.LoginLogEntity;
 import com.weread.entity.user.UserEntity;
 import com.weread.repository.user.UserRepository;
+import com.weread.repository.community.PostRepository;
 import com.weread.repository.user.FollowRepository;
-import com.weread.repository.user.LoginLogRepository;
 import com.weread.service.user.UserService;
-import com.weread.service.util.GeoLocationService;
-import com.weread.dto.user.ProfileUpdateDTO;
-import com.weread.dto.user.PasswordUpdateDTO;
-import com.weread.vo.user.LoginLogVO;
-import com.weread.vo.user.UserDetailVO;
-import com.weread.vo.user.FollowUserVO;
 import com.weread.vo.user.FollowListVO;
+import com.weread.vo.user.FollowUserVO;
+import com.weread.vo.user.UserProfileVO;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.weread.util.RedisService; // 假设的Redis工具
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Optional;
 
-// 假设的自定义异常
-class ResourceNotFoundException extends RuntimeException {
-    public ResourceNotFoundException(String message) { super(message); }
-}
-class InvalidCodeException extends RuntimeException {
-    public InvalidCodeException(String message) { super(message); }
-}
-
-
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
-
-    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class); // 引入 Logger 替代 System.err
-
-    private final LoginLogRepository loginLogRepository;
-    private final GeoLocationService geoLocationService; // 【✅ 注入 GeoLocationService】
+    
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final RedisService redisService;
-    // 假设您还需要 Phone 相关的 DTO/VOs 和对应的逻辑，这里只展示 Email 部分。
-
-    public UserServiceImpl(UserRepository userRepository, FollowRepository followRepository, PasswordEncoder passwordEncoder, RedisService redisService, LoginLogRepository loginLogRepository, 
-                           GeoLocationService geoLocationService) {
-        this.userRepository = userRepository;
-        this.followRepository = followRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.redisService = redisService;
-        this.loginLogRepository = loginLogRepository;
-        this.geoLocationService = geoLocationService;
-    }
-
-    // ===========================================
-    // 1. 个人信息 (Profile Management)
-    // ===========================================
-
+    private final PostRepository postRepository;
     @Override
-    public UserDetailVO getUserProfile(Integer userId) {
-        UserEntity user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("用户未找到"));
-        
-        // 实际应用中，这里需要将 UserEntity 转换为 UserDetailVO
-        UserDetailVO response = new UserDetailVO();
-        response.setUserId(user.getUserId());
-        response.setUsername(user.getUsername());
-        response.setPhone(user.getPhone());
-        response.setAvatar(user.getAvatar());
-        response.setBio(user.getBio());
-        // 注意：isMember 和 coins 等字段已不再由 UserService 负责
-        
-        return response;
-    }
-
-    @Override
-    public void updateProfile(Integer userId, ProfileUpdateDTO request) {
-        UserEntity user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("用户未找到"));
-
-        if (request.getUsername() != null) {
-            user.setUsername(request.getUsername());
-        }
-        if (request.getAvatar() != null) {
-            user.setAvatar(request.getAvatar());
-        }
-        if (request.getBio() != null) {
-            user.setBio(request.getBio());
-        }
-
-        userRepository.save(user);
-    }
-
-    @Override
-    public void updatePassword(Integer userId, PasswordUpdateDTO request) {
+    @Transactional(readOnly = true)
+    public UserProfileVO getUserHome(Integer userId) {
+        // 获取用户基本信息
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("用户未找到"));
-
-        // 1. 校验旧密码
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("旧密码不正确");
-        }
-
-        // 2. 校验新密码一致性
-        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
-            throw new IllegalArgumentException("新密码与确认密码不一致");
-        }
-
-        // 3. 更新密码
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-    }
-
-    // ===========================================
-    // 2. 账号安全 (Account Security)
-    // ===========================================
-
-    @Override
-    public List<LoginLogVO> getLoginLogs(Integer userId, int page, int size) {
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
         
-        // 1. 业务逻辑：校验用户ID (确保用户存在)
-        if (!userRepository.existsById(userId)) {
-            // 如果用户不存在，抛出 404 异常
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "用户ID [" + userId + "] 不存在。");
-        }
+        // 构建UserProfileVO
+        UserProfileVO profileVO = new UserProfileVO();
+        profileVO.setAvatar(user.getAvatar());
+        profileVO.setUsername(user.getUsername());
+        profileVO.setBio(user.getBio());
+        profileVO.setCoinCount(user.getCoins() != null ? user.getCoins() : 0);
         
-        // 2. 调用 Repository 进行分页查询
-        // Spring Data JPA 的页码是从 0 开始的，所以传入 (page - 1)
-        // 假设 LoginLogRepository 中有 findByUserIdOrderByLoginTimeDesc 方法
+        // 会员状态
+        profileVO.setIsMember(user.getMembershipExpireAt() != null && 
+                             ((LocalDateTime) user.getMembershipExpireAt()).isAfter(LocalDateTime.now()));
         
-        Pageable pageable = PageRequest.of(
-            page - 1, 
-            size
-            // 如果需要排序，可以添加 .by("loginTime").descending() 
-            // 如果方法名已包含 OrderBy，则 PageRequest 中可省略 Sort
-        ); 
-        
-        // 假设 LoginLogRepository 提供了 findByUserId(Long userId, Pageable pageable)
-        Page<LoginLogEntity> logEntities = this.loginLogRepository.findByUserIdOrderByLoginTimeDesc(userId, pageable);
-
-        // 3. 转换 Entity 为 VO
-        // 使用 Stream.toList() 替代 collect(Collectors.toList()) (Java 16+)
-        return logEntities.getContent().stream()
-                .map(this::convertToLoginLogVO) 
-                .toList(); 
-    }
-
-    // ----------------------------------------------------
-    // 【辅助方法】：Entity 到 VO 的转换
-    // ----------------------------------------------------
-
-    /**
-     * 将 LoginLogEntity 转换为 LoginLogVO
-     */
-    private LoginLogVO convertToLoginLogVO(LoginLogEntity entity) {
-        LoginLogVO vo = new LoginLogVO();
-        vo.setLoginLogId(entity.getLoginLogId());
-        vo.setLoginTime(entity.getLoginTime());
-        vo.setIpAddress(entity.getIpAddress());
-        vo.setDevice(entity.getDevice());
-        vo.setStatus(entity.getStatus()); 
-        vo.setIpAddress(entity.getIpAddress());
-
-        // 【✅ 核心逻辑：实时 IP 解析】
-        String ipAddress = entity.getIpAddress();
-        
-        if (ipAddress != null && !ipAddress.isEmpty()) {
-            try {
-                String resolvedLocation = geoLocationService.resolveIpToLocation(ipAddress);
-                vo.setLoginLocation(resolvedLocation != null ? resolvedLocation : "未知地点");
-            } catch (Exception e) {
-                // 如果解析服务出现异常，记录错误并设置默认值
-                logger.error("IP解析失败，IP: {}", ipAddress, e);
-                vo.setLoginLocation("解析服务错误");
-            }
+        // 计算会员剩余天数
+        if (user.getMembershipExpireAt() != null) {
+            long days = ChronoUnit.DAYS.between(LocalDateTime.now(), (Temporal) user.getMembershipExpireAt());
+            profileVO.setMemberExpireDays(days > 0 ? (int) days : 0);
         } else {
-            vo.setLoginLocation("IP地址缺失");
+            profileVO.setMemberExpireDays(0);
         }
-
-        return vo;
+        
+        // 统计数据（这里需要调用其他服务或Repository获取）
+        profileVO.setFollowingCount(getFollowingCount(userId));
+        profileVO.setFollowerCount(getFollowerCount(userId));
+        profileVO.setPostCount(getPostCount(userId));
+        profileVO.setMemberCardCount(getMemberCardCount(userId));
+        
+        // 阅读统计
+        profileVO.setReadingStats(getReadingStats(userId));
+        profileVO.setConsecutiveReadingDays(getConsecutiveReadingDays(userId));
+        
+        return profileVO;
     }
-
-    // =========================================================
-    // 【实现 1】: 关注用户
-    // =========================================================
+    
+    @Override
+    @Transactional
+    public UserProfileVO updateUserProfile(Integer userId, UpdateProfileDTO updateDTO) {
+        // 获取用户
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
+        
+        // 检查用户名是否已被占用（如果用户名有修改）
+        if (updateDTO.getUsername() != null && 
+            !updateDTO.getUsername().equals(user.getUsername())) {
+            boolean exists = userRepository.existsByUsername(updateDTO.getUsername());
+            if (exists) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名已被占用");
+            }
+            user.setUsername(updateDTO.getUsername());
+        }
+        
+        // 更新其他字段
+        if (updateDTO.getAvatar() != null) {
+            user.setAvatar(updateDTO.getAvatar());
+        }
+        
+        if (updateDTO.getBio() != null) {
+            user.setBio(updateDTO.getBio());
+        }
+        
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        
+        // 返回更新后的信息
+        return getUserHome(userId);
+    }
+    
+    @Override
+    @Transactional
+    public void updateLastLoginTime(Integer userId) {
+        userRepository.updateLastLoginTime(userId, LocalDateTime.now());
+    }
+    
+    // ============ 私有方法，需要根据实际情况实现 ============
+    
+    private Integer getFollowingCount(Integer userId) {
+        return followRepository.countByFollowerId(userId);
+    }
+    
+    private Integer getFollowerCount(Integer userId) {
+        return followRepository.countByFollowingId(userId);
+    }
+    
+    private Integer getPostCount(Integer userId) {
+        return postRepository.countByUserId(userId);
+    }
+    
+    private Integer getMemberCardCount(Integer userId) {
+        // 这里需要调用会员卡相关的Repository
+        return 0; // 示例
+    }
+    
+    private UserProfileVO.ReadingStatsVO getReadingStats(Integer userId) {
+        // 这里需要调用阅读统计相关的Repository
+        UserProfileVO.ReadingStatsVO stats = new UserProfileVO.ReadingStatsVO();
+        
+        // 示例数据，实际应从数据库获取
+        stats.setWeeklyReadingTime(120);
+        stats.setMonthlyReadingTime(480);
+        stats.setYearlyReadingTime(5760);
+        stats.setTotalReadingTime(11520);
+        
+        stats.setWeeklyReadCount(3);
+        stats.setMonthlyReadCount(12);
+        stats.setYearlyReadCount(48);
+        stats.setTotalReadCount(96);
+        
+        stats.setWeeklyFinishedCount(1);
+        stats.setMonthlyFinishedCount(4);
+        stats.setYearlyFinishedCount(16);
+        stats.setTotalFinishedCount(32);
+        
+        stats.setWeeklyNoteCount(5);
+        stats.setMonthlyNoteCount(20);
+        stats.setYearlyNoteCount(240);
+        stats.setTotalNoteCount(480);
+        
+        return stats;
+    }
+    
+    private Integer getConsecutiveReadingDays(Integer userId) {
+        // 这里需要调用阅读记录相关的Repository
+        // 计算连续阅读天数
+        return 7; // 示例
+    }
 
     @Override
     @Transactional
@@ -220,7 +193,6 @@ public class UserServiceImpl implements UserService {
         userRepository.incrementFollowingCount(followerId); // 关注者 (follower) 的关注数 +1
         userRepository.incrementFollowerCount(followingId); // 被关注者 (following) 的粉丝数 +1
     }
-
     // =========================================================
     // 【实现 2】: 取消关注用户
     // =========================================================
@@ -246,6 +218,26 @@ public class UserServiceImpl implements UserService {
         }
         // 如果不存在，方法结束，无需操作
     }
+    @Override
+    public FollowListVO getFollowers(Integer userId, int page, int limit, Integer currentUserId) {
+        Pageable pageable = PageRequest.of(page - 1, limit);
+        
+        // 查找目标用户（userId）的粉丝列表 (即 FollowingId = userId)
+        Page<FollowEntity> followPage = followRepository.findByFollowingId(userId, pageable);
+        
+        return buildFollowListResponse(followPage, currentUserId, true);
+    }
+
+    @Override
+    public FollowListVO getFollowings(Integer userId, int page, int limit, Integer currentUserId) {
+        Pageable pageable = PageRequest.of(page - 1, limit);
+        
+        // 查找目标用户（userId）的关注列表 (即 FollowerId = userId)
+        Page<FollowEntity> followPage = followRepository.findByFollowerId(userId, pageable);
+        
+        return buildFollowListResponse(followPage, currentUserId, false);
+    }
+
 
 
     /**
@@ -297,25 +289,5 @@ public class UserServiceImpl implements UserService {
         vo.setUsername(userEntity.getUsername());
         vo.setAvatarUrl(userEntity.getAvatar()); 
         return vo;
-    }
-
-    @Override
-    public FollowListVO getFollowers(Integer userId, int page, int limit, Integer currentUserId) {
-        Pageable pageable = PageRequest.of(page - 1, limit);
-        
-        // 查找目标用户（userId）的粉丝列表 (即 FollowingId = userId)
-        Page<FollowEntity> followPage = followRepository.findByFollowingId(userId, pageable);
-        
-        return buildFollowListResponse(followPage, currentUserId, true);
-    }
-
-    @Override
-    public FollowListVO getFollowings(Integer userId, int page, int limit, Integer currentUserId) {
-        Pageable pageable = PageRequest.of(page - 1, limit);
-        
-        // 查找目标用户（userId）的关注列表 (即 FollowerId = userId)
-        Page<FollowEntity> followPage = followRepository.findByFollowerId(userId, pageable);
-        
-        return buildFollowListResponse(followPage, currentUserId, false);
     }
 }

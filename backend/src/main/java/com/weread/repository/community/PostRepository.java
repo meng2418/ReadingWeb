@@ -24,4 +24,6 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
 
     List<PostEntity> findPostsByTopicAndCursor(Integer topicId, String sort, Integer cursor, Integer limit,
             Pageable pageable);
+
+    Integer countByUserId(Integer userId);
 }

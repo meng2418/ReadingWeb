@@ -2,10 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCard from '@/components/bookshelf/BookCardMiddle.vue'
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
-import Footer from '@/components/layout/Footer.vue'
-import { getBookshelfAll, type ShelfBook } from '@/api/bookshelf'
+import { getBookshelfAll, batchRemoveBooks, type ShelfBook } from '@/api/bookshelf'
 
 // 全部书籍（只请求一次）
 const books = ref<ShelfBook[]>([])
@@ -55,19 +54,33 @@ const toggleBookSelect = (bookId: string | number) => {
 const deleteSelectedBooks = async () => {
   if (selectedBookIds.value.length === 0) return
   try {
+    // 1. 二次确认
     await ElMessageBox.confirm(
-      `确定要移除选中的 ${selectedBookIds.value.length} 本书吗？`,
-      '删除确认',
+      `确定要将选中的 ${selectedBookIds.value.length} 本书从书架移除吗？`,
+      '批量删除',
       {
-        confirmButtonText: '确认删除',
+        confirmButtonText: '确定移除',
         cancelButtonText: '取消',
         type: 'warning',
       },
     )
+    // 2. 开启 Loading 并调用接口
+    loading.value = true
+    await batchRemoveBooks(selectedBookIds.value)
+    // 3. 后端删除成功后，前端同步更新（不用刷新页面）
     books.value = books.value.filter((book) => !selectedBookIds.value.includes(book.id))
+    // 4. 重置状态
     selectedBookIds.value = []
-  } catch {
-    // 用户取消
+    isDeleteMode.value = false
+    ElMessage.success('移除成功')
+  } catch (error) {
+    // 捕获用户取消和接口报错
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('操作失败，请重试')
+    }
+  } finally {
+    loading.value = false
   }
 }
 

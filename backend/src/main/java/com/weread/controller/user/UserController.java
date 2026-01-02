@@ -1,13 +1,23 @@
-package com.weread.controller;
+package com.weread.controller.user;
 
 import com.weread.vo.user.FollowListVO;
+import com.weread.vo.user.UserProfileVO;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
+
+import com.weread.dto.user.UpdateProfileDTO;
 import com.weread.service.user.UserService;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("user")
 public class UserController {
 
     private final UserService userService;
@@ -65,5 +75,38 @@ public class UserController {
         
         FollowListVO vo = userService.getFollowings(userId, page, limit, currentUserId);
         return ResponseEntity.ok(vo);
+    }
+
+    @Operation(summary = "获取登录用户个人中心")
+    @GetMapping("/home")
+    public ResponseEntity<Map<String, Object>> getUserHome(
+            @Parameter(description = "用户ID", hidden = true)
+            @RequestAttribute Integer userId) {
+        
+        UserProfileVO userProfile = userService.getUserHome(userId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", userProfile);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @Operation(summary = "编辑个人信息")
+    @PutMapping("/home")
+    public ResponseEntity<Map<String, Object>> updateUserProfile(
+            @Valid @RequestBody UpdateProfileDTO updateDTO,
+            @Parameter(description = "用户ID", hidden = true)
+            @RequestAttribute Integer userId) {
+        
+        UserProfileVO updatedProfile = userService.updateUserProfile(userId, updateDTO);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "个人信息更新成功");
+        response.put("data", updatedProfile);
+        
+        return ResponseEntity.ok(response);
     }
 }

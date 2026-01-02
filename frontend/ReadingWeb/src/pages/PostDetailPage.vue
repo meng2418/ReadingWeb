@@ -1,9 +1,14 @@
+<!--PostDetailPage.vue-->
 <template>
   <div class="post-detail-page">
     <NavBar />
-    <div class="post-detail-container" v-if="loaded">
+    <div class="post-detail-container" v-if="loaded && post">
       <div class="left-column">
-        <PostDetail :post="post" />
+        <PostDetail
+          :post="post"
+          @update-like="handleLikeUpdate"
+          @update-follow="handleFollowUpdate"
+        />
 
         <div class="interaction-tabs">
           <button
@@ -28,12 +33,26 @@
         </div>
       </div>
 
+      <!-- PostDetailPage.vue -->
       <div class="right-column">
-        <PostBook v-if="post && post.book" :book="post.book" />
+        <!-- 1. 建立一个包裹容器，承载所有的书籍卡片 -->
+        <!-- 2. 将 sticky 效果应用在这里，而不是单个卡片上 -->
+        <div class="sidebar-sticky-wrapper" v-if="post?.mentionedBooks?.length">
+          <PostBook
+            v-for="(item, index) in post.mentionedBooks"
+            :key="index"
+            :book="{
+              title: item.bookTitle,
+              author: item.authorName,
+              cover: item.cover,
+              description: item.description,
+            }"
+          />
+        </div>
       </div>
     </div>
 
-    <div v-else class="loading">加载中…</div>
+    <div v-else class="loading">正在加载帖子详情...</div>
   </div>
 </template>
 
@@ -48,10 +67,12 @@ import LikeSection from '@/components/community/PostDetail/LikeSection.vue'
 // 引入修改后的 API 方法
 import { getPostDetail, getPostComments, getPostLikes } from '@/api/post'
 
+import type { PostDetailResponse } from '@/api/post'
+
 const route = useRoute()
 const postId = route.params.id as string
 
-const post = ref<any>(null)
+const post = ref<PostDetailResponse | null>(null)
 const loaded = ref(false)
 const isCommentTabActive = ref(true)
 
@@ -59,6 +80,41 @@ const isCommentTabActive = ref(true)
 const comments = ref<any[]>([])
 const likedData = ref({ totalLikes: 0, likedUsers: [] })
 
+/**
+ * 2. 提取获取点赞列表的独立函数
+ */
+const fetchPostLikes = async () => {
+  try {
+    const likeRes = await getPostLikes(postId)
+    likedData.value = likeRes
+
+    // 如果 post 已经加载了，同步更新 post 里的 likeCount
+    if (post.value) {
+      post.value.likeCount = likeRes.totalLikes
+    }
+  } catch (error) {
+    console.error('刷新点赞列表失败', error)
+  }
+}
+
+const handleLikeUpdate = async (payload: { isLiked: boolean; likeCount: number }) => {
+  if (!post.value) return
+
+  // 1. 立即更新 UI (乐观更新)
+  post.value.isLiked = payload.isLiked
+  post.value.likeCount = payload.likeCount
+  likedData.value.totalLikes = payload.likeCount
+
+  // 2. 刷新点赞列表
+  // 如果你的接口支持，这里其实最好是重新获取最新的 likedUsers
+  await fetchPostLikes()
+}
+// 处理关注状态更新
+const handleFollowUpdate = (isFollowing: boolean) => {
+  if (post.value) {
+    post.value.isFollowingAuthor = isFollowing
+  }
+}
 const fetchAllData = async () => {
   try {
     const [postRes, commentRes, likeRes] = await Promise.all([
@@ -67,7 +123,7 @@ const fetchAllData = async () => {
       getPostLikes(postId),
     ])
 
-    // API 层已经统一处理过数据结构，直接赋值
+    // API 返回完整的数据结构
     post.value = postRes
     comments.value = commentRes
     likedData.value = likeRes
@@ -84,8 +140,6 @@ onMounted(fetchAllData)
 </script>
 
 <style scoped>
-/* ========== 这里完全还原了你原始文件的样式 ========== */
-
 .post-detail-page {
   background-color: #f9f9f9;
 }
@@ -115,7 +169,14 @@ onMounted(fetchAllData)
   flex: 1;
   min-width: 220px;
 }
-
+/* 侧边栏粘性容器 */
+.sidebar-sticky-wrapper {
+  position: sticky;
+  top: 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* 多本书之间的间距 */
+}
 /* Tab 样式还原 */
 .interaction-tabs {
   grid-column: 1 / -1;

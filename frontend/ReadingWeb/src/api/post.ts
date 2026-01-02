@@ -10,25 +10,35 @@ interface RawComment {
   likeCount: number
   replies?: RawComment[]
 }
+/** 帖子详情API响应结构 */
+export interface PostDetailResponse {
+  postId: number
+  author: {
+    authorId: number
+    authorAvatar: string
+    authorName: string
+  }
+  publishTime: string
+  publishLocation?: string
+  isFollowingAuthor: boolean
+  postTitle: string
+  content: string
+  mentionedBooks: Array<{
+    cover: string
+    bookTitle: string
+    authorName: string
+    description: string
+  }>
+  commentCount: number
+  likeCount: number
+  isLiked: boolean
+  topics: string[]
+}
 
 /** 获取帖子详情 */
-export const getPostDetail = async (postId: string | number) => {
-  const res = await request.get(`/posts/${postId}`) // 假设接口是这个
-  const data = res.data.data
-
-  return {
-    id: data.postId,
-    title: data.postTitle,
-    content: data.content,
-    // 必须确保 book 的结构正确，否则 PostBook 组件会报错
-    book: data.mentionedBooks?.[0]
-      ? {
-          title: data.mentionedBooks[0].bookTitle,
-          author: data.mentionedBooks[0].author,
-          cover: data.mentionedBooks[0].cover,
-        }
-      : null,
-  }
+export const getPostDetail = async (postId: string | number): Promise<PostDetailResponse> => {
+  const res = await request.get(`/posts/${postId}`)
+  return res.data.data
 }
 
 /** 获取评论列表 */
