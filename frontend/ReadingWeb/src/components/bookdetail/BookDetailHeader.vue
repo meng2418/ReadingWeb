@@ -125,6 +125,7 @@ interface Props {
   description: string
   coverImage?: string
   initialBookshelfStatus?: boolean
+  bookId?: string | number
   stats: {
     readingCount: string
     readingSubtitle: string
@@ -188,7 +189,11 @@ const handleBookshelfToggle = () => {
 // 开始阅读
 const handleStartReading = () => {
   emit('startReading')
-  router.push('/reader')
+  if (props.bookId) {
+    router.push(`/reader/${props.bookId}/1`)
+  } else {
+    router.push('/reader')
+  }
   console.log('开始阅读')
 }
 

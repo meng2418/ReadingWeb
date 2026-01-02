@@ -15,9 +15,10 @@ import { usePostInteractions } from '@/composables/usePostInteractions'
 import { fetchCommunityPosts, fetchMyComments, fetchMyLikes } from '@/api/community'
 import type { Post } from '@/types/post'
 import { getProfileHome } from '@/api/profile'
-import { getTopicsList, getHotTopics, type HotTopic } from '@/api/topics'
+import { getTopicsList } from '@/api/topics/topics-list'
+import { getHotTopics, type HotTopic } from '@/api/topics/hot-topics'
 
-// 当前用户信息（初始值设为空或默认值）
+// 当前用户信息
 const currentUser = reactive({
   username: '加载中...',
   bio: '',
@@ -27,8 +28,8 @@ const currentUser = reactive({
   postCount: 0,
 })
 
-// 热门话题
-const hotTopics = ref<{ id: number, name: string }[]>([])
+// 热门话题 - 使用更明确的结构
+const hotTopics = ref<HotTopic[]>([])
 const topicsList = ref<{ id: number, cover: string, title: string, number: number }[]>([])
 
 // 话题列表分页相关
@@ -61,16 +62,36 @@ const loadTopicsList = async () => {
 // 加载热门话题
 const loadHotTopics = async () => {
   try {
-    const result = await getHotTopics()
-    console.log('热门话题接口返回:', result)
+    console.log('开始加载热门话题...')
 
-    // 直接使用接口返回的数据，不需要额外转换
-    hotTopics.value = result.map(topic => ({
-      id: topic.id,
-      name: topic.name
-    }))
+    // 调用API获取热门话题
+    const topics = await getHotTopics()
+    console.log('API返回的热门话题数据:', topics)
 
-    console.log('转换后的热门话题:', hotTopics.value)
+    if (topics && topics.length > 0) {
+      // 确保只取前9个（如果需要的话）
+      hotTopics.value = topics.slice(0, 9).map(topic => ({
+        id: topic.id,
+        name: topic.name
+      }))
+      console.log('设置后的热门话题数据:', hotTopics.value)
+    } else {
+      // 如果接口返回空或失败，使用默认数据
+      console.warn('热门话题接口返回空，使用默认数据')
+      hotTopics.value = [
+        { id: 1, name: '# 好书推荐' },
+        { id: 2, name: '# 阅读心得' },
+        { id: 3, name: '# 文学讨论' },
+        { id: 4, name: '# 经典名著' },
+        { id: 5, name: '# 新书速递' },
+        { id: 6, name: '# 科幻世界' },
+        { id: 7, name: '# 悬疑推理' },
+        { id: 8, name: '# 历史传记' },
+        { id: 9, name: '# 人生哲学' }
+      ]
+    }
+
+    console.log('热门话题加载完成，数量:', hotTopics.value.length)
   } catch (error) {
     console.error('加载热门话题失败:', error)
     // 如果接口失败，使用默认数据
@@ -80,6 +101,10 @@ const loadHotTopics = async () => {
       { id: 3, name: '# 文学讨论' },
       { id: 4, name: '# 经典名著' },
       { id: 5, name: '# 新书速递' },
+      { id: 6, name: '# 科幻世界' },
+      { id: 7, name: '# 悬疑推理' },
+      { id: 8, name: '# 历史传记' },
+      { id: 9, name: '# 人生哲学' }
     ]
   }
 }
@@ -117,12 +142,14 @@ onMounted(async () => {
   }
 
   // 加载话题相关数据
+  console.log('开始加载话题相关数据...')
   await Promise.all([
     loadTopicsList(),
     loadHotTopics()
   ])
 
   console.log('所有数据加载完成')
+  console.log('热门话题数据:', hotTopics.value)
 })
 
 const posts = ref<Post[]>([])
@@ -179,7 +206,7 @@ const filteredPosts = computed<Post[]>(() => {
   }
 })
 
-const handleTopicClick = (topic: any) => {
+const handleTopicClick = (topic: HotTopic) => {
   console.log('点击热门话题:', topic.name)
   // 这里可以添加跳转到话题详情页的逻辑
   // window.open(`/topicdetail/${topic.id}`, '_blank')
@@ -307,6 +334,7 @@ const handleShare = (postId: number): void => {
 
       <div class="sidebar">
         <UserProfileCard :user="currentUser" />
+        <!-- 传递热门话题数据 -->
         <HotTopics :topics="hotTopics" @topic-click="handleTopicClick" />
       </div>
     </div>
@@ -335,39 +363,31 @@ const handleShare = (postId: number): void => {
 .tabs {
   grid-column: 1 / -1;
   display: flex;
-  /* 关键：为父容器添加整体的白色背景、边框和圆角 */
   background-color: #fff;
-  border: 1px solid #e5e7eb; /* 淡灰色边框 */
-  border-radius: 12px; /* 圆润的 corners */
-  overflow: hidden; /* 确保内部按钮的圆角不会溢出 */
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
   width: 800px;
 }
 
 .tabs button {
-  /* 关键：让按钮填满父容器的空间，并去掉边框和背景 */
-  flex: 1; /* 四个按钮平分宽度 */
+  flex: 1;
   background: none;
   border: none;
   outline: none;
-
-  /* 内边距和字体 */
-  padding: 10px 0; /* 上下 padding，左右由 flex 自动分配 */
+  padding: 10px 0;
   cursor: pointer;
   font-size: 16px;
   font-weight: 500;
-  color: #6b7280; /* 灰色文字 */
-
-  /* 过渡效果 */
+  color: #6b7280;
   transition: all 0.2s ease;
 }
 
-/* Hover 状态 */
 .tabs button:hover {
-  color: #1f2937; /* 深灰色文字 */
+  color: #1f2937;
   background-color: var(--shadow-green);
 }
 
-/* Active 激活状态 */
 .tabs button.active {
   color: var(--primary-green);
   font-weight: 600;

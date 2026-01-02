@@ -14,6 +14,7 @@
           :cover-image="bookDetail?.cover || 'https://picsum.photos/200/280?random=25'"
           :initial-bookshelf-status="bookDetail?.isInBookshelf || false"
           :stats="computedBookStats"
+          :book-id="bookId"
           @toggle-bookshelf="handleBookshelfToggle"
           @start-reading="handleStartReading"
           @stat-click="handleStatClick"
@@ -75,8 +76,14 @@ import { useTitle } from '@/stores/useTitle'
 import { countPublicReviews } from '@/composables/useReviews'
 import type { Review } from '@/types/review'
 import type { BookListItem } from '@/types/book'
-import { getBookDetail, getBookReviews, getAuthorWorks, getRelatedBooks, addToBookshelf, removeFromBookshelf, startReading } from '@/api/books'
-import type { BookDetail, BookReview, AuthorWork, RelatedBook } from '@/api/books'
+import { getBookDetail, addToBookshelf, removeFromBookshelf, startReading } from '@/api/book-detail/book-detail-header'
+import { getBookReviews } from '@/api/book-detail/user-reviews'
+import { getAuthorWorks } from '@/api/book-detail/author-info-section'
+import { getRelatedBooks } from '@/api/book-detail/related-recommendations'
+import type { BookDetail } from '@/api/book-detail/book-detail-header'
+import type { BookReview } from '@/api/book-detail/user-reviews'
+import type { AuthorWork } from '@/api/book-detail/author-info-section'
+import type { RelatedBook } from '@/api/book-detail/related-recommendations'
 
 // 默认测试数据
 const getDefaultBookDetail = (): BookDetail => ({

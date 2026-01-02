@@ -61,7 +61,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useBookNavigation } from '@/composables/useBookNavigation'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import { useTitle } from '@/stores/useTitle'
-import { getAuthorDetail, getAuthorAllWorks, type AuthorDetail, type AuthorWorkWithId } from '@/api/books'
+import { getAuthorDetail, getAuthorAllWorks, type AuthorDetail, type AuthorWorkWithId } from '@/api/book-detail/author-info-section'
 
 // 路由
 const router = useRouter()

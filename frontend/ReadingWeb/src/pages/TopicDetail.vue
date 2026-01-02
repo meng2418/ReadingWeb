@@ -128,9 +128,10 @@ import PostCard from '@/components/community/PostCard.vue'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import { usePostInteractions } from '@/composables/usePostInteractions'
-import { getTopicDetail, getTopicPosts, getHotTopics } from '@/api/topics'
+import { getTopicDetail, type TopicDetail } from '@/api/topics/topic-detail-header'
+import { getTopicPosts } from '@/api/topics/topic-posts-section'
+import { getHotTopics, type HotTopic } from '@/api/topics/hot-topics'
 import type { Post } from '@/types/post'
-import type { TopicDetail, HotTopic } from '@/api/topics'
 
 const route = useRoute()
 const router = useRouter()

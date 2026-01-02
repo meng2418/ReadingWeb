@@ -93,7 +93,7 @@ const router = createRouter({
       props: true,
     },
     {
-      path: '/reader/:id?',
+      path: '/reader/:bookId/:chapterId?',
       name: 'ReaderPage',
       component: ReaderPage,
       props: true,
