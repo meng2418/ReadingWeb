@@ -1,8 +1,10 @@
 import request from '@/utils/request'
 
+// api/bookshelf.ts
+
 /** 前端统一使用的类型 */
 export interface ShelfBook {
-  id: number
+  id: number // 这里的 id 对应后端的 bookId
   title: string
   cover: string
   author?: string
@@ -11,39 +13,49 @@ export interface ShelfBook {
   description?: string
   status: '未读' | '在读' | '读完'
 }
+
+// 1. 修改后端返回的数据格式定义，加入 bookId
+interface BackendBook {
+  bookId: number // <--- 关键字段
+  bookTitle: string
+  cover: string
+  author?: string
+  rating?: number
+  readCount?: number
+  description?: string
+  readingStatus: 'unread' | 'reading' | 'finished'
+}
+
 const statusMap: Record<'unread' | 'reading' | 'finished', ShelfBook['status']> = {
   unread: '未读',
   reading: '在读',
   finished: '读完',
 }
+
 export const getBookshelfAll = async (): Promise<ShelfBook[]> => {
   const res = await request.get('/bookshelf')
 
-  return res.data.data.map((item: any, index: number) => ({
-    id: index + 1,
-    title: item.bookTitle, // 字段适配
+  // 2. 映射时使用 item.bookId 赋值给 id
+  return res.data.data.map((item: BackendBook) => ({
+    id: item.bookId, // <--- 使用后端真实 ID，不要用 index + 1
+    title: item.bookTitle,
     cover: item.cover,
     author: item.author,
     rating: item.rating,
     readCount: item.readCount,
     description: item.description,
-    status: statusMap[item.readingStatus], // 核心：用 status
+    status: statusMap[item.readingStatus],
   }))
 }
+
 export const getBookshelfByStatus = async (
   status: 'unread' | 'reading' | 'finished',
 ): Promise<ShelfBook[]> => {
   const res = await request.get(`/bookshelf/${status}`)
 
-  const statusMap: Record<typeof status, ShelfBook['status']> = {
-    unread: '未读',
-    reading: '在读',
-    finished: '读完',
-  }
-
-  return res.data.data.map((item: any, index: number) => ({
-    id: index + 1,
-    title: item.title,
+  return res.data.data.map((item: BackendBook) => ({
+    id: item.bookId, // <--- 同样保持一致
+    title: item.bookTitle,
     cover: item.cover,
     status: statusMap[status],
   }))
