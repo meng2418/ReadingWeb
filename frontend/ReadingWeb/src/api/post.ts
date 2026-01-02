@@ -24,6 +24,7 @@ export interface PostDetailResponse {
   postTitle: string
   content: string
   mentionedBooks: Array<{
+    bookId: number
     cover: string
     bookTitle: string
     authorName: string

@@ -4,7 +4,7 @@
       <h4 class="section-title">相关书籍</h4>
 
       <div class="book-info">
-        <div class="book-cover-container">
+        <div class="book-cover-container" @click="goToDetail">
           <img :src="book.cover" :alt="book.title" class="book-cover" />
         </div>
 
@@ -14,7 +14,7 @@
             作者：<span class="author-name">{{ book.author }}</span>
           </p>
 
-          <button class="read-button">前往阅读</button>
+          <button class="read-button" @click="goToDetail">前往阅读</button>
         </div>
       </div>
 
@@ -26,18 +26,37 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
 // 定义接口，确保 TS 知道 book 的结构
 interface BookProps {
   title: string
   author: string
   cover: string
   description?: string
+  bookId: number
 }
 
 // 1. 使用 defineProps 接收父组件传递的 book 对象
 const props = defineProps<{
   book: BookProps
 }>()
+
+const router = useRouter()
+
+// 跳转函数
+const goToDetail = () => {
+  if (!props.book.bookId) {
+    console.warn('未获取到书籍ID')
+    return
+  }
+  // 使用 resolve 获取完整的 URL，实现新窗口打开
+  const routeData = router.resolve({
+    name: 'BookDetail',
+    params: { id: props.book.bookId.toString() },
+  })
+  window.open(routeData.href, '_blank')
+}
 </script>
 
 <style scoped>

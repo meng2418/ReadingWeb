@@ -46,6 +46,7 @@
               author: item.authorName,
               cover: item.cover,
               description: item.description,
+              bookId: item.bookId,
             }"
           />
         </div>
