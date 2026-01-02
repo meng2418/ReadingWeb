@@ -1,9 +1,105 @@
 <!-- ReaderContent.vue -->
+<template>
+  <main class="reader-wrapper">
+    <div
+      class="reader-card"
+      :class="{
+        'dark-mode': isDarkMode,
+      }"
+    >
+      <!-- 上一章按钮 -->
+      <div v-if="hasPrevChapter" class="chapter-nav top-chapter-nav left-chapter-nav">
+        <button
+          class="chapter-nav-button prev-chapter"
+          @click="$emit('prevChapter')"
+          :class="{ dark: isDarkMode }"
+        >
+          <ChevronLeft :size="16" class="nav-icon" />
+          <span class="chapter-nav-text">上一章</span>
+        </button>
+      </div>
+
+      <header class="reader-header">
+        <p class="chapter-title">
+          {{ pageData.chapter }}
+        </p>
+      </header>
+
+      <article
+        ref="articleRef"
+        @mouseup="handleMouseUp"
+        @mousedown="selection = null"
+        class="reader-article"
+        :style="{
+          fontSize: `${typography.fontSize}px`,
+          lineHeight: typography.lineHeight,
+        }"
+      >
+        <p
+          v-for="(paragraph, index) in pageData.content"
+          :key="index"
+          :data-index="index"
+          class="paragraph"
+        >
+          <span
+            v-for="seg in getParagraphSegments(paragraph, index)"
+            :key="seg.key"
+            :class="seg.classes"
+            @click="(e) => handleSegmentClick(e, seg)"
+          >
+            {{ seg.text }}
+            <span v-if="seg.isThought" class="thought-icon-wrapper">
+              <span class="thought-icon-badge">
+                <MessageSquare :size="8" fill="currentColor" />
+              </span>
+            </span>
+          </span>
+        </p>
+
+        <!-- 只在最后一章显示结束操作 -->
+        <BookEndActions
+          v-if="isLastChapter"
+          :book-id="bookEndData.bookId"
+          :book-title="bookEndData.bookTitle"
+          :recommendation-value="bookEndData.recommendationValue"
+          :review-count="bookEndData.reviewCount"
+          :rating-stats="bookEndData.ratingStats"
+          :initial-completed="bookEndData.initialCompleted"
+          :initial-complete-time="bookEndData.initialCompleteTime"
+          @markComplete="handleBookEndAction('markComplete', $event)"
+          @viewReviews="handleBookEndAction('viewReviews')"
+          @rateBook="handleBookEndAction('rateBook', $event)"
+          :is-dark-mode="isDarkMode"
+        />
+      </article>
+
+      <!-- 下一章按钮 -->
+      <div v-if="hasNextChapter" class="chapter-nav bottom-chapter-nav">
+        <button
+          class="chapter-nav-button next-chapter"
+          @click="$emit('nextChapter')"
+          :class="{ dark: isDarkMode }"
+        >
+          <span class="chapter-nav-text">下一章</span>
+          <ChevronRight :size="16" class="nav-icon" />
+        </button>
+      </div>
+    </div>
+
+    <SelectionMenu
+      :position="selection?.position || null"
+      :hasOverlap="!!selection?.overlappingAnnotations?.length"
+      @action="handleMenuAction"
+    />
+  </main>
+</template>
+
 <script setup lang="ts">
 // @ts-nocheck
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ChevronLeft, ChevronRight, MessageSquare } from 'lucide-vue-next'
 import SelectionMenu from './SelectionMenu.vue'
+import BookEndActions from './BookEndActions.vue'
 import type { BookPage, TypographySettings, Annotation } from './types'
 
 const props = defineProps<{
@@ -13,6 +109,20 @@ const props = defineProps<{
   annotations: Annotation[]
   hasPrevChapter: boolean
   hasNextChapter: boolean
+  isLastChapter: boolean
+  bookEndData?: {
+    bookId: string | number
+    bookTitle: string
+    recommendationValue: number
+    reviewCount: number
+    ratingStats: {
+      recommend: number
+      average: number
+      poor: number
+    }
+    initialCompleted: boolean
+    initialCompleteTime: string | null
+  }
 }>()
 
 const emit = defineEmits<{
@@ -28,7 +138,25 @@ const emit = defineEmits<{
     action: string,
     range?: { pIndex: number; start: number; end: number },
   ): void
+  (e: 'markComplete', data: { bookId: string | number, completeTime: string }): void
+  (e: 'viewReviews'): void
+  (e: 'rateBook', rating: string): void
 }>()
+
+// 为bookEndData提供默认值
+const defaultBookEndData = {
+  bookId: 'book-123',
+  bookTitle: '书籍标题',
+  recommendationValue: 90.5,
+  reviewCount: 100,
+  ratingStats: {
+    recommend: 70,
+    average: 20,
+    poor: 10
+  },
+  initialCompleted: false,
+  initialCompleteTime: null
+}
 
 const selection = ref<{
   text: string
@@ -40,6 +168,21 @@ const selection = ref<{
 } | null>(null)
 
 const articleRef = ref<HTMLElement | null>(null)
+
+// 处理书籍结束操作
+const handleBookEndAction = (action: string, data?: any) => {
+  switch (action) {
+    case 'markComplete':
+      emit('markComplete', data)
+      break
+    case 'viewReviews':
+      emit('viewReviews')
+      break
+    case 'rateBook':
+      emit('rateBook', data)
+      break
+  }
+}
 
 // 检测选中文本是否与现有标注重叠
 const checkOverlappingAnnotations = (pIndex: number, start: number, end: number): Annotation[] => {
@@ -378,85 +521,6 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
 }
 </script>
 
-<template>
-  <main class="reader-wrapper">
-    <div
-      class="reader-card"
-      :class="{
-        'dark-mode': isDarkMode,
-      }"
-    >
-      <!-- 上一章按钮 -->
-      <div v-if="hasPrevChapter" class="chapter-nav top-chapter-nav left-chapter-nav">
-        <button
-          class="chapter-nav-button prev-chapter"
-          @click="$emit('prevChapter')"
-          :class="{ dark: isDarkMode }"
-        >
-          <ChevronLeft :size="16" class="nav-icon" />
-          <span class="chapter-nav-text">上一章</span>
-        </button>
-      </div>
-
-      <header class="reader-header">
-        <p class="chapter-title">
-          {{ pageData.chapter }}
-        </p>
-      </header>
-
-      <article
-        ref="articleRef"
-        @mouseup="handleMouseUp"
-        @mousedown="selection = null"
-        class="reader-article"
-        :style="{
-          fontSize: `${typography.fontSize}px`,
-          lineHeight: typography.lineHeight,
-        }"
-      >
-        <p
-          v-for="(paragraph, index) in pageData.content"
-          :key="index"
-          :data-index="index"
-          class="paragraph"
-        >
-          <span
-            v-for="seg in getParagraphSegments(paragraph, index)"
-            :key="seg.key"
-            :class="seg.classes"
-            @click="(e) => handleSegmentClick(e, seg)"
-          >
-            {{ seg.text }}
-            <span v-if="seg.isThought" class="thought-icon-wrapper">
-              <span class="thought-icon-badge">
-                <MessageSquare :size="8" fill="currentColor" />
-              </span>
-            </span>
-          </span>
-        </p>
-      </article>
-
-      <!-- 下一章按钮 -->
-      <div v-if="hasNextChapter" class="chapter-nav bottom-chapter-nav">
-        <button
-          class="chapter-nav-button next-chapter"
-          @click="$emit('nextChapter')"
-          :class="{ dark: isDarkMode }"
-        >
-          <span class="chapter-nav-text">下一章</span>
-          <ChevronRight :size="16" class="nav-icon" />
-        </button>
-      </div>
-    </div>
-
-    <SelectionMenu
-      :position="selection?.position || null"
-      :hasOverlap="!!selection?.overlappingAnnotations?.length"
-      @action="handleMenuAction"
-    />
-  </main>
-</template>
-
 <style scoped>
 .reader-wrapper {
   width: 100%;
@@ -471,7 +535,7 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
 
 .reader-card {
   width: 100%;
-  height: 100%;
+  height: 95%;
   display: flex;
   flex-direction: column;
   padding: 1rem 3rem 2.5rem 3rem;
