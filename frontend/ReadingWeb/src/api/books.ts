@@ -7,6 +7,8 @@ export interface BookDetailRaw {
   cover: string
   bookTitle: string
   author: string
+  authorName: string
+  authorId: number
   rating: number
   readCount: number
   description: string
@@ -33,6 +35,7 @@ export interface BookDetail {
   id: string | number
   title: string
   author: string
+  authorId: number
   cover: string
   description: string
   rating: number
@@ -59,7 +62,8 @@ export interface BookDetail {
 const mapBookDetail = (raw: BookDetailRaw, bookId: string | number): BookDetail => ({
   id: bookId,
   title: raw.bookTitle,
-  author: raw.author,
+  author: raw.authorName || raw.author,
+  authorId: raw.authorId,
   cover: raw.cover,
   description: raw.description,
   rating: raw.rating,
@@ -91,12 +95,14 @@ export interface AuthorWork {
   cover: string
   bookTitle: string
   description: string
+  bookId: string
 }
 
 export interface RelatedBook {
   cover: string
   title: string
   description: string
+  bookId: number
 }
 
 export interface AuthorDetail {
@@ -142,12 +148,26 @@ export const getBookReviews = async (bookId: string | number): Promise<BookRevie
 
 export const getAuthorWorks = async (bookId: string | number): Promise<AuthorWork[]> => {
   const res = await request.get<AuthorWork[]>(`/books/${bookId}/author-works`)
-  return unwrap(res)
+  const data: AuthorWork[] = unwrap(res)
+  // 确保返回的数据包含所有必需字段
+  return data.map((work: AuthorWork) => ({
+    cover: work.cover,
+    bookTitle: work.bookTitle,
+    description: work.description,
+    bookId: work.bookId,
+  }))
 }
 
 export const getRelatedBooks = async (bookId: string | number): Promise<RelatedBook[]> => {
   const res = await request.get<RelatedBook[]>(`/books/${bookId}/related`)
-  return unwrap(res)
+  const data: RelatedBook[] = unwrap(res)
+  // 确保返回的数据包含所有必需字段
+  return data.map((book: RelatedBook) => ({
+    cover: book.cover,
+    title: book.title,
+    description: book.description,
+    bookId: book.bookId,
+  }))
 }
 
 export const getBookDetail = async (bookId: string | number): Promise<BookDetail> => {
@@ -180,7 +200,7 @@ export const getAuthorAllWorks = async (authorId: number): Promise<AuthorWorkWit
   const data = unwrap(res)
 
   // 将接口数据映射为前端需要的格式
-  return data.works.map(work => ({
+  return data.works.map((work: AuthorDetailResponse['works'][0]) => ({
     id: work.bookId,
     title: work.bookTitle,
     summary: work.description,
@@ -189,4 +209,28 @@ export const getAuthorAllWorks = async (authorId: number): Promise<AuthorWorkWit
     recommendationRate: work.rating,
     authorName: work.authorName
   }))
+}
+
+/**
+ * 加入书架
+ */
+export const addToBookshelf = async (bookId: string | number): Promise<boolean> => {
+  const res = await request.post('/bookshelf', { bookId })
+  return unwrap(res)
+}
+
+/**
+ * 从书架移除
+ */
+export const removeFromBookshelf = async (bookId: string | number): Promise<boolean> => {
+  const res = await request.delete(`/bookshelf/${bookId}`)
+  return unwrap(res)
+}
+
+/**
+ * 开始阅读
+ */
+export const startReading = async (bookId: string | number): Promise<{ readingStatus: 'not_started' | 'reading' | 'finished' }> => {
+  const res = await request.post(`/books/${bookId}/reading`)
+  return unwrap(res)
 }

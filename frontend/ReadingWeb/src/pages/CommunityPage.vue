@@ -15,6 +15,8 @@ import { usePostInteractions } from '@/composables/usePostInteractions'
 import { fetchCommunityPosts, fetchMyComments, fetchMyLikes } from '@/api/community'
 import type { Post } from '@/types/post'
 import { getProfileHome } from '@/api/profile'
+import { getTopicsList, getHotTopics, type HotTopic } from '@/api/topics'
+
 // 当前用户信息（初始值设为空或默认值）
 const currentUser = reactive({
   username: '加载中...',
@@ -26,68 +28,122 @@ const currentUser = reactive({
 })
 
 // 热门话题
-const hotTopics = ref([
-  { id: 1, name: '# 好书推荐' },
-  { id: 2, name: '# 阅读心得' },
-  { id: 3, name: '# 文学讨论' },
-  { id: 4, name: '# 经典名著' },
-  { id: 5, name: '# 新书速递' },
-  { id: 6, name: '# 读书笔记' },
-  { id: 7, name: '# 作者访谈' },
-  { id: 8, name: '# 阅读挑战' },
-  { id: 9, name: '# 书单分享' },
-])
-const topicsList = ref([
-  { id: 1, cover: 'https://picsum.photos/200?random=1', title: '每日读点小说', number: 200 },
-  { id: 2, cover: 'https://picsum.photos/200?random=2', title: '科幻爱好者', number: 156 },
-  { id: 3, cover: 'https://picsum.photos/200?random=3', title: '经典文学', number: 320 },
-  { id: 4, cover: 'https://picsum.photos/200?random=4', title: '读书笔记精选', number: 187 },
-  { id: 5, cover: 'https://picsum.photos/200?random=5', title: '外国名著', number: 98 },
-  { id: 6, cover: 'https://picsum.photos/200?random=6', title: '推理与悬疑', number: 240 },
-  { id: 7, cover: 'https://picsum.photos/200?random=7', title: '诗歌与散文', number: 142 },
-  { id: 8, cover: 'https://picsum.photos/200?random=8', title: '新书速递', number: 75 },
-  { id: 9, cover: 'https://picsum.photos/200?random=9', title: '阅读打卡挑战', number: 310 },
-])
+const hotTopics = ref<{ id: number, name: string }[]>([])
+const topicsList = ref<{ id: number, cover: string, title: string, number: number }[]>([])
+
+// 话题列表分页相关
+const topicsHasMore = ref(true)
+const topicsNextCursor = ref<number | undefined>(undefined)
+const topicsLoading = ref(false)
+
+// 加载话题列表
+const loadTopicsList = async () => {
+  if (topicsLoading.value) return
+
+  topicsLoading.value = true
+  try {
+    const result = await getTopicsList(topicsNextCursor.value, 9)
+    topicsList.value = [...topicsList.value, ...result.items.map(item => ({
+      id: item.id as number,
+      cover: item.cover,
+      title: item.title,
+      number: item.number
+    }))]
+    topicsHasMore.value = result.hasMore
+    topicsNextCursor.value = result.nextCursor
+  } catch (error) {
+    console.error('加载话题列表失败:', error)
+  } finally {
+    topicsLoading.value = false
+  }
+}
+
+// 加载热门话题
+const loadHotTopics = async () => {
+  try {
+    const result = await getHotTopics()
+    console.log('热门话题接口返回:', result)
+
+    // 直接使用接口返回的数据，不需要额外转换
+    hotTopics.value = result.map(topic => ({
+      id: topic.id,
+      name: topic.name
+    }))
+
+    console.log('转换后的热门话题:', hotTopics.value)
+  } catch (error) {
+    console.error('加载热门话题失败:', error)
+    // 如果接口失败，使用默认数据
+    hotTopics.value = [
+      { id: 1, name: '# 好书推荐' },
+      { id: 2, name: '# 阅读心得' },
+      { id: 3, name: '# 文学讨论' },
+      { id: 4, name: '# 经典名著' },
+      { id: 5, name: '# 新书速递' },
+    ]
+  }
+}
 
 // 帖子数据
 onMounted(async () => {
-  // 并发请求所有数据
+  console.log('CommunityPage mounted, 开始加载数据...')
+
   try {
+    // 并发请求所有数据
     const [postsData, commentsData, likesData, profileData] = await Promise.all([
       fetchCommunityPosts(),
       fetchMyComments(),
       fetchMyLikes(),
-      getProfileHome(), // 获取用户信息
+      getProfileHome(),
     ])
 
     posts.value = postsData
     commentList.value = commentsData
     likeList.value = likesData
 
-    // 3. 将接口数据映射到 currentUser
-    // 注意：这里将接口返回的字段名映射到你组件内使用的字段名
+    // 更新用户信息
     Object.assign(currentUser, {
       username: profileData.username,
       bio: profileData.bio,
-      avatar: profileData.avatar, // 如果后端没头像则用本地默认
-      followCount: profileData.followingCount, // 接口字段是 followingCount
-      fansCount: profileData.followerCount, // 接口字段是 followerCount
-      postCount: profileData.postCount,
+      avatar: profileData.avatar || '/default-avatar.png',
+      followCount: profileData.followingCount || 0,
+      fansCount: profileData.followerCount || 0,
+      postCount: profileData.postCount || 0,
     })
+
+    console.log('用户信息加载完成:', currentUser)
   } catch (error) {
-    console.error('加载数据失败:', error)
+    console.error('加载主要数据失败:', error)
   }
+
+  // 加载话题相关数据
+  await Promise.all([
+    loadTopicsList(),
+    loadHotTopics()
+  ])
+
+  console.log('所有数据加载完成')
 })
+
 const posts = ref<Post[]>([])
 const commentList = ref<any[]>([])
 const likeList = ref<any[]>([])
 const currentTab = ref<'square' | 'following' | 'topics' | 'mine'>('square')
-const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => (currentTab.value = tab)
-// “我的”内部的二级 Tab
+
+const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => {
+  console.log('切换标签:', tab)
+  currentTab.value = tab
+
+  // 切换到话题页时，如果没有数据则加载
+  if (tab === 'topics' && topicsList.value.length === 0 && !topicsLoading.value) {
+    loadTopicsList()
+  }
+}
+
+// "我的"内部的二级 Tab
 const mineTab = ref<'like' | 'comment'>('comment')
 
 // 动态页面标题
-// 直接使用 computed
 const title = computed(() => {
   let tabName = ''
 
@@ -124,9 +180,20 @@ const filteredPosts = computed<Post[]>(() => {
 })
 
 const handleTopicClick = (topic: any) => {
-  console.log('点击话题:', topic.name)
+  console.log('点击热门话题:', topic.name)
+  // 这里可以添加跳转到话题详情页的逻辑
+  // window.open(`/topicdetail/${topic.id}`, '_blank')
 }
-// TODO: 等待接口文档确认
+
+// 滚动加载更多话题
+const handleTopicsScroll = (event: Event) => {
+  const target = event.target as HTMLElement
+  const { scrollTop, scrollHeight, clientHeight } = target
+
+  if (scrollTop + clientHeight >= scrollHeight - 100 && topicsHasMore.value && !topicsLoading.value) {
+    loadTopicsList()
+  }
+}
 
 // 统一：帖子交互逻辑（关注 / 点赞）
 const { updateFollow, updateLike } = usePostInteractions(posts)
@@ -141,17 +208,13 @@ const handleLike = (postId: number, likeCount: number, isLiked: boolean): void =
 
 // 评论事件
 const handleComment = (postId: number): void => {
-  // 这里可以添加跳转到评论页面或打开评论弹窗的逻辑
-  // 例如：router.push(`/post/${postId}/comments`)
-  void postId // 明确表示此参数未使用
+  console.log('评论帖子:', postId)
   // TODO: 实现评论功能
 }
 
 // 转发事件
 const handleShare = (postId: number): void => {
-  // 这里可以添加分享逻辑
-  // 例如：showShareDialog(postId)
-  void postId // 明确表示此参数未使用
+  console.log('转发帖子:', postId)
   // TODO: 实现转发功能
 }
 </script>
@@ -177,7 +240,7 @@ const handleShare = (postId: number): void => {
 
       <!-- main-content部分 -->
       <div class="main-content">
-        <div v-if="currentTab === 'topics'" class="topics-grid">
+        <div v-if="currentTab === 'topics'" class="topics-grid" @scroll="handleTopicsScroll">
           <Topic
             v-for="topic in topicsList"
             :id="topic.id"
@@ -186,6 +249,16 @@ const handleShare = (postId: number): void => {
             :title="topic.title"
             :number="topic.number"
           />
+          <!-- 加载更多提示 -->
+          <div v-if="topicsLoading" class="loading-more">
+            加载中...
+          </div>
+          <div v-else-if="!topicsHasMore && topicsList.length > 0" class="no-more">
+            没有更多话题了
+          </div>
+          <div v-else-if="topicsList.length === 0 && !topicsLoading" class="empty">
+            暂无话题
+          </div>
         </div>
         <!--我的-->
         <div v-else-if="currentTab === 'mine'" class="mine-grid">
@@ -299,6 +372,7 @@ const handleShare = (postId: number): void => {
   color: var(--primary-green);
   font-weight: 600;
 }
+
 .mine-tabs {
   display: flex;
   gap: 16px;
@@ -341,11 +415,23 @@ const handleShare = (postId: number): void => {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 20px;
   justify-items: center;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 10px;
 }
 
 .empty {
   padding: 24px;
   text-align: center;
   color: #888;
+}
+
+.loading-more,
+.no-more {
+  grid-column: 1 / -1;
+  padding: 16px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
 }
 </style>

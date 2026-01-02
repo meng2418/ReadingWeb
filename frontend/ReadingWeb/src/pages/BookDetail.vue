@@ -75,7 +75,7 @@ import { useTitle } from '@/stores/useTitle'
 import { countPublicReviews } from '@/composables/useReviews'
 import type { Review } from '@/types/review'
 import type { BookListItem } from '@/types/book'
-import { getBookDetail, getBookReviews, getAuthorWorks, getRelatedBooks } from '@/api/books'
+import { getBookDetail, getBookReviews, getAuthorWorks, getRelatedBooks, addToBookshelf, removeFromBookshelf, startReading } from '@/api/books'
 import type { BookDetail, BookReview, AuthorWork, RelatedBook } from '@/api/books'
 
 // 默认测试数据
@@ -83,6 +83,7 @@ const getDefaultBookDetail = (): BookDetail => ({
   id: 'book-123',
   title: '少年Pi的奇幻漂流',
   author: '扬·马特尔',
+  authorId: 1,
   cover: 'https://picsum.photos/200/280?random=25',
   description: '《少年Pi的奇幻漂流》是加拿大作家扬·马特尔于2001年发表的虚构小说，描述一名印度男孩Pi在太平洋上与一只孟加拉虎同船而行的冒险故事。这部小说探讨了信仰、生存和人类与自然的关系等深刻主题，获得了2002年的布克奖及亚洲/太平洋美洲文学奖。',
   rating: 90.5,
@@ -134,17 +135,20 @@ const getDefaultAuthorWorks = (): AuthorWork[] => [
   {
     cover: 'https://picsum.photos/80/100?random=21',
     bookTitle: '少年Pi的奇幻漂流',
-    description: '一名印度男孩与孟加拉虎在太平洋上的生存故事'
+    description: '一名印度男孩与孟加拉虎在太平洋上的生存故事',
+    bookId: '1'
   },
   {
     cover: 'https://picsum.photos/80/100?random=22',
     bookTitle: '标本师的魔幻剧本',
-    description: '关于大屠杀记忆与文学创作的深刻探讨'
+    description: '关于大屠杀记忆与文学创作的深刻探讨',
+    bookId: '2'
   },
   {
     cover: 'https://picsum.photos/80/100?random=23',
     bookTitle: '赫尔曼',
-    description: '关于友谊、艺术与人生选择的温暖故事'
+    description: '关于友谊、艺术与人生选择的温暖故事',
+    bookId: '3'
   }
 ]
 
@@ -152,17 +156,20 @@ const getDefaultRelatedBooks = (): RelatedBook[] => [
   {
     cover: 'https://picsum.photos/80/100?random=1',
     title: '时光旅行者的妻子',
-    description: '一段跨越时空的爱情故事，感人至深。'
+    description: '一段跨越时空的爱情故事，感人至深。',
+    bookId: 1
   },
   {
     cover: 'https://picsum.photos/80/100?random=2',
     title: '追风筝的人',
-    description: '关于友谊、背叛与救赎的动人故事。'
+    description: '关于友谊、背叛与救赎的动人故事。',
+    bookId: 2
   },
   {
     cover: 'https://picsum.photos/80/100?random=3',
     title: '解忧杂货店',
-    description: '穿越时空的信件，连接过去与未来。'
+    description: '穿越时空的信件，连接过去与未来。',
+    bookId: 3
   }
 ]
 const route = useRoute()
@@ -302,7 +309,7 @@ const convertedReviews = computed(() => {
 // 将AuthorWork转换为组件期望的格式
 const convertedAuthorWorks = computed(() => {
   return authorWorks.value.map((work, index) => ({
-    id: index + 1,
+    id: work.bookId ? parseInt(work.bookId.toString()) : (index + 1),
     title: work.bookTitle,
     summary: work.description,
     cover: work.cover,
@@ -311,8 +318,8 @@ const convertedAuthorWorks = computed(() => {
 
 // 将RelatedBook转换为BookListItem格式
 const convertedRelatedBooks = computed(() => {
-  return relatedBooks.value.map((book, index) => ({
-    id: index + 1,
+  return relatedBooks.value.map((book) => ({
+    id: book.bookId,
     title: book.title,
     cover: book.cover,
     intro: book.description, // API返回的是description，组件期望的是intro
@@ -339,7 +346,7 @@ watch(
 
 // 作者信息数据 - 从API获取
 const computedAuthorInfo = computed(() => ({
-  id: 1, // TODO: 从API获取作者ID，暂时使用默认值
+  id: bookDetail.value?.authorId || 1,
   name: bookDetail.value?.author || '扬·马特尔',
   description: bookDetail.value?.authorBio ||
     '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
@@ -414,12 +421,47 @@ const handleViewAllWorks = () => {
   console.log('查看全部作品')
 }
 
-const handleBookshelfToggle = (isAdded: boolean) => {
-  console.log(`书架状态: ${isAdded ? '已加入' : '已移除'}`)
+const handleBookshelfToggle = async (isAdded: boolean) => {
+  try {
+    const currentBookId = bookId.value
+    if (isAdded) {
+      await addToBookshelf(currentBookId)
+      console.log('成功加入书架')
+    } else {
+      await removeFromBookshelf(currentBookId)
+      console.log('成功从书架移除')
+    }
+
+    // 重新获取书籍详情以更新状态
+    const updatedBookDetail = await getBookDetail(currentBookId)
+    if (bookDetail.value) {
+      bookDetail.value.isInBookshelf = updatedBookDetail.isInBookshelf
+    }
+  } catch (error) {
+    console.error('书架操作失败:', error)
+    // 可以在这里添加错误提示
+  }
 }
 
-const handleStartReading = () => {
-  console.log('开始阅读事件触发')
+const handleStartReading = async () => {
+  try {
+    const currentBookId = bookId.value
+    const result = await startReading(currentBookId)
+    console.log('开始阅读成功，新的阅读状态:', result.readingStatus)
+
+    // 重新获取书籍详情以更新状态
+    const updatedBookDetail = await getBookDetail(currentBookId)
+    if (bookDetail.value) {
+      bookDetail.value.readingStatus = updatedBookDetail.readingStatus
+      bookDetail.value.hasStarted = updatedBookDetail.hasStarted
+    }
+
+    // 可以在这里添加跳转到阅读器的逻辑
+    // router.push(`/reader/${currentBookId}`)
+  } catch (error) {
+    console.error('开始阅读失败:', error)
+    // 可以在这里添加错误提示
+  }
 }
 
 const handleStatClick = (statType: string) => {

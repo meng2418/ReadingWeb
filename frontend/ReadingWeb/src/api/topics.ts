@@ -1,4 +1,4 @@
-// src/api/topics.ts
+// src/api/topics.ts (修改后的完整代码)
 import request from '@/utils/request'
 import type { Post } from '@/types/post'
 
@@ -21,6 +21,28 @@ export interface RawTopic {
     name: string
     postCount: number
   }>
+}
+
+/** 前端话题列表项结构（用于话题卡片） */
+export interface TopicListItem {
+  id: string | number
+  title: string
+  name: string
+  cover: string
+  number: number // 帖子总数
+  postCount: number
+}
+
+/** 后端话题列表结构 */
+interface RawTopicsResponse {
+  items: Array<{
+    topicId: number
+    topicName: string
+    image: string
+    postCount: number
+  }>
+  hasMore: boolean
+  nextCursor: number
 }
 
 /** 前端话题详情结构 */
@@ -66,21 +88,24 @@ interface RawTopicPost {
   isLiked: boolean
 }
 
-/** 后端热门话题结构 */
+/** 后端热门话题结构（根据你提供的接口） */
 interface RawHotTopic {
-  image: string
-  name: string
-  postCount: number
-  description: string
-  followerCount: number
+  topicId: number
+  topicName: string
 }
 
-/** 前端热门话题结构 */
+/** 后端热门话题响应 */
+interface RawHotTopicsResponse {
+  items?: Array<{
+    topicId: number
+    topicName: string
+  }>
+}
+
+/** 前端热门话题结构（用于HotTopics组件） */
 export interface HotTopic {
-  id: string
-  cover: string
-  title: string
-  postCount: number
+  id: number
+  name: string
 }
 
 /** 数据转换函数 */
@@ -126,12 +151,41 @@ const mapPost = (raw: RawTopicPost): Post => ({
     : null,
 })
 
-const mapHotTopic = (raw: RawHotTopic, index: number): HotTopic => ({
-  id: `hot-${index}`,
+const mapHotTopic = (raw: RawHotTopic): HotTopic => ({
+  id: raw.topicId,
+  name: `# ${raw.topicName}`
+})
+
+const mapTopicListItem = (raw: any): TopicListItem => ({
+  id: raw.topicId,
+  title: raw.topicName,
+  name: raw.topicName,
   cover: raw.image,
-  title: raw.name,
+  number: raw.postCount,
   postCount: raw.postCount,
 })
+
+/** 获取话题列表 */
+export const getTopicsList = async (
+  cursor?: number,
+  limit: number = 9
+): Promise<{
+  items: TopicListItem[]
+  hasMore: boolean
+  nextCursor?: number
+}> => {
+  const res = await request.get<RawTopicsResponse>('/topics', {
+    params: { cursor, limit }
+  })
+
+  const data = unwrap(res)
+
+  return {
+    items: data.items.map(mapTopicListItem),
+    hasMore: data.hasMore,
+    nextCursor: data.nextCursor
+  }
+}
 
 /** 获取话题详情 */
 export const getTopicDetail = async (topicId: string): Promise<TopicDetail> => {
@@ -156,7 +210,18 @@ export const getTopicPosts = async (
 
 /** 获取热门话题列表 */
 export const getHotTopics = async (): Promise<HotTopic[]> => {
-  const res = await request.get<RawHotTopic[]>('/topics/hot')
-  const list: RawHotTopic[] = unwrap(res)
-  return list.map(mapHotTopic)
+  const res = await request.get<RawHotTopicsResponse>('/topics/hot')
+  const data = unwrap(res)
+
+  // 处理不同的返回格式
+  if (Array.isArray(data)) {
+    // 如果是数组格式 [{"topicName":"string","topicId":0}]
+    return data.map(mapHotTopic)
+  } else if (data.items && Array.isArray(data.items)) {
+    // 如果是包含items的对象格式
+    return data.items.map(mapHotTopic)
+  }
+
+  console.error('热门话题接口返回格式异常:', data)
+  return []
 }

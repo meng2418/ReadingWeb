@@ -274,8 +274,8 @@ const confirmPurchase = () => {
 
 <style scoped>
 .book-detail-header {
-  max-width: 1200px;
-  margin: 0 auto;
+  /* 移除固定最大宽度，让它填充父容器 */
+  width: 100%;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -630,6 +630,7 @@ const confirmPurchase = () => {
     width: 150px;
     height: 210px;
     align-self: center;
+    margin-top: 0;
   }
 
   .book-title {
@@ -659,6 +660,14 @@ const confirmPurchase = () => {
 
   .book-description-section {
     padding: 20px;
+  }
+
+  .description-title {
+    font-size: 24px;
+  }
+
+  .book-description {
+    font-size: 16px;
   }
 
   .dialog-footer {
@@ -704,6 +713,10 @@ const confirmPurchase = () => {
 
   .book-description-section {
     padding: 15px;
+  }
+
+  .description-title {
+    font-size: 20px;
   }
 
   .book-description {
