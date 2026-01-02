@@ -31,8 +31,7 @@
 import { ref, computed } from 'vue'
 import CommentItem from './CommentItem.vue'
 import DefaultAvatar from '@/img/avatar.jpg'
-import { replyComment } from '@/api/post'
-import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
   postId: string | number
@@ -41,16 +40,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'add-reply', payload: { parentId: number; content: string }): void // 通知父组件添加回复到本地数据
+  (e: 'publish-comment', content: string): void
 }>()
-
+const userStore = useUserStore()
 // CommentSection.vue 里的核心逻辑
 const formattedComments = computed(() => {
   // props.initialComments 是从 API 传进来的数组
   return props.initialComments.map((item) => ({
     id: item.id,
     author: {
-      name: item.username, // <--- 必须确认 api/post.ts 里叫 username
-      avatar: item.avatar || DefaultAvatar,
+      name: userStore.userInfo.name,
+      avatar: userStore.userInfo.avatar || DefaultAvatar,
     },
     content: item.content,
     timestamp: item.commentTime, // <--- 必须确认 api/post.ts 里叫 commentTime
@@ -77,10 +77,18 @@ const sendComment = () => {
   const text = input.value.trim()
   if (!text) return
 
-  // 模拟发送请求...
-  console.log('提交到后端:', text)
+  // 触发父组件事件
+  emit('publish-comment', text)
+}
+
+// 暴露给父组件的方法
+const clearInput = () => {
   input.value = ''
 }
+
+defineExpose({
+  clearInput,
+})
 
 // 5. 回复逻辑
 const handleAddReply = (payload: { parentId: number; content: string }) => {

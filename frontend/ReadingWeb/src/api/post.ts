@@ -84,6 +84,27 @@ export const getPostLikes = async (postId: string | number) => {
   }
 }
 
+export interface PublishCommentResponse {
+  code: number
+  data: {
+    comment: {
+      commentId: number
+      username: string
+      avatar: string
+      content: string
+      commentTime: string
+      [property: string]: any
+    }
+    commentCount: number
+  }
+  message: string
+}
+
+export const publishComment = async (postId: string | number, content: string) => {
+  const res = await request.post<PublishCommentResponse>(`/posts/${postId}/comments`, { content })
+  return res.data.data // 返回包含 comment 和 commentCount 的对象
+}
+
 /** 回复评论的请求参数 */
 export interface ReplyCommentRequest {
   content: string

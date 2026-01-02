@@ -30,9 +30,11 @@
         <div class="interaction-content">
           <CommentSection
             v-if="isCommentTabActive"
+            ref="commentSectionRef"
             :postId="postId"
             :initialComments="comments"
             @add-reply="handleAddReply"
+            @publish-comment="handlePublishComment"
           />
           <LikeSection v-else :likes="likedData.likedUsers" />
         </div>
@@ -71,7 +73,13 @@ import CommentSection from '@/components/community/PostDetail/CommentSection.vue
 import PostBook from '@/components/community/PostDetail/PostBook.vue'
 import LikeSection from '@/components/community/PostDetail/LikeSection.vue'
 // 引入修改后的 API 方法
-import { getPostDetail, getPostComments, getPostLikes, replyComment } from '@/api/post'
+import {
+  getPostDetail,
+  getPostComments,
+  getPostLikes,
+  replyComment,
+  publishComment,
+} from '@/api/post'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import type { PostDetailResponse } from '@/api/post'
@@ -83,6 +91,7 @@ const userStore = useUserStore()
 const post = ref<PostDetailResponse | null>(null)
 const loaded = ref(false)
 const isCommentTabActive = ref(true)
+const commentSectionRef = ref()
 
 // 响应式数据
 const comments = ref<any[]>([])
@@ -157,6 +166,47 @@ const handleAddReply = async (payload: { parentId: number; content: string }) =>
   } catch (error) {
     console.error('回复失败:', error)
     ElMessage.error('回复失败，请稍后再试')
+  }
+}
+
+const handlePublishComment = async (content: string) => {
+  try {
+    // 调用 publishComment(postId, content)
+    // 注意：postId 是当前组件已定义的局部变量
+    const res = await publishComment(postId, content)
+
+    // res 结构: { comment: { commentId, ... }, commentCount: number }
+    const serverComment = res.comment
+
+    // 字段转换：将 commentId 映射为 id
+    // 构造评论对象，结构必须与 formattedComments 所需字段匹配
+    const newComment = {
+      id: serverComment.commentId,
+      username: serverComment.username || userStore.userInfo.name,
+      avatar: serverComment.avatar || userStore.userInfo.avatar,
+      content: serverComment.content,
+      commentTime: serverComment.commentTime,
+      likeCount: 0,
+      replies: [],
+    }
+
+    // 更新列表：插入到 comments.value 数组的最前面
+    comments.value.unshift(newComment)
+
+    // 更新评论数
+    if (post.value) {
+      post.value.commentCount = res.commentCount
+    }
+
+    // 清理工作：通知 CommentSection 清空输入框
+    if (commentSectionRef.value) {
+      commentSectionRef.value.clearInput()
+    }
+
+    ElMessage.success('评论发表成功')
+  } catch (error) {
+    console.error('发表评论失败', error)
+    ElMessage.error('发表评论失败')
   }
 }
 
