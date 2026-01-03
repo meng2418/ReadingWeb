@@ -20,7 +20,7 @@ export const useUserStore = defineStore('user', {
     // =====================
     // token
     // =====================
-    token: localStorage.getItem('token') || null,
+    token: localStorage.getItem('user_token') || null,
 
     // =====================
     // 阅读相关（新增）

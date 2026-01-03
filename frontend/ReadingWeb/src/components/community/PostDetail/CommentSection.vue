@@ -42,15 +42,15 @@ const emit = defineEmits<{
   (e: 'add-reply', payload: { parentId: number; content: string }): void // 通知父组件添加回复到本地数据
   (e: 'publish-comment', content: string): void
 }>()
-const userStore = useUserStore()
+
 // CommentSection.vue 里的核心逻辑
 const formattedComments = computed(() => {
   // props.initialComments 是从 API 传进来的数组
   return props.initialComments.map((item) => ({
     id: item.id,
     author: {
-      name: userStore.userInfo.name,
-      avatar: userStore.userInfo.avatar || DefaultAvatar,
+      name: item.username, // <--- 必须确认 api/post.ts 里叫 username
+      avatar: item.avatar || DefaultAvatar,
     },
     content: item.content,
     timestamp: item.commentTime, // <--- 必须确认 api/post.ts 里叫 commentTime
@@ -64,10 +64,11 @@ const formattedComments = computed(() => {
   }))
 })
 
-const currentUser = ref({
-  name: 'Current User',
-  avatar: DefaultAvatar,
-})
+const userStore = useUserStore()
+const currentUser = computed(() => ({
+  name: userStore.userInfo.name || '游客',
+  avatar: userStore.userInfo.avatar || DefaultAvatar,
+}))
 
 const input = ref('')
 const isSubmittingReply = ref(false)
@@ -95,15 +96,6 @@ const handleAddReply = (payload: { parentId: number; content: string }) => {
   // 直接通知父组件，让父组件去调接口并更新 comments 数组
   emit('add-reply', payload)
 }
-
-// // 辅助函数
-// function findInTree(list: Reply[] | undefined, targetId: number): boolean {
-//   if (!list || list.length === 0) return false
-//   for (const item of list) {
-//     if (item.id === targetId) return true
-//   }
-//   return false
-// }
 </script>
 
 <style scoped>
