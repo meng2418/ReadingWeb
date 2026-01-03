@@ -18,6 +18,7 @@ import WriteReview from '@/pages/WriteReview.vue'
 import AllReadingHighlights from '@/pages/AllReadingHighlights.vue'
 import AuthorDetail from '@/pages/AuthorDetail.vue'
 import SearchResultsPage from '@/pages/SearchResultsPage.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -92,7 +93,7 @@ const router = createRouter({
       props: true,
     },
     {
-      path: '/reader/:id?',
+      path: '/reader/:bookId/:chapterId?',
       name: 'ReaderPage',
       component: ReaderPage,
       props: true,

@@ -12,6 +12,7 @@ export interface Review {
   rating?: RatingValue
   isPublic?: boolean
   lastEditDate?: string
+  avatar?: string // 添加头像字段
 }
 
 // 评分统计数据
