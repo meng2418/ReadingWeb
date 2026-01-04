@@ -1,5 +1,8 @@
 <template>
   <div class="fp-container">
+    <!-- 粒子背景画布 -->
+    <canvas ref="canvasRef" class="particle-canvas"></canvas>
+
     <div class="fp-box">
       <h1 class="fp-title">找回密码</h1>
       <p class="fp-desc">{{ stepDesc }}</p>
@@ -69,8 +72,9 @@
               placeholder="请设置新密码"
               :class="{ 'fp-input': true, 'fp-input--error': errors.newPwd }"
             />
-            <button @click="toggleShowPwd" class="fp-toggle-pwd">
-              {{ showPwd ? '隐藏' : '显示' }}
+            <button @click="toggleShowPwd" class="fp-toggle-pwd" type="button">
+              <Eye v-if="!showPwd" :size="20" />
+              <EyeOff v-else :size="20" />
             </button>
           </div>
           <p class="fp-error" v-if="errors.newPwd">{{ errors.newPwd }}</p>
@@ -85,8 +89,9 @@
               placeholder="请再次输入密码"
               :class="{ 'fp-input': true, 'fp-input--error': errors.confirmPwd }"
             />
-            <button @click="toggleShowPwd" class="fp-toggle-pwd">
-              {{ showPwd ? '隐藏' : '显示' }}
+            <button @click="toggleShowPwd" class="fp-toggle-pwd" type="button">
+              <Eye v-if="!showPwd" :size="20" />
+              <EyeOff v-else :size="20" />
             </button>
           </div>
           <p class="fp-error" v-if="errors.confirmPwd">{{ errors.confirmPwd }}</p>
@@ -94,7 +99,7 @@
 
         <div class="fp-btn-group">
           <button @click="prevStep" class="fp-btn fp-btn--secondary">返回</button>
-          <button @click="resetPassword" class="fp-btn">完成重置</button>
+          <button @click="handleResetPassword" class="fp-btn">完成重置</button>
         </div>
       </div>
 
@@ -114,12 +119,117 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Eye, EyeOff } from 'lucide-vue-next' // 引入眼睛图标
+import { sendVerificationCode as apiSendCode, resetPassword as apiResetPassword } from '@/api/auth'
 
 const router = useRouter()
 
-// 响应式数据
+// --- 粒子效果逻辑开始 ---
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+let ctx: CanvasRenderingContext2D | null = null
+let animationFrameId: number
+let particles: Particle[] = []
+const mouse = { x: -1000, y: -1000 }
+
+class Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  size: number
+  constructor(w: number, h: number) {
+    this.x = Math.random() * w
+    this.y = Math.random() * h
+    this.vx = (Math.random() - 0.5) * 1.2
+    this.vy = (Math.random() - 0.5) * 1.2
+    this.size = Math.random() * 2 + 1
+  }
+  update(w: number, h: number) {
+    this.x += this.vx
+    this.y += this.vy
+    if (this.x < 0 || this.x > w) this.vx *= -1
+    if (this.y < 0 || this.y > h) this.vy *= -1
+    const dx = mouse.x - this.x
+    const dy = mouse.y - this.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    if (distance < 120) {
+      this.x -= dx * 0.01
+      this.y -= dy * 0.01
+    }
+  }
+  draw(context: CanvasRenderingContext2D) {
+    context.fillStyle = 'rgba(0, 124, 39, 0.4)'
+    context.beginPath()
+    context.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+    context.fill()
+  }
+}
+
+const initCanvas = () => {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  ctx = canvas.getContext('2d')
+  handleResize()
+  if (ctx) {
+    particles = Array.from({ length: 80 }, () => new Particle(canvas.width, canvas.height))
+    animate()
+  }
+}
+
+const handleResize = () => {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  mouse.x = e.clientX
+  mouse.y = e.clientY
+}
+
+const animate = () => {
+  const canvas = canvasRef.value
+  const currentCtx = ctx
+  if (!canvas || !currentCtx) return
+  const width = canvas.width
+  const height = canvas.height
+  currentCtx.clearRect(0, 0, width, height)
+  particles.forEach((p, i) => {
+    p.update(width, height)
+    p.draw(currentCtx)
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = p.x - particles[j].x
+      const dy = p.y - particles[j].y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < 100) {
+        currentCtx.strokeStyle = `rgba(0, 124, 39, ${0.15 * (1 - dist / 100)})`
+        currentCtx.lineWidth = 0.5
+        currentCtx.beginPath()
+        currentCtx.moveTo(p.x, p.y)
+        currentCtx.lineTo(particles[j].x, particles[j].y)
+        currentCtx.stroke()
+      }
+    }
+  })
+  animationFrameId = requestAnimationFrame(animate)
+}
+
+onMounted(() => {
+  initCanvas()
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('mousemove', handleMouseMove)
+})
+
+onUnmounted(() => {
+  cancelAnimationFrame(animationFrameId)
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('mousemove', handleMouseMove)
+})
+// --- 粒子效果逻辑结束 ---
+
 const step = ref(1)
 const phone = ref('')
 const code = ref('')
@@ -130,7 +240,6 @@ const success = ref(false)
 const resendDisabled = ref(false)
 const resendSeconds = ref(60)
 
-// 错误信息对象
 const errors = reactive({
   phone: '',
   code: '',
@@ -138,7 +247,6 @@ const errors = reactive({
   confirmPwd: '',
 })
 
-// 计算属性
 const stepDesc = computed(() => {
   const descs = [
     '请输入您注册的手机号，我们将发送验证码',
@@ -159,7 +267,6 @@ const maskedPhone = computed(() => {
   return phone.value
 })
 
-// 方法
 const nextStep = () => {
   if (step.value === 1 && validatePhone()) {
     sendCode()
@@ -203,7 +310,6 @@ const validatePassword = () => {
   let valid = true
   errors.newPwd = ''
   errors.confirmPwd = ''
-
   if (newPwd.value.length < 8) {
     errors.newPwd = '密码至少8位'
     valid = false
@@ -215,26 +321,28 @@ const validatePassword = () => {
   return valid
 }
 
-const sendCode = () => {
-  if (step.value === 1 && !validatePhone()) {
-    return
+const sendCode = async () => {
+  if (!validatePhone()) return
+  try {
+    await apiSendCode({ phone: phone.value })
+    startResendTimer()
+  } catch (e) {
+    errors.phone = '验证码发送失败'
   }
-
-  // 这里应该调用发送验证码的API
-  console.log(`向 ${phone.value} 发送验证码`)
-
-  // 启动重发计时器
-  startResendTimer()
 }
 
-const resetPassword = () => {
-  if (validatePassword()) {
-    // 这里应该调用重置密码的API
-    console.log('重置密码:', { phone: phone.value, newPwd: newPwd.value })
-
-    setTimeout(() => {
-      success.value = true
-    }, 800)
+const handleResetPassword = async () => {
+  if (!validatePassword()) return
+  try {
+    await apiResetPassword({
+      phone: phone.value,
+      verificationCode: code.value,
+      newPassword: newPwd.value,
+      confirmPassword: confirmPwd.value,
+    })
+    success.value = true
+  } catch (e) {
+    errors.newPwd = '重置密码失败'
   }
 }
 
@@ -245,7 +353,6 @@ const toggleShowPwd = () => {
 const startResendTimer = () => {
   resendDisabled.value = true
   resendSeconds.value = 60
-
   const timer = setInterval(() => {
     resendSeconds.value--
     if (resendSeconds.value <= 0) {
@@ -261,7 +368,6 @@ const toLogin = () => {
 </script>
 
 <style scoped>
-/* 基础样式 */
 .fp-container {
   min-height: 100vh;
   display: flex;
@@ -270,13 +376,24 @@ const toLogin = () => {
   justify-content: center;
   width: 100%;
   height: 100vh;
-  background: url('@/img/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-color: #f0f2f5; /* 移除 bg.jpg */
+  position: relative;
+  overflow: hidden;
+}
+
+.particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .fp-box {
+  position: relative;
+  z-index: 1; /* 保证卡片在粒子上方 */
   width: 100%;
   max-width: 400px;
   background: white;
@@ -285,7 +402,6 @@ const toLogin = () => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* 标题区域 */
 .fp-title {
   text-align: center;
   color: #333;
@@ -299,7 +415,6 @@ const toLogin = () => {
   font-size: 14px;
 }
 
-/* 步骤指示器 */
 .fp-steps {
   display: flex;
   justify-content: space-between;
@@ -321,10 +436,9 @@ const toLogin = () => {
   color: #1ad6a1;
 }
 
-/* 表单样式 */
 .fp-form-group {
   margin-bottom: 20px;
-  width: 375px;
+  width: 100%; /* 修复了之前固定的 375px 可能导致的溢出问题 */
 }
 
 .fp-label {
@@ -340,6 +454,7 @@ const toLogin = () => {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 15px;
+  box-sizing: border-box;
 }
 
 .fp-input:focus {
@@ -357,7 +472,6 @@ const toLogin = () => {
   margin-top: 5px;
 }
 
-/* 按钮样式 */
 .fp-btn {
   width: 100%;
   padding: 12px;
@@ -388,7 +502,6 @@ const toLogin = () => {
   gap: 10px;
 }
 
-/* 验证码信息 */
 .fp-code-info {
   display: flex;
   justify-content: space-between;
@@ -397,22 +510,6 @@ const toLogin = () => {
   color: #666;
 }
 
-.fp-resend {
-  width: auto;
-  padding: 0;
-  background: none;
-  color: #007c27;
-  font-size: 12px;
-  cursor: pointer;
-  border: none;
-}
-
-.fp-resend:disabled {
-  color: #999;
-  cursor: not-allowed;
-}
-
-/* 成功提示 */
 .fp-success {
   text-align: center;
   padding: 20px 0;
@@ -429,15 +526,16 @@ const toLogin = () => {
   font-size: 14px;
 }
 
-/* 底部信息 */
 .fp-footer {
+  position: relative;
+  z-index: 1;
   margin-top: 20px;
   text-align: center;
   font-size: 14px;
 }
 
 .fp-link {
-  color: #dadada;
+  color: #888; /* 稍微加深了颜色提高可读性 */
   text-decoration: underline;
   cursor: pointer;
 }
@@ -448,7 +546,6 @@ const toLogin = () => {
   font-size: 12px;
 }
 
-/* 新增的样式，你可以整合到你的CSS文件中 */
 .fp-code-input-group {
   display: flex;
   gap: 12px;
@@ -457,7 +554,7 @@ const toLogin = () => {
 .fp-send-code {
   min-width: 120px;
   padding: 0 16px;
-  background-color: #409eff;
+  background-color: #007c27;
   color: white;
   border: none;
   border-radius: 4px;
@@ -474,6 +571,7 @@ const toLogin = () => {
   position: relative;
 }
 
+/* 眼睛图标按钮样式优化 */
 .fp-toggle-pwd {
   position: absolute;
   right: 12px;
@@ -481,9 +579,17 @@ const toLogin = () => {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #666;
+  color: #999;
   cursor: pointer;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.fp-toggle-pwd:hover {
+  color: #007c27;
 }
 
 .fp-code-info {

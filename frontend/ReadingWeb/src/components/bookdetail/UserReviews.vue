@@ -9,7 +9,8 @@
         class="review-item"
       >
         <div class="user-avatar">
-          <span class="avatar-text">{{ getInitials(review.userName) }}</span>
+          <img v-if="review.avatar" :src="review.avatar" :alt="review.userName" class="avatar-image" @error="handleAvatarError" />
+          <span v-else class="avatar-text">{{ getInitials(review.userName) }}</span>
           <!-- 当前用户的点评标记 -->
           <span class="current-user-badge" v-if="isCurrentUserReview(review.userId)">我</span>
         </div>
@@ -146,6 +147,19 @@ const handleEditReview = (review: Review) => {
   });
 };
 
+// 处理头像加载失败
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  img.style.display = 'none';
+  const parent = img.parentElement;
+  if (parent) {
+    const fallback = parent.querySelector('.avatar-text') as HTMLElement;
+    if (fallback) {
+      fallback.style.display = 'block';
+    }
+  }
+};
+
 const expandAllReviews = () => {
   isLoading.value = true;
 
@@ -236,6 +250,18 @@ onMounted(() => {
   font-weight: bold;
   font-size: 14px;
   position: relative;
+  overflow: hidden;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-text {
+  display: block;
 }
 
 .current-user-badge {

@@ -1,9 +1,10 @@
 <!-- LoginPage.vue -->
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { ref, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import axios from 'axios'
+import { login, register, sendVerificationCode } from '@/api/auth'
+import type { LoginParams } from '@/api/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,22 +26,120 @@ const signUpPassword = ref('')
 const signUpConfirmPassword = ref('')
 const signUpCode = ref('')
 
-// 根据路由参数决定显示登录或注册界面
+// --- 粒子背景逻辑开始 ---
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+let ctx: CanvasRenderingContext2D | null = null
+let animationFrameId: number
+let particles: Particle[] = []
+const mouse = { x: -1000, y: -1000 }
+
+class Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  size: number
+  constructor(w: number, h: number) {
+    this.x = Math.random() * w
+    this.y = Math.random() * h
+    this.vx = (Math.random() - 0.5) * 1.2
+    this.vy = (Math.random() - 0.5) * 1.2
+    this.size = Math.random() * 2 + 1
+  }
+  update(w: number, h: number) {
+    this.x += this.vx
+    this.y += this.vy
+    if (this.x < 0 || this.x > w) this.vx *= -1
+    if (this.y < 0 || this.y > h) this.vy *= -1
+
+    // 鼠标排斥效果
+    const dx = mouse.x - this.x
+    const dy = mouse.y - this.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    if (distance < 120) {
+      this.x -= dx * 0.01
+      this.y -= dy * 0.01
+    }
+  }
+  draw() {
+    if (!ctx) return
+    ctx.fillStyle = 'rgba(0, 124, 39, 0.4)' // 使用主题绿色
+    ctx.beginPath()
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+const initCanvas = () => {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  ctx = canvas.getContext('2d')
+  handleResize()
+  particles = Array.from({ length: 100 }, () => new Particle(canvas.width, canvas.height))
+  animate()
+}
+
+const handleResize = () => {
+  if (!canvasRef.value) return
+  canvasRef.value.width = window.innerWidth
+  canvasRef.value.height = window.innerHeight
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  mouse.x = e.clientX
+  mouse.y = e.clientY
+}
+
+const animate = () => {
+  if (!ctx || !canvasRef.value) return
+  ctx.clearRect(0, 0, canvasRef.value.width, canvasRef.value.height)
+
+  particles.forEach((p, i) => {
+    p.update(canvasRef.value!.width, canvasRef.value!.height)
+    p.draw()
+    // 连线逻辑
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = p.x - particles[j].x
+      const dy = p.y - particles[j].y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < 100) {
+        ctx!.strokeStyle = `rgba(0, 124, 39, ${0.15 * (1 - dist / 100)})`
+        ctx!.lineWidth = 0.5
+        ctx!.beginPath()
+        ctx!.moveTo(p.x, p.y)
+        ctx!.lineTo(particles[j].x, particles[j].y)
+        ctx!.stroke()
+      }
+    }
+  })
+  animationFrameId = requestAnimationFrame(animate)
+}
+
+onMounted(() => {
+  initCanvas()
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('mousemove', handleMouseMove)
+})
+
+onUnmounted(() => {
+  cancelAnimationFrame(animationFrameId)
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('mousemove', handleMouseMove)
+})
+// --- 粒子背景逻辑结束 ---
+
 watchEffect(() => {
   isSignUp.value = route.query.mode === 'signup'
 })
 
-// 点击 "注册" 按钮
 function handleSignUp() {
   isSignUp.value = true
 }
 
-// 点击 "登录" 按钮（异步函数）
 function handleLogin() {
   isSignUp.value = false
 }
 
-// 切换验证码 / 密码登录
 function toggleCaptchaLogin() {
   isCaptchaLogin.value = !isCaptchaLogin.value
   phone.value = ''
@@ -48,32 +147,100 @@ function toggleCaptchaLogin() {
   code.value = ''
 }
 
-// 发送验证码（登录）
-function sendCode() {
-  if (!phone.value || phone.value.trim().length < 6) {
-    globalThis.alert('请输入有效的手机号')
+async function sendCode() {
+  if (!phone.value) {
+    alert('请输入手机号')
     return
   }
-  globalThis.alert(`已向 ${phone.value} 发送验证码（模拟）`)
+  try {
+    await sendVerificationCode({ phone: phone.value })
+    alert('验证码已发送')
+  } catch (e: any) {
+    alert(e?.response?.data?.message || '发送验证码失败')
+  }
 }
 
-// 发送验证码（注册）
-function sendSignUpCode() {
-  if (!signUpPhone.value || signUpPhone.value.trim().length < 6) {
-    globalThis.alert('请输入有效的手机号')
+async function sendSignUpCode() {
+  if (!signUpPhone.value) {
+    alert('请输入手机号')
     return
   }
-  globalThis.alert(`已向 ${signUpPhone.value} 发送验证码（模拟）`)
+  try {
+    await sendVerificationCode({ phone: signUpPhone.value })
+    alert('验证码已发送')
+  } catch (e: any) {
+    alert(e?.response?.data?.message || '发送验证码失败')
+  }
 }
 
-// 忘记密码跳转
 function goForgetPassword() {
   router.push('/forget-password')
+}
+
+async function submitLogin() {
+  if (!phone.value) {
+    alert('请输入手机号')
+    return
+  }
+  const payload: LoginParams = {
+    phone: phone.value,
+    type: isCaptchaLogin.value ? 'verificationCode' : 'password',
+    password: isCaptchaLogin.value ? null : password.value,
+    verificationCode: isCaptchaLogin.value ? code.value : null,
+  }
+  try {
+    const res = await login(payload)
+    userStore.setUser(res.data.data)
+    router.push('/')
+  } catch (err: any) {
+    alert(err?.response?.data?.message || '登录失败')
+  }
+}
+
+async function submitRegister() {
+  if (!signUpUsername.value) {
+    alert('请输入用户名')
+    return
+  }
+  if (!signUpPhone.value) {
+    alert('请输入手机号')
+    return
+  }
+  if (!signUpPassword.value || !signUpConfirmPassword.value) {
+    alert('请输入密码')
+    return
+  }
+  if (signUpPassword.value !== signUpConfirmPassword.value) {
+    alert('两次密码不一致')
+    return
+  }
+  if (!signUpCode.value) {
+    alert('请输入验证码')
+    return
+  }
+  const payload = {
+    username: signUpUsername.value,
+    phone: signUpPhone.value,
+    password: signUpPassword.value,
+    confirmPassword: signUpConfirmPassword.value,
+    verificationCode: signUpCode.value,
+  }
+  try {
+    await register(payload)
+    alert('注册成功，请登录')
+    isSignUp.value = false
+    isCaptchaLogin.value = false
+  } catch (e: any) {
+    alert(e?.response?.data?.message || '注册失败')
+  }
 }
 </script>
 
 <template>
   <section class="user">
+    <!-- 粒子背景画布 -->
+    <canvas ref="canvasRef" class="particle-canvas"></canvas>
+
     <div class="user_options-container">
       <div class="user_options-text">
         <div class="user_options-unregistered">
@@ -101,7 +268,7 @@ function goForgetPassword() {
         <!-- 登录表单 -->
         <div class="user_forms-login">
           <h2 class="forms_title">登录</h2>
-          <form class="forms_form">
+          <form class="forms_form" @submit.prevent="submitLogin">
             <fieldset class="forms_fieldset">
               <div class="forms_field">
                 <input
@@ -161,9 +328,8 @@ function goForgetPassword() {
         <!-- 注册表单 -->
         <div class="user_forms-signup">
           <h2 class="forms_title">注册</h2>
-          <form class="forms_form">
+          <form class="forms_form" @submit.prevent="submitRegister">
             <fieldset class="forms_fieldset">
-              <!-- 用户名 -->
               <div class="forms_field">
                 <input
                   v-model="signUpUsername"
@@ -174,7 +340,6 @@ function goForgetPassword() {
                 />
               </div>
 
-              <!-- 手机号码 -->
               <div class="forms_field">
                 <input
                   v-model="signUpPhone"
@@ -185,7 +350,6 @@ function goForgetPassword() {
                 />
               </div>
 
-              <!-- 验证码 -->
               <div class="forms_field" style="display: flex; align-items: center; gap: 8px">
                 <input
                   v-model="signUpCode"
@@ -205,7 +369,6 @@ function goForgetPassword() {
                 </button>
               </div>
 
-              <!-- 密码 -->
               <div class="forms_field">
                 <input
                   v-model="signUpPassword"
@@ -216,7 +379,6 @@ function goForgetPassword() {
                 />
               </div>
 
-              <!-- 确认密码 -->
               <div class="forms_field">
                 <input
                   v-model="signUpConfirmPassword"
@@ -239,12 +401,6 @@ function goForgetPassword() {
 </template>
 
 <style scoped>
-/**
- * * General variables
- * */
-/**
- * * General configs
- * */
 * {
   box-sizing: border-box;
 }
@@ -281,20 +437,6 @@ input {
 input[type='submit'] {
   cursor: pointer;
 }
-input::-moz-placeholder {
-  font-size: 0.85rem;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
-  letter-spacing: 0.1rem;
-  color: #ccc;
-}
-input:-ms-input-placeholder {
-  font-size: 0.85rem;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
-  letter-spacing: 0.1rem;
-  color: #ccc;
-}
 input::placeholder {
   font-size: 0.85rem;
   font-family: 'Montserrat', sans-serif;
@@ -303,20 +445,7 @@ input::placeholder {
   color: #ccc;
 }
 
-/**
- * * Bounce to the left side
- * */
-@-webkit-keyframes bounceLeft {
-  0% {
-    transform: translate3d(100%, -50%, 0);
-  }
-  50% {
-    transform: translate3d(-30px, -50%, 0);
-  }
-  100% {
-    transform: translate3d(0, -50%, 0);
-  }
-}
+/* 动画定义保持不变 */
 @keyframes bounceLeft {
   0% {
     transform: translate3d(100%, -50%, 0);
@@ -326,20 +455,6 @@ input::placeholder {
   }
   100% {
     transform: translate3d(0, -50%, 0);
-  }
-}
-/**
- * * Bounce to the left side
- * */
-@-webkit-keyframes bounceRight {
-  0% {
-    transform: translate3d(0, -50%, 0);
-  }
-  50% {
-    transform: translate3d(calc(100% + 30px), -50%, 0);
-  }
-  100% {
-    transform: translate3d(100%, -50%, 0);
   }
 }
 @keyframes bounceRight {
@@ -353,16 +468,6 @@ input::placeholder {
     transform: translate3d(100%, -50%, 0);
   }
 }
-/**
- * * Show Sign Up form
- * */
-@-webkit-keyframes showSignUp {
-  100% {
-    opacity: 1;
-    visibility: visible;
-    transform: translate3d(0, 0, 0);
-  }
-}
 @keyframes showSignUp {
   100% {
     opacity: 1;
@@ -370,8 +475,9 @@ input::placeholder {
     transform: translate3d(0, 0, 0);
   }
 }
+
 /**
- * * Page background
+ * * Page background 修改
  * */
 .user {
   display: flex;
@@ -379,26 +485,36 @@ input::placeholder {
   align-items: center;
   width: 100%;
   height: 100vh;
-  background: url('@/img/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  /* 移除 bg.jpg */
+  background-color: #f0f2f5;
+  position: relative;
+  overflow: hidden;
 }
+
+.particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* 置于底层 */
+  pointer-events: none; /* 防止拦截鼠标点击 */
+}
+
 .user_options-container {
   position: relative;
   width: 80%;
+  z-index: 1; /* 置于粒子上方 */
 }
+
 .user_options-text {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  background-color: rgba(241, 241, 241, 0.9);
+  background-color: var(--bg-green);
   border-radius: 3px;
 }
 
-/**
- * * Registered and Unregistered user box and text
- * */
 .user_options-registered,
 .user_options-unregistered {
   width: 50%;
@@ -440,9 +556,6 @@ input::placeholder {
   background-color: #333;
 }
 
-/**
- * * Login and signup forms
- * */
 .user_options-forms {
   position: absolute;
   top: 50%;
@@ -455,7 +568,10 @@ input::placeholder {
   overflow: hidden;
   transform: translate3d(100%, -50%, 0);
   transition: transform 0.4s ease-in-out;
+  z-index: 2; /* 确保表单在最顶层 */
 }
+
+/* 其余样式逻辑保持不变 */
 .user_options-forms .user_forms-login {
   transition:
     opacity 0.4s ease-in-out,
@@ -500,23 +616,15 @@ input::placeholder {
   text-decoration: underline;
   transition: color 0.2s ease-in-out;
 }
-
 .user_options-forms .forms_buttons-forgot:hover,
 .user_options-forms .forms_buttons-loginway:hover {
   color: #b3b3b3;
 }
-.forms_buttons {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .forms_buttons-left {
   display: flex;
   align-items: center;
-  gap: 16px; /* 两个按钮的间距，可以改成8~20px按需求 */
+  gap: 16px;
 }
-
 .user_options-forms .forms_buttons-action {
   background-color: #007c27;
   border-radius: 3px;
@@ -535,7 +643,6 @@ input::placeholder {
 .user_options-forms .user_forms-signup,
 .user_options-forms .user_forms-login {
   position: absolute;
-  align-items: center; /* 垂直居中 */
   top: 20px;
   left: 40px;
   width: calc(100% - 80px);
@@ -558,15 +665,10 @@ input::placeholder {
   visibility: visible;
 }
 
-/**
- * * Triggers
- * */
 .user_options-forms.bounceLeft {
-  -webkit-animation: bounceLeft 1s forwards;
   animation: bounceLeft 1s forwards;
 }
 .user_options-forms.bounceLeft .user_forms-signup {
-  -webkit-animation: showSignUp 1s forwards;
   animation: showSignUp 1s forwards;
 }
 .user_options-forms.bounceLeft .user_forms-login {
@@ -575,13 +677,9 @@ input::placeholder {
   transform: translate3d(-120px, 0, 0);
 }
 .user_options-forms.bounceRight {
-  -webkit-animation: bounceRight 1s forwards;
   animation: bounceRight 1s forwards;
 }
 
-/**
- * * Responsive 990px
- * */
 @media screen and (max-width: 990px) {
   .user_options-forms {
     min-height: 350px;
@@ -596,7 +694,6 @@ input::placeholder {
   .user_options-forms .user_forms-login {
     top: 40px;
   }
-
   .user_options-registered,
   .user_options-unregistered {
     padding: 50px 45px;

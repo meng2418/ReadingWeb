@@ -99,3 +99,14 @@ export const fetchMyLikes = async () => {
     time: item.likeTime,
   }))
 }
+
+/** 点赞/取消点赞参数 */
+export interface LikeParams {
+  commentId: number // 如果是帖子点赞，传 0
+  postId: number
+}
+
+/** 点赞或取消点赞 */
+export const toggleLikeApi = (data: LikeParams) => {
+  return request.post('/likes', data)
+}

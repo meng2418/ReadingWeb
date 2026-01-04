@@ -10,17 +10,25 @@ export enum RewardCode {
   UNAUTHORIZED = 401,
 }
 
+// 定义后端统一返回的格式
+interface ApiResponse<T = any> {
+  code: number
+  message: string
+  data: T
+}
+
 /**
  * 领取阅读奖励
  */
 export const postReadingReward = async (type: 'daily' | 'streak', value: number): Promise<void> => {
-  const res = await request.post('/rewards/reading', { type, value })
+  // 告知 axios 返回值的类型是 ApiResponse
+  const res = await request.post<ApiResponse>('/rewards/reading', { type, value })
 
-  if (res.data.code !== RewardCode.SUCCESS) {
-    throw new Error(res.data.message || '请求失败')
+  // 现在 TS 知道 res.data 里面有 code 和 message 了
+  if (res.data.code !== 200) {
+    throw new Error(res.data.message || '领取失败')
   }
 }
-
 /*=========================
  *获取每日阅读时长
  * ========================= */
@@ -35,15 +43,12 @@ export interface DailyReadingResponse {
   data: DailyReadingStat[]
 }
 
-/** 获取每日阅读时长 */
-export const fetchDailyReading = async (): Promise<number> => {
-  const res = await request.get<DailyReadingResponse>('/user/reading-stats/daily')
-  if (res.data.code !== 200) throw new Error(res.data.message || '获取阅读时长失败')
-
-  const stats = res.data.data ?? []
-
-  const today = new Date().toISOString().slice(0, 10) // 格式 'YYYY-MM-DD'
-  const todayStat = stats.find((item) => item.date === today)
-
-  return todayStat?.readingTime ?? 0
+/**
+ *  获取今日阅读时长（分钟）
+ */
+export function getTodayReadingTime() {
+  return request({
+    url: '/user/reading-time/today',
+    method: 'get',
+  })
 }

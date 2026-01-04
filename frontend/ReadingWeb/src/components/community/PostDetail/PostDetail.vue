@@ -1,11 +1,16 @@
+<!--PostDetail.vue-->
 <template>
   <article class="post-detail">
     <div class="post-content">
       <div class="author-header">
         <div class="author-info">
-          <img :src="post.author.avatar" :alt="post.author.name" class="author-avatar" />
+          <img
+            :src="post.author.authorAvatar || defaultAvatar"
+            :alt="post.author.authorName"
+            class="author-avatar"
+          />
           <div class="author-name-container">
-            <h3 class="author-name">{{ post.author.name }}</h3>
+            <h3 class="author-name">{{ post.author.authorName }}</h3>
             <div class="post-meta">
               <span class="post-time">
                 <svg
@@ -22,10 +27,9 @@
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                {{ post.timestamp }}
+                {{ formatTime(post.publishTime) }}
               </span>
-              <span v-if="post.isEdited" class="post-edited">• Edited</span>
-              <span v-if="post.author.location" class="post-location">
+              <span v-if="post.publishLocation" class="post-location">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="12"
@@ -40,29 +44,27 @@
                   <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
-                {{ post.author.location }}
+                {{ post.publishLocation }}
               </span>
             </div>
           </div>
         </div>
         <button
-          @click="isFollowing = !isFollowing"
-          :class="isFollowing ? 'following-button' : 'follow-button'"
+          @click="handleFollow"
+          :class="post.isFollowingAuthor ? 'following-button' : 'follow-button'"
         >
-          {{ isFollowing ? '已关注' : '关注' }}
+          {{ post.isFollowingAuthor ? '已关注' : '关注' }}
         </button>
       </div>
 
-      <h1 class="post-title">{{ post.title }}</h1>
+      <h1 class="post-title">{{ post.postTitle }}</h1>
 
       <div class="post-body">
-        <p v-for="(paragraph, idx) in post.content" :key="idx" class="post-paragraph">
-          {{ paragraph }}
-        </p>
+        <p class="post-paragraph">{{ post.content }}</p>
       </div>
 
-      <div class="tags-container">
-        <span v-for="tag in post.tags" :key="tag" class="tag"> #{{ tag }} </span>
+      <div class="tags-container" v-if="post.topics && post.topics.length > 0">
+        <span v-for="topic in post.topics" :key="topic" class="tag"> #{{ topic }} </span>
       </div>
 
       <div class="action-bar">
@@ -72,12 +74,12 @@
         <div class="right-actions">
           <button
             class="action-button"
-            :class="{ liked: isLiked }"
+            :class="{ liked: post.isLiked }"
             title="Like"
-            @click="toggleLike"
+            @click="handleLike"
           >
             <Heart />
-            <span v-if="likeCount" class="like-count">{{ likeCount }}</span>
+            <span v-if="post.likeCount > 0" class="like-count">{{ post.likeCount }}</span>
           </button>
         </div>
       </div>
@@ -86,42 +88,89 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import DefaultAvatar from '@/img/avatar.jpg'
 import { Heart } from 'lucide-vue-next'
 import { useTitle } from '@/stores/useTitle'
-// 直接在组件内部定义 post 数据
-const post = ref({
-  id: 1,
-  title: '探寻林奕含的“真相”',
-  content: [
-    '——你以血书，我以泪和。',
-    '这几天又在看林奕含的各种视频。',
-    '去年只看了那一期书房里、她离世8天前的采访，这一次才发现了更多线索。（锵锵三人行那一期，真的是太粗糙了，窦文涛对她没有丝毫了解，仅凭一些花边新闻就开始拼凑想象。反倒是另一位女嘉宾说了几句掷地有声的话。所以如果只看到事物的片面，真的不如完全不看。不知道这期节目，给观众带来了多少对林奕含的误解！）',
-    '同时看到了一个台湾三立新闻的谈话，某党立委林俊宪很激愤地说“他（陈国星）就是一个变态！”我一开始是感到比较新奇，因为很少见政界人士直接在电视节目中用“变态”这样直白的词，看到后面，我才知道他为什么如此激愤。',
-  ],
-  author: {
-    name: 'Sarah Johnson',
-    avatar: DefaultAvatar,
-    location: 'San Francisco, CA',
-  },
-  timestamp: '2 hours ago',
-  isEdited: false,
-  tags: ['台湾文学'],
-})
+import type { PostDetailResponse } from '@/api/post'
+import { toggleLikeApi } from '@/api/community'
+
+const props = defineProps<{
+  post: PostDetailResponse
+}>()
+
+const defaultAvatar = DefaultAvatar
+// 格式化时间
+const formatTime = (timeStr: string) => {
+  const date = new Date(timeStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+  return date.toLocaleDateString('zh-CN')
+}
+
 // 动态页面标题
-const title = ref(`${post.value.title} - 帖子详情`)
-useTitle(title)
+const pagetitle = computed(() => `${props.post.postTitle} - 帖子详情`)
+useTitle(pagetitle)
+
+// 处理关注
+// 1. 引入 API
+import { followUserApi, unfollowUserApi } from '@/api/userRelations'
+
+// 2. 增加 update-follow 到 emits 中
+const emit = defineEmits(['update-like', 'update-follow'])
+
+// 处理关注/取消关注
+import { ElMessage } from 'element-plus'
+
+const handleFollow = async () => {
+  const authorId = props.post.author.authorId
+  try {
+    if (props.post.isFollowingAuthor) {
+      await unfollowUserApi(authorId)
+      ElMessage.success('已取消关注')
+    } else {
+      await followUserApi(authorId)
+      ElMessage.success('关注成功')
+    }
+    emit('update-follow', !props.post.isFollowingAuthor)
+  } catch (error) {
+    ElMessage.error('操作失败，请重试')
+  }
+}
+
+const handleLike = async () => {
+  try {
+    // 调用 API
+    await toggleLikeApi({
+      commentId: 0,
+      postId: props.post.postId,
+    })
+
+    // 2. 不要直接修改 props.post！
+    // 计算新状态
+    const newLikedStatus = !props.post.isLiked
+    const newCount = props.post.likeCount + (newLikedStatus ? 1 : -1)
+
+    // 3. 传给父组件处理
+    emit('update-like', {
+      isLiked: newLikedStatus,
+      likeCount: newCount,
+    })
+  } catch (error) {
+    console.error('点赞失败', error)
+  }
+}
+
 // 响应式状态
 const isFollowing = ref(false)
-
-const isLiked = ref(false)
-const likeCount = ref(12)
-
-const toggleLike = () => {
-  isLiked.value = !isLiked.value
-  likeCount.value += isLiked.value ? 1 : -1
-}
 </script>
 
 <style scoped>
@@ -330,22 +379,14 @@ const toggleLike = () => {
   font-size: 20px;
   color: inherit;
 }
-
-/* 点赞后的颜色变化 */
-.liked {
-  color: #ef4444; /* red-500 */
+/* 点赞后的样式 */
+.action-button.liked {
+  color: #ff4d4f; /* 红色 */
+  transform: scale(1.1); /* 稍微放大点，增加动感 */
 }
 
-/* 点赞数字 */
-.like-count {
-  font-size: 0.75rem;
-  margin-left: 0.25rem;
-  color: #94a3b8;
-  font-weight: 600;
-}
-/* 点赞后：数字变红 */
-.liked .like-count {
-  color: #ef4444; /* red-500 */
+.action-button.liked svg {
+  fill: #ff4d4f; /* 填充红色 */
 }
 
 /* 点按反馈 */

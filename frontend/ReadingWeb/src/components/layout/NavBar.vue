@@ -37,7 +37,7 @@
         <!-- 登录状态：使用下拉菜单 -->
         <el-dropdown @command="handleCommand">
           <div class="user-dropdown-trigger">
-            <img class="avatar" :src="userStore.userInfo.avatar || defaultAvatar" alt="用户头像" />
+            <img class="avatar" :src="userStore.userInfo.avatar" alt="用户头像" />
             <span class="username">{{ userStore.userInfo.name || '用户' }}</span>
             <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
           </div>
@@ -79,7 +79,6 @@ import { Search, ArrowDown, User, SwitchButton } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const defaultAvatar = 'https://picsum.photos/id/1027/200'
 // --- 新增：组件挂载时获取最新用户信息 ---
 onMounted(async () => {
   // 如果已经登录，且当前 store 里没头像（或者想每次刷新都同步一下）

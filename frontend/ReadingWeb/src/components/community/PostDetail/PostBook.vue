@@ -4,8 +4,8 @@
       <h4 class="section-title">相关书籍</h4>
 
       <div class="book-info">
-        <div class="book-cover-container">
-          <img :src="book.coverUrl" :alt="book.title" class="book-cover" />
+        <div class="book-cover-container" @click="goToDetail">
+          <img :src="book.cover" :alt="book.title" class="book-cover" />
         </div>
 
         <div class="book-details">
@@ -14,7 +14,7 @@
             作者：<span class="author-name">{{ book.author }}</span>
           </p>
 
-          <button class="read-button">前往阅读</button>
+          <button class="read-button" @click="goToDetail">前往阅读</button>
         </div>
       </div>
 
@@ -26,16 +26,36 @@
 </template>
 
 <script setup lang="ts">
-import DefaultCover from '@/img/cover.jpg'
-// 在组件内部直接定义书籍信息
-const book = {
-  id: 1,
-  title: '房思琪的初恋乐园',
-  author: '林奕含',
-  coverUrl: DefaultCover,
-  rating: 4.5, // 示例评分
-  description:
-    '令人心碎却无能为力的真实故事。向死而生的文学绝唱 打动万千读者的年度华语小说。痛苦的际遇是如此难以分享，好险这个世界还有文学。',
+import { useRouter } from 'vue-router'
+
+// 定义接口，确保 TS 知道 book 的结构
+interface BookProps {
+  title: string
+  author: string
+  cover: string
+  description?: string
+  bookId: number
+}
+
+// 1. 使用 defineProps 接收父组件传递的 book 对象
+const props = defineProps<{
+  book: BookProps
+}>()
+
+const router = useRouter()
+
+// 跳转函数
+const goToDetail = () => {
+  if (!props.book.bookId) {
+    console.warn('未获取到书籍ID')
+    return
+  }
+  // 使用 resolve 获取完整的 URL，实现新窗口打开
+  const routeData = router.resolve({
+    name: 'BookDetail',
+    params: { id: props.book.bookId.toString() },
+  })
+  window.open(routeData.href, '_blank')
 }
 </script>
 
@@ -47,7 +67,6 @@ const book = {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9; /* slate-100 */
   overflow: hidden;
-  position: sticky;
   top: 6rem; /* 96px */
 }
 
@@ -82,13 +101,16 @@ const book = {
 
 /* 书籍封面图片样式 */
 .book-cover {
-  width: 7rem; /* 112px */
+  width: 7rem; /* 你原来的 112px */
+  height: 9.5rem; /* 【新增】定死高度，保持 3:4 左右的书籍比例 */
+  object-fit: cover; /* 【关键】防止图片拉伸，多余部分自动裁剪 */
   border-radius: 0.375rem; /* 6px */
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   transform: translateY(0);
+  display: block; /* 消除图片底部间隙 */
 }
 
 /* 封面容器 hover 效果 */
@@ -180,6 +202,7 @@ const book = {
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
+  line-clamp: 4;
   overflow: hidden;
   line-height: 1.625; /* leading-relaxed */
 }
@@ -208,7 +231,8 @@ const book = {
 
   /* 书籍封面宽度调整 */
   .book-cover {
-    width: 6rem; /* 96px */
+    width: 6rem; /* 你原来的 96px */
+    height: 8rem; /* 【新增】适配中屏高度 */
   }
 }
 </style>

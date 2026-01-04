@@ -1,3 +1,4 @@
+<!-- CommentSection.vue -->
 <template>
   <section class="comment-section">
     <!-- Input Area -->
@@ -30,9 +31,16 @@
 import { ref, computed } from 'vue'
 import CommentItem from './CommentItem.vue'
 import DefaultAvatar from '@/img/avatar.jpg'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
+  postId: string | number
   initialComments: any[] // 接收来自 PostDetailPage 的原始接口数据
+}>()
+
+const emit = defineEmits<{
+  (e: 'add-reply', payload: { parentId: number; content: string }): void // 通知父组件添加回复到本地数据
+  (e: 'publish-comment', content: string): void
 }>()
 
 // CommentSection.vue 里的核心逻辑
@@ -56,38 +64,38 @@ const formattedComments = computed(() => {
   }))
 })
 
-const currentUser = ref({
-  name: 'Current User',
-  avatar: DefaultAvatar,
-})
+const userStore = useUserStore()
+const currentUser = computed(() => ({
+  name: userStore.userInfo.name || '游客',
+  avatar: userStore.userInfo.avatar || DefaultAvatar,
+}))
 
 const input = ref('')
+const isSubmittingReply = ref(false)
 
 // 4. 发送评论逻辑
 const sendComment = () => {
   const text = input.value.trim()
   if (!text) return
 
-  // 模拟发送请求...
-  console.log('提交到后端:', text)
+  // 触发父组件事件
+  emit('publish-comment', text)
+}
+
+// 暴露给父组件的方法
+const clearInput = () => {
   input.value = ''
 }
 
-// 5. 回复逻辑 (保持你的扁平化处理)
-const handleAddReply = (payload: { parentId: number; content: string }) => {
-  // 这里的处理逻辑建议通过 emit 告知父组件重新 fetch 接口数据
-  // 或者直接操作 props.rawComments (如果是 reactive 的)
-  console.log('添加回复到:', payload.parentId)
-}
+defineExpose({
+  clearInput,
+})
 
-// // 辅助函数
-// function findInTree(list: Reply[] | undefined, targetId: number): boolean {
-//   if (!list || list.length === 0) return false
-//   for (const item of list) {
-//     if (item.id === targetId) return true
-//   }
-//   return false
-// }
+// 5. 回复逻辑
+const handleAddReply = (payload: { parentId: number; content: string }) => {
+  // 直接通知父组件，让父组件去调接口并更新 comments 数组
+  emit('add-reply', payload)
+}
 </script>
 
 <style scoped>
