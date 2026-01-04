@@ -52,3 +52,14 @@ export const getUserReviews = async () => {
     nextCursor: data.nextCursor,
   }
 }
+
+/**
+ * 删除书评
+ * Path: /book-reviews/{reviewId}
+ */
+export const deleteUserReview = (reviewId: number | string) => {
+  return request({
+    url: `/book-reviews/${reviewId}`,
+    method: 'delete',
+  })
+}

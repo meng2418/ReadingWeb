@@ -14,6 +14,7 @@ interface RawPost {
   postTitle: string
   content: string
   mentionedFirstBook?: {
+    bookId: number
     cover: string
     bookTitle: string
     authorName: string
@@ -41,6 +42,7 @@ export const fetchCommunityPosts = async (): Promise<Post[]> => {
     isLiked: item.isLiked,
     book: item.mentionedFirstBook
       ? {
+          bookId: item.mentionedFirstBook.bookId,
           title: item.mentionedFirstBook.bookTitle,
           author: item.mentionedFirstBook.authorName,
           cover: item.mentionedFirstBook.cover,

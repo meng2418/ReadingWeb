@@ -77,3 +77,14 @@ function mapPost(item: any): Post {
       : null,
   }
 }
+
+/**
+ * 删除帖子
+ *Path: /posts/{postId}
+ */
+export const deleteUserPost = (postId: number) => {
+  return request({
+    url: `/posts/${postId}`,
+    method: 'delete',
+  })
+}

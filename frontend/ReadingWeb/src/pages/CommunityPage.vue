@@ -30,7 +30,7 @@ const currentUser = reactive({
 
 // 热门话题 - 使用更明确的结构
 const hotTopics = ref<HotTopic[]>([])
-const topicsList = ref<{ id: number, cover: string, title: string, number: number }[]>([])
+const topicsList = ref<{ id: number; cover: string; title: string; number: number }[]>([])
 
 // 话题列表分页相关
 const topicsHasMore = ref(true)
@@ -44,12 +44,15 @@ const loadTopicsList = async () => {
   topicsLoading.value = true
   try {
     const result = await getTopicsList(topicsNextCursor.value, 9)
-    topicsList.value = [...topicsList.value, ...result.items.map(item => ({
-      id: item.id as number,
-      cover: item.cover,
-      title: item.title,
-      number: item.number
-    }))]
+    topicsList.value = [
+      ...topicsList.value,
+      ...result.items.map((item) => ({
+        id: item.id as number,
+        cover: item.cover,
+        title: item.title,
+        number: item.number,
+      })),
+    ]
     topicsHasMore.value = result.hasMore
     topicsNextCursor.value = result.nextCursor
   } catch (error) {
@@ -70,42 +73,22 @@ const loadHotTopics = async () => {
 
     if (topics && topics.length > 0) {
       // 确保只取前9个（如果需要的话）
-      hotTopics.value = topics.slice(0, 9).map(topic => ({
+      hotTopics.value = topics.slice(0, 9).map((topic) => ({
         id: topic.id,
-        name: topic.name
+        name: topic.name,
       }))
       console.log('设置后的热门话题数据:', hotTopics.value)
     } else {
       // 如果接口返回空或失败，使用默认数据
       console.warn('热门话题接口返回空，使用默认数据')
-      hotTopics.value = [
-        { id: 1, name: '# 好书推荐' },
-        { id: 2, name: '# 阅读心得' },
-        { id: 3, name: '# 文学讨论' },
-        { id: 4, name: '# 经典名著' },
-        { id: 5, name: '# 新书速递' },
-        { id: 6, name: '# 科幻世界' },
-        { id: 7, name: '# 悬疑推理' },
-        { id: 8, name: '# 历史传记' },
-        { id: 9, name: '# 人生哲学' }
-      ]
+      hotTopics.value = []
     }
 
     console.log('热门话题加载完成，数量:', hotTopics.value.length)
   } catch (error) {
     console.error('加载热门话题失败:', error)
     // 如果接口失败，使用默认数据
-    hotTopics.value = [
-      { id: 1, name: '# 好书推荐' },
-      { id: 2, name: '# 阅读心得' },
-      { id: 3, name: '# 文学讨论' },
-      { id: 4, name: '# 经典名著' },
-      { id: 5, name: '# 新书速递' },
-      { id: 6, name: '# 科幻世界' },
-      { id: 7, name: '# 悬疑推理' },
-      { id: 8, name: '# 历史传记' },
-      { id: 9, name: '# 人生哲学' }
-    ]
+    hotTopics.value = []
   }
 }
 
@@ -130,7 +113,7 @@ onMounted(async () => {
     Object.assign(currentUser, {
       username: profileData.username,
       bio: profileData.bio,
-      avatar: profileData.avatar || '/default-avatar.png',
+      avatar: profileData.avatar,
       followCount: profileData.followingCount || 0,
       fansCount: profileData.followerCount || 0,
       postCount: profileData.postCount || 0,
@@ -143,10 +126,7 @@ onMounted(async () => {
 
   // 加载话题相关数据
   console.log('开始加载话题相关数据...')
-  await Promise.all([
-    loadTopicsList(),
-    loadHotTopics()
-  ])
+  await Promise.all([loadTopicsList(), loadHotTopics()])
 
   console.log('所有数据加载完成')
   console.log('热门话题数据:', hotTopics.value)
@@ -217,7 +197,11 @@ const handleTopicsScroll = (event: Event) => {
   const target = event.target as HTMLElement
   const { scrollTop, scrollHeight, clientHeight } = target
 
-  if (scrollTop + clientHeight >= scrollHeight - 100 && topicsHasMore.value && !topicsLoading.value) {
+  if (
+    scrollTop + clientHeight >= scrollHeight - 100 &&
+    topicsHasMore.value &&
+    !topicsLoading.value
+  ) {
     loadTopicsList()
   }
 }
@@ -277,15 +261,11 @@ const handleShare = (postId: number): void => {
             :number="topic.number"
           />
           <!-- 加载更多提示 -->
-          <div v-if="topicsLoading" class="loading-more">
-            加载中...
-          </div>
+          <div v-if="topicsLoading" class="loading-more">加载中...</div>
           <div v-else-if="!topicsHasMore && topicsList.length > 0" class="no-more">
             没有更多话题了
           </div>
-          <div v-else-if="topicsList.length === 0 && !topicsLoading" class="empty">
-            暂无话题
-          </div>
+          <div v-else-if="topicsList.length === 0 && !topicsLoading" class="empty">暂无话题</div>
         </div>
         <!--我的-->
         <div v-else-if="currentTab === 'mine'" class="mine-grid">

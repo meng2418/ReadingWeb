@@ -23,7 +23,7 @@
 
       <!-- 操作按钮 -->
       <div class="thought-actions">
-        <button class="delete-thought-btn" @click="handleDelete">
+        <button class="delete-thought-btn" @click.stop="handleDelete">
           <el-icon><Delete /></el-icon>
           删除
         </button>
@@ -34,7 +34,6 @@
 
 <script setup lang="ts">
 import { Delete } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
 
 // 定义 props
 interface ThoughtItem {
@@ -56,21 +55,8 @@ const emit = defineEmits<{
 
 // 处理删除
 const handleDelete = async () => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要删除这个想法吗？删除后不可恢复。',
-      '删除确认',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
-    emit('delete', props.thought.id)
-  } catch {
-    console.log('取消删除')
-  }
+  // 直接通知父组件，把决定权交给父组件
+  emit('delete', props.thought.id)
 }
 </script>
 

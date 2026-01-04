@@ -25,7 +25,7 @@
             <span class="review-date">{{ review.date }}</span>
             <span class="review-likes">{{ review.likes }} 人觉得有用</span>
           </div>
-          <button class="delete-review-btn" @click="handleDelete">
+          <button class="delete-review-btn" @click.stop="handleDelete">
             <el-icon><Delete /></el-icon>
             删除
           </button>
@@ -37,7 +37,6 @@
 
 <script setup lang="ts">
 import { Delete } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
 import type { ReviewCardItem, RatingConfig } from '@/types/review'
 
 interface Props {
@@ -52,21 +51,8 @@ const emit = defineEmits<{
 
 // 处理删除
 const handleDelete = async () => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要删除这篇书评吗？删除后不可恢复。',
-      '删除确认',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
-    emit('delete', props.review.id)
-  } catch {
-    console.log('取消删除')
-  }
+  // 直接通知父组件，把决定权交给父组件
+  emit('delete', props.review.id)
 }
 </script>
 

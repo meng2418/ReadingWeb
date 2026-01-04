@@ -11,7 +11,7 @@ export interface PostUserSummary {
 
 // 帖子关联的书籍信息（用于卡片展示）
 export type PostBookSummary = Pick<BookListItem, 'title' | 'author' | 'cover'> & {
-  id?: string | number
+  bookId?: string | number
 }
 
 // 帖子基础结构（不含 UI 派生字段）

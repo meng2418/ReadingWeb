@@ -28,6 +28,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 跳转到书籍详情页
 const goToBook = (): void => {
+  // 1. 打印看看接收到的 bookId 是什么
+  console.log('LinkBookCard接收到的bookId:', props.bookId, typeof props.bookId)
+
+  if (!props.bookId) {
+    console.error('跳转失败：bookId 为空')
+    return
+  }
+
   openBookDetail(props.bookId, props.openInNewTab ? 'new-tab' : 'current')
 }
 </script>
