@@ -129,32 +129,33 @@ const router = createRouter({
   ],
 })
 
-// 路由守卫：登录拦截
+// --- 修复后的路由守卫 ---
 router.beforeEach(async (to, from, next) => {
+  // 1. 设置标题
   if (to.meta.title) {
     document.title = to.meta.title as string
   }
-  next()
-  // 获取用户状态
+
+  // 2. 获取用户状态
   const userStore = useUserStore()
 
-  // 恢复会话（如果是刷新页面）
+  // 3. 恢复会话（如果是刷新页面，Pinia 状态可能丢失，尝试恢复）
   if (!userStore.token) {
     userStore.restoreSession()
   }
 
-  // 调试信息
+  // 调试信息（可选）
   console.log(`路由跳转: ${from.path} -> ${to.path}`)
-  console.log(`需要登录吗: ${to.meta.requiresAuth}`)
-  console.log(`用户登录状态: ${userStore.isLoggedIn}`)
+  console.log(`需要登录: ${to.meta.requiresAuth}`)
+  console.log(`当前登录状态: ${userStore.isLoggedIn}`)
 
-  // 检查目标路由是否需要登录
+  // 4. 检查权限
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
 
-  // 如果需要登录但用户未登录
+  // 情况 A: 需要登录 且 用户未登录
   if (requiresAuth && !userStore.isLoggedIn) {
     try {
-      // 显示Element Plus的确认对话框
+      // 弹出确认框 (这会暂停路由跳转，直到用户点击)
       await ElMessageBox.confirm('当前未登录，请先登录以继续操作', '登录提示', {
         confirmButtonText: '立即登录',
         cancelButtonText: '取消',
@@ -164,26 +165,27 @@ router.beforeEach(async (to, from, next) => {
         closeOnPressEscape: false,
       })
 
-      // 用户点击了"立即登录"
-      // 跳转到登录页面，并携带当前想去的页面路径
+      // 用户点击“立即登录” -> 跳转去登录页
       next({
         path: '/login',
-        query: { redirect: to.fullPath },
+        query: { redirect: to.fullPath }, // 保存原本想去的路径
       })
     } catch (error) {
-      // 用户点击了"取消"
-      // 记录异常信息
-      console.warn('登录提示对话框被取消', error)
-      // 返回首页或上一页
-      if (from.path === '/') {
-        next('/')
+      // 用户点击“取消” -> 中断跳转或回首页
+      console.warn('登录提示对话框被取消')
+
+      // 这里推荐使用 next(false) 来取消当前的导航
+      // 或者如果这是一个初始加载（from.path 是 '/' 且 from.name 是 undefined），可以跳转到首页
+      if (from.name) {
+        next(false) // 停留在当前页
       } else {
-        next(from.path)
+        next('/') // 如果是直接输网址进来的，取消后去首页，避免白屏
       }
     }
-  } else {
-    // 不需要登录或已登录，正常放行
-    next()
+  }
+  // 情况 B: 不需要登录，或者用户已登录
+  else {
+    next() // 放行
   }
 })
 

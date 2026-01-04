@@ -35,10 +35,10 @@
       <!-- 如果有书籍，展示 mini bookcard -->
       <LinkBookCard
         v-if="book"
-        :cover="book.cover"
+        :cover="book.cover as string"
         :title="book.title"
-        :author="book.author"
-        :book-id="book.id"
+        :author="book.author as string"
+        :book-id="book.bookId as number"
       />
     </div>
 
@@ -121,7 +121,13 @@ const handleLike = (): void => {
 // 其他操作事件保持不变
 const commentPost = (): void => {
   emit('comment')
-  router.push('/postdetail')
+  // 优先使用 props.id (来自 Post 接口)，如果没有则尝试使用 postId
+  const targetId = props.id || props.postId
+  if (targetId) {
+    router.push(`/postdetail/${targetId}`)
+  } else {
+    console.error('无法跳转：缺少帖子 ID')
+  }
 }
 
 const toggleExpand = (): void => {
@@ -130,9 +136,14 @@ const toggleExpand = (): void => {
 
 // 点击卡片跳转：修复postId判断逻辑
 const handleCardClick = () => {
-  const url = '/postdetail'
-  // 在新标签页打开
-  window.open(url, '_blank')
+  const targetId = props.id || props.postId
+  if (targetId) {
+    const url = `/postdetail/${targetId}`
+    // 在新标签页打开
+    window.open(url, '_blank')
+  } else {
+    console.error('无法跳转：缺少帖子 ID')
+  }
 }
 </script>
 

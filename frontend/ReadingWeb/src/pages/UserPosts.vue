@@ -90,7 +90,8 @@
 
                 <!-- 删除按钮 -->
                 <div class="delete-action">
-                  <button class="delete-btn" @click="handleDeletePost(post.id)">
+                  <!-- 修改为（添加 .stop）： -->
+                  <button class="delete-btn" @click.stop="handleDeletePost(post.id)">
                     <el-icon><Delete /></el-icon>
                     删除
                   </button>
@@ -207,7 +208,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+// 引入 ElMessageBox
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Edit, User, UserFilled, ChatLineSquare, Star } from '@element-plus/icons-vue'
 
 // 组件导入
@@ -224,14 +226,15 @@ import type { Post } from '@/types/post'
 import type { FollowUser } from '@/types/user'
 import type { ReviewCardItem, RatingConfig } from '@/types/review'
 import { useTitle } from '@/stores/useTitle'
-import { getPosts } from '@/api/userPosts'
-import { getUserNotes } from '@/api/notes'
-import { getUserReviews } from '@/api/bookreview'
+// 引入新的删除 API
+import { getPosts, deleteUserPost } from '@/api/userPosts'
+import { getUserNotes, deleteUserNote } from '@/api/notes'
+import { getUserReviews, deleteUserReview } from '@/api/bookreview'
 import { getFollowingList, getFollowersList } from '@/api/userRelations'
 
 /* -----------------------------------------
-     1. 基础配置与导航状态
-  ----------------------------------------- */
+       1. 基础配置与导航状态 (保持不变)
+    ----------------------------------------- */
 const props = defineProps<{ id?: string }>()
 const route = useRoute()
 const currentTab = ref('posts')
@@ -244,30 +247,25 @@ const tabTitleMap: Record<string, string> = {
   reviews: '我的书评',
 }
 
-// 切换标签页
 const switchTab = (tab: string) => {
   currentTab.value = tab
 }
 
 /* -----------------------------------------
-     2. 业务数据状态
-  ----------------------------------------- */
-// 用户统计信息
+       2. 业务数据状态 (保持不变)
+    ----------------------------------------- */
 const userStats = ref({
   postCount: 0,
   followingCount: 0,
   followerCount: 0,
 })
 
-// 帖子数据
 const userPosts = ref<Post[]>([])
 const isLoadingPosts = ref(false)
 
-// 想法数据
 const thoughts = ref<any[]>([])
 const isLoadingThoughts = ref(false)
 
-// 书评数据
 const reviews = ref<ReviewCardItem[]>([])
 const reviewTotalCount = ref(0)
 const isLoadingReviews = ref(false)
@@ -277,14 +275,13 @@ const ratingConfig: RatingConfig = {
   bad: { label: '不行', className: 'tag-bad' },
 }
 
-// 用户关系数据 (关注/粉丝)
 const followingList = ref<FollowUser[]>([])
 const followersList = ref<FollowUser[]>([])
 const isLoadingRelations = ref(false)
 
 /* -----------------------------------------
-     3. 计算属性
-  ----------------------------------------- */
+       3. 计算属性 (保持不变)
+    ----------------------------------------- */
 const totalLikes = computed(() => userPosts.value.reduce((sum, post) => sum + post.likeCount, 0))
 const totalComments = computed(() =>
   userPosts.value.reduce((sum, post) => sum + post.commentCount, 0),
@@ -294,9 +291,8 @@ const pageTitle = computed(() => `微信读书 - ${tabTitleMap[currentTab.value]
 useTitle(pageTitle)
 
 /* -----------------------------------------
-     4. 数据请求函数
-  ----------------------------------------- */
-// 获取帖子
+       4. 数据请求函数 (保持不变)
+    ----------------------------------------- */
 const fetchUserPosts = async () => {
   try {
     isLoadingPosts.value = true
@@ -310,15 +306,15 @@ const fetchUserPosts = async () => {
   }
 }
 
-// 获取想法
 const fetchUserThoughts = async () => {
   try {
     isLoadingThoughts.value = true
     const allNotes = await getUserNotes()
     thoughts.value = allNotes
       .filter((n: any) => n.noteType === 'thought')
+      // 确保这里的 id 对应的是 noteId，方便后续删除使用
       .map((n: any) => ({
-        id: n.markId,
+        id: n.markId, // 注意：如果接口返回的是 noteId，这里要确保映射正确
         bookName: n.bookTitle,
         date: n.noteCreatedAt,
         thought: n.noteContent,
@@ -331,7 +327,6 @@ const fetchUserThoughts = async () => {
   }
 }
 
-// 获取书评
 const fetchUserReviews = async () => {
   try {
     isLoadingReviews.value = true
@@ -345,7 +340,6 @@ const fetchUserReviews = async () => {
   }
 }
 
-// 获取关注与粉丝
 const fetchUserRelations = async () => {
   try {
     isLoadingRelations.value = true
@@ -362,9 +356,8 @@ const fetchUserRelations = async () => {
 }
 
 /* -----------------------------------------
-     5. 事件处理函数
-  ----------------------------------------- */
-// 点赞/评论
+       5. 事件处理函数 (修改了删除逻辑)
+    ----------------------------------------- */
 const handleLike = (postId: number, likeCount: number, isLiked: boolean) => {
   const post = userPosts.value.find((p) => p.id === postId)
   if (post) {
@@ -374,22 +367,97 @@ const handleLike = (postId: number, likeCount: number, isLiked: boolean) => {
 }
 const handleComment = () => console.log('跳转到评论页面')
 
-// 删除操作
-const handleDeletePost = async (postId: number) => {
-  userPosts.value = userPosts.value.filter((post) => post.id !== postId)
-  userStats.value.postCount = userPosts.value.length
-  ElMessage.success('帖子删除成功')
-}
-const handleDeleteThought = (thoughtId: number) => {
-  thoughts.value = thoughts.value.filter((thought) => thought.id !== thoughtId)
-  ElMessage.success('想法删除成功')
-}
-const handleDeleteReview = (id: string | number) => {
-  reviews.value = reviews.value.filter((review) => review.id !== id)
-  ElMessage.success('书评删除成功')
+// 1. 定义后端数据结构接口
+interface BackendResponse<T = any> {
+  code: number
+  message: string
+  data: T
 }
 
-// 关系列表更新
+// ------------------------------------------------------
+
+// 2. 修改：删除帖子逻辑
+const handleDeletePost = async (postId: number) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这条帖子吗？删除后无法恢复。', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    // 注意：没有拦截器，Axios 返回的是 AxiosResponse<BackendResponse>
+    // 这里我们解构出 data，重命名为 resData，方便后续使用
+    const { data: resData } = (await deleteUserPost(postId)) as {
+      data: BackendResponse<{ remainingPostCount: number }>
+    }
+
+    // 使用 resData.code 判断业务状态
+    if (resData.code === 200) {
+      userPosts.value = userPosts.value.filter((post) => post.id !== postId)
+      // 数据在 resData.data 里面
+      userStats.value.postCount = resData.data?.remainingPostCount ?? userStats.value.postCount - 1
+      ElMessage.success('帖子删除成功')
+    } else {
+      ElMessage.error(resData.message || '删除失败')
+    }
+  } catch (err) {
+    if (err !== 'cancel') console.error('删除帖子出错:', err)
+  }
+}
+
+// ------------------------------------------------------
+
+// 3. 修改：删除想法逻辑
+const handleDeleteThought = async (thoughtId: number) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这条想法吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    const { data: resData } = (await deleteUserNote(thoughtId)) as { data: BackendResponse }
+
+    if (resData.code === 200) {
+      thoughts.value = thoughts.value.filter((thought) => thought.id !== thoughtId)
+      ElMessage.success('想法删除成功')
+    } else {
+      ElMessage.error(resData.message || '删除失败')
+    }
+  } catch (err) {
+    if (err !== 'cancel') console.error('删除想法出错:', err)
+  }
+}
+
+// ------------------------------------------------------
+
+// 4. 修改：删除书评逻辑
+const handleDeleteReview = async (id: string | number) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这篇书评吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    const { data: resData } = (await deleteUserReview(id)) as {
+      data: BackendResponse<{ remainingReviewCount: number }>
+    }
+
+    if (resData.code === 200) {
+      reviews.value = reviews.value.filter((review) => review.id !== id)
+      if (resData.data?.remainingReviewCount !== undefined) {
+        reviewTotalCount.value = resData.data.remainingReviewCount
+      }
+      ElMessage.success('书评删除成功')
+    } else {
+      ElMessage.error(resData.message || '删除失败')
+    }
+  } catch (err) {
+    if (err !== 'cancel') console.error('删除书评出错:', err)
+  }
+}
+
 const handleFollowingUpdate = (updatedUsers: FollowUser[]) => {
   followingList.value = updatedUsers
   userStats.value.followingCount = updatedUsers.length
@@ -398,24 +466,19 @@ const handleFollowersUpdate = (updatedUsers: FollowUser[]) => {
   followersList.value = updatedUsers
 }
 
-// 模拟跳转
 const goToCreatePost = () => console.log('跳转到发布页面')
 const goToCreateThought = () => console.log('跳转到记录想法页面')
 const goToCreateReview = () => console.log('跳转到撰写书评页面')
 
 /* -----------------------------------------
-     6. 生命周期与监听
-  ----------------------------------------- */
+       6. 生命周期与监听 (保持不变)
+    ----------------------------------------- */
 onMounted(async () => {
   window.scrollTo(0, 0)
-
-  // 1. 同步 URL 参数中的 Tab
   const tabParam = route.query.tab as string
   if (tabParam && tabTitleMap[tabParam]) {
     currentTab.value = tabParam
   }
-
-  // 2. 初始数据加载
   await Promise.all([
     fetchUserPosts(),
     fetchUserThoughts(),
@@ -424,7 +487,6 @@ onMounted(async () => {
   ])
 })
 
-// 监听路由 Tab 参数变化
 watch(
   () => route.query.tab,
   (newTab) => {

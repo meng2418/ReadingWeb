@@ -34,3 +34,14 @@ export const getUserNotes = async (): Promise<NoteRaw[]> => {
   // 确保返回的是数组
   return data.notes ?? []
 }
+
+/**
+ * 删除笔记（想法）
+ * Path: /notes/{noteId}
+ */
+export const deleteUserNote = (noteId: number | string) => {
+  return request({
+    url: `/notes/${noteId}`,
+    method: 'delete',
+  })
+}
