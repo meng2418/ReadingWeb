@@ -1,8 +1,11 @@
 package com.weread.service.impl.community;
 
+import com.weread.dto.community.AuthorInfoDTO;
 import com.weread.dto.community.BookSearchResponseDTO;
 import com.weread.dto.community.BookSearchResultDTO;
+import com.weread.dto.community.BookSimpleDTO;
 import com.weread.dto.community.PostCreationDTO;
+import com.weread.dto.community.PostSquareDTO;
 import com.weread.dto.community.TopicSearchResponseDTO;
 import com.weread.dto.community.TopicSearchResultDTO;
 import com.weread.vo.book.AuthorVO;
@@ -301,6 +304,96 @@ public class PostServiceImpl implements PostService {
             .collect(Collectors.toList());
         
         return new PostListVO(postVOs, postPage.getTotalElements(), page, limit);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostSquareDTO> getSquarePosts(int page, int limit, String type, Integer currentUserId) {
+        // 参数验证
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 20;
+        if (limit > 100) limit = 100;
+    
+        Pageable pageable = PageRequest.of(page - 1, limit);
+        Page<PostEntity> postPage;
+    
+        if ("following".equals(type) && currentUserId != null) {
+            // 获取关注页帖子
+            List<FollowEntity> follows = followRepository.findByFollowerId(currentUserId, Pageable.unpaged()).getContent();
+            List<Integer> followingIds = follows.stream()
+                .map(FollowEntity::getFollowingId)
+                .collect(Collectors.toList());
+        
+            if (followingIds.isEmpty()) {
+                postPage = Page.empty(pageable);
+            } else {
+                // 这里需要确保PostRepository有这个方法
+                postPage = postRepository.findByAuthorIdInAndStatusOrderByCreatedAtDesc(
+                    followingIds, 1, pageable);
+            }
+        } else {
+            // 获取广场帖子（全部帖子）
+            postPage = postRepository.findByStatusOrderByCreatedAtDesc(1, pageable);
+        }
+    
+        // 转换为 PostSquareDTO
+        return postPage.getContent().stream()
+            .map(post -> convertToPostSquareDTO(post, currentUserId))
+            .collect(Collectors.toList());
+    }
+
+    private PostSquareDTO convertToPostSquareDTO(PostEntity post, Integer currentUserId) {
+        PostSquareDTO dto = new PostSquareDTO();
+        dto.setPostId(post.getPostId());
+        dto.setPostTitle(post.getTitle());
+        dto.setContent(post.getContent());
+        dto.setPublishTime(post.getCreatedAt());
+        dto.setPublishLocation(post.getPublishLocation());
+        dto.setCommentCount(post.getCommentsCount());
+        dto.setLikeCount(post.getLikesCount());
+    
+        // 获取作者信息
+        UserEntity author = userRepository.findById(post.getAuthorId()).orElse(null);
+        if (author != null) {
+            AuthorInfoDTO authorInfo = new AuthorInfoDTO();
+            authorInfo.setAuthorAvatar(author.getAvatar());
+            authorInfo.setAuthorName(author.getUsername());
+            dto.setAuthor(authorInfo);
+        
+            // 检查当前用户是否关注作者
+            if (currentUserId != null) {
+                boolean isFollowing = followRepository.findByFollowerIdAndFollowingId(currentUserId, author.getUserId())
+                    .isPresent();
+                dto.setIsFollowingAuthor(isFollowing);
+            } else {
+                dto.setIsFollowingAuthor(false);
+            }
+        }
+    
+        // 检查是否点赞
+        if (currentUserId != null) {
+            boolean isLiked = likeRepository.findByPostIdAndUserId(post.getPostId(), currentUserId)
+                .isPresent();
+            dto.setIsLiked(isLiked);
+        } else {
+            dto.setIsLiked(false);
+        }
+    
+        // 获取话题列表
+        dto.setTopics(post.getTopics());
+    
+        // 获取提到的第一本书
+        if (post.getRelatedBooks() != null && !post.getRelatedBooks().isEmpty()) {
+            BookEntity firstBook = post.getRelatedBooks().get(0);
+            BookSimpleDTO bookSimple = new BookSimpleDTO();
+            bookSimple.setBookId(firstBook.getBookId());
+            bookSimple.setBookTitle(firstBook.getTitle());
+            bookSimple.setCover(firstBook.getCover());
+            bookSimple.setAuthorName(firstBook.getAuthor() != null ? firstBook.getAuthor().getName() : "未知作者");
+            dto.setMentionedFirstBook(bookSimple);
+        }
+    
+        return dto;
     }
     
     @Override

@@ -16,6 +16,9 @@ import com.weread.common.ApiResponse;
 import com.weread.dto.community.BookSearchResponseDTO;
 import com.weread.dto.community.PostCreationDTO;
 import com.weread.dto.community.PostDeleteResponseDTO;
+import com.weread.dto.community.PostSquareDTO;
+
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,24 +43,31 @@ public class PostController {
      * 接口文档：type: [square, following]
      */
     @GetMapping
-    public ResponseEntity<?> getPosts(
-            @RequestParam String type,  // square, following
+    public ResponseEntity<ApiResponse<List<PostSquareDTO>>> getPosts(
+            @RequestParam String type,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int limit,
             @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
+    
+        try {
+            // 参数验证
+            if (!"square".equals(type) && !"following".equals(type)) {
+                return ResponseEntity.badRequest().body(ApiResponse.error(400, "type参数必须是square或following"));
+            }
         
-        // 将接口文档的 square/following 映射到业务逻辑
-        String mappedType;
-        if ("square".equals(type)) {
-            mappedType = "all";  // 广场对应全部帖子
-        } else if ("following".equals(type)) {
-            mappedType = "following";  // 关注页
-        } else {
-            return ResponseEntity.badRequest().body("type参数必须是square或following");
+            // 转换类型参数
+            String mappedType = "square".equals(type) ? "all" : "following";
+        
+            // 调用服务获取广场帖子
+            List<PostSquareDTO> result = postService.getSquarePosts(page, limit, mappedType, currentUserId);
+            return ResponseEntity.ok(ApiResponse.ok(result));
+        
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "获取帖子列表失败"));
         }
-        
-        PostListVO result = postService.getPostList(page, limit, mappedType, null, currentUserId);
-        return ResponseEntity.ok(result);
     }
 
     /**

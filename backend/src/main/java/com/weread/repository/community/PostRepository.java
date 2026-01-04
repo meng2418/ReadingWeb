@@ -4,7 +4,6 @@ import com.weread.entity.BookEntity;
 import com.weread.entity.community.PostEntity;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -44,4 +43,21 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
            "AND b.isPublished = true " +
            "ORDER BY b.readCount DESC, b.createdAt DESC")
     Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
+
+    Page<PostEntity> findByAuthorIdInAndStatusOrderByCreatedAtDesc(List<Integer> followingIds, int i,
+            Pageable pageable);
+
+    /**
+     * 根据作者ID列表和状态查询帖子（用于关注页）
+     */
+    @Query("SELECT p FROM PostEntity p WHERE p.authorId IN :authorIds AND p.status = :status ORDER BY p.createdAt DESC")
+    Page<PostEntity> findByAuthorIdInAndStatusOrderByCreatedAtDesc(
+            @Param("authorIds") List<Integer> authorIds,
+            @Param("status") Integer status,
+            Pageable pageable);
+    
+    /**
+     * 根据状态查询帖子（用于广场）
+     */
+    Page<PostEntity> findByStatusOrderByCreatedAtDesc(Integer status, Pageable pageable);
 }

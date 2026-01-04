@@ -2,6 +2,7 @@ package com.weread.service.community;
 
 import com.weread.dto.community.BookSearchResponseDTO;
 import com.weread.dto.community.PostCreationDTO;
+import com.weread.dto.community.PostSquareDTO;
 import com.weread.dto.community.TopicSearchResponseDTO;
 import com.weread.vo.community.PostListVO;
 import com.weread.vo.community.PostVO;
@@ -64,4 +65,6 @@ public interface PostService {
      * 搜索话题
      */
     TopicSearchResponseDTO searchTopics(String keyword, String cursor, int limit);
+
+    List<PostSquareDTO> getSquarePosts(int page, int limit, String mappedType, Integer currentUserId);
 }

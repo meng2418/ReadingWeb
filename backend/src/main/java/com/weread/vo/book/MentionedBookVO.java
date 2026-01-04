@@ -10,6 +10,7 @@ public class MentionedBookVO {
     private Integer rating;
     private Integer readCount;
     private String description;
+    
     public void setRating(float f) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'setRating'");
