@@ -7,6 +7,7 @@ import com.weread.vo.community.PostListVO;
 import com.weread.entity.BookEntity;
 import com.weread.entity.community.PostEntity;
 import com.weread.entity.community.TopicEntity;
+import com.weread.entity.user.FollowEntity;
 import com.weread.entity.user.UserEntity;
 import com.weread.repository.BookRepository;
 import com.weread.repository.community.LikeRepository;
@@ -22,6 +23,7 @@ import com.weread.vo.community.PostVO;
 import com.weread.vo.community.TopicPostVO;
 import com.weread.vo.community.TopicPostRelatedVO;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -211,27 +214,143 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public PostVO createPost(PostCreationDTO dto, Integer authorId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'createPost'");
+        // 验证用户存在
+        UserEntity author = userRepository.findById(authorId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
+        
+        // 创建帖子
+        PostEntity post = new PostEntity();
+        post.setAuthorId(authorId);
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+        post.setPublishLocation(dto.getPublishLocation());
+        
+        // 处理关联书籍
+        if (dto.getBookIds() != null && !dto.getBookIds().isEmpty()) {
+            List<BookEntity> books = bookRepository.findAllById(dto.getBookIds());
+            post.setRelatedBooks(books);
+        }
+        
+        // 处理话题 - 需要根据话题名称创建或获取TopicEntity
+        if (dto.getTopics() != null && !dto.getTopics().isEmpty()) {
+            // 这里需要处理话题关联
+            // 暂时保存为字符串列表，后续需要改为关联TopicEntity
+            // post.setRelatedTopics(dto.getTopics());
+        }
+        
+        // 保存帖子
+        PostEntity savedPost = postRepository.save(post);
+        
+        // 转换为VO返回
+        return convertToPostVO(savedPost, authorId);
     }
-
+    
     @Override
+    @Transactional(readOnly = true)
     public PostVO getPostById(Integer postId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPostById'");
+        PostEntity post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "帖子不存在"));
+        
+        // 增加查看次数
+        post.setViewCount(post.getViewCount() + 1);
+        postRepository.save(post);
+        
+        return convertToPostVO(post, null);
     }
-
+    
     @Override
+    @Transactional(readOnly = true)
     public PostListVO getPostList(int page, int limit, String type, List<String> topics, Integer currentUserId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPostList'");
+        // 参数验证
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 20;
+        if (limit > 100) limit = 100;
+        
+        Pageable pageable = PageRequest.of(page - 1, limit);
+        Page<PostEntity> postPage;
+        
+        if ("following".equals(type) && currentUserId != null) {
+            // 获取关注页帖子
+            // 先获取关注列表
+            List<FollowEntity> follows = followRepository.findByFollowerId(currentUserId, Pageable.unpaged()).getContent();
+            List<Integer> followingIds = follows.stream()
+                .map(FollowEntity::getFollowingId)
+                .collect(Collectors.toList());
+            
+            if (followingIds.isEmpty()) {
+                postPage = Page.empty(pageable);
+            } else {
+                postPage = postRepository.findByAuthorIdInAndStatus(
+                    followingIds, 1, pageable); // 状态1为正常
+            }
+        } else {
+            // 获取广场帖子（全部帖子）
+            postPage = postRepository.findByStatusOrderByCreatedAtDesc(1, pageable);
+        }
+        
+        // 转换为VO
+        List<PostVO> postVOs = postPage.getContent().stream()
+            .map(post -> convertToPostVO(post, currentUserId))
+            .collect(Collectors.toList());
+        
+        return new PostListVO(postVOs, postPage.getTotalElements(), page, limit);
     }
     
-    // ========================================================
-    // 其他原有方法保持不变...
-    // ========================================================
+    @Override
+    @Transactional
+    public boolean deletePost(Integer postId, Integer userId) {
+        PostEntity post = postRepository.findById(postId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "帖子不存在"));
+        
+        // 验证权限：只能删除自己的帖子
+        if (!post.getAuthorId().equals(userId)) {
+            return false;
+        }
+        
+        // 软删除：设置删除时间
+        post.setDeletedAt(LocalDateTime.now());
+        post.setStatus(3); // 状态3为删除
+        postRepository.save(post);
+        
+        return true;
+    }
     
-    // 原有的createPost、getPostById、getPostList等方法保持不变
-    // 原有的辅助方法也保持不变
+    @Override
+    public Integer getUserPostCount(Integer userId) {
+        return postRepository.countByUserId(userId);
+    }
+    
+    // 辅助方法：转换为PostVO
+    private PostVO convertToPostVO(PostEntity post, Integer currentUserId) {
+        PostVO vo = new PostVO();
+        vo.setPostId(post.getPostId());
+        vo.setAuthorId(post.getAuthorId());
+        vo.setTitle(post.getTitle());
+        vo.setContentSummary(getContentSummary(post.getContent()));
+        vo.setCreatedAt(post.getCreatedAt());
+        vo.setLikesCount(post.getLikesCount());
+        vo.setCommentsCount(post.getCommentsCount());
+        
+        // 获取作者信息
+        UserEntity author = userRepository.findById(post.getAuthorId()).orElse(null);
+        if (author != null) {
+            // 设置作者相关信息
+        }
+        
+        // 检查是否点赞
+        if (currentUserId != null) {
+            // 使用likeService检查
+        }
+        
+        return vo;
+    }
+    
+    private String getContentSummary(String content) {
+        if (content == null || content.length() <= 100) {
+            return content;
+        }
+        return content.substring(0, 100) + "...";
+    }
 }

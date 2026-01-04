@@ -13,7 +13,7 @@ public class PostTopicEntity implements Serializable {
 
     @Id
     @Column(name = "post_id", nullable = false)
-    private Long postId;
+    private Integer postId;
 
     @Id
     @Column(name = "topic_id", nullable = false)
@@ -32,7 +32,7 @@ public class PostTopicEntity implements Serializable {
     public static class PostTopicId implements Serializable {
 
         @Column(name = "post_id")
-        private Long postId;
+        private Integer postId;
 
         @Column(name = "topic_id")
         private Integer topicId;
