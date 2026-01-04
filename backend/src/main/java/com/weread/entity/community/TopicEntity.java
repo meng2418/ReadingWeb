@@ -56,18 +56,20 @@ public class TopicEntity {
         updatedAt = LocalDateTime.now();
     }
 
+    // 【修改】修复这些方法
     public Integer getFollowerCount() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getFollowerCount'");
+        // 这里可以返回一个默认值，或者从数据库查询
+        // 暂时返回 0
+        return 0;
     }
-
+    
     public String getIntroduction() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getIntroduction'");
+        return description; // 直接返回 description 字段
     }
-
+    
     public String getAdminName() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAdminName'");
+        // 这里可以返回话题管理员的用户名
+        // 暂时返回空字符串
+        return "";
     }
 }

@@ -40,4 +40,7 @@ public interface LikeRepository extends JpaRepository<LikeEntity, Long> {
 
     @Query("SELECT l.userId FROM LikeEntity l WHERE l.noteId = :noteId ORDER BY l.createdAt DESC")
     List<Integer> findTopNUserIdsByNoteId(Integer noteId, Pageable pageable);
+
+    // 添加按用户和帖子查询的方法
+    boolean existsByUserIdAndPostId(Integer userId, Integer postId);
 }

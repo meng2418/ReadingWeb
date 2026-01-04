@@ -106,6 +106,16 @@ public class BookEntity {
         updatedAt = LocalDateTime.now();
     }
 
+    @Transient
+    public String getBookName() {
+        return title;
+    }
+    
+    @Transient
+    public String getCoverImage() {
+        return cover;
+    }
+    
     public String getAuthorName() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getAuthorName'");

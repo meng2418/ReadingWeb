@@ -27,21 +27,37 @@ public class FollowEntity {
     @Column(name = "following_id", nullable = false)
     private Integer followingId;
 
+    // 【添加】关联实体 - 仅用于查询，不参与插入/更新
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "follower_id", insertable = false, updatable = false)
+    private UserEntity followerUser;  // 关注者用户实体
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "following_id", insertable = false, updatable = false)
+    private UserEntity followingUser; // 被关注者用户实体
+
     @CreatedDate
     private LocalDateTime createdAt;
 
+    // 【修改】方法从关联实体获取信息
     public String getUsername() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getUsername'");
+        return followingUser != null ? followingUser.getUsername() : null;
     }
 
     public String getAvatar() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAvatar'");
+        return followingUser != null ? followingUser.getAvatar() : null;
     }
 
     public String getBio() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getBio'");
+        return followingUser != null ? followingUser.getBio() : null;
+    }
+    
+    // 【添加】获取关注者用户名的便捷方法
+    public String getFollowerUsername() {
+        return followerUser != null ? followerUser.getUsername() : null;
+    }
+    
+    public String getFollowerAvatar() {
+        return followerUser != null ? followerUser.getAvatar() : null;
     }
 }

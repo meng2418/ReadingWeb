@@ -26,4 +26,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
             Pageable pageable);
 
     Integer countByUserId(Integer userId);
+
+    Page<PostEntity> findByAuthorIdInAndStatus(List<Integer> followingIds, int i, Pageable pageable);
+
+    Page<PostEntity> findByStatusOrderByCreatedAtDesc(int i, Pageable pageable);
 }

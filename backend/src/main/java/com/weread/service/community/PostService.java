@@ -37,4 +37,19 @@ public interface PostService {
                            List<String> topics, Integer currentUserId);
 
     List<TopicPostVO> getTopicPosts(Integer topicId, String sort, Integer cursor, Integer limit, Integer currentUserId);
+
+    /**
+     * 删除帖子
+     * @param postId 帖子ID
+     * @param userId 用户ID（用于权限验证）
+     * @return 是否删除成功
+     */
+    boolean deletePost(Integer postId, Integer userId);
+    
+    /**
+     * 获取用户帖子数量
+     * @param userId 用户ID
+     * @return 帖子数量
+     */
+    Integer getUserPostCount(Integer userId);
 }

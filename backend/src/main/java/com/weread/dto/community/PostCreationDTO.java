@@ -20,4 +20,14 @@ public class PostCreationDTO {
     private List<Integer> bookIds;
 
     private List<String> topics;
+
+    public String getPublishLocation() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPublishLocation'");
+    }
+
+    public void setPublishLocation(String publishLocation) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setPublishLocation'");
+    }
 }

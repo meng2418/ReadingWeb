@@ -1,55 +1,89 @@
+// 【修改 PostController.java】
 package com.weread.controller.community;
 
-import com.weread.dto.community.PostCreationDTO;
+// 添加导入
+import com.weread.dto.community.PublishPostRequestDTO;
 import com.weread.service.community.PostService;
 import com.weread.vo.community.PostListVO;
 import com.weread.vo.community.PostVO;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import com.weread.dto.community.PostCreationDTO;
+import com.weread.dto.community.PostDeleteResponseDTO;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
-import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/posts")
+@RequestMapping("/posts")  // 改为 /posts 匹配接口文档
 @RequiredArgsConstructor
 public class PostController {
 
     private final PostService postService;
 
-    // 假设您有一个安全配置，能够将当前登录用户的 ID 注入到请求属性中
-    // 如果用户未登录，@RequestAttribute 应该允许为 null
+    /**
+     * GET /posts?type=square|following - 获取广场/关注页帖子
+     * 接口文档：type: [square, following]
+     */
+    @GetMapping
+    public ResponseEntity<?> getPosts(
+            @RequestParam String type,  // square, following
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
+        
+        // 将接口文档的 square/following 映射到业务逻辑
+        String mappedType;
+        if ("square".equals(type)) {
+            mappedType = "all";  // 广场对应全部帖子
+        } else if ("following".equals(type)) {
+            mappedType = "following";  // 关注页
+        } else {
+            return ResponseEntity.badRequest().body("type参数必须是square或following");
+        }
+        
+        PostListVO result = postService.getPostList(page, limit, mappedType, null, currentUserId);
+        return ResponseEntity.ok(result);
+    }
 
     /**
-     * POST /api/v1/posts
-     * 【发帖】用户创建新帖子
-     * * @param userId 当前登录用户的ID
-     * @param dto 帖子内容DTO (包含标题、内容、话题/标签列表)
-     * @return PostVO 新创建的帖子详情
+     * POST /posts - 发布帖子
+     * 接口文档：使用 PublishPostRequest
      */
     @PostMapping
     public ResponseEntity<PostVO> createPost(
-            @RequestAttribute(value = "userId", required = true) Integer userId, 
-            @Valid @RequestBody PostCreationDTO dto) {
+            @RequestAttribute(value = "userId", required = true) Integer userId,
+            @Valid @RequestBody PublishPostRequestDTO dto) {
         
-        // userId 必须存在才能发帖，如果 required=true，则未登录用户将收到 401/403 错误（由安全框架处理）
-        PostVO newPost = postService.createPost(dto, userId);
+        // 将 PublishPostRequestDTO 转换为 PostCreationDTO
+        PostCreationDTO creationDTO = new PostCreationDTO();
+        creationDTO.setTitle(dto.getTitle());
+        creationDTO.setContent(dto.getContent());
+        creationDTO.setBookIds(dto.getBookIds());
+        creationDTO.setTopics(dto.getTopics());
+        creationDTO.setPublishLocation(dto.getPublishLocation());
+        
+        PostVO newPost = postService.createPost(creationDTO, userId);
         return new ResponseEntity<>(newPost, HttpStatus.CREATED);
     }
 
     /**
-     * GET /api/v1/posts/{postId}
-     * 【获取帖子详情】
-     * * @param postId 帖子ID
-     * @return PostVO 帖子详情
+     * GET /posts/{postId} - 获取帖子详情
      */
     @GetMapping("/{postId}")
     public ResponseEntity<PostVO> getPostDetail(@PathVariable Integer postId) {
-        
         PostVO post = postService.getPostById(postId);
-        
         if (post == null) {
             return ResponseEntity.notFound().build();
         }
@@ -57,24 +91,29 @@ public class PostController {
     }
 
     /**
-     * GET /api/v1/posts
-     * 【获取帖子列表】
-     * 用于发现页、热门列表、最新列表等。
-     * * @param page 页码
-     * @param limit 每页数量
-     * @param type 列表类型 (例如: "HOT", "LATEST", "FOLLOWING")
-     * @param hashtags 话题/标签列表，用于筛选
-     * @param currentUserId 当前登录用户的ID（如果未登录，为 null）
-     * @return PostListVO 帖子列表分页数据
+     * DELETE /posts/{postId} - 删除帖子
+     * 接口文档：只能删除自己的帖子
      */
-    @GetMapping
-    public PostListVO getPostList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "LATEST") String type,
-            @RequestParam(required = false) List<String> hashtags,
-            @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<PostDeleteResponseDTO> deletePost(
+            @PathVariable Integer postId,
+            @RequestAttribute(value = "userId", required = true) Integer userId) {
         
-        return postService.getPostList(page, limit, type, hashtags, currentUserId);
+        // 这里需要调用删除服务
+        // 由于PostService没有删除方法，需要添加
+        boolean deleted = postService.deletePost(postId, userId);
+        
+        if (!deleted) {
+            return ResponseEntity.status(403).body(
+                new PostDeleteResponseDTO(false, "无权限删除此帖子或帖子不存在", postId, null, null)
+            );
+        }
+        
+        // 获取剩余帖子数（需要实现）
+        Integer remainingCount = postService.getUserPostCount(userId);
+        
+        return ResponseEntity.ok(
+            new PostDeleteResponseDTO(true, "删除成功", postId, remainingCount, null)
+        );
     }
 }
