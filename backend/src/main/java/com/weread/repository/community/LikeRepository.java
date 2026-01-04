@@ -16,8 +16,6 @@ public interface LikeRepository extends JpaRepository<LikeEntity, Long> {
     // ----------------------
     Optional<LikeEntity> findByPostIdAndUserId(Integer postId, Integer userId);
 
-    int countByPostId(Integer postId);
-
     @Query("SELECT l.userId FROM LikeEntity l WHERE l.postId = :postId ORDER BY l.createdAt DESC")
     List<Integer> findTopNUserIdsByPostId(Integer postId, Pageable pageable);
 
@@ -25,8 +23,6 @@ public interface LikeRepository extends JpaRepository<LikeEntity, Long> {
     // 评论点赞
     // ----------------------
     Optional<LikeEntity> findByCommentIdAndUserId(Integer commentId, Integer userId);
-
-    int countByCommentId(Integer commentId);
 
     @Query("SELECT l.userId FROM LikeEntity l WHERE l.commentId = :commentId ORDER BY l.createdAt DESC")
     List<Integer> findTopNUserIdsByCommentId(Integer commentId, Pageable pageable);
@@ -43,4 +39,19 @@ public interface LikeRepository extends JpaRepository<LikeEntity, Long> {
 
     // 添加按用户和帖子查询的方法
     boolean existsByUserIdAndPostId(Integer userId, Integer postId);
+
+    // 按帖子ID查询点赞列表
+    List<LikeEntity> findByPostId(Integer postId);
+    
+    // 按帖子ID查询点赞列表（按时间倒序）
+    List<LikeEntity> findByPostIdOrderByCreatedAtDesc(Integer postId);
+    
+    // 统计帖子点赞数
+    Integer countByPostId(Integer postId);
+    
+    // 按评论ID查询点赞列表
+    List<LikeEntity> findByCommentId(Integer commentId);
+    
+    // 统计评论点赞数
+    Integer countByCommentId(Integer commentId);
 }

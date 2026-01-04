@@ -164,7 +164,7 @@ public class PostServiceImpl implements PostService {
         // 是否已点赞（需要LikeService的实现）
         if (currentUserId != null && likeService != null) {
             try {
-                vo.setIsLiked(likeService.isLiked(currentUserId, post.getPostId()));
+                vo.setIsLiked(likeService.isPostLiked(currentUserId, post.getPostId()));
             } catch (Exception e) {
                 vo.setIsLiked(false);  // 出错时默认为false
             }
