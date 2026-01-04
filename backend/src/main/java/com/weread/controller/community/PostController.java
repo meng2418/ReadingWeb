@@ -3,6 +3,7 @@ package com.weread.controller.community;
 
 // 添加导入
 import com.weread.dto.community.PublishPostRequestDTO;
+import com.weread.dto.community.TopicSearchResponseDTO;
 import com.weread.service.community.PostService;
 import com.weread.vo.community.PostListVO;
 import com.weread.vo.community.PostVO;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import com.weread.common.ApiResponse;
+import com.weread.dto.community.BookSearchResponseDTO;
 import com.weread.dto.community.PostCreationDTO;
 import com.weread.dto.community.PostDeleteResponseDTO;
 
@@ -115,5 +118,45 @@ public class PostController {
         return ResponseEntity.ok(
             new PostDeleteResponseDTO(true, "删除成功", postId, remainingCount, null)
         );
+    }
+
+    /**
+     * GET /posts/search/books - 发帖时搜索书籍
+     */
+    @GetMapping("/search/books")
+    public ResponseEntity<ApiResponse<BookSearchResponseDTO>> searchBooks(
+            @RequestParam String keyword,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        
+        try {
+            BookSearchResponseDTO result = postService.searchBooks(keyword, cursor, limit);
+            return ResponseEntity.ok(ApiResponse.ok(result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "搜索书籍失败"));
+        }
+    }
+
+    /**
+     * GET /posts/search/topics - 发帖时搜索话题
+     */
+    @GetMapping("/search/topics")
+    public ResponseEntity<ApiResponse<TopicSearchResponseDTO>> searchTopics(
+            @RequestParam String keyword,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        
+        try {
+            TopicSearchResponseDTO result = postService.searchTopics(keyword, cursor, limit);
+            return ResponseEntity.ok(ApiResponse.ok(result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "搜索话题失败"));
+        }
     }
 }

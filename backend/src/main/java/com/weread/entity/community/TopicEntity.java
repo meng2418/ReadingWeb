@@ -37,6 +37,9 @@ public class TopicEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "view_count")
+    private Integer viewCount = 0;
+
     // 关联到中间表
     @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostTopicEntity> postTopics;

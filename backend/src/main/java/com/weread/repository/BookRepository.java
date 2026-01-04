@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -26,16 +25,6 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
      * Finds a book by its ISBN (used for unique validation).
      */
     Optional<BookEntity> findByIsbn(String isbn);
-
-    /**
-     * 关键词搜索书籍（标题、作者、简介）
-     */
-    @Query("SELECT b FROM BookEntity b WHERE " +
-           "b.isPublished = true AND (" +
-           "b.title LIKE %:keyword% OR " +
-           "b.description LIKE %:keyword% OR " +
-           "b.tags LIKE %:keyword%)")
-    Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
 
     /**
      * 根据分类ID查询书籍
@@ -76,4 +65,16 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
             @Param("isFree") Boolean isFree,
             @Param("isMemberOnly") Boolean isMemberOnly,
             Pageable pageable);
+
+
+    /**
+     * 搜索书籍（按标题或作者名）
+     */
+    @Query("SELECT b FROM BookEntity b " +
+           "LEFT JOIN b.author a " +
+           "WHERE (b.title LIKE %:keyword% OR " +
+           "       (a IS NOT NULL AND a.name LIKE %:keyword%)) " +
+           "AND b.isPublished = true " +
+           "ORDER BY b.readCount DESC, b.createdAt DESC")
+    Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
 }

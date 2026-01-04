@@ -5,6 +5,7 @@ import com.weread.entity.community.TopicEntity;
 import io.lettuce.core.dynamic.annotation.Param;
 
 import org.springdoc.core.converters.models.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -44,4 +45,12 @@ public interface TopicRepository extends JpaRepository<TopicEntity, Integer> {
     List<TopicEntity> findHotTopics(PageRequest pageable);
     List<TopicEntity> findRelatedTopics(Integer topicId, int i);
     List<TopicEntity> findRelatedTopicsByPostId(Integer postId, Integer currentTopicId, int i);
+
+    /**
+     * 搜索话题（按名称）
+     */
+    @Query("SELECT t FROM TopicEntity t " +
+           "WHERE t.topicName LIKE %:keyword% " +
+           "ORDER BY t.postCount DESC, t.createdAt DESC")
+    Page<TopicEntity> searchTopics(@Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
 }

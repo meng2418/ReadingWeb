@@ -1,6 +1,10 @@
 package com.weread.service.impl.community;
 
+import com.weread.dto.community.BookSearchResponseDTO;
+import com.weread.dto.community.BookSearchResultDTO;
 import com.weread.dto.community.PostCreationDTO;
+import com.weread.dto.community.TopicSearchResponseDTO;
+import com.weread.dto.community.TopicSearchResultDTO;
 import com.weread.vo.book.AuthorVO;
 import com.weread.vo.book.MentionedBookVO;
 import com.weread.vo.community.PostListVO;
@@ -32,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -352,5 +357,96 @@ public class PostServiceImpl implements PostService {
             return content;
         }
         return content.substring(0, 100) + "...";
+    }
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookSearchResponseDTO searchBooks(String keyword, String cursor, int limit) {
+        // 参数验证
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new BookSearchResponseDTO(new ArrayList<>(), null, false);
+        }
+        
+        if (limit <= 0) limit = 20;
+        if (limit > 100) limit = 100;
+        
+        // 创建分页
+        Pageable pageable = PageRequest.of(0, limit);
+        
+        // 搜索书籍
+        Page<BookEntity> bookPage = bookRepository.searchBooks("%" + keyword + "%", pageable);
+        
+        // 转换为 DTO
+        List<BookSearchResultDTO> bookDTOs = bookPage.getContent().stream()
+            .map(this::convertToBookSearchResultDTO)
+            .collect(Collectors.toList());
+        
+        // 生成游标（如果有下一页）
+        String nextCursor = null;
+        boolean hasMore = bookPage.hasNext();
+        
+        if (hasMore) {
+            // 使用最后一本书的ID和时间戳作为游标
+            BookEntity lastBook = bookPage.getContent().get(bookPage.getContent().size() - 1);
+            long timestamp = System.currentTimeMillis() / 1000;
+            nextCursor = String.format("book_%d_%d", lastBook.getBookId(), timestamp);
+        }
+        
+        return new BookSearchResponseDTO(bookDTOs, nextCursor, hasMore);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public TopicSearchResponseDTO searchTopics(String keyword, String cursor, int limit) {
+        // 参数验证
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new TopicSearchResponseDTO(new ArrayList<>(), null, false);
+        }
+        
+        if (limit <= 0) limit = 20;
+        if (limit > 100) limit = 100;
+        
+        // 创建分页
+        Pageable pageable = PageRequest.of(0, limit);
+        
+        // 搜索话题
+        Page<TopicEntity> topicPage = topicRepository.searchTopics("%" + keyword + "%", pageable);
+        
+        // 转换为 DTO
+        List<TopicSearchResultDTO> topicDTOs = topicPage.getContent().stream()
+            .map(this::convertToTopicSearchResultDTO)
+            .collect(Collectors.toList());
+        
+        // 生成游标（如果有下一页）
+        String nextCursor = null;
+        boolean hasMore = topicPage.hasNext();
+        
+        if (hasMore) {
+            // 使用最后一个话题的ID和时间戳作为游标
+            TopicEntity lastTopic = topicPage.getContent().get(topicPage.getContent().size() - 1);
+            long timestamp = System.currentTimeMillis() / 1000;
+            nextCursor = String.format("topic_%d_%d", lastTopic.getTopicId(), timestamp);
+        }
+        
+        return new TopicSearchResponseDTO(topicDTOs, nextCursor, hasMore);
+    }
+    
+    private BookSearchResultDTO convertToBookSearchResultDTO(BookEntity book) {
+        BookSearchResultDTO dto = new BookSearchResultDTO();
+        dto.setBookId(book.getBookId());
+        dto.setBookTitle(book.getTitle());
+        dto.setAuthorName(book.getAuthor() != null ? book.getAuthor().getName() : "未知作者");
+        return dto;
+    }
+    
+    private TopicSearchResultDTO convertToTopicSearchResultDTO(TopicEntity topic) {
+        TopicSearchResultDTO dto = new TopicSearchResultDTO();
+        dto.setTopicId(topic.getTopicId());
+        dto.setTopicName(topic.getTopicName());
+        dto.setViewCount(0); // 如果需要查看次数，需要在TopicEntity中添加字段
+        dto.setDiscussionCount(topic.getPostCount() != null ? topic.getPostCount() : 0);
+        return dto;
     }
 }

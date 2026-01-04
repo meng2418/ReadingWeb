@@ -1,5 +1,6 @@
 package com.weread.repository.community;
 
+import com.weread.entity.BookEntity;
 import com.weread.entity.community.PostEntity;
 
 import org.springframework.data.domain.Page;
@@ -7,6 +8,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -30,4 +33,15 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
     Page<PostEntity> findByAuthorIdInAndStatus(List<Integer> followingIds, int i, Pageable pageable);
 
     Page<PostEntity> findByStatusOrderByCreatedAtDesc(int i, Pageable pageable);
+
+    /**
+     * 搜索书籍（按标题或作者）
+     */
+    @Query("SELECT DISTINCT b FROM BookEntity b " +
+           "LEFT JOIN b.author a " +
+           "WHERE (b.title LIKE %:keyword% OR " +
+           "       (a IS NOT NULL AND (a.name LIKE %:keyword% OR a.penName LIKE %:keyword%))) " +
+           "AND b.isPublished = true " +
+           "ORDER BY b.readCount DESC, b.createdAt DESC")
+    Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
 }

@@ -1,6 +1,8 @@
 package com.weread.service.community;
 
+import com.weread.dto.community.BookSearchResponseDTO;
 import com.weread.dto.community.PostCreationDTO;
+import com.weread.dto.community.TopicSearchResponseDTO;
 import com.weread.vo.community.PostListVO;
 import com.weread.vo.community.PostVO;
 import com.weread.vo.community.TopicPostVO;
@@ -52,4 +54,14 @@ public interface PostService {
      * @return 帖子数量
      */
     Integer getUserPostCount(Integer userId);
+
+    /**
+     * 搜索书籍
+     */
+    BookSearchResponseDTO searchBooks(String keyword, String cursor, int limit);
+    
+    /**
+     * 搜索话题
+     */
+    TopicSearchResponseDTO searchTopics(String keyword, String cursor, int limit);
 }
