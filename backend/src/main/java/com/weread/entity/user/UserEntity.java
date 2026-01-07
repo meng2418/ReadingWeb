@@ -59,6 +59,9 @@ public class UserEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "last_login_time")
+    private LocalDateTime lastLoginTime;
+
     public Object getMembershipExpireAt() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getMembershipExpireAt'");

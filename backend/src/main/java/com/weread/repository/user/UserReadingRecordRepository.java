@@ -48,7 +48,21 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
 
     Integer countDistinctBooksByUserId(Integer userId);
 
-    List<Object[]> findTopBooksByUserIdAndPeriod(Integer userId, LocalDate startDate, LocalDate endDate, int i);
+    /**
+     * 查找用户在指定日期范围内阅读时间最长的书籍
+     * 返回: [bookId, bookTitle, totalReadingTime]
+     */
+    @Query("SELECT r.bookId, r.bookTitle, SUM(r.readingTime) as totalReadingTime " +
+           "FROM UserReadingRecordEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.readDate BETWEEN :startDate AND :endDate " +
+           "AND r.bookId IS NOT NULL " +
+           "GROUP BY r.bookId, r.bookTitle " +
+           "ORDER BY totalReadingTime DESC")
+    List<Object[]> findTopBooksByUserIdAndPeriod(@Param("userId") Integer userId, 
+                                                  @Param("startDate") LocalDate startDate, 
+                                                  @Param("endDate") LocalDate endDate, 
+                                                  org.springframework.data.domain.Pageable pageable);
 
     Integer countFinishedBooksByUserId(Integer userId);
 }

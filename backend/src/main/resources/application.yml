@@ -5,30 +5,40 @@ server:
   port: 8080
 
 spring:
-  # -------------------------------------
-  # 数据源配置 (H2 数据库，文件模式)
-  # -------------------------------------
   datasource:
-    url: jdbc:mysql://localhost:3306/wechatreading_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/wechatreading_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root # 替换为您的 MySQL 用户名
-    password: 299792 # 替换为您的 MySQL 密码
+    username: root
+    password: 123456
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: HikariCP
+      auto-commit: true
+      connection-test-query: SELECT 1
   
   # -------------------------------------
   # JPA / Hibernate 配置
   # -------------------------------------
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect # (保留这个以兼容Spring Boot Autoconfigure)
+    database: mysql
     properties:
       # 显式告诉 Hibernate 使用 MySQL 8 方言
       hibernate.dialect: org.hibernate.dialect.MySQLDialect
       # 禁用对序列（SEQUENCES）表的查询，这是解决问题的关键
       hibernate.id.disable_sequences: true
+      # 连接池相关配置
+      hibernate.connection.provider_disables_autocommit: false
       
     hibernate:
       # ddl-auto 保持不变
       ddl-auto: update 
     show-sql: true
+    open-in-view: false
   
   # -------------------------------------
   # Redis 配置 (从前一个配置中保留)

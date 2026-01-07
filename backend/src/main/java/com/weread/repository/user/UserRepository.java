@@ -62,8 +62,14 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     
     // 扣减用户币数（需要确保余额充足）
     @Modifying
-    @Query("UPDATE UserEntity u SET u.coins = u.coins - :amount, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userOd = :userId AND u.coins >= :amount")
+    @Query("UPDATE UserEntity u SET u.coins = u.coins - :amount, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.coins >= :amount")
     int deductCoins(@Param("userId") Integer userId, @Param("amount") Integer amount);
     boolean existsByUsername(String username);
-    void updateLastLoginTime(Integer userId, LocalDateTime now);    
+    
+    /**
+     * 更新用户最后登录时间
+     */
+    @Modifying
+    @Query("UPDATE UserEntity u SET u.lastLoginTime = :now WHERE u.userId = :userId")
+    void updateLastLoginTime(@Param("userId") Integer userId, @Param("now") LocalDateTime now);    
 }

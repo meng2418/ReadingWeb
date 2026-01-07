@@ -285,7 +285,7 @@ public class ReadingServiceImpl implements ReadingService {
         
         // 查询该时间段内阅读时间最长的书籍
         List<Object[]> topBooksData = readingRecordRepository.findTopBooksByUserIdAndPeriod(
-                userId, startDate, endDate, 3);
+                userId, startDate, endDate, org.springframework.data.domain.PageRequest.of(0, 3));
         
         TopBooksVO.TopBookItem[] topBooks = new TopBooksVO.TopBookItem[Math.min(topBooksData.size(), 3)];
         

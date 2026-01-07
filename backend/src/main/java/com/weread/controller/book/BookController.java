@@ -4,15 +4,19 @@ import com.weread.dto.Result;
 import com.weread.dto.book.BookCreateDTO;
 import com.weread.dto.book.BookQueryDTO;
 import com.weread.dto.book.BookUpdateDTO;
+import com.weread.service.book.BookReviewService;
 import com.weread.service.book.BookService;
 import com.weread.vo.book.BookDetailVO;
 import com.weread.vo.book.BookListVO;
+import com.weread.vo.book.BookReviewVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 书籍管理控制器
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class BookController {
 
     private final BookService bookService;
+    private final BookReviewService bookReviewService;
 
     @PostMapping
     @Operation(summary = "创建书籍", description = "创建新书籍")
@@ -82,6 +87,13 @@ public class BookController {
             @RequestParam Boolean isPublished) {
         bookService.updateBookStatus(bookId, isPublished);
         return Result.success();
+    }
+
+    @GetMapping("/{bookId}/reviews")
+    @Operation(summary = "获取用户点评", description = "获取书籍的用户点评列表（最多3条）")
+    public Result<List<BookReviewVO>> getBookReviews(@PathVariable Integer bookId) {
+        List<BookReviewVO> reviews = bookReviewService.getBookReviewsLimited(bookId, 3);
+        return Result.success(reviews);
     }
 }
 

@@ -58,6 +58,15 @@ public interface FollowRepository extends JpaRepository<FollowEntity, Integer> {
      */
     Page<FollowEntity> findByFollowerId(Integer followerId, Pageable pageable);
 
-    Boolean existsByUserIdAndTopicId(Integer currentUserId, Integer topicId);
+    /**
+     * 检查用户是否关注了某个话题
+     * 注意：目前话题关注功能未实现，此方法暂时返回 false
+     * TODO: 如果将来需要实现话题关注功能，需要创建 TopicFollowEntity 和对应的表
+     */
+    default Boolean existsByUserIdAndTopicId(Integer userId, Integer topicId) {
+        // 暂时返回 false，因为 FollowEntity 只用于用户之间的关注，不涉及话题
+        // 如果将来需要实现话题关注，需要创建单独的 TopicFollowEntity
+        return false;
+    }
 
 }

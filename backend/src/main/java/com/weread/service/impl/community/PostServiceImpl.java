@@ -24,7 +24,7 @@ import com.weread.repository.user.FollowRepository;
 import com.weread.repository.community.TopicRepository;
 import com.weread.service.book.BookService;
 import com.weread.service.community.PostService;
-import com.weread.service.community.FollowService;
+import com.weread.service.user.FollowService;
 import com.weread.service.community.LikeService;
 import com.weread.vo.community.PostVO;
 import com.weread.vo.community.TopicPostVO;
@@ -149,13 +149,11 @@ public class PostServiceImpl implements PostService {
             authorVO.setAuthorName(author.getUsername());
             vo.setAuthor(authorVO);
             
-            // 是否已关注作者（需要FollowService的实现）
-            if (currentUserId != null && followService != null) {
-                try {
-                    vo.setIsFollowingAuthor(followService.isFollowing(currentUserId, author.getUserId()));
-                } catch (Exception e) {
-                    vo.setIsFollowingAuthor(false);  // 出错时默认为false
-                }
+            // 是否已关注作者
+            if (currentUserId != null) {
+                boolean isFollowing = followRepository.findByFollowerIdAndFollowingId(currentUserId, author.getUserId())
+                    .isPresent();
+                vo.setIsFollowingAuthor(isFollowing);
             } else {
                 vo.setIsFollowingAuthor(false);
             }
@@ -189,7 +187,8 @@ public class PostServiceImpl implements PostService {
         
         // 相关话题（从数据库中查询相关话题）
         try {
-            List<TopicEntity> relatedTopics = topicRepository.findRelatedTopicsByPostId(post.getPostId(), currentTopicId, 5);
+            List<TopicEntity> relatedTopics = topicRepository.findRelatedTopicsByPostId(post.getPostId(), currentTopicId, 
+                org.springframework.data.domain.PageRequest.of(0, 5));
             List<TopicPostRelatedVO> relatedTopicVOs = relatedTopics.stream()
                 .map(this::convertToTopicPostRelatedVO)
                 .collect(Collectors.toList());
@@ -417,7 +416,7 @@ public class PostServiceImpl implements PostService {
     
     @Override
     public Integer getUserPostCount(Integer userId) {
-        return postRepository.countByUserId(userId);
+        return postRepository.countByAuthorId(userId);
     }
     
     // 辅助方法：转换为PostVO

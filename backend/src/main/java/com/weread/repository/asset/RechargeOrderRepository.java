@@ -27,14 +27,16 @@ public interface RechargeOrderRepository extends JpaRepository<RechargeOrderEnti
     // 支付成功回调
     @Modifying
     @Query("UPDATE RechargeOrderEntity o SET " +
-           "o.orderStatus = com.weread.entity.payment.RechargeOrderEntity.OrderStatus.PAID, " +
+           "o.orderStatus = :paidStatus, " +
            "o.transactionNo = :transactionNo, " +
            "o.paidAt = :paidAt, " +
            "o.updatedAt = CURRENT_TIMESTAMP " +
-           "WHERE o.orderNo = :orderNo AND o.orderStatus = com.weread.entity.payment.RechargeOrderEntity.OrderStatus.PENDING")
+           "WHERE o.orderNo = :orderNo AND o.orderStatus = :pendingStatus")
     int markAsPaid(@Param("orderNo") String orderNo, 
                    @Param("transactionNo") String transactionNo,
-                   @Param("paidAt") LocalDateTime paidAt);
+                   @Param("paidAt") LocalDateTime paidAt,
+                   @Param("paidStatus") RechargeOrderEntity.OrderStatus paidStatus,
+                   @Param("pendingStatus") RechargeOrderEntity.OrderStatus pendingStatus);
     
     // 检查是否有未完成的订单
     boolean existsByUserIdAndPackageIdAndOrderStatus(Integer userId, Integer packageId, RechargeOrderEntity.OrderStatus status);

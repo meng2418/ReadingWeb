@@ -102,7 +102,13 @@ public class RechargeServiceImpl implements RechargeService {
         }
         
         // 4. 标记订单为已支付
-        int updated = rechargeOrderRepository.markAsPaid(orderNo, transactionNo, LocalDateTime.now());
+        int updated = rechargeOrderRepository.markAsPaid(
+            orderNo, 
+            transactionNo, 
+            LocalDateTime.now(),
+            RechargeOrderEntity.OrderStatus.PAID,
+            RechargeOrderEntity.OrderStatus.PENDING
+        );
         if (updated == 0) {
             return false;
         }

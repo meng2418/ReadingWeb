@@ -1,9 +1,7 @@
 package com.weread.service.impl.bookmark;
 
 import com.weread.dto.bookmark.BookmarkCreateDTO;
-import com.weread.entity.BookEntity;
 import com.weread.entity.BookmarkEntity;
-import com.weread.entity.book.BookChapterEntity;
 import com.weread.repository.BookRepository;
 import com.weread.repository.BookmarkRepository;
 import com.weread.repository.book.BookChapterRepository;
