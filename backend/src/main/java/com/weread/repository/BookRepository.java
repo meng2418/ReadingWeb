@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -77,4 +78,14 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
            "AND b.isPublished = true " +
            "ORDER BY b.readCount DESC, b.createdAt DESC")
     Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
+
+    /**
+     * 根据作者ID查询该作者的所有作品
+     */
+    List<BookEntity> findByAuthorIdAndIsPublishedTrue(Long authorId);
+
+    /**
+     * 统计作者的作品数量
+     */
+    int countByAuthorIdAndIsPublishedTrue(Long authorId);
 }

@@ -26,3 +26,4 @@ public class BookReviewCreateDTO {
     private Boolean isPublic = true; // 默认公开
 }
 
+
