@@ -14,8 +14,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -70,7 +72,7 @@ public class BookDetailController {
             @PathVariable Integer bookId,
             @AuthenticationPrincipal UserEntity currentUser) {
         if (currentUser == null || currentUser.getUserId() == null) {
-            throw new RuntimeException("用户未登录");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户未登录");
         }
         Long userId = currentUser.getUserId().longValue();
         MarkFinishedVO result = bookshelfService.markBookFinished(bookId, userId);

@@ -7,8 +7,10 @@ import com.weread.service.BookshelfService;
 import com.weread.service.user.ReadingService;
 import com.weread.vo.book.MarkFinishedVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -219,13 +221,13 @@ public class BookshelfServiceImpl implements BookshelfService {
     @Override
     @Transactional
     public MarkFinishedVO markBookFinished(Integer bookId, Long userId) {
-        // 1. 校验图书是否在书架中
-        bookshelfRepository.findByUserIdAndBookId(userId, bookId)
-                .orElseThrow(() -> new RuntimeException("图书不在书架中"));
-
-        // 2. 校验图书是否存在
+        // 1. 校验图书是否存在（先检查图书，如果不存在返回404）
         BookEntity book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("图书不存在"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图书不存在"));
+
+        // 2. 校验图书是否在书架中（业务逻辑错误，返回400）
+        bookshelfRepository.findByUserIdAndBookId(userId, bookId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "图书不在书架中"));
 
         // 3. 更新书架中的状态为finished，同时更新最后阅读时间
         LocalDateTime now = LocalDateTime.now();
