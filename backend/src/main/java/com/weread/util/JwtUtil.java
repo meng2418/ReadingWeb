@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class JwtUtil {
+public class  JwtUtil {
 
     @Value("${jwt.expiration:604800000}") // 7天
     private long expiration;
