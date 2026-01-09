@@ -47,4 +47,12 @@ public interface BookshelfService {
      * @return List of BookShelfVO
      */
     List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId);
+
+    /**
+     * Marks a book as finished (completed reading).
+     * * @param bookId Book ID
+     * @param userId Current User ID
+     * @return MarkFinishedVO with book status, finished time, total finished books count, and milestone info
+     */
+    com.weread.vo.book.MarkFinishedVO markBookFinished(Integer bookId, Long userId);
 }

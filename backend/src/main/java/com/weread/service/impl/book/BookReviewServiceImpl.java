@@ -208,7 +208,11 @@ public class BookReviewServiceImpl implements BookReviewService {
 
         if (user != null) {
             vo.setUsername(user.getUsername());
-            vo.setAvatar(user.getAvatar());
+            // 确保 avatar 始终是 string 类型，如果为 null 则返回空字符串
+            vo.setAvatar(user.getAvatar() != null ? user.getAvatar() : "");
+        } else {
+            // 如果用户不存在，设置默认值
+            vo.setAvatar("");
         }
 
         return vo;

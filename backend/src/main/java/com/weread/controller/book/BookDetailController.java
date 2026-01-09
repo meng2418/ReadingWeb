@@ -2,13 +2,16 @@ package com.weread.controller.book;
 
 import com.weread.dto.Result;
 import com.weread.entity.user.UserEntity;
+import com.weread.service.BookshelfService;
 import com.weread.service.book.BookService;
 import com.weread.service.book.BookReviewService;
 import com.weread.vo.book.AuthorWorkVO;
 import com.weread.vo.book.BookDetailVO;
 import com.weread.vo.book.BookReviewVO;
+import com.weread.vo.book.MarkFinishedVO;
 import com.weread.vo.book.RelatedBookVO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,6 +30,7 @@ public class BookDetailController {
 
     private final BookService bookService;
     private final BookReviewService bookReviewService;
+    private final BookshelfService bookshelfService;
 
     @GetMapping("/{bookId}")
     @Operation(summary = "获取书详情", description = "根据ID获取书籍详细信息")
@@ -57,6 +61,20 @@ public class BookDetailController {
     public Result<List<BookReviewVO>> getBookReviews(@PathVariable Integer bookId) {
         List<BookReviewVO> reviews = bookReviewService.getBookReviewsLimited(bookId, 3);
         return Result.success(reviews);
+    }
+
+    @PutMapping("/{bookId}/mark-finished")
+    @Operation(summary = "标记书籍为已读完", description = "将指定书籍标记为已读完状态，更新阅读进度为100%，并检查里程碑成就")
+    @SecurityRequirement(name = "bearerAuth")
+    public Result<MarkFinishedVO> markBookFinished(
+            @PathVariable Integer bookId,
+            @AuthenticationPrincipal UserEntity currentUser) {
+        if (currentUser == null || currentUser.getUserId() == null) {
+            throw new RuntimeException("用户未登录");
+        }
+        Long userId = currentUser.getUserId().longValue();
+        MarkFinishedVO result = bookshelfService.markBookFinished(bookId, userId);
+        return Result.success(result);
     }
 }
 
