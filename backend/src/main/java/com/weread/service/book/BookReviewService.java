@@ -35,6 +35,11 @@ public interface BookReviewService {
      * 获取书籍的评分统计
      */
     BookReviewService.RatingStats getRatingStats(Integer bookId);
+
+    /**
+     * 获取用户的书评列表（限制数量，用于个人中心）
+     */
+    List<BookReviewVO> getUserReviewsLimited(Integer userId, Integer limit);
     
     /**
      * 评分统计

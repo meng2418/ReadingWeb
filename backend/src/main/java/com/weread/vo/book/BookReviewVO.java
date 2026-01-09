@@ -12,6 +12,12 @@ public class BookReviewVO {
     private Integer bookId;
     private String bookTitle;
     private String bookCover;
+    
+    /**
+     * 书籍信息对象（SimpleBook格式，用于发布书评接口返回）
+     */
+    private SimpleBookVO book;
+    
     private Integer userId;
     private String username;
     private String avatar;

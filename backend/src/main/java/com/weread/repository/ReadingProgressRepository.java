@@ -31,4 +31,20 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
             @Param("currentPage") Integer currentPage,
             @Param("progress") Float progress,
             @Param("lastReadAt") LocalDateTime lastReadAt);
+
+    /**
+     * 统计在读人数（progress > 0 且 < 1）
+     */
+    @Query("SELECT COUNT(r) FROM ReadingProgressEntity r " +
+           "WHERE r.bookId = :bookId " +
+           "AND r.progress > 0 AND r.progress < 1")
+    Long countReadingUsers(@Param("bookId") Integer bookId);
+
+    /**
+     * 统计读完人数（progress = 1）
+     */
+    @Query("SELECT COUNT(r) FROM ReadingProgressEntity r " +
+           "WHERE r.bookId = :bookId " +
+           "AND r.progress >= 1")
+    Long countFinishedUsers(@Param("bookId") Integer bookId);
 }

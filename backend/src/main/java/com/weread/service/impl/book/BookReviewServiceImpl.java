@@ -4,11 +4,13 @@ import com.weread.dto.book.BookReviewCreateDTO;
 import com.weread.entity.BookEntity;
 import com.weread.entity.book.BookReviewEntity;
 import com.weread.entity.user.UserEntity;
+import com.weread.repository.AuthorRepository;
 import com.weread.repository.BookRepository;
 import com.weread.repository.book.BookReviewRepository;
 import com.weread.repository.user.UserRepository;
 import com.weread.service.book.BookReviewService;
 import com.weread.vo.book.BookReviewVO;
+import com.weread.vo.book.SimpleBookVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +34,7 @@ public class BookReviewServiceImpl implements BookReviewService {
     private final BookReviewRepository bookReviewRepository;
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
+    private final AuthorRepository authorRepository;
 
     @Override
     @Transactional
@@ -136,6 +139,17 @@ public class BookReviewServiceImpl implements BookReviewService {
         return ratingStats;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookReviewVO> getUserReviewsLimited(Integer userId, Integer limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        Page<BookReviewEntity> reviews = bookReviewRepository.findByUserId(userId, pageable);
+
+        return reviews.getContent().stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 转换为VO（需要加载关联实体）
      */
@@ -162,6 +176,34 @@ public class BookReviewServiceImpl implements BookReviewService {
         if (book != null) {
             vo.setBookTitle(book.getTitle());
             vo.setBookCover(book.getCover());
+            
+            // 填充book对象（SimpleBook格式）
+            SimpleBookVO simpleBook = new SimpleBookVO();
+            simpleBook.setCover(book.getCover());
+            simpleBook.setBookTitle(book.getTitle());
+            simpleBook.setAuthorId(book.getAuthorId());
+            simpleBook.setDescription(book.getDescription());
+            // 将Float rating转换为Integer（0-100范围）
+            if (book.getRating() != null) {
+                if (book.getRating() <= 1.0f) {
+                    // 如果是0-1的小数格式，转换为0-100的整数
+                    simpleBook.setRating((int) (book.getRating() * 100));
+                } else {
+                    // 如果已经是0-100的值，直接取整
+                    simpleBook.setRating(book.getRating().intValue());
+                }
+            } else {
+                simpleBook.setRating(0);
+            }
+            simpleBook.setReadCount(book.getReadCount() != null ? book.getReadCount() : 0);
+            
+            // 设置作者名（通过authorRepository查询，避免LazyInitializationException）
+            if (book.getAuthorId() != null) {
+                authorRepository.findById(book.getAuthorId())
+                        .ifPresent(author -> simpleBook.setAuthorName(author.getName()));
+            }
+            
+            vo.setBook(simpleBook);
         }
 
         if (user != null) {

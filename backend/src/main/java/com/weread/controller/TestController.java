@@ -1,7 +1,5 @@
 package com.weread.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -28,23 +26,10 @@ public class TestController {
     // 注意：获取作者详情接口已迁移到 AuthorController
     // GET /authors/{authorId} 现在由 AuthorController 处理
 
-    // 2. GET /books/{bookId} - 获取书详情
-    @GetMapping("/books/{bookId}")
-    public Map<String, Object> getBookDetail(@PathVariable String bookId) {
-        log.info("=== 收到请求 GET /books/{} ===", bookId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("code", 200);
-        response.put("message", "成功");
-        response.put("data", Map.of(
-                "id", bookId,
-                "title", "测试书籍标题",
-                "author", "测试作者",
-                "createdAt", new Date()
-        ));
-
-        return response;
-    }
+    // 2. GET /books/{bookId} - 获取书详情（调用真正的服务）
+    // 注意：这个接口现在调用 BookService 来获取真实的书籍详情
+    // 如果前端需要，可以保持这个路径，或者迁移到 BookController
+    // 为了保持兼容性，暂时保留此接口，但建议前端使用 /api/v1/books/{bookId}
 
     // 2.1 GET /books/ - 处理不带参数的请求
     @GetMapping("/books/")
@@ -59,24 +44,12 @@ public class TestController {
         return response;
     }
 
-    // 3. POST /book-reviews - 发布书评
-    @PostMapping("/book-reviews")
-    public ResponseEntity<Map<String, Object>> publishReview(@RequestBody Map<String, Object> request) {
-        log.info("=== 收到请求 POST /book-reviews ===");
-        log.info("请求体: {}", request);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("code", 201);
-        response.put("message", "书评创建成功");
-        response.put("data", Map.of(
-                "reviewId", 999,
-                "bookId", request.get("bookId"),
-                "content", request.get("content"),
-                "createdAt", new Date()
-        ));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+    // 3. POST /book-reviews - 发布书评（已迁移到 BookReviewController）
+    // 注意：此接口已废弃，请使用 /api/v1/book-reviews
+    // @PostMapping("/book-reviews")
+    // public ResponseEntity<Map<String, Object>> publishReview(@RequestBody Map<String, Object> request) {
+    //     // 已迁移到 BookReviewController
+    // }
 
     // 4. PUT /books/{bookId}/mark-finished - 标记书籍为已读完
     @PutMapping("/books/{bookId}/mark-finished")

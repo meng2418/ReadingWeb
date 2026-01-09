@@ -88,4 +88,36 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
      * 统计作者的作品数量
      */
     int countByAuthorIdAndIsPublishedTrue(Long authorId);
+
+    /**
+     * 根据作者ID查询该作者的代表作（排除指定书籍，按阅读量排序，最多返回指定数量）
+     * @param authorId 作者ID
+     * @param excludeBookId 排除的书籍ID
+     * @param pageable 分页参数（用于限制返回数量）
+     * @return 作者代表作列表
+     */
+    @Query("SELECT b FROM BookEntity b WHERE b.authorId = :authorId " +
+           "AND b.isPublished = true " +
+           "AND b.bookId <> :excludeBookId " +
+           "ORDER BY b.readCount DESC, b.rating DESC")
+    List<BookEntity> findAuthorRepresentativeWorks(
+            @Param("authorId") Long authorId,
+            @Param("excludeBookId") Integer excludeBookId,
+            Pageable pageable);
+
+    /**
+     * 根据分类ID查询相关推荐书籍（排除指定书籍，按阅读量和评分排序，最多返回指定数量）
+     * @param categoryId 分类ID
+     * @param excludeBookId 排除的书籍ID
+     * @param pageable 分页参数（用于限制返回数量）
+     * @return 相关推荐书籍列表
+     */
+    @Query("SELECT b FROM BookEntity b WHERE b.categoryId = :categoryId " +
+           "AND b.isPublished = true " +
+           "AND b.bookId <> :excludeBookId " +
+           "ORDER BY b.readCount DESC, b.rating DESC")
+    List<BookEntity> findRelatedBooksByCategory(
+            @Param("categoryId") Integer categoryId,
+            @Param("excludeBookId") Integer excludeBookId,
+            Pageable pageable);
 }

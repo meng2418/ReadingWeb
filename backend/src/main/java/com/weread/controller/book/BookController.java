@@ -4,6 +4,7 @@ import com.weread.dto.Result;
 import com.weread.dto.book.BookCreateDTO;
 import com.weread.dto.book.BookQueryDTO;
 import com.weread.dto.book.BookUpdateDTO;
+import com.weread.entity.user.UserEntity;
 import com.weread.service.book.BookReviewService;
 import com.weread.service.book.BookService;
 import com.weread.vo.book.BookDetailVO;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,8 +48,12 @@ public class BookController {
 
     @GetMapping("/{bookId}")
     @Operation(summary = "获取书籍详情", description = "根据ID获取书籍详细信息")
-    public Result<BookDetailVO> getBookById(@PathVariable Integer bookId) {
-        return Result.success(bookService.getBookById(bookId));
+    public Result<BookDetailVO> getBookById(
+            @PathVariable Integer bookId,
+            @AuthenticationPrincipal UserEntity currentUser) {
+        Long userId = (currentUser != null && currentUser.getUserId() != null) 
+                ? currentUser.getUserId().longValue() : null;
+        return Result.success(bookService.getBookById(bookId, userId));
     }
 
     @DeleteMapping("/{bookId}")

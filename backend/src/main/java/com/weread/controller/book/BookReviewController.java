@@ -2,6 +2,7 @@ package com.weread.controller.book;
 
 import com.weread.dto.Result;
 import com.weread.dto.book.BookReviewCreateDTO;
+import com.weread.dto.book.BookReviewCreateResponseDTO;
 import com.weread.service.book.BookReviewService;
 import com.weread.vo.book.BookReviewVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -18,7 +21,7 @@ import java.util.Map;
  * 书评控制器
  */
 @RestController
-@RequestMapping("/api/v1/book-reviews")
+@RequestMapping("/book-reviews")
 @RequiredArgsConstructor
 @Tag(name = "书评管理", description = "书评的创建、查询、删除")
 public class BookReviewController {
@@ -27,14 +30,20 @@ public class BookReviewController {
 
     @PostMapping
     @Operation(summary = "发布书评", description = "用户对书籍进行评价")
-    public Result<Map<String, Object>> createReview(
+    public ResponseEntity<Result<BookReviewCreateResponseDTO>> createReview(
             @RequestAttribute("userId") Integer userId,
             @Valid @RequestBody BookReviewCreateDTO dto) {
         BookReviewVO review = bookReviewService.createReview(userId, dto);
         
-        Map<String, Object> response = new HashMap<>();
-        response.put("review", review);
-        return Result.success(response);
+        // 使用专门的响应DTO，确保data字段是object类型
+        BookReviewCreateResponseDTO response = new BookReviewCreateResponseDTO();
+        response.setReview(review);
+        
+        // HTTP状态码为201（CREATED），但响应体中的code字段应为200（成功）
+        Result<BookReviewCreateResponseDTO> result = Result.success(response);
+        // 显式确保code字段为200，符合枚举值规范（200、400、401）
+        result.setCode(200);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     @DeleteMapping("/{reviewId}")

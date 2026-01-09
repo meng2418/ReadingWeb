@@ -5,15 +5,26 @@ import com.weread.dto.book.BookQueryDTO;
 import com.weread.dto.book.BookUpdateDTO;
 import com.weread.entity.AuthorEntity;
 import com.weread.entity.BookEntity;
+import com.weread.entity.BookshelfEntity;
+import com.weread.entity.ReadingProgressEntity;
 import com.weread.entity.book.BookCategoryEntity;
 import com.weread.repository.AuthorRepository;
 import com.weread.repository.BookRepository;
+import com.weread.repository.BookshelfRepository;
+import com.weread.repository.ReadingProgressRepository;
 import com.weread.repository.book.BookCategoryRepository;
 import com.weread.repository.book.BookChapterRepository;
+import com.weread.repository.book.BookReviewRepository;
 import com.weread.service.book.BookService;
+import com.weread.service.book.BookReviewService;
+import com.weread.vo.book.AuthorWorkVO;
 import com.weread.vo.book.BookDetailVO;
 import com.weread.vo.book.BookListVO;
 import com.weread.vo.book.BookSummaryVO;
+import com.weread.vo.book.RelatedBookVO;
+
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +46,10 @@ public class BookServiceImpl implements BookService {
     private final AuthorRepository authorRepository;
     private final BookCategoryRepository categoryRepository;
     private final BookChapterRepository chapterRepository;
+    private final BookshelfRepository bookshelfRepository;
+    private final ReadingProgressRepository readingProgressRepository;
+    private final BookReviewRepository bookReviewRepository;
+    private final BookReviewService bookReviewService;
 
     @Override
     public BookSummaryVO convertToSummaryVO(BookEntity bookEntity) {
@@ -135,9 +150,15 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public BookDetailVO getBookById(Integer bookId) {
+        return getBookById(bookId, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookDetailVO getBookById(Integer bookId, Long userId) {
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new RuntimeException("书籍不存在"));
-        return convertToDetailVO(book);
+        return convertToDetailVO(book, userId);
     }
 
     @Override
@@ -205,17 +226,127 @@ public class BookServiceImpl implements BookService {
         bookRepository.save(book);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AuthorWorkVO> getAuthorRepresentativeWorks(Integer bookId) {
+        // 1. 查询书籍信息
+        BookEntity book = bookRepository.findByBookId(bookId)
+                .orElseThrow(() -> new RuntimeException("书籍不存在，ID: " + bookId));
+        
+        // 2. 获取作者ID
+        Long authorId = book.getAuthorId();
+        if (authorId == null) {
+            return List.of(); // 如果没有作者，返回空列表
+        }
+        
+        // 3. 查询该作者的其他作品（排除当前书籍，按阅读量排序，最多3部）
+        Pageable pageable = PageRequest.of(0, 3);
+        List<BookEntity> works = bookRepository.findAuthorRepresentativeWorks(authorId, bookId, pageable);
+        
+        // 4. 转换为VO
+        return works.stream()
+                .map(this::convertToAuthorWorkVO)
+                .collect(Collectors.toList());
+    }
+    
     /**
-     * 转换为详情VO
+     * 将 BookEntity 转换为 AuthorWorkVO
      */
-    private BookDetailVO convertToDetailVO(BookEntity book) {
-        BookDetailVO vo = new BookDetailVO();
+    private AuthorWorkVO convertToAuthorWorkVO(BookEntity book) {
+        AuthorWorkVO vo = new AuthorWorkVO();
+        // 将 bookId 转换为 String 类型
+        vo.setBookId(book.getBookId() != null ? String.valueOf(book.getBookId()) : "");
+        vo.setCover(book.getCover() != null ? book.getCover() : "");
+        vo.setBookTitle(book.getTitle());
+        return vo;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RelatedBookVO> getRelatedBooks(Integer bookId) {
+        // 1. 查询书籍信息
+        BookEntity book = bookRepository.findByBookId(bookId)
+                .orElseThrow(() -> new RuntimeException("书籍不存在，ID: " + bookId));
+        
+        // 2. 获取分类ID
+        Integer categoryId = book.getCategoryId();
+        if (categoryId == null) {
+            return List.of(); // 如果没有分类，返回空列表
+        }
+        
+        // 3. 查询同分类的其他书籍（排除当前书籍，按阅读量和评分排序，最多3部）
+        Pageable pageable = PageRequest.of(0, 3);
+        List<BookEntity> relatedBooks = bookRepository.findRelatedBooksByCategory(categoryId, bookId, pageable);
+        
+        // 4. 转换为VO
+        return relatedBooks.stream()
+                .map(this::convertToRelatedBookVO)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 将 BookEntity 转换为 RelatedBookVO
+     */
+    private RelatedBookVO convertToRelatedBookVO(BookEntity book) {
+        RelatedBookVO vo = new RelatedBookVO();
         vo.setBookId(book.getBookId());
+        vo.setCover(book.getCover() != null ? book.getCover() : "");
         vo.setTitle(book.getTitle());
-        vo.setAuthorId(book.getAuthorId());
+        vo.setDescription(book.getDescription() != null ? book.getDescription() : "");
+        
+        // 作者名
         if (book.getAuthor() != null) {
             vo.setAuthorName(book.getAuthor().getName());
+        } else {
+            vo.setAuthorName("");
         }
+        
+        // 评分
+        vo.setRating(book.getRating() != null ? book.getRating() : 0f);
+        
+        // 阅读量
+        vo.setReadCount(book.getReadCount() != null ? book.getReadCount() : 0);
+        
+        // 价格
+        vo.setPrice(book.getPrice() != null ? book.getPrice() : 0);
+        
+        // 是否免费
+        vo.setIsFree(book.getIsFree() != null ? book.getIsFree() : false);
+        
+        return vo;
+    }
+
+    /**
+     * 转换为详情VO（不包含用户相关状态）
+     */
+    private BookDetailVO convertToDetailVO(BookEntity book) {
+        return convertToDetailVO(book, null);
+    }
+
+    /**
+     * 转换为详情VO（包含用户相关状态和统计信息）
+     */
+    private BookDetailVO convertToDetailVO(BookEntity book, Long userId) {
+        BookDetailVO vo = new BookDetailVO();
+        
+        // 基础信息
+        vo.setBookId(book.getBookId());
+        vo.setTitle(book.getTitle());
+        vo.setBookTitle(book.getTitle()); // 前端期望的字段名
+        vo.setAuthorId(book.getAuthorId());
+        
+        // 作者信息
+        if (book.getAuthor() != null) {
+            vo.setAuthorName(book.getAuthor().getName());
+            vo.setAuthor(book.getAuthor().getName()); // 前端期望的字段名
+            // authorBio 确保是 string 类型，如果为 null 则返回空字符串
+            String bio = book.getAuthor().getBio();
+            vo.setAuthorBio(bio != null ? bio : "");
+        } else {
+            // 如果没有作者信息，设置默认值
+            vo.setAuthorBio("");
+        }
+        
         vo.setCover(book.getCover());
         vo.setDescription(book.getDescription());
         vo.setCategoryId(book.getCategoryId());
@@ -232,11 +363,90 @@ public class BookServiceImpl implements BookService {
         vo.setIsFree(book.getIsFree());
         vo.setIsPublished(book.getIsPublished());
         vo.setIsMemberOnly(book.getIsMemberOnly());
+        vo.setIsFreeForMember(book.getIsMemberOnly()); // 体验卡是否可读
         vo.setTags(book.getTags());
-        vo.setRating(book.getRating());
+        // 将 Float rating 转换为 Integer（0-100范围）
+        // 如果rating是0-1的小数格式，转换为0-100的整数；如果已经是0-100的值，直接取整
+        if (book.getRating() != null) {
+            if (book.getRating() <= 1.0f) {
+                // 0-1的小数格式，转换为0-100的整数
+                vo.setRating(Math.round(book.getRating() * 100));
+            } else {
+                // 已经是0-100的值，直接取整
+                vo.setRating(Math.round(book.getRating()));
+            }
+            // 确保不超过100
+            if (vo.getRating() > 100) {
+                vo.setRating(100);
+            }
+        } else {
+            vo.setRating(0);
+        }
         vo.setReadCount(book.getReadCount());
         vo.setCreatedAt(book.getCreatedAt());
         vo.setUpdatedAt(book.getUpdatedAt());
+        
+        // 用户相关状态（如果提供了userId）
+        if (userId != null) {
+            // 检查是否在书架中
+            Optional<BookshelfEntity> bookshelf = bookshelfRepository.findByUserIdAndBookId(userId, book.getBookId());
+            vo.setIsInBookshelf(bookshelf.isPresent());
+            
+            // 检查阅读进度
+            Optional<ReadingProgressEntity> progress = readingProgressRepository.findByUserIdAndBookId(userId, book.getBookId());
+            if (progress.isPresent()) {
+                ReadingProgressEntity progressEntity = progress.get();
+                Float progressValue = progressEntity.getProgress();
+                vo.setHasStarted(progressValue != null && progressValue > 0);
+                
+                // 判断阅读状态
+                if (progressValue == null || progressValue == 0) {
+                    vo.setReadingStatus("not_started");
+                    vo.setIsFinished(false);
+                } else if (progressValue >= 1.0f) {
+                    vo.setReadingStatus("finished");
+                    vo.setIsFinished(true);
+                } else {
+                    vo.setReadingStatus("reading");
+                    vo.setIsFinished(false);
+                }
+            } else {
+                vo.setHasStarted(false);
+                vo.setReadingStatus("not_started");
+                vo.setIsFinished(false);
+            }
+        } else {
+            // 未登录用户，设置默认值
+            vo.setIsInBookshelf(false);
+            vo.setHasStarted(false);
+            vo.setReadingStatus("not_started");
+            vo.setIsFinished(false);
+        }
+        
+        // 统计信息
+        Long readingCount = readingProgressRepository.countReadingUsers(book.getBookId());
+        Long finishedCount = readingProgressRepository.countFinishedUsers(book.getBookId());
+        vo.setReadingCount(readingCount != null ? readingCount.intValue() : 0);
+        vo.setFinishedCount(finishedCount != null ? finishedCount.intValue() : 0);
+        
+        // 点评统计
+        Long ratingCount = bookReviewRepository.countByBookId(book.getBookId());
+        vo.setRatingCount(ratingCount != null ? ratingCount.intValue() : 0);
+        
+        // 点评详情
+        BookReviewService.RatingStats ratingStats = bookReviewService.getRatingStats(book.getBookId());
+        BookDetailVO.RatingDetailVO ratingDetail = new BookDetailVO.RatingDetailVO();
+        long total = ratingStats.getTotal();
+        if (total > 0) {
+            ratingDetail.setRecommendPercent((ratingStats.getRecommend() * 100.0) / total);
+            ratingDetail.setAveragePercent((ratingStats.getAverage() * 100.0) / total);
+            ratingDetail.setNotRecommendPercent((ratingStats.getNotRecommend() * 100.0) / total);
+        } else {
+            ratingDetail.setRecommendPercent(0.0);
+            ratingDetail.setAveragePercent(0.0);
+            ratingDetail.setNotRecommendPercent(0.0);
+        }
+        vo.setRatingDetail(ratingDetail);
         
         return vo;
     }

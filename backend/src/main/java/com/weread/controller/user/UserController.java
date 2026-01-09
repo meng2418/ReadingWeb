@@ -1,7 +1,9 @@
 package com.weread.controller.user;
 
+import com.weread.dto.Result;
 import com.weread.vo.user.FollowListVO;
 import com.weread.vo.user.UserProfileVO;
+import com.weread.vo.book.BookReviewVO;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,8 +11,10 @@ import jakarta.validation.Valid;
 
 import com.weread.dto.user.UpdateProfileDTO;
 import com.weread.service.user.UserService;
+import com.weread.service.book.BookReviewService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -21,9 +25,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final BookReviewService bookReviewService;
+    
     // ... (构造函数注入) ...
-    public UserController(UserService userService) {
+    public UserController(UserService userService, BookReviewService bookReviewService) {
         this.userService = userService;
+        this.bookReviewService = bookReviewService;
     }
     /**
      * 【PUT /users/{userId}/follow】 关注用户
@@ -108,5 +115,14 @@ public class UserController {
         response.put("data", updatedProfile);
         
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "获取用户最新的3条书评", description = "获取登录用户最新的3条书评")
+    @GetMapping("/book-reviews/recent")
+    public Result<List<BookReviewVO>> getUserRecentReviews(
+            @Parameter(description = "用户ID", hidden = true)
+            @RequestAttribute Integer userId) {
+        List<BookReviewVO> reviews = bookReviewService.getUserReviewsLimited(userId, 3);
+        return Result.success(reviews);
     }
 }
