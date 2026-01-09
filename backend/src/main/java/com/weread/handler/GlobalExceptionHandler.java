@@ -41,6 +41,11 @@ public class GlobalExceptionHandler {
             return false;
         }
         
+        // /notes 接口返回空 body（400和401响应不应该有Body）
+        if (requestPath != null && requestPath.startsWith("/notes")) {
+            return false;
+        }
+        
         // 默认返回 JSON 格式（为了兼容其他接口）
         return true;
     }

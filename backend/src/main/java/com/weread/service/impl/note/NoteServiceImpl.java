@@ -1,6 +1,9 @@
 package com.weread.service.impl.note;
 
+import com.weread.dto.note.NoteResponseDTO;
+import com.weread.entity.BookEntity;
 import com.weread.entity.note.NoteEntity;
+import com.weread.repository.BookRepository;
 import com.weread.repository.note.NoteRepository;
 import com.weread.service.note.NoteService;
 import com.weread.vo.note.NoteVO;
@@ -23,9 +26,11 @@ public class NoteServiceImpl implements NoteService {
     private static final Logger logger = LoggerFactory.getLogger(NoteServiceImpl.class);
 
     private final NoteRepository noteRepository;
+    private final BookRepository bookRepository;
 
-    public NoteServiceImpl(NoteRepository noteRepository) {
+    public NoteServiceImpl(NoteRepository noteRepository, BookRepository bookRepository) {
         this.noteRepository = noteRepository;
+        this.bookRepository = bookRepository;
     }
 
     @Override
@@ -112,5 +117,45 @@ public class NoteServiceImpl implements NoteService {
                 .filter(NoteEntity::getIsPublic) // 仅显示公开笔记
                 .map(this::convertToNoteVO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public NoteResponseDTO createNoteFromDTO(Integer userId, Integer bookId, Integer chapterId,
+                                              String quote, String lineType, String thought) {
+        // 验证书籍是否存在
+        BookEntity book = bookRepository.findByBookId(bookId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "书籍不存在"));
+
+        // 验证lineType
+        if (lineType != null && !lineType.matches("marker|wavy|underline")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "划线类型无效，必须是 marker、wavy 或 underline");
+        }
+
+        // 创建笔记实体
+        NoteEntity note = new NoteEntity();
+        note.setUserId(userId.longValue());
+        note.setBookId(bookId);
+        note.setChapterId(chapterId);
+        note.setContent(quote); // 将quote存储在content字段中
+        note.setType("highlight"); // 默认类型
+        note.setIsPublic(false); // 默认不公开
+        note.setCreatedAt(LocalDateTime.now());
+        
+        // 将lineType映射到color字段（或者可以扩展实体添加lineType字段）
+        // 这里暂时使用color字段存储lineType信息
+        note.setColor(lineType != null ? lineType : "marker");
+
+        note = noteRepository.save(note);
+
+        // 构建响应DTO
+        NoteResponseDTO response = new NoteResponseDTO();
+        response.setNoteId(note.getNoteId());
+        response.setQuote(quote);
+        response.setLineType(lineType != null ? lineType : "marker");
+        response.setNoteContent(thought != null ? thought : ""); // thought暂时返回，如果数据库不支持可以后续扩展
+        response.setCreatedAt(note.getCreatedAt());
+
+        return response;
     }
 }

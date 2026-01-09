@@ -1,5 +1,6 @@
 package com.weread.service.note;
 
+import com.weread.dto.note.NoteResponseDTO;
 import com.weread.entity.note.NoteEntity;
 import com.weread.vo.note.NoteVO;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,19 @@ public interface NoteService {
      * @return 创建的笔记实体
      */
     NoteEntity createNote(Long userId, NoteEntity noteEntity);
+
+    /**
+     * 发布笔记（根据API规范）
+     * @param userId 用户ID
+     * @param bookId 书籍ID
+     * @param chapterId 章节ID（可选）
+     * @param quote 引用内容
+     * @param lineType 划线类型（marker, wavy, underline）
+     * @param thought 想法/笔记内容（可选）
+     * @return 笔记响应DTO
+     */
+    NoteResponseDTO createNoteFromDTO(Integer userId, Integer bookId, Integer chapterId, 
+                                      String quote, String lineType, String thought);
 
     /**
      * 更新笔记内容或公开状态（只允许作者修改）
