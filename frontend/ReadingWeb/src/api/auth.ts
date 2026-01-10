@@ -1,6 +1,5 @@
 //api/auth.ts
 import request from '@/utils/request'
-import service from '@/utils/request'
 // 登录
 export type LoginType = 'password' | 'verificationCode'
 
@@ -25,7 +24,7 @@ export interface RegisterParams {
 }
 
 export function register(data: RegisterParams) {
-  return service.post('/auth/register', data)
+  return request.post('/auth/register', data)
 }
 
 // 获取验证码
@@ -34,7 +33,7 @@ export interface SendCodeParams {
 }
 
 export function sendVerificationCode(data: SendCodeParams) {
-  return service.post('/auth/send-verification-code', data)
+  return request.post('/auth/send-verification-code', data)
 }
 
 //忘记密码

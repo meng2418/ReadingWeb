@@ -188,11 +188,28 @@ async function submitLogin() {
     password: isCaptchaLogin.value ? null : password.value,
     verificationCode: isCaptchaLogin.value ? code.value : null,
   }
+
   try {
     const res = await login(payload)
-    userStore.setUser(res.data.data)
+
+    // 🔍 1. 解构后端返回的数据
+    // 根据你的 OpenAPI，结构是: res.data.data = { token: '...', user: { ... } }
+    const { token, user } = res.data.data
+
+    // 🔍 2. 调用 Store 的 login action
+    // 注意：你的 Store 里期望的参数结构是 { token, userInfo }
+    userStore.login({
+      token: token,
+      userInfo: {
+        ...user, // 保留 userId, bio, avatar 等
+        name: user.username, // 👈 手动把 username 映射为 store 习惯的 name
+      },
+    })
+
+    // 3. 跳转首页
     router.push('/')
   } catch (err: any) {
+    console.error(err)
     alert(err?.response?.data?.message || '登录失败')
   }
 }
