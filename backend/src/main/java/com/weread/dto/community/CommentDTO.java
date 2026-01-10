@@ -21,4 +21,9 @@ public class CommentDTO {
     private Integer likeCount;
     private Boolean isLiked;
     private List<CommentDTO> replies; // 子评论
+
+    // 确保在转换时处理 null 值
+    public String getReplyToUsername() {
+        return replyToUsername != null ? replyToUsername : "";
+    }
 }

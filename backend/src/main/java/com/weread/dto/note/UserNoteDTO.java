@@ -10,7 +10,7 @@ import java.util.List;
  */
 @Data
 public class UserNoteDTO {
-    private Long markId; // 笔记ID（对应noteId）
+    private Integer markId; // 笔记ID（对应noteId）
     private Integer bookId;
     private String bookTitle;
     private Integer chapterId;

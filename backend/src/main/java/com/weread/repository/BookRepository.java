@@ -74,7 +74,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
     @Query("SELECT b FROM BookEntity b " +
            "LEFT JOIN b.author a " +
            "WHERE (b.title LIKE %:keyword% OR " +
-           "       (a IS NOT NULL AND a.name LIKE %:keyword%)) " +
+           "       (a IS NOT NULL AND a.authorName LIKE %:keyword%)) " +
            "AND b.isPublished = true " +
            "ORDER BY b.readCount DESC, b.createdAt DESC")
     Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
@@ -82,12 +82,12 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
     /**
      * 根据作者ID查询该作者的所有作品
      */
-    List<BookEntity> findByAuthorIdAndIsPublishedTrue(Long authorId);
+    List<BookEntity> findByAuthorIdAndIsPublishedTrue(Integer authorId);
 
     /**
      * 统计作者的作品数量
      */
-    int countByAuthorIdAndIsPublishedTrue(Long authorId);
+    int countByAuthorIdAndIsPublishedTrue(Integer authorId);
 
     /**
      * 根据作者ID查询该作者的代表作（排除指定书籍，按阅读量排序，最多返回指定数量）
@@ -101,7 +101,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
            "AND b.bookId <> :excludeBookId " +
            "ORDER BY b.readCount DESC, b.rating DESC")
     List<BookEntity> findAuthorRepresentativeWorks(
-            @Param("authorId") Long authorId,
+            @Param("authorId") Integer authorId,
             @Param("excludeBookId") Integer excludeBookId,
             Pageable pageable);
 

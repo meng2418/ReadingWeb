@@ -23,10 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("user")
+@RequestMapping("/user")
 public class UserController {
 
     private final UserService userService;
@@ -45,11 +46,12 @@ public class UserController {
     @PutMapping("/{followingId}/follow")
     public ResponseEntity<Void> followUser(
         @PathVariable Integer followingId,
-        @RequestAttribute("userId") Integer followerId) { // 当前用户 ID
-        
+        @AuthenticationPrincipal Integer followerId) {
+
         userService.followUser(followerId, followingId);
         return ResponseEntity.ok().build();
     }
+
 
     /**
      * 【DELETE /users/{userId}/follow】 取消关注用户
@@ -57,11 +59,12 @@ public class UserController {
     @DeleteMapping("/{followingId}/follow")
     public ResponseEntity<Void> unfollowUser(
         @PathVariable Integer followingId,
-        @RequestAttribute("userId") Integer followerId) { // 当前用户 ID
-        
+        @AuthenticationPrincipal Integer followerId) {
+
         userService.unfollowUser(followerId, followingId);
         return ResponseEntity.noContent().build();
     }
+
 
     /**
      * 【GET /users/{userId}/followers】 获取粉丝列表
@@ -71,7 +74,7 @@ public class UserController {
         @PathVariable Integer userId,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "20") int limit,
-        @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
+        @AuthenticationPrincipal Integer currentUserId) {
 
         FollowListVO vo = userService.getFollowers(userId, page, limit, currentUserId);
         return ResponseEntity.ok(vo);
@@ -85,7 +88,7 @@ public class UserController {
         @PathVariable Integer userId,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "20") int limit,
-        @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
+        @AuthenticationPrincipal Integer currentUserId) {
         
         FollowListVO vo = userService.getFollowings(userId, page, limit, currentUserId);
         return ResponseEntity.ok(vo);
@@ -94,8 +97,7 @@ public class UserController {
     @Operation(summary = "获取登录用户个人中心")
     @GetMapping("/home")
     public ResponseEntity<Map<String, Object>> getUserHome(
-            @Parameter(description = "用户ID", hidden = true)
-            @RequestAttribute Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         UserProfileVO userProfile = userService.getUserHome(userId);
         
@@ -108,11 +110,10 @@ public class UserController {
     }
     
     @Operation(summary = "编辑个人信息")
-    @PutMapping("/home")
+    @PutMapping("/profile")
     public ResponseEntity<Map<String, Object>> updateUserProfile(
             @Valid @RequestBody UpdateProfileDTO updateDTO,
-            @Parameter(description = "用户ID", hidden = true)
-            @RequestAttribute Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         UserProfileVO updatedProfile = userService.updateUserProfile(userId, updateDTO);
         
@@ -201,11 +202,11 @@ public class UserController {
         }
         
         // 将Integer类型的cursor转换为Long类型（因为noteId是Long类型）
-        Long cursorLong = cursor != null ? cursor.longValue() : null;
+        Integer cursorLong = cursor != null ? cursor : null;
         
         // 调用Service获取笔记列表
         UserNotesResponseDTO response = noteService.getUserNotesWithCursor(
-                userId.longValue(), cursorLong, limit);
+                userId, cursorLong, limit);
         
         // 构建响应
         Map<String, Object> result = new HashMap<>();
@@ -231,7 +232,7 @@ public class UserController {
         }
         
         // 获取最新的6条笔记
-        List<BookNoteDTO> notes = noteService.getUserRecentNotes6(userId.longValue());
+        List<BookNoteDTO> notes = noteService.getUserRecentNotes6(userId);
         
         // 构建响应（符合JSON定义格式：data直接是数组）
         Map<String, Object> result = new HashMap<>();
@@ -257,7 +258,7 @@ public class UserController {
         }
         
         // 获取最新的3条划线
-        List<HighlightVO> highlights = noteService.getUserRecentHighlights3(userId.longValue());
+        List<HighlightVO> highlights = noteService.getUserRecentHighlights3(userId);
         
         // 构建响应（符合JSON定义格式）
         Map<String, Object> result = new HashMap<>();

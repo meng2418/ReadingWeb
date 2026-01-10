@@ -60,7 +60,7 @@ public class BookServiceImpl implements BookService {
         vo.setDescription(bookEntity.getDescription());
         
         if (bookEntity.getAuthor() != null) {
-            vo.setAuthorName(bookEntity.getAuthor().getName());
+            vo.setAuthorName(bookEntity.getAuthor().getAuthorName());
         }
         
         return vo;
@@ -70,7 +70,7 @@ public class BookServiceImpl implements BookService {
     @Transactional
     public BookDetailVO createBook(BookCreateDTO dto) {
         // 验证作者是否存在
-        AuthorEntity author = authorRepository.findById(dto.getAuthorId())
+        AuthorEntity author = authorRepository.findByAuthorId(dto.getAuthorId())
                 .orElseThrow(() -> new RuntimeException("作者不存在"));
 
         // 验证分类是否存在
@@ -87,9 +87,9 @@ public class BookServiceImpl implements BookService {
         book.setPublisher(dto.getPublisher());
         book.setIsbn(dto.getIsbn());
         book.setPrice(dto.getPrice() != null ? dto.getPrice() : 0);
-        book.setIsFree(dto.getIsFree() != null ? dto.getIsFree() : false);
+        book.setIsbn(dto.getIsbn() != null ? dto.getIsbn() : false);
         book.setIsMemberOnly(dto.getIsMemberOnly() != null ? dto.getIsMemberOnly() : false);
-        book.setTags(dto.getTags());
+        book.setTopics(dto.getTopics());
         book.setIsPublished(true); // 默认上架
 
         book = bookRepository.save(book);
@@ -107,7 +107,7 @@ public class BookServiceImpl implements BookService {
             book.setTitle(dto.getTitle());
         }
         if (dto.getAuthorId() != null) {
-            AuthorEntity author = authorRepository.findById(dto.getAuthorId())
+            AuthorEntity author = authorRepository.findByAuthorId(dto.getAuthorId())
                     .orElseThrow(() -> new RuntimeException("作者不存在"));
             book.setAuthorId(dto.getAuthorId());
         }
@@ -131,8 +131,8 @@ public class BookServiceImpl implements BookService {
         if (dto.getPrice() != null) {
             book.setPrice(dto.getPrice());
         }
-        if (dto.getIsFree() != null) {
-            book.setIsFree(dto.getIsFree());
+        if (dto.getIsbn() != null) {
+            book.setIsbn(dto.getIsbn());
         }
         if (dto.getIsPublished() != null) {
             book.setIsPublished(dto.getIsPublished());
@@ -140,8 +140,8 @@ public class BookServiceImpl implements BookService {
         if (dto.getIsMemberOnly() != null) {
             book.setIsMemberOnly(dto.getIsMemberOnly());
         }
-        if (dto.getTags() != null) {
-            book.setTags(dto.getTags());
+        if (dto.getTopics() != null) {
+            book.setTopics(dto.getTopics());
         }
 
         book = bookRepository.save(book);
@@ -155,7 +155,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     @Transactional(readOnly = true)
-    public BookDetailVO getBookById(Integer bookId, Long userId) {
+    public BookDetailVO getBookById(Integer bookId, Integer userId) {
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new RuntimeException("书籍不存在"));
         return convertToDetailVO(book, userId);
@@ -234,7 +234,7 @@ public class BookServiceImpl implements BookService {
                 .orElseThrow(() -> new RuntimeException("书籍不存在，ID: " + bookId));
         
         // 2. 获取作者ID
-        Long authorId = book.getAuthorId();
+        Integer authorId = book.getAuthorId();
         if (authorId == null) {
             return List.of(); // 如果没有作者，返回空列表
         }
@@ -296,7 +296,7 @@ public class BookServiceImpl implements BookService {
         
         // 作者名
         if (book.getAuthor() != null) {
-            vo.setAuthorName(book.getAuthor().getName());
+            vo.setAuthorName(book.getAuthor().getAuthorName());
         } else {
             vo.setAuthorName("");
         }
@@ -326,7 +326,7 @@ public class BookServiceImpl implements BookService {
     /**
      * 转换为详情VO（包含用户相关状态和统计信息）
      */
-    private BookDetailVO convertToDetailVO(BookEntity book, Long userId) {
+    private BookDetailVO convertToDetailVO(BookEntity book, Integer userId) {
         BookDetailVO vo = new BookDetailVO();
         
         // 基础信息
@@ -337,8 +337,8 @@ public class BookServiceImpl implements BookService {
         
         // 作者信息
         if (book.getAuthor() != null) {
-            vo.setAuthorName(book.getAuthor().getName());
-            vo.setAuthor(book.getAuthor().getName()); // 前端期望的字段名
+            vo.setAuthorName(book.getAuthor().getAuthorName());
+            vo.setAuthor(book.getAuthor().getAuthorName()); // 前端期望的字段名
             // authorBio 确保是 string 类型，如果为 null 则返回空字符串
             String bio = book.getAuthor().getBio();
             vo.setAuthorBio(bio != null ? bio : "");
@@ -459,7 +459,7 @@ public class BookServiceImpl implements BookService {
         vo.setBookId(book.getBookId());
         vo.setTitle(book.getTitle());
         if (book.getAuthor() != null) {
-            vo.setAuthorName(book.getAuthor().getName());
+            vo.setAuthorName(book.getAuthor().getAuthorName());
         }
         vo.setCover(book.getCover());
         vo.setDescription(book.getDescription());

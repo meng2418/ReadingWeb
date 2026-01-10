@@ -351,7 +351,7 @@ public class BookReviewServiceImpl implements BookReviewService {
             // 设置作者名（通过authorRepository查询，避免LazyInitializationException）
             if (book.getAuthorId() != null) {
                 authorRepository.findById(book.getAuthorId())
-                        .ifPresent(author -> simpleBook.setAuthorName(author.getName()));
+                        .ifPresent(author -> simpleBook.setAuthorName(author.getAuthorName()));
             }
             
             vo.setBook(simpleBook);

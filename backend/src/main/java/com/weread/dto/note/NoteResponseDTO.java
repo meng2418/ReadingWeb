@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  */
 @Data
 public class NoteResponseDTO {
-    private Long noteId;
+    private Integer noteId;
     private String quote;
     private String lineType;
     private String noteContent; // 对应thought

@@ -12,7 +12,7 @@ public class AuthorDetailVO {
     /**
      * 作者ID
      */
-    private Long authorId;
+    private Integer authorId;
     
     /**
      * 作者姓名

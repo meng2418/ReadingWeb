@@ -2,7 +2,6 @@ package com.weread.controller.asset;
 
 import com.weread.common.ApiResponse;
 import com.weread.dto.asset.RechargeRequestDTO;
-import com.weread.entity.user.UserEntity;
 import com.weread.service.asset.RechargePackageService;
 import com.weread.service.asset.RechargeService;
 import com.weread.vo.asset.PaymentInfoVO;
@@ -19,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("recharge")
+@RequestMapping("/recharge")
 @RequiredArgsConstructor
 public class RechargePackageController {
     
@@ -45,14 +44,14 @@ public class RechargePackageController {
     @GetMapping("/payment-page")
     public ApiResponse<PaymentInfoVO> getPaymentPage(
             @RequestParam Integer packageId,
-            @AuthenticationPrincipal UserEntity loginUser) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
-            if (loginUser == null) {
+            if (userId == null) {
                 return ApiResponse.error(401, "请先登录");
             }
             
-            PaymentInfoVO data = rechargeService.getPaymentPageInfo(packageId, loginUser.getUserId());
+            PaymentInfoVO data = rechargeService.getPaymentPageInfo(packageId, userId);
             return ApiResponse.ok(data);
             
         } catch (ResponseStatusException e) {
@@ -67,14 +66,14 @@ public class RechargePackageController {
     @PostMapping
     public ApiResponse<RechargeResponseVO> recharge(
             @Valid @RequestBody RechargeRequestDTO request,
-            @AuthenticationPrincipal UserEntity loginUser) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
-            if (loginUser == null) {
+            if (userId == null) {
                 return ApiResponse.error(401, "请先登录");
             }
             
-            RechargeResponseVO data = rechargeService.createRechargeOrder(request, loginUser.getUserId());
+            RechargeResponseVO data = rechargeService.createRechargeOrder(request, userId);
             return ApiResponse.ok(data);
             
         } catch (ResponseStatusException e) {

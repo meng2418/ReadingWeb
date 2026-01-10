@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  */
 @Data
 public class BookNoteResponseDTO {
-    private Long noteId;
+    private Integer noteId;
     private Integer bookId;
     private String bookTitle;
     private Integer chapterId;

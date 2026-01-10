@@ -26,7 +26,7 @@ public class SimpleBookVO {
     /**
      * 作者ID
      */
-    private Long authorId;
+    private Integer authorId;
 
     /**
      * 推荐值（0-100）

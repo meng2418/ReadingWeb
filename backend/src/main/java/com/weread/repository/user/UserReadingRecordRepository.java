@@ -1,6 +1,9 @@
 package com.weread.repository.user;
 
 import com.weread.entity.user.UserReadingRecordEntity;
+
+import org.springdoc.core.converters.models.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -65,5 +68,28 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
                                                   org.springframework.data.domain.Pageable pageable);
 
     Integer countFinishedBooksByUserId(Integer userId);
+
+    @Query("SELECT YEAR(urr.readDate), SUM(urr.readingTime) " +
+       "FROM UserReadingRecordEntity urr " +
+       "WHERE urr.userId = :userId " +
+       "GROUP BY YEAR(urr.readDate) " +
+       "ORDER BY YEAR(urr.readDate) DESC")
+       List<Object[]> findYearlyStatsByUserId(@Param("userId") Integer userId);
+
+    List<UserReadingRecordEntity> findTopByUserIdOrderByReadDateDesc(Integer userId, PageRequest of);
+
+    List<UserReadingRecordEntity> findFinishedBooksByUserId(Integer userId, PageRequest of);
+
+    @Query("SELECT r.book.id, b.title, SUM(r.readingDuration) " +
+       "FROM UserReadingRecordEntity r " +
+       "JOIN BookEntity b ON r.book.id = b.id " +
+       "WHERE r.user.id = :userId " +
+       "AND r.createdAt BETWEEN :startDate AND :endDate " +
+       "GROUP BY r.book.id, b.title " +
+       "ORDER BY SUM(r.readingDuration) DESC")
+List<Object[]> findTopBooksByUserIdAndPeriod(@Param("userId") Integer userId,
+                                             @Param("startDate") LocalDate startDate,
+                                             @Param("endDate") LocalDate endDate,
+                                             Pageable pageable);
 }
 

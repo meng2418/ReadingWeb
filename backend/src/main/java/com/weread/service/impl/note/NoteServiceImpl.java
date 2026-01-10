@@ -49,7 +49,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional
-    public NoteEntity createNote(Long userId, NoteEntity newNote) {
+    public NoteEntity createNote(Integer userId, NoteEntity newNote) {
         if (newNote.getBookId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "书籍ID不能为空。");
         }
@@ -65,7 +65,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional
-    public NoteEntity updateNote(Long noteId, Long userId, String content, Boolean isPublic, String color) {
+    public NoteEntity updateNote(Integer noteId, Integer userId, String content, Boolean isPublic, String color) {
         NoteEntity note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "笔记不存在。"));
 
@@ -91,7 +91,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional
-    public void deleteNote(Long noteId, Long userId) {
+    public void deleteNote(Integer noteId, Integer userId) {
         NoteEntity note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "笔记不存在。"));
         
@@ -117,7 +117,7 @@ public class NoteServiceImpl implements NoteService {
     }
     
     @Override
-    public Page<NoteVO> getUserNotes(Long userId, Pageable pageable) {
+    public Page<NoteVO> getUserNotes(Integer userId, Pageable pageable) {
         Page<NoteEntity> entities = noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
         return entities.map(this::convertToNoteVO);
     }
@@ -148,7 +148,7 @@ public class NoteServiceImpl implements NoteService {
 
         // 创建笔记实体
         NoteEntity note = new NoteEntity();
-        note.setUserId(userId.longValue());
+        note.setUserId(userId);
         note.setBookId(bookId);
         note.setChapterId(chapterId);
         note.setContent(quote); // 将quote存储在content字段中
@@ -174,7 +174,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<ChapterNoteResponseDTO> getChapterNotes(Long userId, Integer bookId, Integer chapterId) {
+    public List<ChapterNoteResponseDTO> getChapterNotes(Integer userId, Integer bookId, Integer chapterId) {
         // 查询指定用户、指定书籍和章节的笔记
         List<NoteEntity> entities = noteRepository.findByUserIdAndBookIdAndChapterIdOrderByCreatedAtDesc(
                 userId, bookId, chapterId);
@@ -211,7 +211,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<BookNoteResponseDTO> getBookNotes(Long userId, Integer bookId) {
+    public List<BookNoteResponseDTO> getBookNotes(Integer userId, Integer bookId) {
         // 查询指定用户、指定书籍的所有笔记
         List<NoteEntity> entities = noteRepository.findByUserIdAndBookIdOrderByCreatedAtDesc(userId, bookId);
         
@@ -271,7 +271,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserNotesResponseDTO getUserNotesWithCursor(Long userId, Long cursor, Integer limit) {
+    public UserNotesResponseDTO getUserNotesWithCursor(Integer userId, Integer cursor, Integer limit) {
         // 参数验证和默认值设置
         if (limit == null || limit <= 0) {
             limit = 20; // 默认20条
@@ -312,7 +312,7 @@ public class NoteServiceImpl implements NoteService {
         }
 
         // 获取总笔记数
-        Long totalCount = noteRepository.countByUserId(userId);
+        Integer totalCount = noteRepository.countByUserId(userId);
 
         // 构建响应DTO
         UserNotesResponseDTO response = new UserNotesResponseDTO();
@@ -388,7 +388,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookNoteDTO> getUserRecentNotes6(Long userId) {
+    public List<BookNoteDTO> getUserRecentNotes6(Integer userId) {
         // 查询最新的6条笔记
         PageRequest pageable = PageRequest.of(0, 6);
         List<NoteEntity> notes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
@@ -435,7 +435,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<HighlightVO> getUserRecentHighlights3(Long userId) {
+    public List<HighlightVO> getUserRecentHighlights3(Integer userId) {
         // 查询最新的3条划线（type="highlight"且color为marker、wavy或underline）
         PageRequest pageable = PageRequest.of(0, 3);
         List<NoteEntity> notes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
@@ -491,8 +491,8 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Integer getUserNoteCount(Long userId) {
-        Long count = noteRepository.countByUserId(userId);
+    public Integer getUserNoteCount(Integer userId) {
+        Integer count = noteRepository.countByUserId(userId);
         return (count != null && count > 0) ? count.intValue() : 0;
     }
 }

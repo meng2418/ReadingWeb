@@ -61,10 +61,10 @@ public class NoteController {
         
         try {
             // 删除笔记
-            noteService.deleteNote(noteId.longValue(), userId.longValue());
+            noteService.deleteNote(noteId, userId);
             
             // 获取剩余笔记数
-            Integer remainingCount = noteService.getUserNoteCount(userId.longValue());
+            Integer remainingCount = noteService.getUserNoteCount(userId);
             
             // 构建响应数据
             Map<String, Object> responseData = new HashMap<>();

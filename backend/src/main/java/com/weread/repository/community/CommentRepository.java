@@ -1,9 +1,13 @@
 package com.weread.repository.community;
 
 import com.weread.entity.community.CommentEntity;
+
+import io.lettuce.core.dynamic.annotation.Param;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -29,5 +33,25 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Integer>
     /**
      * 统计一个帖子的评论总数
      */
-    long countByPostId(Integer postId);
+    Integer countByPostId(Integer postId);
+
+    /**
+     * 帖子的评论
+     */
+    @Query("SELECT c FROM CommentEntity c WHERE c.postId IN :postIds AND c.userId != :authorId ORDER BY c.createdAt DESC")
+    List<CommentEntity> findCommentsOnMyPosts(@Param("postIds") List<Integer> postIds, @Param("authorId") Integer authorId, Pageable pageable);
+
+    /**
+     * 帖子的后续评论
+     */
+    @Query("SELECT c FROM CommentEntity c WHERE c.postId IN :postIds AND c.commentId < :cursorId ORDER BY c.createdAt DESC")
+    List<CommentEntity> findCommentsOnMyPostsAfterCursor(
+        @Param("postIds") List<Integer> postIds,
+        @Param("cursorId") Integer cursorId,
+        Pageable pageable);
+
+    //帖子瀑布流相关
+    @Query("SELECT COUNT(c) FROM CommentEntity c WHERE c.userId = :userId")
+        Integer countByUserId(@Param("userId") Integer userId);
+
 }

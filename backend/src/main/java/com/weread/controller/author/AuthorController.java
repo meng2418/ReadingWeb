@@ -23,7 +23,7 @@ public class AuthorController {
      */
     @GetMapping("/{authorId}")
     public ResponseEntity<ApiResponse<AuthorDetailVO>> getAuthorDetail(
-            @PathVariable Long authorId,
+            @PathVariable Integer authorId,
             @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
         
         try {

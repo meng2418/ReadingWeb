@@ -215,7 +215,7 @@ public class BookChapterServiceImpl implements BookChapterService {
         int lastReadPosition = 0;
         if (userId != null) {
             Optional<ReadingProgressEntity> progressOpt = readingProgressRepository
-                    .findByUserIdAndBookId(userId.longValue(), bookId);
+                    .findByUserIdAndBookId(userId, bookId);
             if (progressOpt.isPresent()) {
                 ReadingProgressEntity progress = progressOpt.get();
                 // 如果当前章节是用户正在阅读的章节，使用currentPage计算位置

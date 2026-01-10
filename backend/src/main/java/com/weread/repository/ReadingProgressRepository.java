@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ import java.util.Optional;
 public interface ReadingProgressRepository extends JpaRepository<ReadingProgressEntity, Integer> {
 
     // 1. Query the reading progress of a specific book for a user
-    Optional<ReadingProgressEntity> findByUserIdAndBookId(Long userId, Integer bookId);
+    Optional<ReadingProgressEntity> findByUserIdAndBookId(Integer userId, Integer bookId);
 
     // 2. Update the reading progress (chapterId, currentPage, progress, lastReadAt)
     @Modifying
@@ -25,7 +26,7 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
             "r.lastReadAt = :lastReadAt " +
             "WHERE r.userId = :userId AND r.bookId = :bookId")
     void updateProgress(
-            @Param("userId") Long userId,
+            @Param("userId") Integer userId,
             @Param("bookId") Integer bookId,
             @Param("chapterId") Integer chapterId,
             @Param("currentPage") Integer currentPage,
@@ -47,4 +48,12 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
            "WHERE r.bookId = :bookId " +
            "AND r.progress >= 1")
     Long countFinishedUsers(@Param("bookId") Integer bookId);
+
+    Integer countTotalBooksRead(Integer userId);
+
+    Integer countBooksFinished(Integer userId);
+
+    Integer countBooksReadByPeriod(Integer userId, LocalDateTime start, LocalDateTime end);
+
+    Integer countBooksFinishedByPeriod(Integer userId, LocalDateTime start, LocalDateTime end);
 }

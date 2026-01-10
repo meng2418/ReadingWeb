@@ -65,7 +65,7 @@ public class ReaderTOCController {
         // 将String类型的路径参数转换为Integer
         Integer bookIdInt = parseInteger(bookId, "bookId");
         
-        Long userId = loginUser.getUserId().longValue();
+        Integer userId = loginUser.getUserId();
         List<BookNoteResponseDTO> notes = noteService.getBookNotes(userId, bookIdInt);
         return Result.success(notes);
     }

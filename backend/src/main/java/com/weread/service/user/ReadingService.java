@@ -6,6 +6,7 @@ import com.weread.vo.user.TodayReadingTimeVO;
 import com.weread.vo.user.TopBooksVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ReadingService {
     
@@ -45,4 +46,6 @@ public interface ReadingService {
      * 检查并更新用户里程碑
      */
     void checkAndUpdateMilestones(Integer userId, String actionType, Object data);
+
+    Map<String, Object> getReadingStatsTimeline(Integer userId);
 }

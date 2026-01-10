@@ -10,6 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 public class TopicSearchResponseDTO {
     private List<TopicSearchResultDTO> topics;
-    private String nextCursor;
+    private Integer nextCursor;
     private Boolean hasMore;
 }
