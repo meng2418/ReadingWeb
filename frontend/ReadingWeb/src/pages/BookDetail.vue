@@ -250,7 +250,9 @@ const bookId = computed(() => {
 })
 const bookTitle = computed(() => bookDetail.value?.title || '加载中...')
 // 动态页面标题
-const title = ref(`${bookTitle.value} - 书籍详情`)
+const title = computed(() =>
+  bookTitle.value && bookTitle.value !== '加载中...' ? `${bookTitle.value} - 书籍详情` : '书籍详情'
+)
 useTitle(title)
 // 定义相关类型
 interface Work {

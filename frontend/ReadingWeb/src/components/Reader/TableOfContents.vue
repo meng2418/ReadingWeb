@@ -49,7 +49,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'select', id: string): void
+  (e: 'select', id: number): void
 }>()
 </script>
 
