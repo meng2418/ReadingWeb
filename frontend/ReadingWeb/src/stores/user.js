@@ -7,7 +7,7 @@ export const useUserStore = defineStore('user', {
     // =====================
     // 登录状态
     // =====================
-    isLoggedIn: true,
+    isLoggedIn: false,
 
     // =====================
     // 用户基础信息
