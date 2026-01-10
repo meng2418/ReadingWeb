@@ -12,5 +12,6 @@ public class BookNoteDTO {
     private String quote;          // 原文引用内容
     private String noteContent;   // 想法内容
     private String noteDate;      // 笔记日期（格式：YYYY-MM-DD）
+    private Integer chapterId;     // 章节ID
 }
 

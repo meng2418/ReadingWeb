@@ -25,7 +25,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -47,12 +46,7 @@ public class BookReviewServiceImpl implements BookReviewService {
         BookEntity book = bookRepository.findById(dto.getBookId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "书籍不存在"));
 
-        // 检查用户是否已经评价过
-        Optional<BookReviewEntity> existingReview = bookReviewRepository
-                .findByBookIdAndUserIdAndStatus(dto.getBookId(), userId, 1);
-        if (existingReview.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "您已经评价过此书，无法重复评价");
-        }
+        // 允许同一用户对同一本书发表多个书评，不再检查是否已评价过
 
         // 验证评分值
         BookReviewEntity.Rating rating;

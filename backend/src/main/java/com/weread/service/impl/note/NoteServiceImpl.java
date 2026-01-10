@@ -427,6 +427,9 @@ public class NoteServiceImpl implements NoteService {
             dto.setNoteDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
         }
         
+        // chapterId：从entity获取章节ID
+        dto.setChapterId(entity.getChapterId());
+        
         return dto;
     }
 

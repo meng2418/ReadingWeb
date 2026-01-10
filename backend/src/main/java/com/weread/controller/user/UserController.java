@@ -233,7 +233,7 @@ public class UserController {
         // 获取最新的6条笔记
         List<BookNoteDTO> notes = noteService.getUserRecentNotes6(userId.longValue());
         
-        // 构建响应（符合JSON定义格式）
+        // 构建响应（符合JSON定义格式：data直接是数组）
         Map<String, Object> result = new HashMap<>();
         result.put("code", 200);
         result.put("message", "success");
