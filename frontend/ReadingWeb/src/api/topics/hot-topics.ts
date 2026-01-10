@@ -1,7 +1,6 @@
 // src/api/topics/hot-topics.ts
 import request from '@/utils/request'
 
-const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
 
 /** 后端热门话题结构（根据你提供的接口） */
 interface RawHotTopic {
@@ -11,7 +10,9 @@ interface RawHotTopic {
 
 /** 后端热门话题响应 */
 interface RawHotTopicsResponse {
-  items?: Array<{
+  code: number
+  message: string
+  data: Array<{
     topicId: number
     topicName: string
   }>
@@ -35,31 +36,12 @@ export const getHotTopics = async (): Promise<HotTopic[]> => {
     const res = await request.get<RawHotTopicsResponse>('/topics/hot')
     console.log('热门话题原始响应:', res)
 
-    // 使用 unwrap 提取数据
-    const data = unwrap(res)
-    console.log('提取后的数据:', data)
-
-    // 处理不同的返回格式
-    let topics: RawHotTopic[] = []
-
-    if (Array.isArray(data)) {
-      // 格式: [{"topicName":"string","topicId":0}]
-      topics = data
-    } else if (data?.items && Array.isArray(data.items)) {
-      // 格式: { items: [...] }
-      topics = data.items
-    } else if (data && typeof data === 'object') {
-      // 尝试从对象中提取数组
-      const values = Object.values(data)
-      if (Array.isArray(values[0])) {
-        topics = values[0] as RawHotTopic[]
-      }
-    }
-
+    // 根据标准接口，直接从 res.data.data 获取话题数组
+    const topics: RawHotTopic[] = res.data?.data || []
     console.log('解析出的热门话题:', topics)
 
     if (topics.length === 0) {
-      console.warn('热门话题接口返回空数组或格式不正确')
+      console.warn('热门话题接口返回空数组')
     }
 
     return topics.map(mapHotTopic)

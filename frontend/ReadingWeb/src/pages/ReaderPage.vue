@@ -51,7 +51,7 @@
         @textAction="handleTextAction"
         @markComplete="handleMarkComplete"
         @viewReviews="handleViewReviews"
-        @rateBook="handleRateBook"
+        @rateBook="(rating: string) => handleRateBook(rating)"
       />
     </div>
 
@@ -144,7 +144,7 @@ const route = useRoute()
 
 // 从路由参数获取书籍ID和章节ID
 const bookId = ref(route.params.bookId as string || '1')
-let currentChapterId = route.params.chapterId as string || '1'
+let currentChapterId = Number(route.params.chapterId as string) || 1
 
 // API数据状态
 const currentChapterData = ref<ChapterContent | null>(null)
@@ -226,7 +226,7 @@ const chapters = computed<Chapter[]>(() => {
   return bookTOC.value.map(item => ({
     id: item.id,
     title: item.chapterName,
-    page: item.startPage
+    page: item.startPage + 1 // 将从0开始的索引转换为从1开始的页码
   }))
 })
 
@@ -250,8 +250,8 @@ const currentChapterIndex = computed(() => {
 
 // 计算是否是最后一章
 const isLastChapter = computed(() => {
-  // 假设最后一章是 '5'
-  return currentChapterId === '5'
+  // 假设最后一章是 5
+  return currentChapterId === 5
 })
 
 // 计算当前章节的标注
@@ -350,7 +350,7 @@ const initialAnnotations: Annotation[] = [
 ]
 
 // API数据加载函数
-const loadChapterContent = async (chapterId: string) => {
+const loadChapterContent = async (chapterId: number) => {
   try {
     loading.value = true
     const data = await getChapterContent(bookId.value, chapterId)
@@ -366,9 +366,32 @@ const loadChapterContent = async (chapterId: string) => {
 const loadBookTOC = async () => {
   try {
     const data = await getBookTOC(bookId.value)
-    bookTOC.value = data
-  } catch (error) {
-    console.error('加载书籍目录失败:', error)
+
+    // 如果API返回有效数据，使用它；否则使用模拟数据
+    if (data && data.length > 0) {
+      bookTOC.value = data
+    } else {
+      // 使用基于现有章节内容的模拟目录数据
+      console.warn('TOC API returned empty data, using fallback data')
+      bookTOC.value = [
+        { id: '1', startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
+        { id: '2', startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
+        { id: '3', startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
+        { id: '4', startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
+        { id: '5', startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
+      ]
+    }
+  } catch (error: any) {
+    console.error('加载书籍目录失败，使用备用数据:', error?.message)
+
+    // API调用失败时使用模拟数据
+    bookTOC.value = [
+      { id: '1', startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
+      { id: '2', startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
+      { id: '3', startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
+      { id: '4', startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
+      { id: '5', startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
+    ]
   }
 }
 
@@ -386,7 +409,9 @@ const loadAllBookNotes = async () => {
     const data = await getBookNotes(bookId.value)
     allBookNotes.value = data
   } catch (error) {
-    console.error('加载全书笔记失败:', error)
+    console.error('加载全书笔记失败，使用空数据:', (error as any)?.message)
+    // API失败时使用空数组
+    allBookNotes.value = []
   }
 }
 
@@ -453,7 +478,7 @@ const togglePanel = (panel: 'toc' | 'typography' | 'notes') => {
   activeContext.value = null
 }
 
-const handleChapterSelect = async (id: string) => {
+const handleChapterSelect = async (id: number) => {
   currentChapterId = id
   closePanels()
 
@@ -634,7 +659,7 @@ watch(
   () => route.params,
   async (newParams) => {
     const newBookId = newParams.bookId as string
-    const newChapterId = newParams.chapterId as string || '1'
+    const newChapterId = Number(newParams.chapterId as string) || 1
 
     if (newBookId !== bookId.value) {
       bookId.value = newBookId
@@ -649,7 +674,7 @@ watch(
       // 章节ID改变时，加载新章节数据
       await Promise.all([
         loadChapterContent(newChapterId),
-        loadChapterNotes(newChapterId),
+        loadChapterNotes(newChapterId.toString()),
       ])
     }
   },
@@ -662,7 +687,7 @@ onMounted(async () => {
   await Promise.all([
     loadBookTOC(),
     loadChapterContent(currentChapterId),
-    loadChapterNotes(currentChapterId),
+    loadChapterNotes(currentChapterId.toString()),
     loadAllBookNotes(),
   ])
 

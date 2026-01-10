@@ -16,7 +16,7 @@ export interface TypographySettings {
 }
 
 export interface Chapter {
-  id: string
+  id: number
   title: string
   page: number
 }
