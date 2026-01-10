@@ -157,7 +157,7 @@ public class UserServiceImpl implements UserService {
     }
     
     private Integer getPostCount(Integer userId) {
-        return postRepository.countByUserId(userId);
+        return postRepository.countByAuthorId(userId);
     }
     
     private Integer getMemberCardCount(Integer userId) {

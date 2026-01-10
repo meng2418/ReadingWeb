@@ -2,6 +2,7 @@ package com.weread.repository.user;
 
 import com.weread.entity.user.UserReadingRecordEntity;
 
+import org.springdoc.core.converters.models.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -50,18 +51,21 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
 
     Integer countDistinctBooksByUserId(Integer userId);
 
-    // 最简单直接的解决方案
-    @Query("SELECT urr FROM UserReadingRecordEntity urr " +
-           "WHERE urr.userId = :userId " +
-           "AND urr.readDate BETWEEN :startDate AND :endDate " +
-           "ORDER BY urr.readingTime DESC " +
-           "LIMIT :limit")
-    List<UserReadingRecordEntity> findTopBooksByUserIdAndPeriod(
-        @Param("userId") Integer userId,
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate,
-        @Param("limit") int limit
-    );
+    /**
+     * 查找用户在指定日期范围内阅读时间最长的书籍
+     * 返回: [bookId, bookTitle, totalReadingTime]
+     */
+    @Query("SELECT r.bookId, r.bookTitle, SUM(r.readingTime) as totalReadingTime " +
+           "FROM UserReadingRecordEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.readDate BETWEEN :startDate AND :endDate " +
+           "AND r.bookId IS NOT NULL " +
+           "GROUP BY r.bookId, r.bookTitle " +
+           "ORDER BY totalReadingTime DESC")
+    List<Object[]> findTopBooksByUserIdAndPeriod(@Param("userId") Integer userId, 
+                                                  @Param("startDate") LocalDate startDate, 
+                                                  @Param("endDate") LocalDate endDate, 
+                                                  org.springframework.data.domain.Pageable pageable);
 
     Integer countFinishedBooksByUserId(Integer userId);
 
@@ -75,5 +79,17 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
     List<UserReadingRecordEntity> findTopByUserIdOrderByReadDateDesc(Integer userId, PageRequest of);
 
     List<UserReadingRecordEntity> findFinishedBooksByUserId(Integer userId, PageRequest of);
+
+    @Query("SELECT r.book.id, b.title, SUM(r.readingDuration) " +
+       "FROM UserReadingRecordEntity r " +
+       "JOIN BookEntity b ON r.book.id = b.id " +
+       "WHERE r.user.id = :userId " +
+       "AND r.createdAt BETWEEN :startDate AND :endDate " +
+       "GROUP BY r.book.id, b.title " +
+       "ORDER BY SUM(r.readingDuration) DESC")
+List<Object[]> findTopBooksByUserIdAndPeriod(@Param("userId") Integer userId,
+                                             @Param("startDate") LocalDate startDate,
+                                             @Param("endDate") LocalDate endDate,
+                                             Pageable pageable);
 }
 

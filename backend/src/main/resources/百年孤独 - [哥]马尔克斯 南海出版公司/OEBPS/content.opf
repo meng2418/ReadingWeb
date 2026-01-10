@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package version="2.0" unique-identifier="uuid_id" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
+    <dc:rights />
+    <meta content="百年孤独" name="calibre:title_sort" />
+    <dc:date>2014-07-07T16:00:00+00:00</dc:date>
+    <dc:creator opf:role="aut" opf:file-as="译, （哥伦比亚）加西亚·马尔克斯 著 范晔">（哥伦比亚）加西亚·马尔克斯 著 范晔 译</dc:creator>
+    <dc:contributor opf:role="bkp">calibre (4.3.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:language>zh</dc:language>
+    <dc:title>百年孤独</dc:title>
+    <meta content="2020-01-29T08:50:33.976000+00:00" name="calibre:timestamp" />
+    <dc:identifier opf:scheme="MOBI-ASIN">cf72b121-855f-451d-b8e9-db17d6dc51e6</dc:identifier>
+    <dc:identifier opf:scheme="calibre">2504d2d2-23f0-487b-9028-19449f3e35d7</dc:identifier>
+    <meta name="cover" content="cover" />
+    <dc:identifier id="uuid_id" opf:scheme="uuid">2504d2d2-23f0-487b-9028-19449f3e35d7</dc:identifier>
+    <meta content="0.9.14" name="Sigil version" />
+    <dc:date opf:event="modification" xmlns:opf="http://www.idpf.org/2007/opf">2020-01-29</dc:date>
+  </metadata>
+  <manifest>
+    <item id="cover" href="Images/cover.jpeg" media-type="image/jpeg"/>
+    <item id="titlepage" href="Text/titlepage.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id8" href="Text/part0000.html" media-type="application/xhtml+xml"/>
+    <item id="id9" href="Text/part0001.html" media-type="application/xhtml+xml"/>
+    <item id="id10" href="Text/part0002.html" media-type="application/xhtml+xml"/>
+    <item id="id11" href="Text/part0003.html" media-type="application/xhtml+xml"/>
+    <item id="id12" href="Text/part0004.html" media-type="application/xhtml+xml"/>
+    <item id="id13" href="Text/part0005.html" media-type="application/xhtml+xml"/>
+    <item id="id14" href="Text/part0006.html" media-type="application/xhtml+xml"/>
+    <item id="id15" href="Text/part0007.html" media-type="application/xhtml+xml"/>
+    <item id="id16" href="Text/part0008.html" media-type="application/xhtml+xml"/>
+    <item id="id17" href="Text/part0009.html" media-type="application/xhtml+xml"/>
+    <item id="id18" href="Text/part0010.html" media-type="application/xhtml+xml"/>
+    <item id="id19" href="Text/part0011.html" media-type="application/xhtml+xml"/>
+    <item id="id20" href="Text/part0012.html" media-type="application/xhtml+xml"/>
+    <item id="id21" href="Text/part0013.html" media-type="application/xhtml+xml"/>
+    <item id="id22" href="Text/part0014.html" media-type="application/xhtml+xml"/>
+    <item id="id23" href="Text/part0015.html" media-type="application/xhtml+xml"/>
+    <item id="id24" href="Text/part0016.html" media-type="application/xhtml+xml"/>
+    <item id="id25" href="Text/part0017.html" media-type="application/xhtml+xml"/>
+    <item id="id26" href="Text/part0018.html" media-type="application/xhtml+xml"/>
+    <item id="id27" href="Text/part0019.html" media-type="application/xhtml+xml"/>
+    <item id="id28" href="Text/part0020.html" media-type="application/xhtml+xml"/>
+    <item id="id29" href="Text/part0021.html" media-type="application/xhtml+xml"/>
+    <item id="id30" href="Text/part0022.html" media-type="application/xhtml+xml"/>
+    <item id="id31" href="Text/part0023.html" media-type="application/xhtml+xml"/>
+    <item id="id32" href="Text/part0024.html" media-type="application/xhtml+xml"/>
+    <item id="id33" href="Text/part0025.html" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Images/00001.jpeg" media-type="image/jpeg"/>
+    <item id="page_css" href="Styles/page_styles.css" media-type="text/css"/>
+    <item id="page_css1" href="Styles/page_styles1.css" media-type="text/css"/>
+    <item id="css" href="Styles/stylesheet.css" media-type="text/css"/>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="Section0001.xhtml" href="Text/Section0001.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="titlepage"/>
+    <itemref idref="id8"/>
+    <itemref idref="id9"/>
+    <itemref idref="id10"/>
+    <itemref idref="id11"/>
+    <itemref idref="id12"/>
+    <itemref idref="id13"/>
+    <itemref idref="id14"/>
+    <itemref idref="id15"/>
+    <itemref idref="id16"/>
+    <itemref idref="id17"/>
+    <itemref idref="id18"/>
+    <itemref idref="id19"/>
+    <itemref idref="id20"/>
+    <itemref idref="id21"/>
+    <itemref idref="id22"/>
+    <itemref idref="id23"/>
+    <itemref idref="id24"/>
+    <itemref idref="id25"/>
+    <itemref idref="id26"/>
+    <itemref idref="id27"/>
+    <itemref idref="id28"/>
+    <itemref idref="id29"/>
+    <itemref idref="id30"/>
+    <itemref idref="id31"/>
+    <itemref idref="id32"/>
+    <itemref idref="Section0001.xhtml"/>
+    <itemref idref="id33"/>
+  </spine>
+  <guide>
+    <reference type="cover" title="Cover" href="Text/titlepage.xhtml"/>
+    <reference type="toc" title="Table of Contents" href="Text/part0025.html#NQU21-3b2f4dce78c74e818ec69681f560c6d0"/>
+  </guide>
+</package>

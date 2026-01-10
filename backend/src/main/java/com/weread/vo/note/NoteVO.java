@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class NoteVO {
 
-    private Long noteId;
+    private Integer noteId;
 
     // --- 笔记/高亮核心内容 ---
     private String content; // 笔记内容
@@ -23,7 +23,7 @@ public class NoteVO {
     private Integer page;   // 页码
     
     // --- 关联信息 ---
-    private Long userId;    // 笔记作者ID
+    private Integer userId;    // 笔记作者ID
     private Integer bookId; // 书籍ID
     private Integer chapterId; // 章节ID
     

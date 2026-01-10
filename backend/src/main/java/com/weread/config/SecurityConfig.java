@@ -1,16 +1,26 @@
 package com.weread.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weread.filter.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -27,6 +37,45 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * 自定义认证入口点，处理未认证用户
+     * 根据接口设计，某些接口的401响应需要返回JSON格式
+     */
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return new AuthenticationEntryPoint() {
+            @Override
+            public void commence(HttpServletRequest request, 
+                                 HttpServletResponse response,
+                                 AuthenticationException authException) throws IOException {
+                String requestPath = request.getRequestURI();
+                
+                // 判断是否需要返回JSON格式的401响应
+                // /books/{bookId}/chapters/{chapterId}/notes 接口需要返回JSON格式
+                // /user/notes 接口需要返回JSON格式
+                // /user/book-reviews 接口需要返回JSON格式
+                if (requestPath != null && (
+                    requestPath.matches("/books/\\d+/chapters/\\d+/notes") ||
+                    requestPath.equals("/user/notes") ||
+                    requestPath.equals("/user/book-reviews")
+                )) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.setCharacterEncoding("UTF-8");
+                    
+                    // 返回JSON格式的响应（空对象，符合接口定义）
+                    Map<String, Object> body = new HashMap<>();
+                    ObjectMapper mapper = new ObjectMapper();
+                    String json = mapper.writeValueAsString(body);
+                    response.getWriter().write(json);
+                } else {
+                    // 其他接口返回空body
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                }
+            }
+        };
     }
 
     @Bean
@@ -46,6 +95,9 @@ public class SecurityConfig {
 
                 // 其他全部需要登录
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(authenticationEntryPoint())
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

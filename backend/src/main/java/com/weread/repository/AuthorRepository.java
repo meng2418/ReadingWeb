@@ -7,7 +7,7 @@ import java.util.Optional;
 /**
  * Author Data Access Interface, for the 'author_info' table.
  */
-public interface AuthorRepository extends JpaRepository<AuthorEntity, Long> {
+public interface AuthorRepository extends JpaRepository<AuthorEntity, Integer> {
 
     /**
      * Finds Author information by ID.

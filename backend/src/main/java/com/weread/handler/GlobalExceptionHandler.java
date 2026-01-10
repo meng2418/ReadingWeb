@@ -1,12 +1,16 @@
 package com.weread.handler;
 
 import com.weread.dto.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.FieldError;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Global Exception Handler (Centralized exception handling using @ControllerAdvice).
@@ -16,24 +20,118 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     /**
-     * Handles business exceptions (e.g., "Book already exists", "Book not found").
+     * 根据请求路径判断是否应该返回 JSON 格式的错误响应
+     * @return true 表示应该返回 JSON 格式，false 表示返回空 body
      */
-    @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST) // Returns 400 Bad Request
-    public Result<Void> handleBusinessException(RuntimeException e) {
-        return Result.fail(e.getMessage());
+    private boolean shouldReturnJsonError() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return false;
+        }
+        HttpServletRequest request = attributes.getRequest();
+        String requestPath = request.getRequestURI();
+        
+        // /books/{bookId}/mark-finished 接口需要返回 JSON 格式
+        if (requestPath != null && requestPath.matches("/books/\\d+/mark-finished")) {
+            return true;
+        }
+        
+        // /user/notes 接口需要返回 JSON 格式（401响应）
+        if (requestPath != null && requestPath.equals("/user/notes")) {
+            return true;
+        }
+        
+        // /book-reviews 接口返回空 body
+        if (requestPath != null && requestPath.startsWith("/book-reviews")) {
+            return false;
+        }
+        
+        // /notes 接口返回空 body（400和401响应不应该有Body）
+        if (requestPath != null && requestPath.startsWith("/notes")) {
+            return false;
+        }
+        
+        // 默认返回 JSON 格式（为了兼容其他接口）
+        return true;
+    }
+
+    /**
+     * Handles ResponseStatusException (e.g., thrown by services).
+     * Returns different response formats based on the request path.
+     * This handler must be before RuntimeException handler since ResponseStatusException extends RuntimeException.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<?> handleResponseStatusException(ResponseStatusException e) {
+        HttpStatus status = HttpStatus.resolve(e.getStatusCode().value());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        
+        boolean shouldReturnJson = shouldReturnJsonError();
+        
+        // 根据接口设计，400 状态码时根据路径返回不同格式
+        if (status == HttpStatus.BAD_REQUEST) {
+            if (shouldReturnJson) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new java.util.HashMap<>());
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+        }
+        
+        // 404 状态码也根据路径返回不同格式
+        if (status == HttpStatus.NOT_FOUND) {
+            if (shouldReturnJson) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new java.util.HashMap<>());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        }
+        
+        // 401 状态码根据路径返回不同格式
+        if (status == HttpStatus.UNAUTHORIZED) {
+            if (shouldReturnJson) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new java.util.HashMap<>());
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        }
+        
+        // 其他状态码返回空 body
+        return ResponseEntity.status(status).build();
     }
 
     /**
      * Handles validation exceptions (e.g., failed @NotNull, @NotEmpty checks).
+     * Returns 400 with different formats based on the request path.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST) // Returns 400 Bad Request
-    public Result<Void> handleValidationException(MethodArgumentNotValidException e) {
-        // Retrieve the first validation failure field and message
-        FieldError fieldError = e.getBindingResult().getFieldError();
-        String errorMessage = fieldError != null ? fieldError.getDefaultMessage() : "参数校验失败";
-        return Result.fail(errorMessage);
+    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException e) {
+        boolean shouldReturnJson = shouldReturnJsonError();
+        if (shouldReturnJson) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new java.util.HashMap<>());
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    /**
+     * Handles business exceptions (e.g., "Book already exists", "Book not found").
+     * Returns 400 with different formats based on the request path.
+     * Note: This handler should not catch ResponseStatusException as it's handled above.
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<?> handleBusinessException(RuntimeException e) {
+        boolean shouldReturnJson = shouldReturnJsonError();
+        if (shouldReturnJson) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new java.util.HashMap<>());
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     /**

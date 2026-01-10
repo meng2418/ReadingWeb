@@ -56,8 +56,10 @@ CREATE TABLE `author_info` (
   `avatar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `bio` text COLLATE utf8mb4_unicode_ci,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `author_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`author_id`),
-  UNIQUE KEY `UKme4hv1oktmw9rcvvrssvvv1g7` (`name`)
+  UNIQUE KEY `UKme4hv1oktmw9rcvvrssvvv1g7` (`name`),
+  UNIQUE KEY `UKmc835xba54n2677mynj0u3tf9` (`author_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -68,6 +70,72 @@ CREATE TABLE `author_info` (
 LOCK TABLES `author_info` WRITE;
 /*!40000 ALTER TABLE `author_info` DISABLE KEYS */;
 /*!40000 ALTER TABLE `author_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `book_category`
+--
+
+DROP TABLE IF EXISTS `book_category`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `book_category` (
+  `category_id` int NOT NULL AUTO_INCREMENT,
+  `book_count` int DEFAULT NULL,
+  `category_level` int DEFAULT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `icon` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_enabled` bit(1) DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `parent_id` int DEFAULT NULL,
+  `sort_order` int DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `book_category`
+--
+
+LOCK TABLES `book_category` WRITE;
+/*!40000 ALTER TABLE `book_category` DISABLE KEYS */;
+/*!40000 ALTER TABLE `book_category` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `book_chapter`
+--
+
+DROP TABLE IF EXISTS `book_chapter`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `book_chapter` (
+  `chapter_id` int NOT NULL AUTO_INCREMENT,
+  `book_id` int NOT NULL,
+  `chapter_number` int NOT NULL,
+  `content` text COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime(6) DEFAULT NULL,
+  `is_published` bit(1) DEFAULT NULL,
+  `is_vip` bit(1) DEFAULT NULL,
+  `next_chapter_id` int DEFAULT NULL,
+  `prev_chapter_id` int DEFAULT NULL,
+  `read_count` int DEFAULT NULL,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `word_count` int DEFAULT NULL,
+  PRIMARY KEY (`chapter_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `book_chapter`
+--
+
+LOCK TABLES `book_chapter` WRITE;
+/*!40000 ALTER TABLE `book_chapter` DISABLE KEYS */;
+/*!40000 ALTER TABLE `book_chapter` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -93,6 +161,10 @@ CREATE TABLE `book_info` (
   `read_count` int DEFAULT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `word_count` int DEFAULT NULL,
+  `is_member_only` bit(1) DEFAULT NULL,
+  `is_published` bit(1) DEFAULT NULL,
+  `tags` text COLLATE utf8mb4_unicode_ci,
+  `updated_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`book_id`),
   KEY `FKdr31r9ml7jpvhbynv43585b2d` (`author_id`),
   CONSTRAINT `FKdr31r9ml7jpvhbynv43585b2d` FOREIGN KEY (`author_id`) REFERENCES `author_info` (`author_id`)
@@ -106,6 +178,35 @@ CREATE TABLE `book_info` (
 LOCK TABLES `book_info` WRITE;
 /*!40000 ALTER TABLE `book_info` DISABLE KEYS */;
 /*!40000 ALTER TABLE `book_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `bookmark_info`
+--
+
+DROP TABLE IF EXISTS `bookmark_info`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `bookmark_info` (
+  `bookmark_id` int NOT NULL AUTO_INCREMENT,
+  `book_id` int NOT NULL,
+  `chapter_id` int NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `note` text COLLATE utf8mb4_unicode_ci,
+  `page_number` int DEFAULT NULL,
+  `user_id` bigint NOT NULL,
+  PRIMARY KEY (`bookmark_id`),
+  UNIQUE KEY `UK3gc4mki5lanxgovenqnyeaq59` (`user_id`,`book_id`,`chapter_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `bookmark_info`
+--
+
+LOCK TABLES `bookmark_info` WRITE;
+/*!40000 ALTER TABLE `bookmark_info` DISABLE KEYS */;
+/*!40000 ALTER TABLE `bookmark_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -300,7 +401,7 @@ CREATE TABLE `comment_info` (
   CONSTRAINT `FK48snme635nlr3j1367bak3u0w` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`user_id`),
   CONSTRAINT `FKhehbbolc3pxpn3x5lluas0p1u` FOREIGN KEY (`post_id`) REFERENCES `post_info` (`post_id`),
   CONSTRAINT `FKl79iid7ghravgghsxsqj15e1r` FOREIGN KEY (`parent_comment_id`) REFERENCES `comment_info` (`comment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -309,7 +410,38 @@ CREATE TABLE `comment_info` (
 
 LOCK TABLES `comment_info` WRITE;
 /*!40000 ALTER TABLE `comment_info` DISABLE KEYS */;
+INSERT INTO `comment_info` VALUES (1,'deserunt','2026-01-10 13:46:02.001795',0,NULL,NULL,1,2,0,3),(2,'string','2026-01-10 14:19:06.892906',0,NULL,1,1,0,0,3),(3,'string','2026-01-10 15:22:50.606397',0,NULL,1,1,0,0,3),(4,'deserunt','2026-01-10 16:01:28.593648',0,NULL,NULL,1,0,0,3);
 /*!40000 ALTER TABLE `comment_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `consecutive_reading`
+--
+
+DROP TABLE IF EXISTS `consecutive_reading`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `consecutive_reading` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `current_streak` int NOT NULL DEFAULT '0' COMMENT '当前连续天数',
+  `longest_streak` int NOT NULL DEFAULT '0' COMMENT '最长连续天数',
+  `last_read_date` date NOT NULL COMMENT '最后阅读日期',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_id` (`user_id`),
+  KEY `idx_last_read_date` (`last_read_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='连续阅读记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `consecutive_reading`
+--
+
+LOCK TABLES `consecutive_reading` WRITE;
+/*!40000 ALTER TABLE `consecutive_reading` DISABLE KEYS */;
+/*!40000 ALTER TABLE `consecutive_reading` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -325,8 +457,11 @@ CREATE TABLE `follow_info` (
   `follower_id` bigint NOT NULL,
   `following_id` bigint NOT NULL,
   PRIMARY KEY (`follow_id`),
-  UNIQUE KEY `UK595t55apajqp5yij34vfdx1sa` (`follower_id`,`following_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `UK595t55apajqp5yij34vfdx1sa` (`follower_id`,`following_id`),
+  KEY `FK5qtxill97pobshtyt452fqe8g` (`following_id`),
+  CONSTRAINT `FK5qtxill97pobshtyt452fqe8g` FOREIGN KEY (`following_id`) REFERENCES `user_info` (`user_id`),
+  CONSTRAINT `FKalxmv7asrdc2t2islofasrs83` FOREIGN KEY (`follower_id`) REFERENCES `user_info` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -335,6 +470,7 @@ CREATE TABLE `follow_info` (
 
 LOCK TABLES `follow_info` WRITE;
 /*!40000 ALTER TABLE `follow_info` DISABLE KEYS */;
+INSERT INTO `follow_info` VALUES (3,'2025-12-30 16:56:38.269256',3,2);
 /*!40000 ALTER TABLE `follow_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -352,9 +488,10 @@ CREATE TABLE `like_info` (
   `note_id` int DEFAULT NULL,
   `post_id` bigint DEFAULT NULL,
   `user_id` bigint NOT NULL,
+  `target_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`like_id`),
   UNIQUE KEY `UKl6ppu8vkat29xy2uavaetqgit` (`user_id`,`post_id`,`comment_id`,`note_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -363,6 +500,7 @@ CREATE TABLE `like_info` (
 
 LOCK TABLES `like_info` WRITE;
 /*!40000 ALTER TABLE `like_info` DISABLE KEYS */;
+INSERT INTO `like_info` VALUES (1,NULL,'2026-01-10 13:34:20.992554',NULL,1,3,'post');
 /*!40000 ALTER TABLE `like_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -396,6 +534,48 @@ LOCK TABLES `login_log_info` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `member_card`
+--
+
+DROP TABLE IF EXISTS `member_card`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `member_card` (
+  `card_id` int NOT NULL AUTO_INCREMENT COMMENT '卡片ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `card_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '卡片名称',
+  `duration_days` int NOT NULL COMMENT '有效天数',
+  `card_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_used` tinyint(1) DEFAULT '0' COMMENT '是否已使用：0-否，1-是',
+  `used_at` datetime DEFAULT NULL COMMENT '使用时间',
+  `expire_at` datetime NOT NULL COMMENT '过期时间',
+  `source_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '来源类型：purchase-购买，gift-赠送，reward-奖励，promotion-促销，system-系统赠送',
+  `source_order_no` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '来源订单号',
+  `status` int DEFAULT NULL,
+  `notes` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`card_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_user_status` (`user_id`,`status`),
+  KEY `idx_expire_at` (`expire_at`),
+  KEY `idx_source_order` (`source_order_no`),
+  KEY `idx_used` (`is_used`),
+  KEY `idx_card_type` (`card_type`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员卡表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `member_card`
+--
+
+LOCK TABLES `member_card` WRITE;
+/*!40000 ALTER TABLE `member_card` DISABLE KEYS */;
+/*!40000 ALTER TABLE `member_card` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `member_info`
 --
 
@@ -422,6 +602,121 @@ CREATE TABLE `member_info` (
 LOCK TABLES `member_info` WRITE;
 /*!40000 ALTER TABLE `member_info` DISABLE KEYS */;
 /*!40000 ALTER TABLE `member_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `membership_benefit_record`
+--
+
+DROP TABLE IF EXISTS `membership_benefit_record`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `membership_benefit_record` (
+  `record_id` bigint NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `order_no` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '订单号',
+  `benefit_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '权益类型',
+  `benefit_value` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '权益值',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-已失效, 1-有效',
+  `expire_time` datetime DEFAULT NULL COMMENT '失效时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`record_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_order_no` (`order_no`),
+  KEY `idx_benefit_type` (`benefit_type`),
+  KEY `idx_expire_time` (`expire_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员权益记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `membership_benefit_record`
+--
+
+LOCK TABLES `membership_benefit_record` WRITE;
+/*!40000 ALTER TABLE `membership_benefit_record` DISABLE KEYS */;
+/*!40000 ALTER TABLE `membership_benefit_record` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `membership_order`
+--
+
+DROP TABLE IF EXISTS `membership_order`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `membership_order` (
+  `order_id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单ID',
+  `order_no` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '订单编号',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `package_id` int NOT NULL COMMENT '套餐ID',
+  `package_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '套餐名称',
+  `duration_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '时长类型',
+  `duration_days` int NOT NULL COMMENT '开通天数',
+  `original_amount` decimal(10,2) NOT NULL COMMENT '原价金额',
+  `pay_amount` decimal(10,2) NOT NULL COMMENT '支付金额',
+  `payment_method` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '支付方式: wechat, alipay, balance, card',
+  `payment_status` tinyint NOT NULL DEFAULT '0' COMMENT '支付状态: 0-待支付, 1-已支付, 2-支付失败, 3-已取消, 4-已退款',
+  `transaction_no` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '第三方支付流水号',
+  `order_status` tinyint NOT NULL DEFAULT '0' COMMENT '订单状态: 0-待处理, 1-已开通, 2-已过期, 3-已取消',
+  `expire_at` datetime DEFAULT NULL COMMENT '订单过期时间',
+  `paid_at` datetime DEFAULT NULL COMMENT '支付时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`order_id`),
+  UNIQUE KEY `uk_order_no` (`order_no`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_order_status` (`order_status`),
+  KEY `idx_payment_status` (`payment_status`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_expire_at` (`expire_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员订单表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `membership_order`
+--
+
+LOCK TABLES `membership_order` WRITE;
+/*!40000 ALTER TABLE `membership_order` DISABLE KEYS */;
+/*!40000 ALTER TABLE `membership_order` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `membership_package`
+--
+
+DROP TABLE IF EXISTS `membership_package`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `membership_package` (
+  `package_id` int NOT NULL AUTO_INCREMENT COMMENT '套餐ID',
+  `package_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '年会' COMMENT '套餐名称',
+  `duration_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '时长类型: week-周, month-月, quarter-季, year-年',
+  `duration_days` int NOT NULL COMMENT '开通天数',
+  `original_price` decimal(10,2) NOT NULL COMMENT '原价',
+  `discount_price` decimal(10,2) NOT NULL COMMENT '折扣价',
+  `description` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '套餐描述',
+  `is_hot` tinyint(1) DEFAULT '0' COMMENT '是否热门推荐: 0-否, 1-是',
+  `is_active` int DEFAULT NULL,
+  `display_order` int DEFAULT '0' COMMENT '显示顺序',
+  `benefits` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '权益列表(JSON格式)',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`package_id`),
+  KEY `idx_active_hot` (`is_active`,`is_hot`),
+  KEY `idx_display_order` (`display_order`),
+  KEY `idx_duration_type` (`duration_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员套餐表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `membership_package`
+--
+
+LOCK TABLES `membership_package` WRITE;
+/*!40000 ALTER TABLE `membership_package` DISABLE KEYS */;
+INSERT INTO `membership_package` VALUES (1,'年会','year',365,228.00,32.00,NULL,0,1,0,NULL,'2026-01-09 16:48:07','2026-01-09 16:48:07');
+/*!40000 ALTER TABLE `membership_package` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -559,17 +854,23 @@ DROP TABLE IF EXISTS `post_info`;
 CREATE TABLE `post_info` (
   `post_id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) NOT NULL,
-  `updated_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
   `author_id` bigint NOT NULL,
-  `comments_count` int NOT NULL,
-  `content` longtext COLLATE utf8mb4_unicode_ci,
-  `likes_count` int NOT NULL,
-  `status` int NOT NULL,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `comments_count` int NOT NULL DEFAULT '0',
+  `content` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `likes_count` int NOT NULL DEFAULT '0',
+  `status` int DEFAULT '1',
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `is_hot` bit(1) DEFAULT NULL,
+  `is_top` bit(1) DEFAULT NULL,
+  `publish_location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `share_count` int DEFAULT '0',
+  `view_count` int DEFAULT '0',
   PRIMARY KEY (`post_id`),
   KEY `FKponab5iwtu4gtiirkxx9hf2gw` (`author_id`),
   CONSTRAINT `FKponab5iwtu4gtiirkxx9hf2gw` FOREIGN KEY (`author_id`) REFERENCES `user_info` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -578,6 +879,7 @@ CREATE TABLE `post_info` (
 
 LOCK TABLES `post_info` WRITE;
 /*!40000 ALTER TABLE `post_info` DISABLE KEYS */;
+INSERT INTO `post_info` VALUES (1,'2026-01-10 10:16:41.000000',NULL,3,2,'苦难是文学的温床',1,3,'有感','2026-01-10 22:41:47.240477',NULL,NULL,'美国',0,0),(2,'2026-01-10 14:09:39.144157',NULL,3,0,'ut cillum et non',0,1,'那好哎呀意识熟人钟优秀轻松鲁莽',NULL,_binary '\0',_binary '\0',NULL,0,0),(3,'2026-01-10 15:48:44.765432',NULL,3,0,'ut cillum et non',0,1,'那好哎呀意识熟人钟优秀轻松鲁莽',NULL,_binary '\0',_binary '\0',NULL,0,0),(4,'2026-01-10 15:49:41.563597',NULL,3,0,'Excepteur',0,1,'谁代表嗯的大约以免大老实',NULL,_binary '\0',_binary '\0',NULL,0,0),(5,'2026-01-10 22:36:11.358931',NULL,3,0,'pariatur',0,1,'捺必然除非嗯实际上统统百般',NULL,_binary '\0',_binary '\0',NULL,0,0);
 /*!40000 ALTER TABLE `post_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -591,7 +893,6 @@ DROP TABLE IF EXISTS `post_topic_info`;
 CREATE TABLE `post_topic_info` (
   `post_id` bigint NOT NULL,
   `topic_id` int NOT NULL,
-  `topic_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`post_id`,`topic_id`),
   KEY `FKktngbyji2nrvhfi6ulymmvlkc` (`topic_id`),
   CONSTRAINT `FKktngbyji2nrvhfi6ulymmvlkc` FOREIGN KEY (`topic_id`) REFERENCES `topic_info` (`topic_id`),
@@ -606,6 +907,76 @@ CREATE TABLE `post_topic_info` (
 LOCK TABLES `post_topic_info` WRITE;
 /*!40000 ALTER TABLE `post_topic_info` DISABLE KEYS */;
 /*!40000 ALTER TABLE `post_topic_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `reading_milestone`
+--
+
+DROP TABLE IF EXISTS `reading_milestone`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reading_milestone` (
+  `milestone_id` bigint NOT NULL AUTO_INCREMENT COMMENT '里程碑ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `milestone_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `target_count` int NOT NULL COMMENT '目标数量',
+  `book_id` int DEFAULT NULL COMMENT '达到里程碑时阅读的书籍ID',
+  `book_title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `note_id` bigint DEFAULT NULL COMMENT '笔记ID',
+  `note_content_preview` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_latest` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否是最新里程碑',
+  `achieved_at` datetime NOT NULL COMMENT '达到时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`milestone_id`),
+  UNIQUE KEY `uk_user_type_count` (`user_id`,`milestone_type`,`target_count`),
+  KEY `idx_user_type` (`user_id`,`milestone_type`),
+  KEY `idx_is_latest` (`is_latest`),
+  KEY `idx_achieved_at` (`achieved_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='阅读里程碑表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `reading_milestone`
+--
+
+LOCK TABLES `reading_milestone` WRITE;
+/*!40000 ALTER TABLE `reading_milestone` DISABLE KEYS */;
+/*!40000 ALTER TABLE `reading_milestone` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `reading_reward`
+--
+
+DROP TABLE IF EXISTS `reading_reward`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reading_reward` (
+  `reward_id` bigint NOT NULL AUTO_INCREMENT COMMENT '奖励ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `reward_date` date NOT NULL COMMENT '奖励日期',
+  `reward_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `reward_value` int DEFAULT '0' COMMENT '奖励值（如体验卡天数）',
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_claimed` tinyint(1) DEFAULT '0' COMMENT '是否已领取：0-否，1-是',
+  `claimed_at` datetime DEFAULT NULL COMMENT '领取时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`reward_id`),
+  UNIQUE KEY `uk_user_date_type` (`user_id`,`reward_date`,`reward_type`),
+  KEY `idx_user_claimed` (`user_id`,`is_claimed`),
+  KEY `idx_reward_date` (`reward_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='阅读奖励表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `reading_reward`
+--
+
+LOCK TABLES `reading_reward` WRITE;
+/*!40000 ALTER TABLE `reading_reward` DISABLE KEYS */;
+/*!40000 ALTER TABLE `reading_reward` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -663,6 +1034,110 @@ LOCK TABLES `readingstatus_info` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `recharge_order`
+--
+
+DROP TABLE IF EXISTS `recharge_order`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `recharge_order` (
+  `order_id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单ID（自增主键）',
+  `order_no` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '订单号（业务唯一）',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `package_id` int NOT NULL COMMENT '套餐ID',
+  `coin_amount` int NOT NULL COMMENT '充值币数',
+  `bonus_coins` int NOT NULL DEFAULT '0' COMMENT '赠送币数',
+  `pay_amount` decimal(10,2) NOT NULL COMMENT '支付金额',
+  `payment_method` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '支付方式：wechat/alipay/unionpay',
+  `order_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' COMMENT '订单状态：pending/paid/failed/cancelled/expired',
+  `transaction_no` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '第三方支付交易号',
+  `paid_at` datetime DEFAULT NULL COMMENT '支付时间',
+  `expire_at` datetime DEFAULT NULL COMMENT '订单过期时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`order_id`),
+  UNIQUE KEY `order_no` (`order_no`),
+  KEY `idx_user` (`user_id`) COMMENT '用户索引',
+  KEY `idx_status` (`order_status`) COMMENT '状态索引',
+  KEY `idx_created` (`created_at`) COMMENT '创建时间索引',
+  KEY `package_id` (`package_id`),
+  CONSTRAINT `recharge_order_ibfk_1` FOREIGN KEY (`package_id`) REFERENCES `recharge_package` (`package_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='充值订单表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `recharge_order`
+--
+
+LOCK TABLES `recharge_order` WRITE;
+/*!40000 ALTER TABLE `recharge_order` DISABLE KEYS */;
+INSERT INTO `recharge_order` VALUES (1,'R17679528595065563',3,1,228,38,228.00,'ALIPAY','PENDING',NULL,NULL,'2026-01-09 18:31:00','2026-01-09 18:01:00','2026-01-09 18:01:00');
+/*!40000 ALTER TABLE `recharge_order` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `recharge_package`
+--
+
+DROP TABLE IF EXISTS `recharge_package`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `recharge_package` (
+  `package_id` int NOT NULL AUTO_INCREMENT COMMENT '套餐ID',
+  `coin_amount` int NOT NULL COMMENT '充值币数',
+  `cny_amount` double NOT NULL,
+  `bonus_coins` int NOT NULL DEFAULT '0' COMMENT '赠送币数',
+  `is_active` int DEFAULT NULL,
+  `display_order` int DEFAULT '0' COMMENT '显示顺序（从小到大排序）',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`package_id`),
+  UNIQUE KEY `uk_display_order` (`display_order`) COMMENT '显示顺序唯一约束',
+  KEY `idx_active_order` (`is_active`,`display_order`) COMMENT '按启用状态和顺序查询的索引'
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='充值套餐表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `recharge_package`
+--
+
+LOCK TABLES `recharge_package` WRITE;
+/*!40000 ALTER TABLE `recharge_package` DISABLE KEYS */;
+INSERT INTO `recharge_package` VALUES (1,228,228,38,1,0,'2026-01-09 17:06:41','2026-01-09 17:06:41');
+/*!40000 ALTER TABLE `recharge_package` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `topic_follows`
+--
+
+DROP TABLE IF EXISTS `topic_follows`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `topic_follows` (
+  `tf_id` int NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `topic_id` int NOT NULL COMMENT '话题ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`tf_id`),
+  UNIQUE KEY `uk_user_topic` (`user_id`,`topic_id`),
+  UNIQUE KEY `UK4d0yt666nckq3dc0fb5u41vr6` (`user_id`,`topic_id`),
+  KEY `fk_topic_follows_topic` (`topic_id`),
+  CONSTRAINT `fk_topic_follows_topic` FOREIGN KEY (`topic_id`) REFERENCES `topic_info` (`topic_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_topic_follows_user` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='话题关注表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `topic_follows`
+--
+
+LOCK TABLES `topic_follows` WRITE;
+/*!40000 ALTER TABLE `topic_follows` DISABLE KEYS */;
+/*!40000 ALTER TABLE `topic_follows` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `topic_info`
 --
 
@@ -672,10 +1147,18 @@ DROP TABLE IF EXISTS `topic_info`;
 CREATE TABLE `topic_info` (
   `topic_id` int NOT NULL AUTO_INCREMENT,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `image` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `post_count` int DEFAULT '0',
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `topic_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `view_count` int DEFAULT '0',
+  `follower_count` int DEFAULT NULL,
+  `introduction` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `admin_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`topic_id`),
-  UNIQUE KEY `UKgd6b0a6mdpxc55qbibre2cldc` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `UK2edxcqonup7pq7l8g4vgpvugo` (`topic_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -684,6 +1167,7 @@ CREATE TABLE `topic_info` (
 
 LOCK TABLES `topic_info` WRITE;
 /*!40000 ALTER TABLE `topic_info` DISABLE KEYS */;
+INSERT INTO `topic_info` VALUES (1,NULL,NULL,0,'2026-01-09 10:00:00',NULL,'献鱼',0,0,NULL,NULL);
 /*!40000 ALTER TABLE `topic_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -774,6 +1258,34 @@ LOCK TABLES `user_book_access_info` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `user_coin`
+--
+
+DROP TABLE IF EXISTS `user_coin`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_coin` (
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `coins` int NOT NULL DEFAULT '0' COMMENT '当前币数',
+  `total_recharged_coins` int NOT NULL DEFAULT '0' COMMENT '累计充值币数',
+  `total_consumed_coins` int NOT NULL DEFAULT '0' COMMENT '累计消费币数',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `user_coin_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_info` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户币数表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_coin`
+--
+
+LOCK TABLES `user_coin` WRITE;
+/*!40000 ALTER TABLE `user_coin` DISABLE KEYS */;
+/*!40000 ALTER TABLE `user_coin` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user_info`
 --
 
@@ -795,10 +1307,12 @@ CREATE TABLE `user_info` (
   `updated_at` datetime(6) NOT NULL,
   `username` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `following_count` int DEFAULT NULL,
+  `last_login_time` datetime(6) DEFAULT NULL,
+  `membership_expire_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `UKf2ksd6h8hsjtd57ipfq9myr64` (`username`),
   UNIQUE KEY `UK5m9cb1vslu82sm2y4nd2xaj4f` (`phone`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -807,7 +1321,78 @@ CREATE TABLE `user_info` (
 
 LOCK TABLES `user_info` WRITE;
 /*!40000 ALTER TABLE `user_info` DISABLE KEYS */;
+INSERT INTO `user_info` VALUES (1,NULL,NULL,0,'2025-12-30 09:08:55.613717',0,_binary '\0','2025-12-30 09:14:09.000000','$2a$10$6G9qvcRKpwHveGlolhuQTOM4gx5uqT7BFeKnHpvoc05wZlvuIyBFK','15743499172',0,'2025-12-30 09:08:55.613717','嵇国栋',0,NULL,NULL),(2,NULL,NULL,0,'2025-12-30 09:24:00.952639',0,_binary '\0','2025-12-30 09:24:00.926475','$2a$10$lRR9Nakqw59gPFZhTXGh6e5fGqMDOnkguISDuF6Xk2J4d/WFK2BvW','16146612124',0,'2025-12-30 09:24:00.952639','林敬彪',0,NULL,NULL),(3,'https://avatars.githubusercontent.com/u/13274768','模特',0,'2025-12-30 10:33:37.285838',0,_binary '\0','2025-12-30 10:33:37.270402','$2a$10$exZzwk4n56waPGx5TaUTs.NcnxAYdHUqkE/E0WCoJ0p45eR4NFMjy','15593371442',0,'2026-01-10 22:02:03.966469','童宇航',0,NULL,NULL),(5,NULL,NULL,0,'2025-12-30 15:09:03.449356',0,_binary '\0','2025-12-30 15:09:03.417860','$2a$10$W3aePFeHxvOpKEOg9jbdPOyDRGlECkx4hEdCwQ2W4PkgSxzKdBCgm','16731705352',0,'2025-12-30 15:09:03.449356','堵奕辰',0,NULL,NULL),(6,NULL,NULL,0,'2026-01-10 14:45:20.818459',0,_binary '\0','2026-01-10 14:45:20.800621','$2a$10$rBWJ0wu7E/JjwUUkbYJiQ.cKMOGy4heBAzHWf9pX.Mj5Ss/XUUcjy','18900436421',0,'2026-01-10 14:45:20.818459','完阳',0,NULL,NULL),(10,'../../../../../data/pictures/default_avatar.jpg','这个人很懒，什么都没有写',0,'2026-01-10 14:58:13.628925',0,_binary '\0','2026-01-10 14:58:13.586613','$2a$10$tiwPD.Ry5aQ3RzN0xa4WW.PEEI4Y5sRm1zZvsF4eK2HKEtj131PXa','15216540849',0,'2026-01-10 14:58:13.628925','魏思佳',0,NULL,NULL);
 /*!40000 ALTER TABLE `user_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_membership`
+--
+
+DROP TABLE IF EXISTS `user_membership`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_membership` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `membership_type` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '会员类型',
+  `start_time` datetime NOT NULL COMMENT '开始时间',
+  `end_time` datetime NOT NULL COMMENT '结束时间',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-已过期, 1-有效, 2-已取消',
+  `source_order_no` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '来源订单号',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_id` (`user_id`),
+  KEY `idx_end_time` (`end_time`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户会员表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_membership`
+--
+
+LOCK TABLES `user_membership` WRITE;
+/*!40000 ALTER TABLE `user_membership` DISABLE KEYS */;
+/*!40000 ALTER TABLE `user_membership` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_reading_record`
+--
+
+DROP TABLE IF EXISTS `user_reading_record`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_reading_record` (
+  `record_id` bigint NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `book_id` int DEFAULT NULL COMMENT '书籍ID',
+  `book_title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `read_date` date NOT NULL COMMENT '阅读日期',
+  `reading_time` int NOT NULL DEFAULT '0' COMMENT '阅读时长（分钟）',
+  `page_count` int DEFAULT '0' COMMENT '阅读页数',
+  `chapter_id` int DEFAULT NULL COMMENT '章节ID',
+  `chapter_title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `record_type` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`record_id`),
+  KEY `idx_user_date` (`user_id`,`read_date`),
+  KEY `idx_user_book` (`user_id`,`book_id`),
+  KEY `idx_read_date` (`read_date`),
+  KEY `idx_user_type` (`user_id`,`record_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户阅读记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_reading_record`
+--
+
+LOCK TABLES `user_reading_record` WRITE;
+/*!40000 ALTER TABLE `user_reading_record` DISABLE KEYS */;
+/*!40000 ALTER TABLE `user_reading_record` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -849,4 +1434,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-16 15:24:24
+-- Dump completed on 2026-01-10 23:33:05

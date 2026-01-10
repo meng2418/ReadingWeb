@@ -1,8 +1,9 @@
 package com.weread.service.book;
 
 import com.weread.dto.book.ChapterCreateDTO;
-import com.weread.entity.book.BookChapterEntity;
+import com.weread.dto.book.ChapterDTO;
 import com.weread.vo.book.ChapterVO;
+import com.weread.vo.book.ChapterContentVO;
 
 import java.util.List;
 
@@ -50,5 +51,21 @@ public interface BookChapterService {
      * 计算章节字数
      */
     Integer calculateWordCount(String content);
+
+    /**
+     * 获取章节内容和信息（用于阅读器）
+     * @param bookId 书籍ID
+     * @param chapterId 章节ID
+     * @param userId 用户ID（可为null，用于获取阅读进度）
+     * @return 章节内容VO
+     */
+    ChapterContentVO getChapterContent(Integer bookId, Integer chapterId, Integer userId);
+
+    /**
+     * 获取书籍目录列表（用于阅读器）
+     * @param bookId 书籍ID
+     * @return 章节目录列表，包含起始页码、章节序号和章节名称
+     */
+    List<ChapterDTO> getBookChapters(Integer bookId);
 }
 

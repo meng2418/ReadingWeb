@@ -2,12 +2,12 @@ package com.weread.repository.community;
 
 import com.weread.entity.community.TopicEntity;
 
-import io.lettuce.core.dynamic.annotation.Param;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,35 +42,27 @@ public interface TopicRepository extends JpaRepository<TopicEntity, Integer> {
     @Query("SELECT t FROM TopicEntity t " +
         "ORDER BY t.postCount DESC, t.topicId DESC")
     List<TopicEntity> findHotTopics(PageRequest pageable);
-
+    
     /**
-     * 查找相关话题（通过中间表）
+     * 查找相关话题（排除当前话题，按热度排序）
      */
-       @Query("SELECT DISTINCT t FROM TopicEntity t " +
-              "JOIN PostTopicEntity pt ON t.topicId = pt.topicId " +
-              "WHERE pt.postId IN (" +
-              "  SELECT pt2.postId FROM PostTopicEntity pt2 WHERE pt2.topicId = :topicId" +
-              ") " +
-              "AND t.topicId != :topicId " +
-              "ORDER BY t.postCount DESC " +
-              "LIMIT :limit")
-       List<TopicEntity> findRelatedTopics(@Param("topicId") Integer topicId, 
-                                           @Param("limit") Integer limit);
-
+    @Query("SELECT t FROM TopicEntity t " +
+           "WHERE t.topicId != :topicId " +
+           "ORDER BY t.postCount DESC, t.topicId DESC")
+    List<TopicEntity> findRelatedTopics(@Param("topicId") Integer topicId, Pageable pageable);
+    
     /**
-     * 通过帖子ID查找相关话题（排除当前话题）
-     * 使用JPQL通过中间表PostTopicEntity查询
+     * 根据帖子ID查找相关话题（排除当前话题）
+     * 通过 PostTopicEntity 中间表查找与当前帖子相关的其他话题
      */
-       @Query("SELECT DISTINCT t FROM TopicEntity t " +
-              "JOIN PostTopicEntity pt ON t.topicId = pt.topicId " +  // 注意：这里是 id，不是 topicId
-              "WHERE pt.postId = :postId " +
-              "AND t.topicId != :excludeTopicId " +
-              "ORDER BY t.postCount DESC")
-       List<TopicEntity> findRelatedTopicsByPostId(
-              @Param("postId") Integer postId, 
-              @Param("excludeTopicId") Integer excludeTopicId,
-              org.springframework.data.domain.Pageable pageable);
-
+    @Query("SELECT DISTINCT t FROM TopicEntity t " +
+           "INNER JOIN t.postTopics pt1 ON t.topicId = pt1.topicId " +
+           "WHERE pt1.postId = :postId " +
+           "AND t.topicId != :currentTopicId " +
+           "ORDER BY t.postCount DESC, t.topicId DESC")
+    List<TopicEntity> findRelatedTopicsByPostId(@Param("postId") Integer postId, 
+                                                 @Param("currentTopicId") Integer currentTopicId, 
+                                                 Pageable pageable);
 
     /**
      * 搜索话题（按名称）

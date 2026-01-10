@@ -149,7 +149,8 @@ public class TopicServiceImpl implements TopicService {
             .orElseThrow(() -> new RuntimeException("话题不存在"));
     
         // 2. 查询相关话题（例如：相同分类或热门话题）
-        List<TopicEntity> relatedTopics = topicRepository.findRelatedTopics(topicId, 5);
+        List<TopicEntity> relatedTopics = topicRepository.findRelatedTopics(topicId, 
+            org.springframework.data.domain.PageRequest.of(0, 5));
     
         // 3. 查询今日帖子数（需要单独统计）
         Integer todayPostCount = postRepository.countTodayPostsByTopic(topicId);

@@ -1,18 +1,24 @@
 package com.weread.service.impl.book;
 
 import com.weread.dto.book.ChapterCreateDTO;
+import com.weread.dto.book.ChapterDTO;
 import com.weread.entity.BookEntity;
+import com.weread.entity.ReadingProgressEntity;
 import com.weread.entity.book.BookChapterEntity;
 import com.weread.repository.BookRepository;
+import com.weread.repository.ReadingProgressRepository;
 import com.weread.repository.book.BookChapterRepository;
+import com.weread.service.asset.MemberService;
 import com.weread.service.book.BookChapterService;
 import com.weread.service.book.BookService;
 import com.weread.vo.book.ChapterVO;
+import com.weread.vo.book.ChapterContentVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +31,8 @@ public class BookChapterServiceImpl implements BookChapterService {
     private final BookChapterRepository chapterRepository;
     private final BookRepository bookRepository;
     private final BookService bookService;
+    private final ReadingProgressRepository readingProgressRepository;
+    private final MemberService memberService;
 
     @Override
     @Transactional
@@ -151,6 +159,105 @@ public class BookChapterServiceImpl implements BookChapterService {
         // 简单的中文字数统计：去除空格和标点，统计字符数
         String text = content.replaceAll("\\s+", "").replaceAll("[\\p{Punct}]", "");
         return text.length();
+    }
+
+    @Override
+    public ChapterContentVO getChapterContent(Integer bookId, Integer chapterId, Integer userId) {
+        // 获取章节信息
+        BookChapterEntity chapter = chapterRepository.findById(chapterId)
+                .orElseThrow(() -> new RuntimeException("章节不存在"));
+
+        // 验证章节是否属于指定书籍
+        if (!chapter.getBookId().equals(bookId)) {
+            throw new RuntimeException("章节不属于指定书籍");
+        }
+
+        // 创建ChapterContentVO
+        ChapterContentVO vo = new ChapterContentVO();
+        vo.setChapterId(chapter.getChapterId());
+        vo.setChapterTitle(chapter.getTitle());
+        vo.setChapterNumber(chapter.getChapterNumber());
+        vo.setContent(chapter.getContent() != null ? chapter.getContent() : "");
+        vo.setTotalWords(chapter.getWordCount() != null ? chapter.getWordCount() : 0);
+
+        // 计算总页数和每页字数（假设每页500字）
+        int wordsPerPage = 500;
+        int totalWords = vo.getTotalWords();
+        int totalPages = totalWords > 0 ? (int) Math.ceil((double) totalWords / wordsPerPage) : 1;
+        vo.setWordsPerPage(wordsPerPage);
+        vo.setTotalPages(totalPages);
+
+        // 判断是否需要体验卡（VIP章节需要体验卡）
+        vo.setRequireExperienceCard(chapter.getIsVip() != null && chapter.getIsVip());
+
+        // 判断是否锁定（未发布的章节或VIP章节且用户不是会员时锁定）
+        boolean isLocked = false;
+        if (chapter.getIsPublished() == null || !chapter.getIsPublished()) {
+            isLocked = true; // 未发布的章节锁定
+        } else if (chapter.getIsVip() != null && chapter.getIsVip()) {
+            // VIP章节需要检查用户会员状态
+            if (userId != null) {
+                // 检查用户是否是有效会员（包括正式会员和体验卡）
+                boolean isMemberValid = memberService.isMemberValid(userId.longValue());
+                isLocked = !isMemberValid; // 如果不是会员，则锁定
+            } else {
+                // 未登录用户，VIP章节锁定
+                isLocked = true;
+            }
+        }
+        vo.setIsLocked(isLocked);
+
+        // 设置上一章和下一章ID（如果为null则返回0，符合接口定义）
+        vo.setPrevChapterId(chapter.getPrevChapterId() != null ? chapter.getPrevChapterId() : 0);
+        vo.setNextChapterId(chapter.getNextChapterId() != null ? chapter.getNextChapterId() : 0);
+
+        // 获取最后阅读位置（如果有用户ID）
+        int lastReadPosition = 0;
+        if (userId != null) {
+            Optional<ReadingProgressEntity> progressOpt = readingProgressRepository
+                    .findByUserIdAndBookId(userId, bookId);
+            if (progressOpt.isPresent()) {
+                ReadingProgressEntity progress = progressOpt.get();
+                // 如果当前章节是用户正在阅读的章节，使用currentPage计算位置
+                if (progress.getChapterId() != null && progress.getChapterId().equals(chapterId)) {
+                    int currentPage = progress.getCurrentPage() != null ? progress.getCurrentPage() : 1;
+                    // 计算阅读位置（字符位置，基于页码）
+                    lastReadPosition = Math.min((currentPage - 1) * wordsPerPage, totalWords);
+                }
+            }
+        }
+        vo.setLastReadPosition(lastReadPosition);
+
+        return vo;
+    }
+
+    @Override
+    public List<ChapterDTO> getBookChapters(Integer bookId) {
+        // 获取书籍的所有章节，按章节序号排序
+        List<BookChapterEntity> chapters = chapterRepository.findByBookIdOrderByChapterNumberAsc(bookId);
+        
+        // 每页字数（与getChapterContent中的设置保持一致）
+        int wordsPerPage = 500;
+        
+        // 计算每个章节的起始页码
+        int currentPage = 1; // 第一页从1开始
+        List<ChapterDTO> chapterDTOs = new java.util.ArrayList<>();
+        
+        for (BookChapterEntity chapter : chapters) {
+            ChapterDTO dto = new ChapterDTO();
+            dto.setStartPage(currentPage);
+            dto.setChapterNumber(chapter.getChapterNumber());
+            dto.setChapterName(chapter.getTitle());
+            
+            chapterDTOs.add(dto);
+            
+            // 计算下一章的起始页码：当前页码 + 当前章节的页数
+            int chapterWordCount = chapter.getWordCount() != null ? chapter.getWordCount() : 0;
+            int chapterPages = chapterWordCount > 0 ? (int) Math.ceil((double) chapterWordCount / wordsPerPage) : 1;
+            currentPage += chapterPages;
+        }
+        
+        return chapterDTOs;
     }
 
     /**

@@ -122,7 +122,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     
                     // 设置到安全上下文
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("✅ 认证成功！UserEntity ID: {}", userEntity.getUserId());
+                    
+                    // 设置 userId 到请求属性，供控制器使用
+                    Integer userId = userEntity.getUserId();
+                    request.setAttribute("userId", userId);
+                    log.info("✅ 认证成功！UserEntity ID: {}", userId);
                     log.info("SecurityContext Principal 类型: {}",
                         SecurityContextHolder.getContext().getAuthentication().getPrincipal().getClass().getName());
                     

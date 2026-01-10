@@ -15,10 +15,10 @@ public class NoteEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "note_id")
-    private Long noteId;
+    private Integer noteId;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private Integer userId;
 
     @Column(name = "book_id", nullable = false)
     private Integer bookId;

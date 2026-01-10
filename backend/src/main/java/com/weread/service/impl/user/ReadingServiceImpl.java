@@ -279,43 +279,48 @@ public class ReadingServiceImpl implements ReadingService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public TopBooksVO getTopBooksByPeriod(Integer userId, String period) {
-        TopBooksVO vo = new TopBooksVO();
-        vo.setPeriod(period);
-        
-        LocalDate startDate = getStartDateByPeriod(period);
-        LocalDate endDate = LocalDate.now();
-        
-        // 查询该时间段内阅读时间最长的书籍
-        List<UserReadingRecordEntity> topBooksData = readingRecordRepository.findTopBooksByUserIdAndPeriod(
-                userId, startDate, endDate, 3);
-
-        TopBooksVO.TopBookItem[] topBooks = new TopBooksVO.TopBookItem[Math.min(topBooksData.size(), 3)];
-
-        for (int i = 0; i < Math.min(topBooksData.size(), 3); i++) {
-            UserReadingRecordEntity data = topBooksData.get(i);
-            TopBooksVO.TopBookItem item = new TopBooksVO.TopBookItem();
+@Transactional(readOnly = true)
+public TopBooksVO getTopBooksByPeriod(Integer userId, String period) {
+    TopBooksVO vo = new TopBooksVO();
+    vo.setPeriod(period);
     
-            item.setBookId(data.getBookId());        
-            item.setBookTitle(data.getBookTitle());  
-            item.setReadingTime(data.getReadingTime()); 
-            
-            // 获取书籍封面和其他信息
-            Optional<BookEntity> bookOpt = bookRepository.findById(item.getBookId());
-            if (bookOpt.isPresent()) {
-                BookEntity book = bookOpt.get();
-                item.setCover(book.getCover());
-                item.setAuthorName(book.getAuthorName());
-                item.setCategoryId(book.getCategoryId());
-            }
-            
-            topBooks[i] = item;
+    LocalDate startDate = getStartDateByPeriod(period);
+    LocalDate endDate = LocalDate.now();
+    
+    // 查询该时间段内阅读时间最长的书籍
+    List<Object[]> topBooksData = readingRecordRepository.findTopBooksByUserIdAndPeriod(
+            userId, startDate, endDate, org.springframework.data.domain.PageRequest.of(0, 3));
+    
+    List<TopBooksVO.TopBookItem> topBooksList = new ArrayList<>();
+
+    for (Object[] data : topBooksData) {
+        // data[0] = bookId, data[1] = bookTitle, data[2] = totalReadingTime
+        Integer bookId = ((Number) data[0]).intValue();
+        String bookTitle = (String) data[1];
+        Integer readingTime = ((Number) data[2]).intValue();
+        
+        TopBooksVO.TopBookItem item = new TopBooksVO.TopBookItem();
+        item.setBookId(bookId);
+        item.setBookTitle(bookTitle);
+        item.setReadingTime(readingTime);
+        
+        // 获取书籍封面和其他信息
+        Optional<BookEntity> bookOpt = bookRepository.findById(bookId);
+        if (bookOpt.isPresent()) {
+            BookEntity book = bookOpt.get();
+            item.setCover(book.getCover());
+            item.setAuthorName(book.getAuthorName());
+            item.setCategoryId(book.getCategoryId());
         }
         
-        vo.setTopBooks(topBooks);
-        return vo;
+        topBooksList.add(item);
     }
+    
+    // 转换为数组
+    TopBooksVO.TopBookItem[] topBooks = topBooksList.toArray(new TopBooksVO.TopBookItem[0]);
+    vo.setTopBooks(topBooks);
+    return vo;
+}
     
     @Override
     @Transactional
@@ -394,7 +399,8 @@ public class ReadingServiceImpl implements ReadingService {
     
     private void updateNoteCountMilestone(Integer userId, Object data) {
         // 获取用户笔记总数
-        Integer totalNotes = noteRepository.countByUserId(userId);
+        Integer totalNotesLong = noteRepository.countByUserId(userId);
+        Integer totalNotes = totalNotesLong != null ? totalNotesLong.intValue() : 0;
         
         // 里程碑阈值：50, 100, 150, 200, 300, 500, 1000...
         Integer[] milestones = {50, 100, 150, 200, 300, 500, 1000};
