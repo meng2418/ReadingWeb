@@ -111,10 +111,7 @@ public class CommentServiceimpl implements CommentService {
         CommentEntity parentComment = commentRepository.findById(commentId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "评论不存在"));
         
-        // 不能回复自己
-        if (parentComment.getUserId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不能回复自己的评论");
-        }
+        
         
         // 创建回复
         CommentEntity reply = new CommentEntity();

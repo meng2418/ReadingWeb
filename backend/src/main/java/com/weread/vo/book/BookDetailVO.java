@@ -13,7 +13,7 @@ public class BookDetailVO {
 
     private String title;
 
-    private Long authorId;
+    private Integer authorId;
 
     private String authorName;
 

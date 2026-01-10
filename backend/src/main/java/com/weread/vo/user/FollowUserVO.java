@@ -6,15 +6,19 @@ import lombok.Data;
 public class FollowUserVO {
     private Integer userId;
     private String username;
-    private String avatarUrl;
+    private String avatar;
+    private String bio;
 
-    /**
-     * true: 当前登录用户已关注此列表中的用户
-     */
-    private boolean isFollowedByMe;
+    // 必需字段
+    private Boolean isFollowing;
+    private Boolean isFollower;
 
-    /**
-     * true: 此列表中的用户是否关注了当前登录用户（即是否互粉）
-     */
-    private boolean isMutualFollow;
+    // 确保在构造时设置默认值
+    public FollowUserVO() {
+        this.username = "";
+        this.avatar = "";
+        this.bio = "";
+        this.isFollowing = false;
+        this.isFollower = false;
+    }
 }

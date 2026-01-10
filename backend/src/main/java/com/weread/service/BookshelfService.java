@@ -14,7 +14,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return BookAddVO result
      */
-    BookAddVO addBookToShelf(BookAddDTO dto, Long userId);
+    BookAddVO addBookToShelf(BookAddDTO dto, Integer userId);
 
     /**
      * Removes a book from the bookshelf.
@@ -22,7 +22,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return Removal message string
      */
-    String removeBookFromShelf(Integer bookId, Long userId);
+    String removeBookFromShelf(Integer bookId, Integer userId);
 
     /**
      * Updates the book's reading status.
@@ -30,7 +30,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return Status update result VO
      */
-    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId);
+    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Integer userId);
 
     /**
      * Updates the reading progress (chapter, page, progress).
@@ -38,7 +38,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return Progress update result VO
      */
-    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId);
+    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Integer userId);
 
     /**
      * Queries the user's bookshelf list, supports status filtering.
@@ -46,5 +46,5 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return List of BookShelfVO
      */
-    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId);
+    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Integer userId);
 }

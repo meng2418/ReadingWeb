@@ -23,7 +23,7 @@ public interface FollowRepository extends JpaRepository<FollowEntity, Integer> {
             + "ORDER BY u.userId ASC")
     List<UserEntity> findFollowing(
             @Param("userId") Integer userId,
-            @Param("cursor") String cursor,
+            @Param("cursor") Integer cursor,
             @Param("limit") int limit);
 
     /**
@@ -58,6 +58,6 @@ public interface FollowRepository extends JpaRepository<FollowEntity, Integer> {
      */
     Page<FollowEntity> findByFollowerId(Integer followerId, Pageable pageable);
 
-    Boolean existsByUserIdAndTopicId(Integer currentUserId, Integer topicId);
+    boolean existsByFollowerIdAndFollowingId(Integer followerId, Integer followingId);
 
 }

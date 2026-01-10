@@ -1,11 +1,16 @@
 package com.weread.service.impl.user;
 
 import com.weread.dto.user.UpdateProfileDTO;
+import com.weread.entity.community.PostEntity;
 import com.weread.entity.user.FollowEntity;
 import com.weread.entity.user.UserEntity;
 import com.weread.repository.user.UserRepository;
+import com.weread.repository.community.CommentRepository;
+import com.weread.repository.community.LikeRepository;
 import com.weread.repository.community.PostRepository;
 import com.weread.repository.user.FollowRepository;
+import com.weread.repository.ReadingProgressRepository;
+import com.weread.repository.note.NoteRepository;
 import com.weread.service.user.UserService;
 import com.weread.vo.user.FollowListVO;
 import com.weread.vo.user.FollowUserVO;
@@ -15,17 +20,22 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,42 +45,65 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final LikeRepository likeRepository;
+    private final NoteRepository noteRepository;
+    private final ReadingProgressRepository readingProgressRepository;
+    
     @Override
     @Transactional(readOnly = true)
     public UserProfileVO getUserHome(Integer userId) {
         // 获取用户基本信息
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
-        
+    
         // 构建UserProfileVO
         UserProfileVO profileVO = new UserProfileVO();
-        profileVO.setAvatar(user.getAvatar());
-        profileVO.setUsername(user.getUsername());
-        profileVO.setBio(user.getBio());
+    
+        // 确保所有String字段不为null
+        profileVO.setAvatar(user.getAvatar() != null ? user.getAvatar() : "");
+        profileVO.setUsername(user.getUsername() != null ? user.getUsername() : "");
+        profileVO.setBio(user.getBio() != null ? user.getBio() : "");
+    
+        // 确保Integer字段不为null
         profileVO.setCoinCount(user.getCoins() != null ? user.getCoins() : 0);
-        
-        // 会员状态
-        profileVO.setIsMember(user.getMembershipExpireAt() != null && 
-                             ((LocalDateTime) user.getMembershipExpireAt()).isAfter(LocalDateTime.now()));
-        
-        // 计算会员剩余天数
+    
+        // 会员状态 - 确保Boolean不为null
+        if (user.getMembershipExpireAt() != null) {
+            boolean isMember = ((LocalDateTime) user.getMembershipExpireAt()).isAfter(LocalDateTime.now());
+            profileVO.setIsMember(isMember);
+        } else {
+            profileVO.setIsMember(false);
+        }
+    
+        // 计算会员剩余天数 - 确保Integer不为null
         if (user.getMembershipExpireAt() != null) {
             long days = ChronoUnit.DAYS.between(LocalDateTime.now(), (Temporal) user.getMembershipExpireAt());
             profileVO.setMemberExpireDays(days > 0 ? (int) days : 0);
         } else {
             profileVO.setMemberExpireDays(0);
         }
-        
-        // 统计数据（这里需要调用其他服务或Repository获取）
-        profileVO.setFollowingCount(getFollowingCount(userId));
-        profileVO.setFollowerCount(getFollowerCount(userId));
-        profileVO.setPostCount(getPostCount(userId));
-        profileVO.setMemberCardCount(getMemberCardCount(userId));
-        
+    
+        // 统计数据 - 确保所有Integer字段不为null
+        Integer followingCount = getFollowingCount(userId);
+        profileVO.setFollowingCount(followingCount != null ? followingCount : 0);
+    
+        Integer followerCount = getFollowerCount(userId);
+        profileVO.setFollowerCount(followerCount != null ? followerCount : 0);
+    
+        Integer postCount = getPostCount(userId);
+        profileVO.setPostCount(postCount != null ? postCount : 0);
+    
+        profileVO.setExperienceCardCount(getMemberCardCount(userId));
+    
         // 阅读统计
-        profileVO.setReadingStats(getReadingStats(userId));
-        profileVO.setConsecutiveReadingDays(getConsecutiveReadingDays(userId));
-        
+        UserProfileVO.ReadingStatsVO readingStats = getReadingStats(userId);
+        profileVO.setReadingStats(readingStats);
+    
+        // 连续阅读天数
+        Integer consecutiveDays = getConsecutiveReadingDays(userId);
+        profileVO.setConsecutiveReadingDays(consecutiveDays != null ? consecutiveDays : 0);
+    
         return profileVO;
     }
     
@@ -133,38 +166,127 @@ public class UserServiceImpl implements UserService {
     }
     
     private UserProfileVO.ReadingStatsVO getReadingStats(Integer userId) {
-        // 这里需要调用阅读统计相关的Repository
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 计算时间范围
+        LocalDateTime weekStart = now.minusDays(7);    // 最近7天
+        LocalDateTime monthStart = now.minusDays(30);  // 最近30天
+        LocalDateTime yearStart = now.minusDays(365);  // 最近365天
+        
         UserProfileVO.ReadingStatsVO stats = new UserProfileVO.ReadingStatsVO();
         
-        // 示例数据，实际应从数据库获取
-        stats.setWeeklyReadingTime(120);
-        stats.setMonthlyReadingTime(480);
-        stats.setYearlyReadingTime(5760);
-        stats.setTotalReadingTime(11520);
+        // 1. 阅读时长统计 - 从UserEntity获取
+        UserEntity user = userRepository.findById(userId).orElse(new UserEntity());
+        Integer totalReadingTime = user.getTotalReadingTime() != null ? user.getTotalReadingTime() : 0;
         
-        stats.setWeeklyReadCount(3);
-        stats.setMonthlyReadCount(12);
-        stats.setYearlyReadCount(48);
-        stats.setTotalReadCount(96);
+        // 假设阅读时长分布：按阅读书籍比例分配
+        Integer totalBooksRead = getTotalBooksRead(userId);
+        if (totalBooksRead > 0) {
+            Integer avgTimePerBook = totalReadingTime / totalBooksRead;
+            
+            Integer weeklyBooks = getBooksReadByPeriod(userId, weekStart, now);
+            stats.setWeeklyReadingTime(weeklyBooks * avgTimePerBook);
+            
+            Integer monthlyBooks = getBooksReadByPeriod(userId, monthStart, now);
+            stats.setMonthlyReadingTime(monthlyBooks * avgTimePerBook);
+            
+            Integer yearlyBooks = getBooksReadByPeriod(userId, yearStart, now);
+            stats.setYearlyReadingTime(yearlyBooks * avgTimePerBook);
+        } else {
+            stats.setWeeklyReadingTime(0);
+            stats.setMonthlyReadingTime(0);
+            stats.setYearlyReadingTime(0);
+        }
+        stats.setTotalReadingTime(totalReadingTime);
         
-        stats.setWeeklyFinishedCount(1);
-        stats.setMonthlyFinishedCount(4);
-        stats.setYearlyFinishedCount(16);
-        stats.setTotalFinishedCount(32);
+        // 2. 阅读书籍统计
+        stats.setWeeklyBooksRead(getBooksReadByPeriod(userId, weekStart, now));
+        stats.setMonthlyBooksRead(getBooksReadByPeriod(userId, monthStart, now));
+        stats.setYearlyBooksRead(getBooksReadByPeriod(userId, yearStart, now));
+        stats.setTotalBooksRead(totalBooksRead);
         
-        stats.setWeeklyNoteCount(5);
-        stats.setMonthlyNoteCount(20);
-        stats.setYearlyNoteCount(240);
-        stats.setTotalNoteCount(480);
+        // 3. 读完书籍统计
+        stats.setWeeklyBooksFinished(getBooksFinishedByPeriod(userId, weekStart, now));
+        stats.setMonthlyBooksFinished(getBooksFinishedByPeriod(userId, monthStart, now));
+        stats.setYearlyBooksFinished(getBooksFinishedByPeriod(userId, yearStart, now));
+        stats.setTotalBooksFinished(getTotalBooksFinished(userId));
+        
+        // 4. 笔记统计
+        stats.setWeeklyNoteCount(countNotesByPeriod(userId, weekStart, now));
+        stats.setMonthlyNoteCount(countNotesByPeriod(userId, monthStart, now));
+        stats.setYearlyNoteCount(countNotesByPeriod(userId, yearStart, now));
+        stats.setTotalNoteCount(countTotalNotes(userId));
         
         return stats;
     }
     
-    private Integer getConsecutiveReadingDays(Integer userId) {
-        // 这里需要调用阅读记录相关的Repository
-        // 计算连续阅读天数
-        return 7; // 示例
+    // 辅助方法
+    private Integer getTotalBooksRead(Integer userId) {
+        Integer count = readingProgressRepository.countTotalBooksRead(userId);
+        return count != null ? count : 0;
     }
+    
+    private Integer getTotalBooksFinished(Integer userId) {
+        Integer count = readingProgressRepository.countBooksFinished(userId);
+        return count != null ? count : 0;
+    }
+    
+    private Integer getBooksReadByPeriod(Integer userId, LocalDateTime start, LocalDateTime end) {
+        Integer count = readingProgressRepository.countBooksReadByPeriod(userId, start, end);
+        return count != null ? count : 0;
+    }
+    
+    private Integer getBooksFinishedByPeriod(Integer userId, LocalDateTime start, LocalDateTime end) {
+        Integer count = readingProgressRepository.countBooksFinishedByPeriod(userId, start, end);
+        return count != null ? count : 0;
+    }
+    
+    private Integer countNotesByPeriod(Integer userId, LocalDateTime start, LocalDateTime end) {
+        // 如果有NoteRepository
+        if (noteRepository != null) {
+            Integer count = noteRepository.countByUserIdAndCreatedAtBetween(userId, start, end);
+            return count != null ? count : 0;
+        }
+        return 0;
+    }
+    
+    private Integer countTotalNotes(Integer userId) {
+        if (noteRepository != null) {
+            Integer count = noteRepository.countByUserId(userId);
+            return count != null ? count : 0;
+        }
+        return 0;
+    }
+    
+    private Integer getConsecutiveReadingDays(Integer userId) {
+        // 直接计算，避免复杂SQL
+        LocalDate today = LocalDate.now();
+        int consecutiveDays = 0;
+    
+        // 检查最多30天
+        for (int i = 0; i < 30; i++) {
+            LocalDate checkDate = today.minusDays(i);
+            LocalDateTime startOfDay = checkDate.atStartOfDay();
+            LocalDateTime endOfDay = checkDate.atTime(23, 59, 59);
+        
+            // 查询这一天是否有阅读记录
+            Integer count = readingProgressRepository.countBooksReadByPeriod(
+                userId, startOfDay, endOfDay);
+        
+            if (count != null && count > 0) {
+                consecutiveDays++;
+            }else if (i == 0) {
+                // 今天没读，继续检查昨天，不算中断
+                continue;
+            } else {
+                // 出现中断
+                break;
+            }
+        }    
+        return consecutiveDays;
+    }
+    
+    
 
     @Override
     @Transactional
@@ -247,31 +369,38 @@ public class UserServiceImpl implements UserService {
      * @param isFollowersList true表示正在查询粉丝列表 (FollowingId是目标用户)，false表示查询关注列表 (FollowerId是目标用户)
      */
     private FollowListVO buildFollowListResponse(Page<FollowEntity> followPage, Integer currentUserId, boolean isFollowersList) {
-        
-        List<Integer> targetUserIds = followPage.getContent().stream().map(entity -> isFollowersList ? entity.getFollowerId() : entity.getFollowingId()).toList();
+    
+        List<Integer> targetUserIds = followPage.getContent().stream()
+            .map(entity -> isFollowersList ? entity.getFollowerId() : entity.getFollowingId())
+            .collect(Collectors.toList());
 
         // 1. 批量查询目标用户信息
         List<UserEntity> targetUsers = userRepository.findAllById(targetUserIds);
-        
-        // 2. 批量查询当前用户与列表中用户的关注关系 (用于判断是否互相关注)
+    
+        // 2. 批量查询当前用户与列表中用户的关注关系
         List<FollowUserVO> followUserVOs = targetUsers.stream()
             .map(userEntity -> {
                 FollowUserVO vo = convertToFollowUserVO(userEntity);
-                
+            
+                // 设置默认值
+                vo.setIsFollowing(false);
+                vo.setIsFollower(false);
+            
                 if (currentUserId != null) {
-                    // a. 检查当前用户是否关注了目标用户 (isFollowedByMe)
-                    vo.setFollowedByMe(followRepository.findByFollowerIdAndFollowingId(currentUserId, userEntity.getUserId()).isPresent());
+                    // a. 检查当前用户是否关注了目标用户 (isFollowing)
+                    boolean isFollowing = followRepository.findByFollowerIdAndFollowingId(
+                        currentUserId, userEntity.getUserId()).isPresent();
+                    vo.setIsFollowing(isFollowing);
                     
-                    // b. 检查目标用户是否关注了当前用户 (isMutualFollow)
-                    // 只有在查询粉丝列表时，这才是"互关"的判断逻辑
-                    vo.setMutualFollow(followRepository.findByFollowerIdAndFollowingId(userEntity.getUserId(), currentUserId).isPresent());
-                } else {
-                    vo.setFollowedByMe(false);
-                    vo.setMutualFollow(false);
+                    // b. 检查目标用户是否关注了当前用户 (isFollower)
+                    boolean isFollower = followRepository.findByFollowerIdAndFollowingId(
+                        userEntity.getUserId(), currentUserId).isPresent();
+                    vo.setIsFollower(isFollower);
                 }
+            
                 return vo;
             })
-            .toList();
+            .collect(Collectors.toList());
 
         FollowListVO response = new FollowListVO();
         response.setUsers(followUserVOs);
@@ -286,8 +415,76 @@ public class UserServiceImpl implements UserService {
     private FollowUserVO convertToFollowUserVO(UserEntity userEntity) {
         FollowUserVO vo = new FollowUserVO();
         vo.setUserId(userEntity.getUserId());
-        vo.setUsername(userEntity.getUsername());
-        vo.setAvatarUrl(userEntity.getAvatar()); 
+        vo.setUsername(userEntity.getUsername() != null ? userEntity.getUsername() : "");
+        vo.setAvatar(userEntity.getAvatar() != null ? userEntity.getAvatar() : "");
+        vo.setBio(userEntity.getBio() != null ? userEntity.getBio() : "");
+    
+        // 设置默认值
+        vo.setIsFollowing(false);
+        vo.setIsFollower(false);
+    
         return vo;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUserPosts(Integer userId, Integer cursor, Integer limit) {
+        log.info("获取用户 {} 的帖子列表，cursor: {}, limit: {}", userId, cursor, limit);
+        
+        // 1. 获取帖子列表（基于游标分页）
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());
+        
+        List<PostEntity> posts;
+        if (cursor != null) {
+            // 基于游标查询
+            Integer cursorId = cursor;
+            posts = postRepository.findUserPostsAfterCursor(userId, cursorId, pageable);
+        } else {
+            // 第一次查询
+            posts = postRepository.findUserPosts(userId, pageable);
+        }
+        
+        // 2. 获取统计数据
+        Integer postCount = postRepository.countByUserId(userId);
+        Integer commentCount = commentRepository.countByUserId(userId);
+        Integer likeCount = likeRepository.countByUserId(userId);
+        
+        // 3. 转换为响应格式
+        List<Map<String, Object>> postList = posts.stream()
+            .map(this::convertPostToMap)
+            .collect(Collectors.toList());
+        
+        // 4. 构建结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("posts", postList);
+        result.put("hasMore", postList.size() >= limit);
+        result.put("nextCursor", postList.isEmpty() ? null : 
+            (Integer) postList.get(postList.size() - 1).get("postId"));
+        result.put("postCount", postCount);
+        result.put("commentCount", commentCount);
+        result.put("likeCount", likeCount);
+        
+        return result;
+    }
+    
+    private Map<String, Object> convertPostToMap(PostEntity post) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("postId", post.getPostId());
+        map.put("title", post.getTitle());
+        map.put("content", post.getContent());
+        map.put("createdAt", post.getCreatedAt());
+        map.put("updatedAt", post.getUpdatedAt());
+        
+        // 获取统计信息
+        Integer commentCount = commentRepository.countByPostId(post.getPostId());
+        Integer likeCount = likeRepository.countByPostId(post.getPostId());
+        
+        map.put("commentCount", commentCount);
+        map.put("likeCount", likeCount);
+        
+        // 用户信息（可选）
+        map.put("authorId", post.getAuthorId());
+        
+        return map;
     }
 }

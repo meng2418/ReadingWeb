@@ -17,7 +17,7 @@ import java.util.Map;
  * All interface return results are encapsulated with Result<T>.
  */
 @RestController
-@RequestMapping("/api/bookshelf")
+@RequestMapping("/bookshelf")
 @RequiredArgsConstructor
 @Tag(name = "Bookshelf", description = "Interfaces for bookshelf management")
 @SecurityRequirement(name = "bearerAuth") // Require JWT authentication
@@ -32,7 +32,7 @@ public class BookshelfController {
     @Operation(summary = "Get Bookshelf", description = "Query books in the user's bookshelf, filterable by status (all/unread/reading/finished)")
     public Result<Map<String, Object>> getBookshelf(
             @RequestParam(required = false, defaultValue = "all") String status,
-            @RequestHeader("userId") Long userId) {
+            @RequestHeader("userId") Integer userId) {
 
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
         if (!"all".equals(status)) {
@@ -51,7 +51,7 @@ public class BookshelfController {
     @Operation(summary = "Add to Bookshelf", description = "Add a specified book to the user's bookshelf (default status: unread)")
     public Result<Void> addToBookshelf(
             @RequestBody BookAddDTO dto,
-            @RequestHeader("userId") Long userId) {
+            @RequestHeader("userId") Integer userId) {
 
         bookshelfService.addBookToShelf(dto, userId);
 
@@ -65,7 +65,7 @@ public class BookshelfController {
     @Operation(summary = "Remove from Bookshelf", description = "Delete the specified book from the user's bookshelf")
     public Result<Void> removeFromBookshelf(
             @PathVariable Integer bookId,
-            @RequestHeader("userId") Long userId) {
+            @RequestHeader("userId") Integer userId) {
 
         bookshelfService.removeBookFromShelf(bookId, userId);
 
@@ -80,7 +80,7 @@ public class BookshelfController {
     public Result<Void> updateBookStatus(
             @PathVariable Integer bookId,
             @RequestBody BookStatusUpdateDTO dto,
-            @RequestHeader("userId") Long userId) {
+            @RequestHeader("userId") Integer userId) {
 
         BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
         statusDTO.setBookId(bookId);
@@ -98,7 +98,7 @@ public class BookshelfController {
     @Operation(summary = "Batch Operation", description = "Batch delete books or batch update reading status")
     public Result<Void> batchOperation(
             @RequestBody BookshelfBatchDTO dto,
-            @RequestHeader("userId") Long userId) {
+            @RequestHeader("userId") Integer userId) {
 
         // Batch delete
         if ("delete".equals(dto.getAction())) {

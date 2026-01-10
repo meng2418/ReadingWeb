@@ -45,7 +45,7 @@ public class BookServiceImpl implements BookService {
         vo.setDescription(bookEntity.getDescription());
         
         if (bookEntity.getAuthor() != null) {
-            vo.setAuthorName(bookEntity.getAuthor().getName());
+            vo.setAuthorName(bookEntity.getAuthor().getAuthorName());
         }
         
         return vo;
@@ -55,7 +55,7 @@ public class BookServiceImpl implements BookService {
     @Transactional
     public BookDetailVO createBook(BookCreateDTO dto) {
         // 验证作者是否存在
-        AuthorEntity author = authorRepository.findById(dto.getAuthorId())
+        AuthorEntity author = authorRepository.findByAuthorId(dto.getAuthorId())
                 .orElseThrow(() -> new RuntimeException("作者不存在"));
 
         // 验证分类是否存在
@@ -72,9 +72,9 @@ public class BookServiceImpl implements BookService {
         book.setPublisher(dto.getPublisher());
         book.setIsbn(dto.getIsbn());
         book.setPrice(dto.getPrice() != null ? dto.getPrice() : 0);
-        book.setIsFree(dto.getIsFree() != null ? dto.getIsFree() : false);
+        book.setIsbn(dto.getIsbn() != null ? dto.getIsbn() : false);
         book.setIsMemberOnly(dto.getIsMemberOnly() != null ? dto.getIsMemberOnly() : false);
-        book.setTags(dto.getTags());
+        book.setTopics(dto.getTopics());
         book.setIsPublished(true); // 默认上架
 
         book = bookRepository.save(book);
@@ -92,7 +92,7 @@ public class BookServiceImpl implements BookService {
             book.setTitle(dto.getTitle());
         }
         if (dto.getAuthorId() != null) {
-            AuthorEntity author = authorRepository.findById(dto.getAuthorId())
+            AuthorEntity author = authorRepository.findByAuthorId(dto.getAuthorId())
                     .orElseThrow(() -> new RuntimeException("作者不存在"));
             book.setAuthorId(dto.getAuthorId());
         }
@@ -116,8 +116,8 @@ public class BookServiceImpl implements BookService {
         if (dto.getPrice() != null) {
             book.setPrice(dto.getPrice());
         }
-        if (dto.getIsFree() != null) {
-            book.setIsFree(dto.getIsFree());
+        if (dto.getIsbn() != null) {
+            book.setIsbn(dto.getIsbn());
         }
         if (dto.getIsPublished() != null) {
             book.setIsPublished(dto.getIsPublished());
@@ -125,8 +125,8 @@ public class BookServiceImpl implements BookService {
         if (dto.getIsMemberOnly() != null) {
             book.setIsMemberOnly(dto.getIsMemberOnly());
         }
-        if (dto.getTags() != null) {
-            book.setTags(dto.getTags());
+        if (dto.getTopics() != null) {
+            book.setTopics(dto.getTopics());
         }
 
         book = bookRepository.save(book);
@@ -214,7 +214,7 @@ public class BookServiceImpl implements BookService {
         vo.setTitle(book.getTitle());
         vo.setAuthorId(book.getAuthorId());
         if (book.getAuthor() != null) {
-            vo.setAuthorName(book.getAuthor().getName());
+            vo.setAuthorName(book.getAuthor().getAuthorName());
         }
         vo.setCover(book.getCover());
         vo.setDescription(book.getDescription());
@@ -249,7 +249,7 @@ public class BookServiceImpl implements BookService {
         vo.setBookId(book.getBookId());
         vo.setTitle(book.getTitle());
         if (book.getAuthor() != null) {
-            vo.setAuthorName(book.getAuthor().getName());
+            vo.setAuthorName(book.getAuthor().getAuthorName());
         }
         vo.setCover(book.getCover());
         vo.setDescription(book.getDescription());

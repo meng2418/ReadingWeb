@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/comments")
@@ -26,7 +27,7 @@ public class CommentController {
     @PostMapping("/{commentId}/like")
     public ResponseEntity<ApiResponse<LikeResponseDTO>> likeComment(
             @PathVariable Integer commentId,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
             LikeResponseDTO result = likeService.toggleCommentLike(commentId, userId);
@@ -45,7 +46,7 @@ public class CommentController {
     @DeleteMapping("/{commentId}/like")
     public ResponseEntity<ApiResponse<LikeResponseDTO>> unlikeComment(
             @PathVariable Integer commentId,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
             LikeResponseDTO result = likeService.toggleCommentLike(commentId, userId);
@@ -65,7 +66,7 @@ public class CommentController {
     public ResponseEntity<ApiResponse<ReplyResponseDTO>> replyComment(
             @PathVariable Integer commentId,
             @Valid @RequestBody CreateCommentRequestDTO request,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
             ReplyResponseDTO result = commentService.replyComment(commentId, request, userId);
@@ -84,7 +85,7 @@ public class CommentController {
     @GetMapping("/{commentId}")
     public ResponseEntity<ApiResponse<CommentDTO>> getCommentDetail(
             @PathVariable Integer commentId,
-            @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
+            @AuthenticationPrincipal Integer currentUserId) {
         
         try {
             CommentDTO result = commentService.getCommentById(commentId, currentUserId);

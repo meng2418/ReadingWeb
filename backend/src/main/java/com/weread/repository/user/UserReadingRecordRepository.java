@@ -1,6 +1,8 @@
 package com.weread.repository.user;
 
 import com.weread.entity.user.UserReadingRecordEntity;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,8 +50,30 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
 
     Integer countDistinctBooksByUserId(Integer userId);
 
-    List<Object[]> findTopBooksByUserIdAndPeriod(Integer userId, LocalDate startDate, LocalDate endDate, int i);
+    // 最简单直接的解决方案
+    @Query("SELECT urr FROM UserReadingRecordEntity urr " +
+           "WHERE urr.userId = :userId " +
+           "AND urr.readDate BETWEEN :startDate AND :endDate " +
+           "ORDER BY urr.readingTime DESC " +
+           "LIMIT :limit")
+    List<UserReadingRecordEntity> findTopBooksByUserIdAndPeriod(
+        @Param("userId") Integer userId,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
+        @Param("limit") int limit
+    );
 
     Integer countFinishedBooksByUserId(Integer userId);
+
+    @Query("SELECT YEAR(urr.readDate), SUM(urr.readingTime) " +
+       "FROM UserReadingRecordEntity urr " +
+       "WHERE urr.userId = :userId " +
+       "GROUP BY YEAR(urr.readDate) " +
+       "ORDER BY YEAR(urr.readDate) DESC")
+       List<Object[]> findYearlyStatsByUserId(@Param("userId") Integer userId);
+
+    List<UserReadingRecordEntity> findTopByUserIdOrderByReadDateDesc(Integer userId, PageRequest of);
+
+    List<UserReadingRecordEntity> findFinishedBooksByUserId(Integer userId, PageRequest of);
 }
 

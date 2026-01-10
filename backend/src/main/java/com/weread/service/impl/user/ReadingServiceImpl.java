@@ -20,6 +20,8 @@ import com.weread.vo.user.TopBooksVO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +32,9 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -284,17 +288,18 @@ public class ReadingServiceImpl implements ReadingService {
         LocalDate endDate = LocalDate.now();
         
         // 查询该时间段内阅读时间最长的书籍
-        List<Object[]> topBooksData = readingRecordRepository.findTopBooksByUserIdAndPeriod(
+        List<UserReadingRecordEntity> topBooksData = readingRecordRepository.findTopBooksByUserIdAndPeriod(
                 userId, startDate, endDate, 3);
-        
+
         TopBooksVO.TopBookItem[] topBooks = new TopBooksVO.TopBookItem[Math.min(topBooksData.size(), 3)];
-        
+
         for (int i = 0; i < Math.min(topBooksData.size(), 3); i++) {
-            Object[] data = topBooksData.get(i);
+            UserReadingRecordEntity data = topBooksData.get(i);
             TopBooksVO.TopBookItem item = new TopBooksVO.TopBookItem();
-            item.setBookId((Integer) data[0]);
-            item.setBookTitle((String) data[1]);
-            item.setReadingTime(((Number) data[2]).intValue());
+    
+            item.setBookId(data.getBookId());        
+            item.setBookTitle(data.getBookTitle());  
+            item.setReadingTime(data.getReadingTime()); 
             
             // 获取书籍封面和其他信息
             Optional<BookEntity> bookOpt = bookRepository.findById(item.getBookId());
@@ -309,54 +314,6 @@ public class ReadingServiceImpl implements ReadingService {
         }
         
         vo.setTopBooks(topBooks);
-        return vo;
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public MilestoneVO getLatestMilestones(Integer userId) {
-        MilestoneVO vo = new MilestoneVO();
-        
-        // 获取累计阅读里程碑
-        Optional<ReadingMilestoneEntity> totalReadingOpt = readingMilestoneRepository
-                .findTopByUserIdAndMilestoneTypeAndIsLatestTrueOrderByTargetCountDesc(
-                        userId, "total_reading");
-        totalReadingOpt.ifPresent(milestone -> {
-            MilestoneVO.TotalReadingMilestone m = new MilestoneVO.TotalReadingMilestone();
-            m.setTargetCount(milestone.getTargetCount());
-            m.setAchievedBookTitle(milestone.getBookTitle());
-            m.setAchievedAt(milestone.getAchievedAt());
-            m.setMessage(milestone.getMessage());
-            vo.setTotalReadingMilestone(m);
-        });
-        
-        // 获取笔记数量里程碑
-        Optional<ReadingMilestoneEntity> noteCountOpt = readingMilestoneRepository
-                .findTopByUserIdAndMilestoneTypeAndIsLatestTrueOrderByTargetCountDesc(
-                        userId, "note_count");
-        noteCountOpt.ifPresent(milestone -> {
-            MilestoneVO.NoteCountMilestone m = new MilestoneVO.NoteCountMilestone();
-            m.setTargetCount(milestone.getTargetCount());
-            m.setAchievedBookTitle(milestone.getBookTitle());
-            m.setAchievedNoteContent(milestone.getNoteContentPreview());
-            m.setAchievedAt(milestone.getAchievedAt());
-            m.setMessage(milestone.getMessage());
-            vo.setNoteCountMilestone(m);
-        });
-        
-        // 获取读完本数里程碑
-        Optional<ReadingMilestoneEntity> finishedReadingOpt = readingMilestoneRepository
-                .findTopByUserIdAndMilestoneTypeAndIsLatestTrueOrderByTargetCountDesc(
-                        userId, "finished_reading");
-        finishedReadingOpt.ifPresent(milestone -> {
-            MilestoneVO.FinishedReadingMilestone m = new MilestoneVO.FinishedReadingMilestone();
-            m.setTargetCount(milestone.getTargetCount());
-            m.setAchievedBookTitle(milestone.getBookTitle());
-            m.setAchievedAt(milestone.getAchievedAt());
-            m.setMessage(milestone.getMessage());
-            vo.setFinishedReadingMilestone(m);
-        });
-        
         return vo;
     }
     
@@ -508,6 +465,176 @@ public class ReadingServiceImpl implements ReadingService {
             }
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MilestoneVO getLatestMilestones(Integer userId) {
+        MilestoneVO vo = new MilestoneVO();
+    
+        // 获取用户真实数据
+        Integer totalBooksRead = readingRecordRepository.countDistinctBooksByUserId(userId);
+        Integer totalBooksFinished = readingRecordRepository.countFinishedBooksByUserId(userId);
+        Integer totalNotes = noteRepository.countByUserId(userId);
+    
+        // 1. 总阅读里程碑
+        vo.setTotalReadingMilestone(calculateTotalReadingMilestone(userId, totalBooksRead));
+    
+        // 2. 笔记数量里程碑
+        vo.setNoteCountMilestone(calculateNoteCountMilestone(userId, totalNotes));
+    
+        // 3. 读完本数里程碑
+        vo.setFinishedReadingMilestone(calculateFinishedReadingMilestone(userId, totalBooksFinished));
+    
+        return vo;
+    }
+
+    private MilestoneVO.TotalReadingMilestone calculateTotalReadingMilestone(Integer userId, Integer totalBooksRead) {
+        MilestoneVO.TotalReadingMilestone milestone = new MilestoneVO.TotalReadingMilestone();
+    
+        if (totalBooksRead == null || totalBooksRead == 0) {
+            // 没有阅读记录，返回空对象但字段齐全
+            milestone.setTargetCount(0);
+            milestone.setAchievedBookTitle("");
+            milestone.setAchievedAt(LocalDateTime.now());
+            milestone.setMessage("开始您的第一本书吧！");
+        } else {
+            // 里程碑阈值：10, 20, 50, 100, 200, 500
+            int[] thresholds = {500, 200, 100, 50, 20, 10};
+        
+            int achievedTarget = 0;
+            for (int threshold : thresholds) {
+                if (totalBooksRead >= threshold) {
+                    achievedTarget = threshold;
+                    break;
+                }
+            }
+        
+            // 如果连10本都没达到，使用5本作为初始里程碑
+            if (achievedTarget == 0) {
+                achievedTarget = 5;
+            }
+        
+            // 获取最近阅读的书籍
+            List<UserReadingRecordEntity> recentRecords = readingRecordRepository
+                .findTopByUserIdOrderByReadDateDesc(userId, PageRequest.of(0, 1));
+        
+            milestone.setTargetCount(achievedTarget);
+            milestone.setAchievedBookTitle(
+                !recentRecords.isEmpty() ? 
+                recentRecords.get(0).getBookTitle() : 
+                "《您的书籍》"
+            );
+            milestone.setAchievedAt(
+                !recentRecords.isEmpty() ? 
+                recentRecords.get(0).getReadDate().atStartOfDay() : 
+                LocalDateTime.now()
+            );
+            milestone.setMessage(String.format("恭喜！您已累计阅读%d本书", achievedTarget));
+        }
+    
+        return milestone;
+    }
+
+    private MilestoneVO.NoteCountMilestone calculateNoteCountMilestone(Integer userId, Integer totalNotes) {
+        MilestoneVO.NoteCountMilestone milestone = new MilestoneVO.NoteCountMilestone();
+    
+        if (totalNotes == null || totalNotes == 0) {
+            // 没有笔记记录
+            milestone.setTargetCount(0);
+            milestone.setAchievedBookTitle("");
+            milestone.setAchievedNoteContent("");
+            milestone.setAchievedAt(LocalDateTime.now());
+            milestone.setMessage("写下您的第一条笔记吧！");
+        } else {
+            // 笔记里程碑：50, 100, 150, 200, 300, 500
+            int[] thresholds = {500, 300, 200, 150, 100, 50};
+        
+            int achievedTarget = 0;
+            for (int threshold : thresholds) {
+                if (totalNotes >= threshold) {
+                    achievedTarget = threshold;
+                    break;
+                }
+            }
+        
+            // 如果连50条都没达到，使用10条作为初始里程碑
+            if (achievedTarget == 0) {
+                achievedTarget = 10;
+            }
+        
+            // 获取最近的一条笔记
+            List<Object[]> recentNoteData = noteRepository.findRecentNoteWithBook(userId, PageRequest.of(0, 1));
+        
+            milestone.setTargetCount(achievedTarget);
+        
+            if (!recentNoteData.isEmpty()) {
+                Object[] data = recentNoteData.get(0);
+                milestone.setAchievedBookTitle((String) data[0]); // 书名
+                String noteContent = (String) data[1];
+                milestone.setAchievedNoteContent(
+                    noteContent.length() > 50 ? 
+                    noteContent.substring(0, 50) + "..." : 
+                    noteContent
+                );
+                milestone.setAchievedAt((LocalDateTime) data[2]); // 创建时间
+            } else {
+                milestone.setAchievedBookTitle("");
+                milestone.setAchievedNoteContent("");
+                milestone.setAchievedAt(LocalDateTime.now());
+            }
+        
+            milestone.setMessage(String.format("恭喜！您已创作%d条笔记", achievedTarget));
+        }
+    
+        return milestone;
+    }
+
+    private MilestoneVO.FinishedReadingMilestone calculateFinishedReadingMilestone(Integer userId, Integer totalBooksFinished) {
+        MilestoneVO.FinishedReadingMilestone milestone = new MilestoneVO.FinishedReadingMilestone();
+    
+        if (totalBooksFinished == null || totalBooksFinished == 0) {
+            // 没有读完的书籍
+            milestone.setTargetCount(0);
+            milestone.setAchievedBookTitle("");
+            milestone.setAchievedAt(LocalDateTime.now());
+            milestone.setMessage("读完您的第一本书吧！");
+        } else {
+            // 完成阅读里程碑：10, 20, 30, 50, 100
+            int[] thresholds = {100, 50, 30, 20, 10};
+        
+            int achievedTarget = 0;
+            for (int threshold : thresholds) {
+                if (totalBooksFinished >= threshold) {
+                    achievedTarget = threshold;
+                    break;
+                }
+            }
+        
+            // 如果连10本都没达到，使用5本作为初始里程碑
+            if (achievedTarget == 0) {
+                achievedTarget = 5;
+            }
+        
+            // 获取最近读完的书籍（假设有is_finished字段）
+            List<UserReadingRecordEntity> finishedBooks = readingRecordRepository
+                .findFinishedBooksByUserId(userId, PageRequest.of(0, 1));
+        
+            milestone.setTargetCount(achievedTarget);
+            milestone.setAchievedBookTitle(
+                !finishedBooks.isEmpty() ? 
+                finishedBooks.get(0).getBookTitle() : 
+                "《您读完的书籍》"
+            );
+            milestone.setAchievedAt(
+                !finishedBooks.isEmpty() ? 
+                finishedBooks.get(0).getReadDate().atStartOfDay() : 
+                LocalDateTime.now()
+            );
+            milestone.setMessage(String.format("恭喜！您已读完%d本书", achievedTarget));
+        }
+    
+        return milestone;
+    }
     
     // 辅助类
     @Data
@@ -523,5 +650,145 @@ public class ReadingServiceImpl implements ReadingService {
         private String contentPreview;
         private Integer bookId;
         private String bookTitle;
+    }
+
+    @Override
+    public Map<String, Object> getReadingStatsTimeline(Integer userId) {
+        Map<String, Object> result = new HashMap<>();
+
+        // week - 最近7天数据（按天）
+        Map<String, Object> week = new HashMap<>();
+        week.put("unit", "day");
+        week.put("list", getWeekTimelineData(userId));
+        result.put("week", week);
+
+        // month - 最近30天数据（按天）
+        Map<String, Object> month = new HashMap<>();
+        month.put("unit", "day");
+        month.put("list", getMonthTimelineData(userId));
+        result.put("month", month);
+
+        // year - 最近12个月数据（按月）
+        Map<String, Object> year = new HashMap<>();
+        year.put("unit", "month");
+        year.put("list", getYearTimelineData(userId));
+        result.put("year", year);
+
+        // total - 所有数据（按年）
+        Map<String, Object> total = new HashMap<>();
+        total.put("unit", "year");
+        total.put("list", getTotalTimelineData(userId));
+        result.put("total", total);
+
+        return result;
+    }
+
+    // 新增这几个方法
+    private List<Map<String, Object>> getWeekTimelineData(Integer userId) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(6);
+    
+        List<Map<String, Object>> list = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    
+        // 查询最近7天的阅读数据
+        List<Object[]> dailyData = readingRecordRepository.findDailyStatsByUserIdAndDateRange(
+                userId, startDate, endDate);
+    
+        // 转换为Map便于查找
+        Map<LocalDate, Integer> dailyStats = new HashMap<>();
+        for (Object[] data : dailyData) {
+            LocalDate date = (LocalDate) data[0];
+            Integer readingTime = ((Number) data[1]).intValue();
+            dailyStats.put(date, readingTime);
+        }
+    
+        // 构建7天数据
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = endDate.minusDays(i);
+            Map<String, Object> item = new HashMap<>();
+            item.put("date", date.format(formatter));
+            item.put("readingTime", dailyStats.getOrDefault(date, 0));
+            list.add(item);
+        }
+        return list;
+    }
+
+    private List<Map<String, Object>> getMonthTimelineData(Integer userId) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(29);
+    
+        List<Map<String, Object>> list = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    
+        List<Object[]> dailyData = readingRecordRepository.findDailyStatsByUserIdAndDateRange(
+                userId, startDate, endDate);
+    
+        Map<LocalDate, Integer> dailyStats = new HashMap<>();
+        for (Object[] data : dailyData) {
+            LocalDate date = (LocalDate) data[0];
+            Integer readingTime = ((Number) data[1]).intValue();
+            dailyStats.put(date, readingTime);
+        }
+    
+        // 构建30天数据
+        for (int i = 29; i >= 0; i--) {
+            LocalDate date = endDate.minusDays(i);
+            Map<String, Object> item = new HashMap<>();
+            item.put("date", date.format(formatter));
+            item.put("readingTime", dailyStats.getOrDefault(date, 0));
+            list.add(item);
+        }
+    
+        return list;
+    }
+
+    private List<Map<String, Object>> getYearTimelineData(Integer userId) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusMonths(11).withDayOfMonth(1);
+    
+        List<Map<String, Object>> list = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    
+        List<Object[]> monthlyData = readingRecordRepository.findMonthlyStatsByUserIdAndDateRange(
+                userId, startDate, endDate);
+    
+        Map<String, Integer> monthlyStats = new HashMap<>();
+        for (Object[] data : monthlyData) {
+            String month = (String) data[0];
+            Integer readingTime = ((Number) data[1]).intValue();
+            monthlyStats.put(month, readingTime);
+        }
+    
+        // 构建12个月数据
+        for (int i = 11; i >= 0; i--) {
+            YearMonth month = YearMonth.from(endDate.minusMonths(i));
+            Map<String, Object> item = new HashMap<>();
+            item.put("date", month.format(formatter));
+            item.put("readingTime", monthlyStats.getOrDefault(month.format(formatter), 0));
+            list.add(item);
+        }
+    
+        return list;
+    }
+
+    private List<Map<String, Object>> getTotalTimelineData(Integer userId) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    
+        // 获取所有年份的数据
+        List<Object[]> yearlyData = readingRecordRepository.findYearlyStatsByUserId(userId);
+    
+        for (Object[] data : yearlyData) {
+            Integer year = (Integer) data[0];
+            Integer readingTime = ((Number) data[1]).intValue();
+        
+            Map<String, Object> item = new HashMap<>();
+            item.put("date", year + "-01-01"); // 用年初日期表示年份
+            item.put("readingTime", readingTime);
+            list.add(item);
+        }   
+    
+        return list;
     }
 }

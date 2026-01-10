@@ -30,6 +30,32 @@ public class LikeEntity {
 
     @Column(name = "user_id", nullable = false)
     private Integer userId; 
+
+    @Column(name = "target_type")
+    private String targetType;
+
+    @Transient
+    private Integer targetId;
+
+    // 业务方法：获取目标ID
+    public Integer getTargetId() {
+        if (postId != null) {
+            return postId;
+        } else if (commentId != null) {
+            return commentId;
+        }
+        return null;
+    }
+    
+    // 业务方法：获取目标类型
+    public String getTargetType() {
+        if (postId != null) {
+            return "post";
+        } else if (commentId != null) {
+            return "comment";
+        }
+        return null;
+    }
     
     @CreatedDate
     private LocalDateTime createdAt;

@@ -2,7 +2,6 @@ package com.weread.controller.community;
 
 import com.weread.common.ApiResponse;
 import com.weread.dto.response.community.TopicListResponse;
-import com.weread.entity.user.UserEntity;
 import com.weread.service.community.TopicService;
 import com.weread.service.community.PostService;
 import com.weread.vo.community.HotTopicVO;
@@ -58,11 +57,10 @@ public class TopicController {
     @GetMapping("/{topicId}")
     public ApiResponse<TopicDetailVO> getTopicDetail(
             @PathVariable Integer topicId,
-            @AuthenticationPrincipal UserEntity loginUser) {
+            @AuthenticationPrincipal Integer currentUserId) {
     
         try {
             // 获取当前用户ID（如果已登录）
-            Integer currentUserId = loginUser != null ? loginUser.getUserId() : null;
         
             // 调用Service
             TopicDetailVO data = topicService.getTopicDetail(topicId, currentUserId);
@@ -82,11 +80,11 @@ public class TopicController {
             @RequestParam String sort,
             @RequestParam(required = false) Integer cursor,  // 改为cursor参数
             @RequestParam(required = false, defaultValue = "20") Integer limit,
-            @AuthenticationPrincipal UserEntity loginUser) {
+            @AuthenticationPrincipal Integer userId) {
     
         try {
             // 检查登录状态
-            if (loginUser == null) {
+            if (userId == null) {
                 return ApiResponse.error(401, "请先登录");
             }
         
@@ -97,7 +95,7 @@ public class TopicController {
             if (limit < 1 || limit > 100) limit = 20;
         
             // 获取当前用户ID
-            Integer currentUserId = loginUser.getUserId();
+            Integer currentUserId = userId;
         
             // 调用Service（使用cursor）
             List<TopicPostVO> data = postService.getTopicPosts(topicId, sort, cursor, limit, currentUserId);

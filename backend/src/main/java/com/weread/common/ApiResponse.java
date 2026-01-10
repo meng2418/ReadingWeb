@@ -1,6 +1,5 @@
 package com.weread.common;
 
-import com.weread.dto.response.user.FollowingResponse;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

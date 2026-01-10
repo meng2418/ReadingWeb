@@ -17,11 +17,16 @@ import com.weread.dto.auth.ResetPasswordDTO;
 import com.weread.dto.auth.LoginResultVO;
 import com.weread.service.AuthService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
     private final AuthService authService;
+    // 添加这行
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     public AuthController(AuthService authService) {
         this.authService = authService;
@@ -48,12 +53,31 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<LoginResultVO> login(@RequestBody LoginRequest request) {
-        LoginDTO dto = new LoginDTO();
-        dto.setPhone(request.getPhone());
-        dto.setPassword(request.getPassword());
-
-        LoginResultVO result = authService.phonePasswordLogin(dto);
-        return ApiResponse.ok(result);
+        log.info("=== 收到登录请求 ===");
+        log.info("请求参数: phone={}, password长度={}, type={}", 
+            request.getPhone(), 
+            request.getPassword() != null ? request.getPassword().length() : 0,
+            request.getType());
+        log.info("完整请求体: {}", request);
+        
+        try {
+            LoginDTO dto = new LoginDTO();
+            dto.setPhone(request.getPhone());
+            dto.setPassword(request.getPassword());
+            log.info("转换后的DTO: phone={}, password={}", dto.getPhone(), 
+                dto.getPassword() != null ? "***长度:" + dto.getPassword().length() : "null");
+            
+            LoginResultVO result = authService.phonePasswordLogin(dto);
+            log.info("登录成功! token={}, userId={}", 
+                result.getToken() != null ? "有token" : "无token", 
+                result.getUser().getUserId());
+            
+            return ApiResponse.ok(result);
+            
+        } catch (Exception e) {
+            log.error("登录失败!", e);
+            return ApiResponse.error(400, "登录失败: " + e.getMessage());
+        }
     }
 
     @PostMapping("/sms-login")

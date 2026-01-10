@@ -27,10 +27,10 @@ public class UserEntity {
     private String password;
 
     @Column(name = "avatar", length = 255)
-    private String avatar;
+    private String avatar = "../../../../../data/pictures/default_avatar.jpg";
 
     @Column(name = "bio", length = 255)
-    private String bio;
+    private String bio = "这个人很懒，什么都没有写";
 
     @Column(name = "is_member", nullable = false)
     private Boolean isMember = false;
@@ -59,8 +59,10 @@ public class UserEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public Object getMembershipExpireAt() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMembershipExpireAt'");
-    }
+    @Column(name = "last_login_time")
+    private LocalDateTime lastLoginTime;
+
+    @Column(name = "membership_expire_at")
+    private LocalDateTime membershipExpireAt;
+
 }

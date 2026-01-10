@@ -18,7 +18,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -42,9 +41,9 @@ public class BookshelfServiceImplTest {
     private BookshelfServiceImpl bookshelfService;
 
     // ��������
-    private final Long userId = 1L;
+    private final Integer userId = 1;
     private final Integer bookId = 1001;
-    private final Long authorId = 2001L;
+    private final Integer authorId = 2001;
 
     // ====================== ���� addBookToShelf ���� ======================
     @Test
@@ -63,11 +62,11 @@ public class BookshelfServiceImplTest {
 
         AuthorEntity mockAuthor = new AuthorEntity();
         mockAuthor.setAuthorId(authorId);
-        mockAuthor.setName("��������");
+        mockAuthor.setAuthorName("��������");
 
         when(bookRepository.findById(bookId)).thenReturn(Optional.of(mockBook));
         when(bookshelfRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.empty()); // �鼮�������
-        when(authorRepository.findById(authorId)).thenReturn(Optional.of(mockAuthor));
+        when(authorRepository.findByAuthorId(authorId)).thenReturn(Optional.of(mockAuthor));
         when(bookshelfRepository.save(any(BookshelfEntity.class))).thenAnswer(invocation -> {
             BookshelfEntity entity = invocation.getArgument(0);
             entity.setBookshelfId(1); // ģ������ID
@@ -95,7 +94,7 @@ public class BookshelfServiceImplTest {
         verify(bookshelfRepository, times(1)).findByUserIdAndBookId(userId, bookId);
         verify(bookshelfRepository, times(1)).save(any());
         verify(progressRepository, times(1)).save(any());
-        verify(authorRepository, times(1)).findById(authorId);
+        verify(authorRepository, times(1)).findByAuthorId(authorId);
     }
 
     @Test
@@ -351,7 +350,7 @@ public class BookshelfServiceImplTest {
 
         AuthorEntity author = new AuthorEntity();
         author.setAuthorId(authorId);
-        author.setName("��������");
+        author.setAuthorName("��������");
 
         ReadingProgressEntity progress = new ReadingProgressEntity();
         progress.setChapterId(3);
@@ -360,7 +359,7 @@ public class BookshelfServiceImplTest {
 
         when(bookshelfRepository.findByUserIdAndStatus(userId, "reading")).thenReturn(List.of(shelf1));
         when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
-        when(authorRepository.findById(authorId)).thenReturn(Optional.of(author));
+        when(authorRepository.findByAuthorId(authorId)).thenReturn(Optional.of(author));
         when(progressRepository.findByUserIdAndBookId(userId, bookId)).thenReturn(Optional.of(progress));
 
         // 3. ִ�з���
@@ -408,8 +407,8 @@ public class BookshelfServiceImplTest {
         when(bookshelfRepository.findByUserId(userId)).thenReturn(List.of(shelf1, shelf2));
         when(bookRepository.findById(bookId)).thenReturn(Optional.of(book1));
         when(bookRepository.findById(1002)).thenReturn(Optional.of(book2));
-        when(authorRepository.findById(authorId)).thenReturn(Optional.of(new AuthorEntity())); // ƥ�� authorId=2001
-        when(progressRepository.findByUserIdAndBookId(anyLong(), any(Integer.class)))
+        when(authorRepository.findByAuthorId(authorId)).thenReturn(Optional.of(new AuthorEntity())); // ƥ�� authorId=2001
+        when(progressRepository.findByUserIdAndBookId((int) anyLong(), any(Integer.class)))
         .thenReturn(Optional.of(new ReadingProgressEntity()));
 
 

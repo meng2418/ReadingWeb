@@ -26,7 +26,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public BookAddVO addBookToShelf(BookAddDTO dto, Long userId) {
+    public BookAddVO addBookToShelf(BookAddDTO dto, Integer userId) {
         // 1. 校验是否已加入书架（先检查书架，避免不必要的图书查询）
         Integer bookId = dto.getBookId();
         if (bookshelfRepository.findByUserIdAndBookId(userId, bookId).isPresent()) {
@@ -51,19 +51,19 @@ public class BookshelfServiceImpl implements BookshelfService {
         progressRepository.save(progressEntity);
 
         // 5. 查询作者信息
-        Long authorId = book.getAuthorId();
+        Integer authorId = book.getAuthorId();
         if (authorId == null) {
             throw new RuntimeException("图书作者信息缺失");
         }
 
-        AuthorEntity author = authorRepository.findById(authorId)
+        AuthorEntity author = authorRepository.findByAuthorId(authorId)
                 .orElseThrow(() -> new RuntimeException("作者信息不存在"));
 
         // 6. 封装返回值
         BookAddVO vo = new BookAddVO();
         vo.setBookId(book.getBookId());
         vo.setTitle(book.getTitle());
-        vo.setAuthor(author.getName());
+        vo.setAuthor(author.getAuthorName());
         vo.setCoverUrl(book.getCover());
         vo.setStatus(dto.getStatus());
         vo.setAddedAt(shelfEntity.getAddedAt());
@@ -73,7 +73,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public String removeBookFromShelf(Integer bookId, Long userId) {
+    public String removeBookFromShelf(Integer bookId, Integer userId) {
         // 1. 校验图书是否在书架中
         BookshelfEntity shelfEntity = bookshelfRepository.findByUserIdAndBookId(userId, bookId)
                 .orElseThrow(() -> new RuntimeException("图书不在书架中，无法移除"));
@@ -90,7 +90,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId) {
+    public BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Integer userId) {
         // 1. 校验图书是否在书架中
         bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId())
                 .orElseThrow(() -> new RuntimeException("图书不在书架中"));
@@ -121,7 +121,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId) {
+    public ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Integer userId) {
         // 1. 校验图书是否在书架中
         if (bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId()).isEmpty()) {
             throw new RuntimeException("图书不在书架中，无法更新进度");
@@ -164,7 +164,7 @@ public class BookshelfServiceImpl implements BookshelfService {
     }
 
     @Override
-    public List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId) {
+    public List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Integer userId) {
         // 1. 查询书架记录，可按状态过滤
         List<BookshelfEntity> shelfEntities;
 
@@ -182,12 +182,12 @@ public class BookshelfServiceImpl implements BookshelfService {
                     .orElseThrow(() -> new RuntimeException("图书不存在: " + bookId));
 
             // === 获取作者信息 ===
-            Long authorId = book.getAuthorId();
+            Integer authorId = book.getAuthorId();
             if (authorId == null) {
                 throw new RuntimeException("图书缺少作者字段：" + bookId);
             }
 
-            AuthorEntity author = authorRepository.findById(authorId)
+            AuthorEntity author = authorRepository.findByAuthorId(authorId)
                     .orElseThrow(() -> new RuntimeException("作者不存在：" + authorId));
 
             // === 获取阅读进度 ===
@@ -199,7 +199,7 @@ public class BookshelfServiceImpl implements BookshelfService {
             BookShelfVO vo = new BookShelfVO();
             vo.setBookId(book.getBookId());
             vo.setTitle(book.getTitle());
-            vo.setAuthor(author.getName());
+            vo.setAuthor(author.getAuthorName());
             vo.setCoverUrl(book.getCover());
             vo.setStatus(shelf.getStatus());
             vo.setChapterId(progress.getChapterId());

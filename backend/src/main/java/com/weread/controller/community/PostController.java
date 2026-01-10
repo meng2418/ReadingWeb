@@ -3,13 +3,14 @@ package com.weread.controller.community;
 
 // 添加导入
 import com.weread.dto.community.PublishPostRequestDTO;
+import com.weread.dto.community.RelatedBookDTO;
 import com.weread.dto.community.TopicSearchResponseDTO;
 import com.weread.service.community.CommentService;
 import com.weread.service.community.LikeService;
 import com.weread.service.community.PostService;
 import com.weread.vo.community.PostVO;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -24,16 +25,18 @@ import com.weread.dto.community.PostCreationDTO;
 import com.weread.dto.community.PostDeleteResponseDTO;
 import com.weread.dto.community.PostSquareDTO;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,7 +60,7 @@ public class PostController {
             @RequestParam String type,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int limit,
-            @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
+            @AuthenticationPrincipal Integer currentUserId) {
     
         try {
             // 参数验证
@@ -82,23 +85,36 @@ public class PostController {
 
     /**
      * POST /posts - 发布帖子
-     * 接口文档：使用 PublishPostRequest
      */
     @PostMapping
-    public ResponseEntity<PostVO> createPost(
-            @RequestAttribute(value = "userId", required = true) Integer userId,
+    public ResponseEntity<Map<String, Object>> createPost(
+            @AuthenticationPrincipal Integer userId,
             @Valid @RequestBody PublishPostRequestDTO dto) {
+    
+        try {
+            // 将 PublishPostRequestDTO 转换为 PostCreationDTO
+            PostCreationDTO creationDTO = new PostCreationDTO();
+            creationDTO.setTitle(dto.getTitle());
+            creationDTO.setContent(dto.getContent());
+            creationDTO.setBookIds(dto.getBookIds());
+            creationDTO.setTopics(dto.getTopics());
         
-        // 将 PublishPostRequestDTO 转换为 PostCreationDTO
-        PostCreationDTO creationDTO = new PostCreationDTO();
-        creationDTO.setTitle(dto.getTitle());
-        creationDTO.setContent(dto.getContent());
-        creationDTO.setBookIds(dto.getBookIds());
-        creationDTO.setTopics(dto.getTopics());
-        creationDTO.setPublishLocation(dto.getPublishLocation());
+            PostVO newPost = postService.createPost(creationDTO, userId);
         
-        PostVO newPost = postService.createPost(creationDTO, userId);
-        return new ResponseEntity<>(newPost, HttpStatus.CREATED);
+            // 构建统一响应格式
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 201);
+            response.put("message", "success");
+            response.put("data", newPost);
+        
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "发布帖子失败: " + e.getMessage());
+            errorResponse.put("data", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 
     /**
@@ -118,26 +134,32 @@ public class PostController {
      * 接口文档：只能删除自己的帖子
      */
     @DeleteMapping("/{postId}")
-    public ResponseEntity<PostDeleteResponseDTO> deletePost(
+    public ResponseEntity<ApiResponse<PostDeleteResponseDTO>> deletePost(
             @PathVariable Integer postId,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
+    
+        try {
+            boolean deleted = postService.deletePost(postId, userId);
         
-        // 这里需要调用删除服务
-        // 由于PostService没有删除方法，需要添加
-        boolean deleted = postService.deletePost(postId, userId);
+            if (!deleted) {
+                return ResponseEntity.status(403)
+                    .body(ApiResponse.error(403, "无权限删除此帖子或帖子不存在"));
+            }
         
-        if (!deleted) {
-            return ResponseEntity.status(403).body(
-                new PostDeleteResponseDTO(false, "无权限删除此帖子或帖子不存在", postId, null, null)
-            );
+            // 获取剩余帖子数
+            Integer remainingCount = postService.getUserPostCount(userId);
+        
+            // 构建响应数据
+            PostDeleteResponseDTO responseData = new PostDeleteResponseDTO();
+            responseData.setDeletedPostId(postId);
+            responseData.setRemainingPostCount(remainingCount);
+        
+            return ResponseEntity.ok(ApiResponse.ok(responseData));
+        
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(ApiResponse.error(500, "删除帖子失败: " + e.getMessage()));
         }
-        
-        // 获取剩余帖子数（需要实现）
-        Integer remainingCount = postService.getUserPostCount(userId);
-        
-        return ResponseEntity.ok(
-            new PostDeleteResponseDTO(true, "删除成功", postId, remainingCount, null)
-        );
     }
 
     /**
@@ -146,7 +168,7 @@ public class PostController {
     @GetMapping("/search/books")
     public ResponseEntity<ApiResponse<BookSearchResponseDTO>> searchBooks(
             @RequestParam String keyword,
-            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer cursor,
             @RequestParam(defaultValue = "20") int limit) {
         
         try {
@@ -166,7 +188,7 @@ public class PostController {
     @GetMapping("/search/topics")
     public ResponseEntity<ApiResponse<TopicSearchResponseDTO>> searchTopics(
             @RequestParam String keyword,
-            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer cursor,
             @RequestParam(defaultValue = "20") int limit) {
         
         try {
@@ -186,7 +208,7 @@ public class PostController {
     @PostMapping("/{postId}/like")
     public ResponseEntity<ApiResponse<LikeResponseDTO>> likePost(
             @PathVariable Integer postId,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
             LikeResponseDTO result = likeService.togglePostLike(postId, userId);
@@ -205,7 +227,7 @@ public class PostController {
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<ApiResponse<LikeResponseDTO>> unlikePost(
             @PathVariable Integer postId,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
             // 这里直接调用 togglePostLike，因为逻辑相同
@@ -225,7 +247,7 @@ public class PostController {
     @GetMapping("/{postId}/likes/detailed")
     public ResponseEntity<ApiResponse<LikeDetailResponseDTO>> getPostLikeDetails(
             @PathVariable Integer postId,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
             LikeDetailResponseDTO result = likeService.getPostLikeDetails(postId, userId);
@@ -242,20 +264,27 @@ public class PostController {
      * GET /posts/{postId}/comments - 获取评论列表
      */
     @GetMapping("/{postId}/comments")
-    public ResponseEntity<ApiResponse<Page<CommentDTO>>> getComments(
+    public ResponseEntity<ApiResponse<List<CommentDTO>>> getComments(
             @PathVariable Integer postId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int limit,
-            @RequestAttribute(value = "userId", required = false) Integer currentUserId) {
-        
+            @AuthenticationPrincipal Integer currentUserId) {
+    
         try {
             Page<CommentDTO> result = commentService.getCommentsByPostId(postId, page, limit, currentUserId);
-            return ResponseEntity.ok(ApiResponse.ok(result));
+        
+            // 从Page中提取内容列表返回，而不是整个Page对象
+            List<CommentDTO> comments = result.getContent();
+        
+            // 或者如果你需要保留分页信息，可以创建自定义响应结构
+            return ResponseEntity.ok(ApiResponse.ok(comments));
         } catch (ResponseStatusException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(ApiResponse.error(e.getStatusCode().value(), e.getReason()));
+            return ResponseEntity.status(e.getStatusCode())
+                .body(ApiResponse.error(e.getStatusCode().value(), e.getReason()));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(ApiResponse.error(500, "获取评论列表失败"));
+            return ResponseEntity.status(500)
+                .body(ApiResponse.error(500, "获取评论列表失败"));
         }
     }
 
@@ -266,7 +295,7 @@ public class PostController {
     public ResponseEntity<ApiResponse<CommentResponseDTO>> createComment(
             @PathVariable Integer postId,
             @Valid @RequestBody CreateCommentRequestDTO request,
-            @RequestAttribute(value = "userId", required = true) Integer userId) {
+            @AuthenticationPrincipal Integer userId) {
         
         try {
             CommentResponseDTO result = commentService.createComment(postId, request, userId);
@@ -276,6 +305,24 @@ public class PostController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(ApiResponse.error(500, "发布评论失败"));
+        }
+    }
+
+    /**
+     * GET /posts/{postId}/related-books - 获取帖子相关书籍列表
+     */
+    @GetMapping("/{postId}/related-books")
+    public ResponseEntity<ApiResponse<List<RelatedBookDTO>>> getPostRelatedBooks(
+            @PathVariable Integer postId) {
+        
+        try {
+            List<RelatedBookDTO> books = postService.getPostRelatedBooks(postId);
+            return ResponseEntity.ok(ApiResponse.ok(books));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(ApiResponse.error(e.getStatusCode().value(), e.getReason()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "获取相关书籍失败"));
         }
     }
 }

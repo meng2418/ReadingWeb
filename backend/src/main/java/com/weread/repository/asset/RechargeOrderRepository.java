@@ -1,6 +1,9 @@
 package com.weread.repository.asset;
 
 import com.weread.entity.asset.RechargeOrderEntity;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -26,12 +29,8 @@ public interface RechargeOrderRepository extends JpaRepository<RechargeOrderEnti
     
     // 支付成功回调
     @Modifying
-    @Query("UPDATE RechargeOrderEntity o SET " +
-           "o.orderStatus = com.weread.entity.payment.RechargeOrderEntity.OrderStatus.PAID, " +
-           "o.transactionNo = :transactionNo, " +
-           "o.paidAt = :paidAt, " +
-           "o.updatedAt = CURRENT_TIMESTAMP " +
-           "WHERE o.orderNo = :orderNo AND o.orderStatus = com.weread.entity.payment.RechargeOrderEntity.OrderStatus.PENDING")
+    @Transactional
+    @Query("UPDATE RechargeOrderEntity o SET o.orderStatus = 'PAID', o.transactionNo = :transactionNo, o.paidAt = :paidAt, o.updatedAt = CURRENT_TIMESTAMP WHERE o.orderNo = :orderNo AND o.orderStatus = 'PENDING'")
     int markAsPaid(@Param("orderNo") String orderNo, 
                    @Param("transactionNo") String transactionNo,
                    @Param("paidAt") LocalDateTime paidAt);

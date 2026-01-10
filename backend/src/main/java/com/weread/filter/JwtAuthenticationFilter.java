@@ -44,9 +44,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         
+        final String requestURI = request.getRequestURI();
         log.info("=== JWT过滤器开始 ===");
-        log.info("请求URI: {}", request.getRequestURI());
+        log.info("请求URI: {}", requestURI);
         
+        // ⭐ 关键修改：跳过不需要认证的路径
+        if (shouldSkipAuthentication(requestURI)) {
+            log.info("跳过认证的路径: {}", requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 放行 OPTIONS 请求
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             log.info("OPTIONS 请求，直接放行");
@@ -60,23 +68,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 检查 Authorization 头
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("缺少或格式错误的 Authorization 头");
-            filterChain.doFilter(request, response);
-            return;
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"code\":401,\"message\":\"未授权访问\"}");
+            return;  // ⭐ 关键：这里要return，不能继续执行
         }
 
         final String jwt = authHeader.substring(7);
         log.info("JWT Token: {}...", jwt.length() > 20 ? jwt.substring(0, 20) : jwt);
         
-        // 修改这里：声明为 final 或 effectively final
-        final String phone;  // 添加 final
+        final String phone;
         
         try {
             // 从 Token 中提取手机号
-            phone = jwtUtil.extractPhone(jwt);  // 直接赋值
+            phone = jwtUtil.extractPhone(jwt);
             log.info("从Token提取的手机号: {}", phone);
         } catch (Exception e) {
             log.error("Token 解析失败: {}", e.getMessage());
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"code\":401,\"message\":\"Token无效\"}");
             return;
         }
 
@@ -100,7 +111,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // 使用 UserEntity 作为 principal
                     UsernamePasswordAuthenticationToken authToken = 
                         new UsernamePasswordAuthenticationToken(
-                            userEntity,  // 改为 UserEntity
+                            userEntity.getUserId(),  
                             null, 
                             userDetails.getAuthorities()
                         );
@@ -117,11 +128,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     
                 } else {
                     log.warn("Token 验证失败");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"code\":401,\"message\":\"Token验证失败\"}");
+                    return;
                 }
                 
             } catch (Exception e) {
                 log.error("加载用户失败: {}", e.getMessage());
                 e.printStackTrace();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"code\":401,\"message\":\"用户不存在\"}");
+                return;
             }
         } else {
             log.info("手机号为空或用户已认证");
@@ -129,5 +148,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         filterChain.doFilter(request, response);
         log.info("=== JWT过滤器结束 ===");
+    }
+    
+    // ⭐ 新增方法：判断是否需要跳过认证
+    private boolean shouldSkipAuthentication(String requestURI) {
+        // 这些路径不需要JWT认证
+        return requestURI.startsWith("/auth/") || 
+               requestURI.equals("/error") ||
+               requestURI.equals("/") ||
+               requestURI.startsWith("/swagger") ||
+               requestURI.startsWith("/v3/api-docs") ||
+               requestURI.startsWith("/webjars") ||
+               requestURI.startsWith("/actuator");
     }
 }

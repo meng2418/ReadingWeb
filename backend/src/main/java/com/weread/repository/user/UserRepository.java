@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.weread.entity.user.UserEntity;
 
+import jakarta.transaction.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -62,8 +64,13 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     
     // 扣减用户币数（需要确保余额充足）
     @Modifying
-    @Query("UPDATE UserEntity u SET u.coins = u.coins - :amount, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userOd = :userId AND u.coins >= :amount")
+    @Query("UPDATE UserEntity u SET u.coins = u.coins - :amount, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.coins >= :amount")
     int deductCoins(@Param("userId") Integer userId, @Param("amount") Integer amount);
-    boolean existsByUsername(String username);
-    void updateLastLoginTime(Integer userId, LocalDateTime now);    
+    boolean existsByUsername(String username);   
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserEntity u SET u.lastLoginTime = :lastLoginTime WHERE u.id = :userId")
+    void updateLastLoginTime(@Param("userId") Integer userId, 
+                            @Param("lastLoginTime") LocalDateTime lastLoginTime);
 }

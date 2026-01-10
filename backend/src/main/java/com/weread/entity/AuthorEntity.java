@@ -16,13 +16,13 @@ public class AuthorEntity {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment strategy
-    private Long authorId;
+    private Integer authorId;
 
     /**
      * Author's name (Unique, Not Null).
      */
     @Column(unique = true, nullable = false) // Unique and not null constraint
-    private String name;
+    private String authorName;
 
     /**
      * Author's biography (Optional, supports long text).

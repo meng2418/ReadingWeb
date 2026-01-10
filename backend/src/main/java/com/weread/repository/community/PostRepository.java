@@ -1,6 +1,5 @@
 package com.weread.repository.community;
 
-import com.weread.entity.BookEntity;
 import com.weread.entity.community.PostEntity;
 
 import org.springframework.data.domain.Page;
@@ -20,29 +19,38 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
     // 自定义方法：查找作者 ID 在列表中的帖子（用于 following 筛选）
     List<PostEntity> findByAuthorIdIn(List<Integer> authorIds);
 
-    Integer countTodayPostsByTopic(Integer topicId);
+    @Query("SELECT COUNT(DISTINCT p) FROM PostEntity p " +
+       "JOIN PostTopicEntity pt ON p.postId = pt.postId " +
+       "WHERE pt.topicId = :topicId " +
+       "AND DATE(p.createdAt) = CURRENT_DATE")
+        Integer countTodayPostsByTopic(@Param("topicId") Integer topicId);
 
-    List<PostEntity> findPostsByTopicAndSort(Integer topicId, String sort, Integer limit);
+    @Query("SELECT DISTINCT p FROM PostEntity p " +
+       "JOIN PostTopicEntity pt ON p.postId = pt.postId " +
+       "WHERE pt.topicId = :topicId " +
+       "ORDER BY " +
+       "CASE WHEN :sort = 'hot' THEN p.likesCount END DESC, " +
+       "CASE WHEN :sort = 'new' THEN p.createdAt END DESC")
+        List<PostEntity> findPostsByTopicAndSort(@Param("topicId") Integer topicId, 
+                                                 @Param("sort") String sort, 
+                                                 @Param("limit") Integer limit);
 
-    List<PostEntity> findPostsByTopicAndCursor(Integer topicId, String sort, Integer cursor, Integer limit,
-            Pageable pageable);
-
-    Integer countByUserId(Integer userId);
+    @Query("SELECT DISTINCT p FROM PostEntity p " +
+       "JOIN PostTopicEntity pt ON p.postId = pt.postId " +
+       "WHERE pt.topicId = :topicId " +
+       "AND (:cursorId IS NULL OR p.postId < :cursorId) " +
+       "ORDER BY " +
+       "CASE WHEN :sort = 'hot' THEN p.likesCount END DESC, " +
+       "CASE WHEN :sort = 'new' THEN p.createdAt END DESC")
+        List<PostEntity> findPostsByTopicAndCursor(@Param("topicId") Integer topicId,
+                                                   @Param("sort") String sort,
+                                                   @Param("cursorId") Integer cursorId,
+                                                   @Param("limit") Integer limit);
 
     Page<PostEntity> findByAuthorIdInAndStatus(List<Integer> followingIds, int i, Pageable pageable);
 
     Page<PostEntity> findByStatusOrderByCreatedAtDesc(int i, Pageable pageable);
 
-    /**
-     * 搜索书籍（按标题或作者）
-     */
-    @Query("SELECT DISTINCT b FROM BookEntity b " +
-           "LEFT JOIN b.author a " +
-           "WHERE (b.title LIKE %:keyword% OR " +
-           "       (a IS NOT NULL AND (a.name LIKE %:keyword% OR a.penName LIKE %:keyword%))) " +
-           "AND b.isPublished = true " +
-           "ORDER BY b.readCount DESC, b.createdAt DESC")
-    Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
 
     Page<PostEntity> findByAuthorIdInAndStatusOrderByCreatedAtDesc(List<Integer> followingIds, int i,
             Pageable pageable);
@@ -60,4 +68,74 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
      * 根据状态查询帖子（用于广场）
      */
     Page<PostEntity> findByStatusOrderByCreatedAtDesc(Integer status, Pageable pageable);
+
+    /**
+     * 根据作者ID和游标查询帖子（用于瀑布流）
+     */
+    @Query("SELECT p FROM PostEntity p " +
+           "WHERE p.authorId = :authorId " +
+           "AND (:cursorId IS NULL OR p.postId < :cursorId) " +
+           "AND p.status = 1 " +
+           "ORDER BY p.createdAt DESC")
+    List<PostEntity> findByAuthorIdAndPostIdLessThanOrderByCreatedAtDesc(
+            @Param("authorId") Integer authorId,
+            @Param("cursorId") Integer cursorId,
+            Pageable pageable);
+    
+    /**
+     * 根据作者ID查询帖子（第一页）
+     */
+    @Query("SELECT p FROM PostEntity p " +
+           "WHERE p.authorId = :authorId " +
+           "AND p.status = 1 " +
+           "ORDER BY p.createdAt DESC")
+    List<PostEntity> findByAuthorIdOrderByCreatedAtDesc(
+            @Param("authorId") Integer authorId,
+            Pageable pageable);
+    
+    /**
+     * 统计作者ID小于指定帖子ID的帖子数量
+     */
+    @Query("SELECT COUNT(p) FROM PostEntity p " +
+           "WHERE p.authorId = :authorId " +
+           "AND p.postId < :postId " +
+           "AND p.status = 1")
+    Long countByAuthorIdAndPostIdLessThan(
+            @Param("authorId") Integer authorId,
+            @Param("postId") Integer postId);
+    
+    /**
+     * 统计用户的帖子总数
+     */
+    @Query("SELECT COUNT(p) FROM PostEntity p WHERE p.authorId = :userId AND p.status = 1")
+    Integer countByUserId(@Param("userId") Integer userId);
+    
+    /**
+     * 统计用户帖子的总评论数
+     */
+    @Query("SELECT COALESCE(SUM(p.commentsCount), 0) FROM PostEntity p WHERE p.authorId = :userId AND p.status = 1")
+    Integer sumCommentsByUserId(@Param("userId") Integer userId);
+    
+    /**
+     * 统计用户帖子的总点赞数
+     */
+    @Query("SELECT COALESCE(SUM(p.likesCount), 0) FROM PostEntity p WHERE p.authorId = :userId AND p.status = 1")
+    Integer sumLikesByUserId(@Param("userId") Integer userId);
+
+    /**
+     * 统计用户帖子
+     */
+    @Query("SELECT p.postId FROM PostEntity p WHERE p.authorId = :userId")
+    List<Integer> findPostIdsByUserId(@Param("userId") Integer userId);
+
+    //我的帖子瀑布流
+    @Query("SELECT p FROM PostEntity p WHERE p.authorId = :userId ORDER BY p.createdAt DESC")
+    List<PostEntity> findUserPosts(@Param("userId") Integer userId, Pageable pageable);
+
+    //我的帖子瀑布流
+    @Query("SELECT p FROM PostEntity p WHERE p.authorId = :userId AND p.postId < :cursorId ORDER BY p.createdAt DESC")
+    List<PostEntity> findUserPostsAfterCursor(
+        @Param("userId") Integer userId,
+        @Param("cursorId") Integer cursorId,
+        Pageable pageable);
 }

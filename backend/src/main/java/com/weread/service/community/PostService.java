@@ -3,7 +3,9 @@ package com.weread.service.community;
 import com.weread.dto.community.BookSearchResponseDTO;
 import com.weread.dto.community.PostCreationDTO;
 import com.weread.dto.community.PostSquareDTO;
+import com.weread.dto.community.RelatedBookDTO;
 import com.weread.dto.community.TopicSearchResponseDTO;
+import com.weread.dto.community.UserPostsResponseDTO;
 import com.weread.vo.community.PostListVO;
 import com.weread.vo.community.PostVO;
 import com.weread.vo.community.TopicPostVO;
@@ -59,12 +61,22 @@ public interface PostService {
     /**
      * 搜索书籍
      */
-    BookSearchResponseDTO searchBooks(String keyword, String cursor, int limit);
+    BookSearchResponseDTO searchBooks(String keyword, Integer cursor, int limit);
     
     /**
      * 搜索话题
      */
-    TopicSearchResponseDTO searchTopics(String keyword, String cursor, int limit);
+    TopicSearchResponseDTO searchTopics(String keyword, Integer cursor, int limit);
 
     List<PostSquareDTO> getSquarePosts(int page, int limit, String mappedType, Integer currentUserId);
+
+    /**
+     * 获取帖子相关书籍列表
+     */
+    List<RelatedBookDTO> getPostRelatedBooks(Integer postId);
+    
+    /**
+     * 获取用户帖子瀑布流
+     */
+    UserPostsResponseDTO getUserPosts(Integer userId, String cursor, int limit);
 }

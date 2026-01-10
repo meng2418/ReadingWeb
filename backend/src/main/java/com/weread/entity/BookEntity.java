@@ -22,7 +22,7 @@ public class BookEntity {
 
     // 外键字段，用于数据插入和更新
     @Column(name = "author_id", nullable = false) 
-    private Long authorId;
+    private Integer authorId;
     
     // JPA 关联：只用于查询，不参与插入/更新
     @ManyToOne(fetch = FetchType.LAZY)
@@ -115,9 +115,33 @@ public class BookEntity {
     public String getCoverImage() {
         return cover;
     }
-    
+
+    @Transient
     public String getAuthorName() {
+        if (author != null) {
+            // 假设 AuthorEntity 有 getAuthorName() 方法
+            return author.getAuthorName();
+        }
+        return "未知作者";
+    }
+
+    public void setPrice(Object price2) {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAuthorName'");
+        throw new UnsupportedOperationException("Unimplemented method 'setPrice'");
+    }
+
+    public void setIsbn(Object isbn2) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setIsbn'");
+    }
+
+    public void setIsMemberOnly(Object isMemberOnly2) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setIsMemberOnly'");
+    }
+
+    public void setTopics(Object topics) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setTopics'");
     }
 }
