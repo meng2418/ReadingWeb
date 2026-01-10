@@ -50,4 +50,21 @@ public interface NoteService {
      * 获取某章节的所有公开笔记
      */
     List<NoteVO> getPublicChapterNotes(Integer chapterId);
+
+    /**
+     * 获取指定用户、指定书籍和章节的笔记列表
+     * @param userId 用户ID
+     * @param bookId 书籍ID
+     * @param chapterId 章节ID
+     * @return 章节笔记响应DTO列表
+     */
+    List<com.weread.dto.note.ChapterNoteResponseDTO> getChapterNotes(Long userId, Integer bookId, Integer chapterId);
+
+    /**
+     * 获取指定用户、指定书籍的所有笔记列表（全书笔记）
+     * @param userId 用户ID
+     * @param bookId 书籍ID
+     * @return 全书笔记响应DTO列表
+     */
+    List<com.weread.dto.note.BookNoteResponseDTO> getBookNotes(Long userId, Integer bookId);
 }

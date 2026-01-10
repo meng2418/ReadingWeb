@@ -26,5 +26,16 @@ public interface NoteRepository extends JpaRepository<NoteEntity, Long> {
      */
     List<NoteEntity> findByChapterIdOrderByCreatedAtDesc(Integer chapterId);
 
+    /**
+     * 查询指定用户、指定书籍和章节的笔记，按创建时间降序排列
+     */
+    List<NoteEntity> findByUserIdAndBookIdAndChapterIdOrderByCreatedAtDesc(
+            Long userId, Integer bookId, Integer chapterId);
+
+    /**
+     * 查询指定用户、指定书籍的所有笔记，按创建时间降序排列
+     */
+    List<NoteEntity> findByUserIdAndBookIdOrderByCreatedAtDesc(Long userId, Integer bookId);
+
     Integer countByUserId(Integer userId);
 }
