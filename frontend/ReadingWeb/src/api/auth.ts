@@ -1,3 +1,4 @@
+//api/auth.ts
 import request from '@/utils/request'
 import service from '@/utils/request'
 // 登录
