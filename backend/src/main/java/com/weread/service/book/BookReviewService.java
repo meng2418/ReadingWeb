@@ -1,6 +1,8 @@
 package com.weread.service.book;
 
 import com.weread.dto.book.BookReviewCreateDTO;
+import com.weread.dto.book.RecentBookReviewDTO;
+import com.weread.dto.book.UserBookReviewsResponseDTO;
 import com.weread.vo.book.BookReviewVO;
 import org.springframework.data.domain.Page;
 
@@ -18,8 +20,9 @@ public interface BookReviewService {
 
     /**
      * 删除书评（只能删除自己的）
+     * @return 删除后用户剩余的书评数量
      */
-    void deleteReview(Integer userId, Integer reviewId);
+    Integer deleteReview(Integer userId, Integer reviewId);
 
     /**
      * 获取书籍的书评列表
@@ -40,6 +43,16 @@ public interface BookReviewService {
      * 获取用户的书评列表（限制数量，用于个人中心）
      */
     List<BookReviewVO> getUserReviewsLimited(Integer userId, Integer limit);
+
+    /**
+     * 获取用户的书评瀑布流（游标分页）
+     */
+    UserBookReviewsResponseDTO getUserReviewsWithCursor(Integer userId, Integer cursor, Integer limit);
+    
+    /**
+     * 获取用户最新的书评列表（用于个人中心，返回RecentBookReviewDTO格式）
+     */
+    List<RecentBookReviewDTO> getUserRecentReviews(Integer userId, Integer limit);
     
     /**
      * 评分统计

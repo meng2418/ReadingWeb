@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 笔记控制器
  */
@@ -48,6 +51,38 @@ public class NoteController {
         // 显式确保code字段为200，符合枚举值规范（200、400、401）
         result.setCode(200);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    @DeleteMapping("/{noteId}")
+    @Operation(summary = "删除笔记", description = "只能删除自己的笔记")
+    public ResponseEntity<Result<Map<String, Object>>> deleteNote(
+            @RequestAttribute("userId") Integer userId,
+            @PathVariable Integer noteId) {
+        
+        try {
+            // 删除笔记
+            noteService.deleteNote(noteId.longValue(), userId.longValue());
+            
+            // 获取剩余笔记数
+            Integer remainingCount = noteService.getUserNoteCount(userId.longValue());
+            
+            // 构建响应数据
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("deletedNoteId", noteId);
+            responseData.put("remainingNoteCount", remainingCount);
+            
+            return ResponseEntity.ok(Result.success(responseData));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            // 处理权限错误或笔记不存在的情况
+            if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Result.fail("无权限删除此笔记"));
+            } else if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Result.fail("笔记不存在"));
+            }
+            throw e;
+        }
     }
 }
 

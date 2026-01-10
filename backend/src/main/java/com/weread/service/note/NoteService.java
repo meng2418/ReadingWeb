@@ -1,8 +1,10 @@
 package com.weread.service.note;
 
 import com.weread.dto.note.NoteResponseDTO;
+import com.weread.dto.note.UserNotesResponseDTO;
 import com.weread.entity.note.NoteEntity;
 import com.weread.vo.note.NoteVO;
+import com.weread.vo.user.HighlightVO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -47,6 +49,15 @@ public interface NoteService {
     Page<NoteVO> getUserNotes(Long userId, Pageable pageable);
 
     /**
+     * 游标分页查询用户的笔记瀑布流
+     * @param userId 用户ID
+     * @param cursor 游标（noteId），第一次请求为null
+     * @param limit 每页数量
+     * @return 笔记瀑布流响应DTO
+     */
+    UserNotesResponseDTO getUserNotesWithCursor(Long userId, Long cursor, Integer limit);
+
+    /**
      * 获取某章节的所有公开笔记
      */
     List<NoteVO> getPublicChapterNotes(Integer chapterId);
@@ -67,4 +78,25 @@ public interface NoteService {
      * @return 全书笔记响应DTO列表
      */
     List<com.weread.dto.note.BookNoteResponseDTO> getBookNotes(Long userId, Integer bookId);
+
+    /**
+     * 获取用户最新的6条笔记
+     * @param userId 用户ID
+     * @return 最新6条笔记DTO列表
+     */
+    List<com.weread.dto.note.BookNoteDTO> getUserRecentNotes6(Long userId);
+
+    /**
+     * 获取用户最新的3条划线
+     * @param userId 用户ID
+     * @return 最新3条划线VO列表
+     */
+    List<HighlightVO> getUserRecentHighlights3(Long userId);
+
+    /**
+     * 获取用户的笔记总数
+     * @param userId 用户ID
+     * @return 笔记总数
+     */
+    Integer getUserNoteCount(Long userId);
 }

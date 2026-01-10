@@ -1,10 +1,14 @@
 package com.weread.service.impl.note;
 
+import com.weread.dto.note.BookNoteDTO;
 import com.weread.dto.note.BookNoteResponseDTO;
 import com.weread.dto.note.ChapterNoteResponseDTO;
 import com.weread.dto.note.NoteResponseDTO;
+import com.weread.dto.note.UserNoteDTO;
+import com.weread.dto.note.UserNotesResponseDTO;
 import com.weread.entity.BookEntity;
 import com.weread.entity.note.NoteEntity;
+import com.weread.vo.user.HighlightVO;
 import com.weread.repository.BookRepository;
 import com.weread.repository.book.BookChapterRepository;
 import com.weread.repository.note.NoteRepository;
@@ -13,13 +17,17 @@ import com.weread.vo.note.NoteVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -259,5 +267,229 @@ public class NoteServiceImpl implements NoteService {
         dto.setNoteCreatedAt(entity.getCreatedAt());
         
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserNotesResponseDTO getUserNotesWithCursor(Long userId, Long cursor, Integer limit) {
+        // 参数验证和默认值设置
+        if (limit == null || limit <= 0) {
+            limit = 20; // 默认20条
+        }
+        if (limit > 50) {
+            limit = 50; // 最大50条
+        }
+
+        // 创建分页对象（limit + 1，用于判断是否有更多数据）
+        PageRequest pageable = PageRequest.of(0, limit + 1);
+
+        // 查询笔记列表
+        List<NoteEntity> notes;
+        if (cursor == null) {
+            // 第一页
+            notes = noteRepository.findUserNotesFirstPage(userId, pageable);
+        } else {
+            // 后续页
+            notes = noteRepository.findUserNotesByCursor(userId, cursor, pageable);
+        }
+
+        // 判断是否有更多数据
+        boolean hasMore = notes.size() > limit;
+        if (hasMore) {
+            notes = notes.subList(0, limit); // 只取前limit条
+        }
+
+        // 转换为DTO
+        List<UserNoteDTO> noteDTOs = notes.stream()
+                .map(this::convertToUserNoteDTO)
+                .collect(Collectors.toList());
+
+        // 计算nextCursor（如果有更多数据，使用最后一条笔记的noteId）
+        // 根据接口定义，nextCursor是必填字段，类型为string，不能为null
+        String nextCursor = "";
+        if (hasMore && !notes.isEmpty()) {
+            nextCursor = String.valueOf(notes.get(notes.size() - 1).getNoteId());
+        }
+
+        // 获取总笔记数
+        Long totalCount = noteRepository.countByUserId(userId);
+
+        // 构建响应DTO
+        UserNotesResponseDTO response = new UserNotesResponseDTO();
+        response.setNotes(noteDTOs);
+        response.setHasMore(hasMore);
+        response.setNextCursor(nextCursor); // 确保是string类型，不能为null
+        response.setNoteCount(totalCount != null ? totalCount.intValue() : 0);
+
+        return response;
+    }
+
+    /**
+     * 将NoteEntity转换为UserNoteDTO
+     */
+    private UserNoteDTO convertToUserNoteDTO(NoteEntity entity) {
+        UserNoteDTO dto = new UserNoteDTO();
+        dto.setMarkId(entity.getNoteId());
+        dto.setBookId(entity.getBookId());
+        
+        // 获取书籍信息
+        BookEntity book = bookRepository.findByBookId(entity.getBookId()).orElse(null);
+        if (book != null) {
+            dto.setBookTitle(book.getTitle());
+        } else {
+            dto.setBookTitle("");
+        }
+        
+        dto.setChapterId(entity.getChapterId());
+        
+        // 获取章节信息
+        if (entity.getChapterId() != null) {
+            chapterRepository.findById(entity.getChapterId())
+                    .ifPresent(chapter -> dto.setChapterName(chapter.getTitle()));
+        }
+        if (dto.getChapterName() == null) {
+            dto.setChapterName("");
+        }
+        
+        dto.setQuote(entity.getContent()); // content字段存储quote
+        dto.setStartIndex(0); // 数据库中没有此字段，使用默认值0
+        dto.setEndIndex(entity.getContent() != null ? entity.getContent().length() : 0);
+        dto.setPageNumber(entity.getPage() != null ? entity.getPage() : 0);
+        
+        // lineTypes从color字段解析（可能是单个值或逗号分隔的多个值）
+        List<String> lineTypes = new ArrayList<>();
+        if (entity.getColor() != null && !entity.getColor().isEmpty()) {
+            if (entity.getColor().contains(",")) {
+                lineTypes = Arrays.asList(entity.getColor().split(","));
+            } else {
+                lineTypes = Arrays.asList(entity.getColor());
+            }
+        } else {
+            lineTypes = Arrays.asList("marker"); // 默认值
+        }
+        dto.setLineTypes(lineTypes);
+        
+        // noteContent：数据库中没有单独存储，暂时使用空字符串
+        // 如果type是"thought"，可以考虑从content中提取，或者后续扩展数据库字段
+        dto.setNoteContent("");
+        
+        dto.setNoteCreatedAt(entity.getCreatedAt());
+        
+        // noteType：根据type字段判断
+        // "highlight" 对应 "highlight"，其他可能对应 "thought"
+        if ("highlight".equals(entity.getType())) {
+            dto.setNoteType("highlight");
+        } else {
+            dto.setNoteType("thought");
+        }
+        
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookNoteDTO> getUserRecentNotes6(Long userId) {
+        // 查询最新的6条笔记
+        PageRequest pageable = PageRequest.of(0, 6);
+        List<NoteEntity> notes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
+
+        // 转换为BookNoteDTO
+        return notes.stream()
+                .map(this::convertToBookNoteDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 将NoteEntity转换为BookNoteDTO
+     */
+    private BookNoteDTO convertToBookNoteDTO(NoteEntity entity) {
+        BookNoteDTO dto = new BookNoteDTO();
+        
+        // 获取书籍标题
+        BookEntity book = bookRepository.findByBookId(entity.getBookId()).orElse(null);
+        if (book != null) {
+            dto.setBookTitle(book.getTitle());
+        } else {
+            dto.setBookTitle("");
+        }
+        
+        // quote：从content字段获取
+        dto.setQuote(entity.getContent() != null ? entity.getContent() : "");
+        
+        // noteContent：目前数据库中没有单独存储想法内容，暂时使用空字符串
+        // 如果type是"thought"，可以考虑将content作为noteContent，但根据现有逻辑，content存储的是quote
+        dto.setNoteContent("");
+        
+        // noteDate：从createdAt格式化为字符串（格式：YYYY-MM-DD）
+        if (entity.getCreatedAt() != null) {
+            dto.setNoteDate(entity.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        } else {
+            dto.setNoteDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        }
+        
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HighlightVO> getUserRecentHighlights3(Long userId) {
+        // 查询最新的3条划线（type="highlight"且color为marker、wavy或underline）
+        PageRequest pageable = PageRequest.of(0, 3);
+        List<NoteEntity> notes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
+
+        // 过滤出划线类型（type="highlight"且color为marker、wavy或underline）
+        // 转换为HighlightVO
+        return notes.stream()
+                .filter(note -> "highlight".equals(note.getType()))
+                .filter(note -> {
+                    String color = note.getColor();
+                    return color != null && (color.equals("marker") || color.equals("wavy") || color.equals("underline"));
+                })
+                .limit(3) // 确保只返回3条
+                .map(this::convertToHighlightVO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 将NoteEntity转换为HighlightVO
+     */
+    private HighlightVO convertToHighlightVO(NoteEntity entity) {
+        HighlightVO vo = new HighlightVO();
+        
+        // 获取书籍标题
+        BookEntity book = bookRepository.findByBookId(entity.getBookId()).orElse(null);
+        if (book != null) {
+            vo.setBookTitle(book.getTitle());
+        } else {
+            vo.setBookTitle("");
+        }
+        
+        // 划线内容：从content字段获取
+        vo.setContent(entity.getContent() != null ? entity.getContent() : "");
+        
+        // 获取章节名称
+        if (entity.getChapterId() != null) {
+            chapterRepository.findById(entity.getChapterId())
+                    .ifPresent(chapter -> vo.setChapterName(chapter.getTitle()));
+        }
+        if (vo.getChapterName() == null) {
+            vo.setChapterName("");
+        }
+        
+        // 划线日期：从createdAt转换为LocalDate
+        if (entity.getCreatedAt() != null) {
+            vo.setHighlightDate(entity.getCreatedAt().toLocalDate());
+        } else {
+            vo.setHighlightDate(LocalDate.now());
+        }
+        
+        return vo;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getUserNoteCount(Long userId) {
+        Long count = noteRepository.countByUserId(userId);
+        return (count != null && count > 0) ? count.intValue() : 0;
     }
 }

@@ -437,7 +437,8 @@ public class ReadingServiceImpl implements ReadingService {
     
     private void updateNoteCountMilestone(Integer userId, Object data) {
         // 获取用户笔记总数
-        Integer totalNotes = noteRepository.countByUserId(userId);
+        Long totalNotesLong = noteRepository.countByUserId(userId.longValue());
+        Integer totalNotes = totalNotesLong != null ? totalNotesLong.intValue() : 0;
         
         // 里程碑阈值：50, 100, 150, 200, 300, 500, 1000...
         Integer[] milestones = {50, 100, 150, 200, 300, 500, 1000};

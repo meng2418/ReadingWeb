@@ -3,7 +3,10 @@ package com.weread.repository.note;
 import com.weread.entity.note.NoteEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -37,5 +40,45 @@ public interface NoteRepository extends JpaRepository<NoteEntity, Long> {
      */
     List<NoteEntity> findByUserIdAndBookIdOrderByCreatedAtDesc(Long userId, Integer bookId);
 
-    Integer countByUserId(Integer userId);
+    /**
+     * 游标分页查询用户笔记（第一页）
+     * 按创建时间降序排列，如果创建时间相同则按noteId降序排列
+     */
+    @Query("SELECT n FROM NoteEntity n WHERE n.userId = :userId " +
+           "ORDER BY n.createdAt DESC, n.noteId DESC")
+    List<NoteEntity> findUserNotesFirstPage(@Param("userId") Long userId, PageRequest pageable);
+
+    /**
+     * 游标分页查询用户笔记（后续页）
+     * cursor 是 noteId，查询创建时间小于等于指定noteId的笔记
+     */
+    @Query("SELECT n FROM NoteEntity n WHERE n.userId = :userId " +
+           "AND (n.createdAt < (SELECT n2.createdAt FROM NoteEntity n2 WHERE n2.noteId = :cursor) " +
+           "OR (n.createdAt = (SELECT n2.createdAt FROM NoteEntity n2 WHERE n2.noteId = :cursor) " +
+           "AND n.noteId < :cursor)) " +
+           "ORDER BY n.createdAt DESC, n.noteId DESC")
+    List<NoteEntity> findUserNotesByCursor(@Param("userId") Long userId, 
+                                           @Param("cursor") Long cursor, 
+                                           PageRequest pageable);
+
+    /**
+     * 检查指定游标后是否还有更多数据
+     */
+    @Query("SELECT COUNT(n) > 0 FROM NoteEntity n WHERE n.userId = :userId " +
+           "AND (n.createdAt < (SELECT n2.createdAt FROM NoteEntity n2 WHERE n2.noteId = :cursor) " +
+           "OR (n.createdAt = (SELECT n2.createdAt FROM NoteEntity n2 WHERE n2.noteId = :cursor) " +
+           "AND n.noteId < :cursor))")
+    boolean existsMoreAfterCursor(@Param("userId") Long userId, @Param("cursor") Long cursor);
+
+    /**
+     * 统计用户总笔记数
+     */
+    Long countByUserId(Long userId);
+
+    /**
+     * 查询用户最新的N条笔记，按创建时间降序排列
+     */
+    @Query("SELECT n FROM NoteEntity n WHERE n.userId = :userId " +
+           "ORDER BY n.createdAt DESC, n.noteId DESC")
+    List<NoteEntity> findTopNByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, PageRequest pageable);
 }
