@@ -158,6 +158,7 @@ import VipDialog from '@/components/user/VipDialog.vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useTheme, themes } from '@/composables/useTheme'
+import { updateProfile } from '@/api/profile'
 // 添加路由实例
 const router = useRouter()
 
@@ -168,6 +169,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'theme-change', theme: string): void
+  (e: 'profile-updated'): void
 }>()
 
 // 使用传入的主题，如果没有则创建新的主题实例
@@ -278,27 +280,151 @@ const getThemePreviewStyle = (theme: any) => {
 // 打开编辑
 const openEditDialog = () => {
   editForm.value = { ...props.user }
+  tempAvatarFile.value = null // 重置临时文件
   editDialogVisible.value = true
 }
 
-const handleEditConfirm = () => {
-  if (!editForm.value.nickname.trim()) {
-    ElMessage.warning('昵称不能为空')
+const handleEditConfirm = async () => {
+  // 验证昵称（只有当昵称改变时才验证）
+  const nicknameChanged = editForm.value.nickname !== props.user.nickname
+  
+  if (nicknameChanged) {
+    const trimmedNickname = editForm.value.nickname?.trim()
+    
+    if (!trimmedNickname) {
+      ElMessage.warning('昵称不能为空')
+      return
+    }
+
+    // 验证用户名格式（2-20个字符，只能包含中文、英文、数字、下划线和减号）
+    const usernameRegex = /^[\u4e00-\u9fa5a-zA-Z0-9\-_]+$/
+    if (!usernameRegex.test(trimmedNickname)) {
+      ElMessage.warning('用户名只能包含中文、英文、数字、下划线和减号')
+      return
+    }
+
+    if (trimmedNickname.length < 2 || trimmedNickname.length > 20) {
+      ElMessage.warning('用户名长度必须在2-20个字符之间')
+      return
+    }
+  }
+
+  // 验证个性签名长度
+  if (editForm.value.signature && editForm.value.signature.length > 200) {
+    ElMessage.warning('个性签名不能超过200个字符')
     return
   }
-  Object.assign(props.user, editForm.value)
 
-  // 处理头像上传和更新
-  if (tempAvatarFile.value) {
-    ElMessage.info('正在模拟上传新头像...')
-    // 演示代码：直接使用 DataURL 作为新的 Avatar URL
-    // 移除 .value
-    props.user.avatar = editForm.value.avatar
+  try {
+    // 构建请求参数，进行字段映射：nickname -> username, signature -> bio
+    const updateParams: {
+      username?: string
+      avatar?: string
+      bio?: string
+    } = {}
+
+    // 只有字段有变化时才添加到请求中
+    const nicknameChanged = editForm.value.nickname !== props.user.nickname
+    const signatureChanged = editForm.value.signature !== props.user.signature
+    const avatarChanged = editForm.value.avatar !== props.user.avatar
+
+    if (nicknameChanged) {
+      updateParams.username = editForm.value.nickname.trim()
+    }
+
+    if (signatureChanged) {
+      // 如果个性签名为空，传空字符串；否则传实际值
+      // 注意：如果用户清空了签名，我们也需要更新（传空字符串）
+      const trimmedSignature = editForm.value.signature?.trim() || ''
+      updateParams.bio = trimmedSignature
+    }
+
+    // 处理头像：如果头像发生了变化（可能是base64或URL）
+    if (avatarChanged) {
+      // 确保头像值不为空
+      if (editForm.value.avatar) {
+        // 检查是否是 base64 格式（以 data: 开头）
+        const isBase64 = editForm.value.avatar.startsWith('data:')
+        
+        if (isBase64) {
+          // base64 字符串可能很长，检查长度
+          // 数据库字段长度限制是 255，但压缩后的 base64 图片可能仍然超过这个长度
+          // 我们已经在前端进行了压缩，如果还是超过，说明需要调整数据库字段长度
+          const base64Length = editForm.value.avatar.length
+          console.log('准备上传的头像 base64 长度:', base64Length, '字符')
+          
+          // 如果超过 255，记录警告但继续上传
+          // 实际应用中，可能需要：
+          // 1. 调整数据库字段长度为 TEXT 或更大的 VARCHAR
+          // 2. 使用图片上传接口，存储文件后返回 URL
+          if (base64Length > 255) {
+            console.warn('头像 base64 长度超过数据库字段限制（255字符），可能需要调整数据库字段长度')
+          }
+        }
+        
+        updateParams.avatar = editForm.value.avatar
+      }
+    }
+
+    // 如果没有需要更新的字段，直接关闭
+    if (Object.keys(updateParams).length === 0) {
+      editDialogVisible.value = false
+      ElMessage.info('没有需要更新的内容')
+      return
+    }
+
+    console.log('准备更新资料，参数:', updateParams)
+
+    // 调用API更新资料
+    const updatedData = await updateProfile(updateParams)
+
+    // 更新本地用户数据
+    props.user.nickname = updatedData.username
+    props.user.signature = updatedData.bio
+    props.user.avatar = updatedData.avatar
+
+    // 清理状态
+    tempAvatarFile.value = null
+    editDialogVisible.value = false
+
+    // 通知父组件刷新数据
+    emit('profile-updated')
+
+    ElMessage.success('个人信息更新成功')
+  } catch (error: any) {
+    console.error('更新资料失败:', error)
+    console.error('错误详情:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+    })
+
+    // 尝试从响应中提取错误信息
+    let errorMessage = '更新资料失败，请稍后重试'
+    
+    if (error.response) {
+      const responseData = error.response.data
+      
+      // 如果是验证错误，尝试提取字段错误信息
+      if (responseData?.errors) {
+        const errors = responseData.errors
+        const errorMessages = Object.values(errors).flat() as string[]
+        errorMessage = errorMessages.join('; ') || errorMessage
+      } else if (responseData?.message) {
+        errorMessage = responseData.message
+      } else if (typeof responseData === 'string') {
+        errorMessage = responseData
+      } else if (error.response.status === 400) {
+        // 400 错误可能是验证失败
+        errorMessage = '数据验证失败，请检查输入内容是否符合要求'
+      }
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+
+    ElMessage.error(errorMessage)
   }
-  // 3. 清理状态并关闭
-  tempAvatarFile.value = null // 清理临时文件
-  ElMessage.success('信息更新成功')
-  editDialogVisible.value = false
 }
 // 触发文件上传
 
@@ -306,21 +432,169 @@ const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
+// 图片压缩函数（智能压缩，逐步降低质量直到满足长度要求）
+const compressImage = (
+  file: File,
+  maxWidth: number = 200,
+  maxHeight: number = 200,
+  initialQuality: number = 0.8,
+  maxBase64Length: number = 200 * 1024, // 200KB，留一些余量
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        // 计算压缩后的尺寸
+        let width = img.width
+        let height = img.height
+
+        // 计算缩放比例
+        const scale = Math.min(maxWidth / width, maxHeight / height, 1)
+        width = Math.round(width * scale)
+        height = Math.round(height * scale)
+
+        // 创建 canvas 进行压缩
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+
+        if (!ctx) {
+          reject(new Error('无法创建画布上下文'))
+          return
+        }
+
+        // 设置图片平滑处理
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+
+        // 绘制压缩后的图片
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // 尝试不同的质量级别，直到满足长度要求
+        const tryCompress = (quality: number): string | null => {
+          const base64 = canvas.toDataURL('image/jpeg', quality)
+          if (base64.length <= maxBase64Length) {
+            return base64
+          }
+          return null
+        }
+
+        // 从初始质量开始，逐步降低
+        let quality = initialQuality
+        let result: string | null = null
+        const qualitySteps = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+
+        for (const q of qualitySteps) {
+          result = tryCompress(q)
+          if (result) {
+            resolve(result)
+            return
+          }
+        }
+
+        // 如果还是太大，进一步缩小尺寸
+        if (!result) {
+          const smallerWidth = Math.round(width * 0.8)
+          const smallerHeight = Math.round(height * 0.8)
+          canvas.width = smallerWidth
+          canvas.height = smallerHeight
+          ctx.drawImage(img, 0, 0, smallerWidth, smallerHeight)
+          
+          // 再次尝试压缩
+          for (const q of [0.5, 0.4, 0.3, 0.2]) {
+            result = tryCompress(q)
+            if (result) {
+              resolve(result)
+              return
+            }
+          }
+        }
+
+        // 如果还是太大，使用最低质量和最小尺寸
+        const minWidth = 150
+        const minHeight = 150
+        const finalScale = Math.min(minWidth / width, minHeight / height, 1)
+        const finalWidth = Math.round(width * finalScale)
+        const finalHeight = Math.round(height * finalScale)
+        
+        canvas.width = finalWidth
+        canvas.height = finalHeight
+        ctx.drawImage(img, 0, 0, finalWidth, finalHeight)
+        
+        const finalBase64 = canvas.toDataURL('image/jpeg', 0.3)
+        resolve(finalBase64)
+      }
+      img.onerror = () => {
+        reject(new Error('图片加载失败'))
+      }
+      img.src = e.target?.result as string
+    }
+    reader.onerror = () => {
+      reject(new Error('文件读取失败'))
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 // 处理头像上传
-
-const handleAvatarUpload = (event: Event) => {
+const handleAvatarUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
-
   const file = target.files?.[0]
 
-  if (file) {
-    const reader = new FileReader()
+  if (!file) {
+    return
+  }
 
-    reader.onload = (e) => {
-      editForm.value.avatar = e.target?.result as string
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('请选择图片文件')
+    return
+  }
+
+  // 验证文件大小（限制为10MB，压缩后会变小）
+  const maxSize = 10 * 1024 * 1024 // 10MB
+  if (file.size > maxSize) {
+    ElMessage.warning('图片大小不能超过10MB')
+    return
+  }
+
+  try {
+    // 显示压缩提示
+    const loadingMessage = ElMessage({
+      message: '正在压缩图片...',
+      type: 'info',
+      duration: 0, // 不自动关闭
+    })
+
+    // 压缩图片（智能压缩，自动调整到合适大小）
+    // 目标：压缩到 200KB 以内（留一些余量给数据库字段限制）
+    const compressedBase64 = await compressImage(file, 200, 200, 0.8, 200 * 1024)
+
+    // 关闭加载提示
+    loadingMessage.close()
+
+    // 检查压缩后的 base64 长度
+    const base64Length = compressedBase64.length
+    console.log('压缩后的 base64 长度:', base64Length, '字符')
+
+    // 如果仍然超过数据库限制（255字符），给出警告但允许继续
+    // 注意：实际上 base64 图片很难压缩到 255 字符以内
+    // 这里我们压缩到 200KB，如果后端字段限制是 255，可能需要调整数据库字段长度
+    if (base64Length > 255) {
+      console.warn('压缩后的图片仍然超过数据库字段限制（255字符），实际长度:', base64Length)
+      // 仍然允许上传，让后端处理（可能需要调整数据库字段长度或使用图片上传接口）
     }
 
-    reader.readAsDataURL(file)
+    editForm.value.avatar = compressedBase64
+    ElMessage.success(`图片已压缩（${(base64Length / 1024).toFixed(1)}KB）`)
+
+    // 保存原始文件对象（如果需要）
+    tempAvatarFile.value = file
+  } catch (error: any) {
+    console.error('图片压缩失败:', error)
+    ElMessage.error('图片压缩失败: ' + (error.message || '未知错误'))
   }
 }
 // 打开外观抽屉

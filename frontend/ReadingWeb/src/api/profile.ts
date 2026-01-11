@@ -50,6 +50,57 @@ export const getProfileHome = async (): Promise<UserHomeData> => {
   }
 }
 
+// =========================
+// 更新用户资料
+// =========================
+export interface UpdateProfileParams {
+  username?: string
+  avatar?: string
+  bio?: string
+}
+
+export const updateProfile = async (params: UpdateProfileParams): Promise<UserHomeData> => {
+  const raw = unwrap(await request.put('/user/profile', params))
+  const rs = raw.readingStats ?? {}
+
+  return {
+    avatar: raw.avatar ?? '',
+    username: raw.username ?? '',
+    bio: raw.bio ?? '',
+    followingCount: raw.followingCount ?? 0,
+    followerCount: raw.followerCount ?? 0,
+    postCount: raw.postCount ?? 0,
+    experienceCardCount: raw.experienceCardCount ?? 0,
+    coinCount: raw.coinCount ?? 0,
+    isMember: raw.isMember ?? false,
+    memberExpireDays: raw.memberExpireDays ?? 0,
+
+    readingStats: {
+      weeklyReadingTime: rs.weeklyReadingTime ?? 0,
+      monthlyReadingTime: rs.monthlyReadingTime ?? 0,
+      yearlyReadingTime: rs.yearlyReadingTime ?? 0,
+      totalReadingTime: rs.totalReadingTime ?? 0,
+
+      weeklyBooksRead: rs.weeklyBooksRead ?? 0,
+      monthlyBooksRead: rs.monthlyBooksRead ?? 0,
+      yearlyBooksRead: rs.yearlyBooksRead ?? 0,
+      totalBooksRead: rs.totalBooksRead ?? 0,
+
+      weeklyBooksFinished: rs.weeklyBooksFinished ?? 0,
+      monthlyBooksFinished: rs.monthlyBooksFinished ?? 0,
+      yearlyBooksFinished: rs.yearlyBooksFinished ?? 0,
+      totalBooksFinished: rs.totalBooksFinishedCount ?? 0,
+
+      weeklyNoteCount: rs.weeklyNoteCount ?? 0,
+      monthlyNoteCount: rs.monthlyNoteCount ?? 0,
+      yearlyNoteCount: rs.yearlyNoteCount ?? 0,
+      totalNoteCount: rs.totalNoteCount ?? 0,
+    },
+
+    consecutiveReadingDays: raw.consecutiveReadingDays ?? 0,
+  }
+}
+
 /* =========================
  * 最近高亮
  * ========================= */

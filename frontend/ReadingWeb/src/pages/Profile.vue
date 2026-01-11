@@ -3,7 +3,12 @@
   <NavBar />
   <div class="profile-page" :style="cssVars">
     <section class="header-section">
-      <UserProfile :user="user" :theme="theme" @theme-change="handleThemeChange" />
+      <UserProfile
+        :user="user"
+        :theme="theme"
+        @theme-change="handleThemeChange"
+        @profile-updated="handleProfileUpdated"
+      />
     </section>
 
     <section class="main-section">
@@ -89,7 +94,8 @@ const thoughts = ref<any[]>([])
 const historyRecords = ref<any[]>([])
 const topBooks = ref<TopBook[]>([])
 const timelineData = ref<any>(null)
-onMounted(async () => {
+// 加载用户数据
+const loadUserData = async () => {
   const period = typeof route.query.tab === 'string' ? (route.query.tab as any) : 'week'
 
   const [
@@ -129,6 +135,16 @@ onMounted(async () => {
   historyRecords.value = historyRecordsData
   topBooks.value = topBooksData
   timelineData.value = timelineDataValue
+}
+
+// 处理资料更新事件
+const handleProfileUpdated = async () => {
+  // 重新加载用户数据
+  await loadUserData()
+}
+
+onMounted(async () => {
+  await loadUserData()
 })
 
 // 动态页面标题
