@@ -281,10 +281,10 @@ const goToNextChapter = () => {
   }
   
   const nextIndex = currentChapterIndex.value + 1
-  const nextChapter = chapters.value[nextIndex]
+    const nextChapter = chapters.value[nextIndex]
   
-  if (nextChapter) {
-    handleChapterSelect(nextChapter.id)
+    if (nextChapter) {
+      handleChapterSelect(nextChapter.id)
     // 滚动到顶部
     const article = document.querySelector('.reader-article')
     if (article) {
@@ -679,7 +679,7 @@ watch(
       // 章节ID改变时，确保目录已加载，然后加载新章节数据
       if (bookTOC.value.length === 0) {
         await loadBookTOC()
-      }
+    }
       await Promise.all([
         loadChapterContent(newChapterId),
         loadChapterNotes(newChapterId.toString()),

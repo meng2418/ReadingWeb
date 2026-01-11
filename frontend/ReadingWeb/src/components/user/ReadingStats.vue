@@ -118,7 +118,8 @@ function getRange() {
 
 .arrows .arrow {
   cursor: pointer;
-  background: #eaeaea;
+  background: var(--bg-gray, #eaeaea);
+  color: var(--text-main, #333);
   border-radius: 50%;
   width: 22px;
   height: 22px;
@@ -128,6 +129,12 @@ function getRange() {
   font-style: normal;
   font-size: 12px;
   margin-left: 6px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.arrows .arrow:hover {
+  background: var(--primary-green, #007c27);
+  color: #fff;
 }
 
 .stats-grid {
@@ -138,30 +145,35 @@ function getRange() {
 }
 
 .card {
-  background: #fff;
+  background: var(--card-bg, #fff);
   padding: 16px;
   border-radius: 12px;
-  border: 1px solid #eee;
+  border: 1px solid var(--border-color, #eee);
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .label {
   font-size: 14px;
-  color: #666;
+  color: var(--text-light, #666);
+  transition: color 0.3s ease;
 }
 
 .value {
   margin-top: 6px;
   font-size: 22px;
   font-weight: 600;
+  color: var(--text-main, #333);
+  transition: color 0.3s ease;
 }
 
 /* --- 新增：单位的样式，与 .label 保持一致 --- */
 .unit {
   font-size: 14px; /* 与 label 一致 */
-  color: #666; /* 与 label 一致 */
+  color: var(--text-light, #666); /* 与 label 一致 */
   font-weight: normal; /* 抵消 value 的粗体 */
   margin-left: 2px; /* 稍微拉开一点间距 */
+  transition: color 0.3s ease;
 }
 </style>

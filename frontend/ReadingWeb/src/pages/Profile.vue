@@ -1,9 +1,9 @@
 <!-- Profile.vue -->
 <template>
   <NavBar />
-  <div class="profile-page">
+  <div class="profile-page" :style="cssVars">
     <section class="header-section">
-      <UserProfile :user="user" />
+      <UserProfile :user="user" :theme="theme" @theme-change="handleThemeChange" />
     </section>
 
     <section class="main-section">
@@ -33,6 +33,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { TopBook } from '@/types/user'
 import { useTitle } from '@/stores/useTitle'
+import { useTheme } from '@/composables/useTheme'
 import NavBar from '@/components/layout/NavBar.vue'
 import UserProfile from '@/components/user/UserProfile.vue'
 import SidebarRankings from '@/components/user/SidebarRankings.vue'
@@ -50,6 +51,20 @@ import {
   getTopBooks,
   getReadingTimeline,
 } from '@/api/profile'
+
+// 主题管理
+const theme = useTheme()
+const cssVars = theme.cssVars
+
+// 处理主题变化事件
+const handleThemeChange = (newTheme: string) => {
+  theme.previewThemeValue.value = newTheme
+}
+
+// 初始化时应用主题
+onMounted(() => {
+  // 主题会在 useTheme 的 watch 中自动应用
+})
 
 const route = useRoute()
 const user = ref({

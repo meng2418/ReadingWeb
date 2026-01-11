@@ -125,13 +125,13 @@
             <h4>选择主题色</h4>
             <div class="theme-options">
               <div
-                v-for="theme in themes"
-                :key="theme.value"
-                :class="['theme-option', { active: previewThemeValue === theme.value }]"
-                @click="handleThemePreview(theme.value)"
+                v-for="themeOption in themes"
+                :key="themeOption.value"
+                :class="['theme-option', { active: theme.previewThemeValue.value === themeOption.value }]"
+                @click="handleThemePreview(themeOption.value)"
               >
-                <div :class="['theme-preview']" :style="getThemePreviewStyle(theme)"></div>
-                <span>{{ theme.label }}</span>
+                <div :class="['theme-preview']" :style="getThemePreviewStyle(themeOption)"></div>
+                <span>{{ themeOption.label }}</span>
               </div>
             </div>
           </div>
@@ -157,12 +157,21 @@ import RechargeDialog from '@/components/user/RechargeDialog.vue'
 import VipDialog from '@/components/user/VipDialog.vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { useTheme, themes } from '@/composables/useTheme'
 // 添加路由实例
 const router = useRouter()
 
 const props = defineProps<{
   user: any
+  theme?: ReturnType<typeof useTheme>
 }>()
+
+const emit = defineEmits<{
+  (e: 'theme-change', theme: string): void
+}>()
+
+// 使用传入的主题，如果没有则创建新的主题实例
+const theme = props.theme || useTheme()
 
 // 跳转到UserPosts页面的对应标签页 - 在新标签页打开
 const goToUserPosts = (tab: string) => {
@@ -242,86 +251,6 @@ const getVipButtonText = () => {
   }
   return '成为会员'
 }
-// --- 主题配置 ---
-const themes = [
-  {
-    value: 'classic-white',
-    label: '经典白',
-    colors: {
-      '--primary-green': '#007c27',
-      '--secondary-green': '#1ad6a1',
-      '--third-green': '#00a86b',
-      '--card-bg': '#ffffff',
-      '--text-main': '#1f2937',
-      '--text-light': '#9ca3af',
-      '--bg-gray': '#f3f4f6',
-      '--shadow': '0 4px 12px rgba(0, 0, 0, 0.05)',
-    },
-    // 用于抽屉里那个小圆块的预览样式
-    previewBg: '#ffffff',
-  },
-  {
-    value: 'silent-black',
-    label: '沉静黑',
-    colors: {
-      '--primary-green': '#d4d4d4',
-      '--secondary-green': '#404040',
-      '--third-green': '#595959',
-      '--card-bg': '#0a0a0a',
-      '--text-main': '#e0e0e0',
-      '--text-light': '#a0a0a0',
-      '--bg-gray': '#1a1a1a',
-      '--shadow': '0 4px 12px rgba(0, 0, 0, 0.5)',
-    },
-    previewBg: '#0a0a0a',
-  },
-  {
-    value: 'tranquil-green',
-    label: '恬静绿',
-    colors: {
-      '--primary-green': '#2d5a3d',
-      '--secondary-green': '#4a7c59',
-      '--third-green': '#6ba876',
-      '--card-bg': '#f0f5f3',
-      '--text-main': '#1a3a2a',
-      '--text-light': '#5c7a68',
-      '--bg-gray': '#e1e8e4',
-      '--shadow': '0 4px 12px rgba(45, 90, 61, 0.1)',
-    },
-    previewBg: 'linear-gradient(135deg, #f0f5f3 0%, #d5e6db 100%)',
-  },
-  {
-    value: 'gay-purple',
-    label: '基佬紫',
-    colors: {
-      '--primary-green': '#7c3aed',
-      '--secondary-green': '#a78bfa',
-      '--third-green': '#c4b5fd',
-      '--card-bg': '#f5f3ff',
-      '--text-main': '#4c1d95',
-      '--text-light': '#8b5cf6',
-      '--bg-gray': '#ede9fe',
-      '--shadow': '0 4px 12px rgba(124, 58, 237, 0.1)',
-    },
-    previewBg: 'linear-gradient(135deg, #f5f3ff 0%, #ddd6fe 100%)',
-  },
-  {
-    value: 'sweet-pink',
-    label: '甜美粉',
-    colors: {
-      '--primary-green': '#db2777',
-      '--secondary-green': '#f472b6',
-      '--third-green': '#fbcfe8',
-      '--card-bg': '#fff1f2',
-      '--text-main': '#881337',
-      '--text-light': '#be123c',
-      '--bg-gray': '#ffe4e6',
-      '--shadow': '0 4px 12px rgba(219, 39, 119, 0.1)',
-    },
-    previewBg: 'linear-gradient(135deg, #fff1f2 0%, #fecdd3 100%)',
-  },
-]
-
 // --- 状态管理 ---
 
 const editDialogVisible = ref(false)
@@ -330,16 +259,11 @@ const editForm = ref({ ...props.user })
 const fileInput = ref<HTMLInputElement | null>(null)
 const appearanceDrawerVisible = ref(false)
 
-// activeThemeValue: 当前真正生效、已保存的主题
-const activeThemeValue = ref(localStorage.getItem('theme') || 'classic-white')
-// previewThemeValue: 当前正在预览的主题（随点击变化，未保存时可回滚）
-const previewThemeValue = ref(activeThemeValue.value)
 // 新增：用于存储待上传的 File 对象
 const tempAvatarFile = ref<File | null>(null)
-const cssVars = computed(() => {
-  const current = themes.find((t) => t.value === previewThemeValue.value)
-  return current ? current.colors : {}
-})
+
+// 使用主题的 CSS 变量（仅用于当前组件）
+const cssVars = theme.cssVars
 
 // --- 方法 ---
 
@@ -402,28 +326,25 @@ const handleAvatarUpload = (event: Event) => {
 // 打开外观抽屉
 const openAppearanceDrawer = () => {
   // 打开时，预览值 = 当前生效值
-  previewThemeValue.value = activeThemeValue.value
+  theme.resetPreview()
   appearanceDrawerVisible.value = true
 }
 
 // 点击颜色块（预览）
 const handleThemePreview = (val: string) => {
-  previewThemeValue.value = val
-  // 不需要 applyTheme 函数，computed cssVars 会自动响应更新 DOM
+  theme.previewThemeValue.value = val
+  emit('theme-change', val)
 }
 
 // 关闭抽屉（取消）
 const closeAppearanceDrawer = () => {
-  if (previewThemeValue.value !== activeThemeValue.value) {
-    previewThemeValue.value = activeThemeValue.value
-  }
+  theme.resetPreview()
   appearanceDrawerVisible.value = false
 }
 
 // 保存设置
 const handleAppearanceSave = () => {
-  activeThemeValue.value = previewThemeValue.value
-  localStorage.setItem('theme', activeThemeValue.value)
+  theme.saveTheme()
   ElMessage.success('外观设置已保存')
   appearanceDrawerVisible.value = false
 }
