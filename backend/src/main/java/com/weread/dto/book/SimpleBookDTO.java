@@ -9,6 +9,7 @@ public class SimpleBookDTO {
     private String author;
     private String cover; // 对应文档字段
     private String readingStatus; // 对应文档字段
+    private String description; // 作品简介
 
     private float rating; // 评分
     private Integer readCount; // 阅读数

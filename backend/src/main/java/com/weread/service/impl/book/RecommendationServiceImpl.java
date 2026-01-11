@@ -58,8 +58,14 @@ public class RecommendationServiceImpl implements RecommendationService {
         SimpleBookDTO dto = new SimpleBookDTO();
         dto.setBookId(book.getBookId());
         dto.setBookTitle(book.getTitle());
-        dto.setAuthor(book.getAuthor().getAuthorName());
-        dto.setCover(book.getCoverImage());
+        dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
+        // 处理cover路径：如果是相对路径（如"1_cover.jpeg"），拼接为完整路径
+        String cover = book.getCoverImage();
+        if (cover != null && !cover.startsWith("/") && !cover.startsWith("http")) {
+            cover = "/static/images/" + cover;
+        }
+        dto.setCover(cover);
+        dto.setDescription(book.getDescription() != null ? book.getDescription() : "");
         dto.setReadingStatus("unread"); // 推荐书籍默认未读
         return dto;
     }

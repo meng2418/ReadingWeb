@@ -13,13 +13,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Bookshelf Module Controller.
@@ -164,6 +162,11 @@ public class BookshelfController {
         // 根据你的实际UserEntity类调整
         // 如果Principal是UserDetails，需要转换为你的实体类
         Object principal = authentication.getPrincipal();
+
+        // 处理 Integer 类型的 principal（JwtAuthenticationFilter 设置的）
+        if (principal instanceof Integer) {
+            return ((Integer) principal).longValue();
+        }
 
         if (principal instanceof com.weread.entity.user.UserEntity) {
             // 如果是UserEntity类型，直接获取用户ID

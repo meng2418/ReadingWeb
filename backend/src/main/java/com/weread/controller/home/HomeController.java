@@ -119,6 +119,11 @@ public class HomeController {
 
         Object principal = authentication.getPrincipal();
 
+        // 处理 Integer 类型的 principal（JwtAuthenticationFilter 设置的）
+        if (principal instanceof Integer) {
+            return ((Integer) principal).longValue();
+        }
+
         if (principal instanceof UserEntity) {
             UserEntity user = (UserEntity) principal;
             Object userIdObj = user.getUserId();

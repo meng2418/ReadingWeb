@@ -348,17 +348,14 @@ const handleEditConfirm = async () => {
         
         if (isBase64) {
           // base64 字符串可能很长，检查长度
-          // 数据库字段长度限制是 255，但压缩后的 base64 图片可能仍然超过这个长度
-          // 我们已经在前端进行了压缩，如果还是超过，说明需要调整数据库字段长度
+          // 数据库字段长度限制是 2000 字符
           const base64Length = editForm.value.avatar.length
           console.log('准备上传的头像 base64 长度:', base64Length, '字符')
           
-          // 如果超过 255，记录警告但继续上传
-          // 实际应用中，可能需要：
-          // 1. 调整数据库字段长度为 TEXT 或更大的 VARCHAR
-          // 2. 使用图片上传接口，存储文件后返回 URL
-          if (base64Length > 255) {
-            console.warn('头像 base64 长度超过数据库字段限制（255字符），可能需要调整数据库字段长度')
+          const maxLength = 2000
+          if (base64Length > maxLength) {
+            ElMessage.error(`头像图片过大（${(base64Length / 1024).toFixed(1)}KB），超过数据库限制（${maxLength}字符），请选择更小的图片`)
+            return
           }
         }
         
@@ -435,10 +432,10 @@ const triggerFileInput = () => {
 // 图片压缩函数（智能压缩，逐步降低质量直到满足长度要求）
 const compressImage = (
   file: File,
-  maxWidth: number = 200,
-  maxHeight: number = 200,
-  initialQuality: number = 0.8,
-  maxBase64Length: number = 200 * 1024, // 200KB，留一些余量
+  maxWidth: number = 150,
+  maxHeight: number = 150,
+  initialQuality: number = 0.7,
+  maxBase64Length: number = 1800, // 1800 字符，留一些余量（数据库限制是 2000）
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -512,18 +509,35 @@ const compressImage = (
           }
         }
 
-        // 如果还是太大，使用最低质量和最小尺寸
-        const minWidth = 150
-        const minHeight = 150
-        const finalScale = Math.min(minWidth / width, minHeight / height, 1)
-        const finalWidth = Math.round(width * finalScale)
-        const finalHeight = Math.round(height * finalScale)
+        // 如果还是太大，使用最低质量和更小的尺寸
+        let finalWidth = 120
+        let finalHeight = 120
+        const finalScale = Math.min(finalWidth / width, finalHeight / height, 1)
+        finalWidth = Math.round(width * finalScale)
+        finalHeight = Math.round(height * finalScale)
         
         canvas.width = finalWidth
         canvas.height = finalHeight
         ctx.drawImage(img, 0, 0, finalWidth, finalHeight)
         
-        const finalBase64 = canvas.toDataURL('image/jpeg', 0.3)
+        // 尝试不同的质量，确保不超过限制
+        for (const q of [0.3, 0.25, 0.2, 0.15, 0.1, 0.05]) {
+          const testBase64 = canvas.toDataURL('image/jpeg', q)
+          if (testBase64.length <= maxBase64Length) {
+            resolve(testBase64)
+            return
+          }
+        }
+        
+        // 如果还是太大，使用最小尺寸和最低质量
+        finalWidth = 100
+        finalHeight = 100
+        canvas.width = finalWidth
+        canvas.height = finalHeight
+        ctx.drawImage(img, 0, 0, finalWidth, finalHeight)
+        
+        const finalBase64 = canvas.toDataURL('image/jpeg', 0.1)
+        // 如果还是超过，至少返回一个结果（让后端处理或提示用户）
         resolve(finalBase64)
       }
       img.onerror = () => {
@@ -569,26 +583,51 @@ const handleAvatarUpload = async (event: Event) => {
     })
 
     // 压缩图片（智能压缩，自动调整到合适大小）
-    // 目标：压缩到 200KB 以内（留一些余量给数据库字段限制）
-    const compressedBase64 = await compressImage(file, 200, 200, 0.8, 200 * 1024)
+    // 目标：压缩到 1800 字符以内（数据库限制是 2000 字符）
+    const compressedBase64 = await compressImage(file, 150, 150, 0.7, 1800)
 
     // 关闭加载提示
     loadingMessage.close()
 
     // 检查压缩后的 base64 长度
-    const base64Length = compressedBase64.length
+    let base64Length = compressedBase64.length
     console.log('压缩后的 base64 长度:', base64Length, '字符')
 
-    // 如果仍然超过数据库限制（255字符），给出警告但允许继续
-    // 注意：实际上 base64 图片很难压缩到 255 字符以内
-    // 这里我们压缩到 200KB，如果后端字段限制是 255，可能需要调整数据库字段长度
-    if (base64Length > 255) {
-      console.warn('压缩后的图片仍然超过数据库字段限制（255字符），实际长度:', base64Length)
-      // 仍然允许上传，让后端处理（可能需要调整数据库字段长度或使用图片上传接口）
+    // 检查是否超过数据库限制（2000字符）
+    const maxLength = 2000
+    if (base64Length > maxLength) {
+      console.warn(`压缩后的图片仍然超过数据库字段限制（${maxLength}字符），尝试进一步压缩...`)
+      
+      // 尝试进一步压缩
+      try {
+        const furtherCompressed = await compressImage(file, 100, 100, 0.5, maxLength)
+        base64Length = furtherCompressed.length
+        console.log('进一步压缩后的 base64 长度:', base64Length, '字符')
+        
+        if (base64Length > maxLength) {
+          // 最后一次尝试：最小尺寸和最低质量
+          const finalCompressed = await compressImage(file, 80, 80, 0.3, maxLength)
+          base64Length = finalCompressed.length
+          console.log('最终压缩后的 base64 长度:', base64Length, '字符')
+          
+          if (base64Length > maxLength) {
+            ElMessage.error(`图片过大，无法压缩到 ${maxLength} 字符以内（当前: ${base64Length} 字符）。请选择更小的图片。`)
+            return
+          }
+          
+          editForm.value.avatar = finalCompressed
+        } else {
+          editForm.value.avatar = furtherCompressed
+        }
+      } catch (error) {
+        ElMessage.error('图片压缩失败，请选择更小的图片')
+        return
+      }
+    } else {
+      editForm.value.avatar = compressedBase64
     }
 
-    editForm.value.avatar = compressedBase64
-    ElMessage.success(`图片已压缩（${(base64Length / 1024).toFixed(1)}KB）`)
+    ElMessage.success(`图片已压缩（${(base64Length / 1024).toFixed(1)}KB，${base64Length} 字符）`)
 
     // 保存原始文件对象（如果需要）
     tempAvatarFile.value = file
