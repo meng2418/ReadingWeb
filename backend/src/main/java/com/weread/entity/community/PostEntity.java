@@ -1,8 +1,9 @@
 package com.weread.entity.community;
 
 import com.weread.entity.base.BaseEntity;
+import com.weread.entity.book.BookEntity;
 import com.weread.entity.user.UserEntity;
-import com.weread.entity.BookEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -60,11 +61,7 @@ public class PostEntity extends BaseEntity {
 
     // 关联书本
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "post_book_mapping",
-        joinColumns = @JoinColumn(name = "post_id"),
-        inverseJoinColumns = @JoinColumn(name = "book_id")
-    )
+    @JoinTable(name = "post_book_mapping", joinColumns = @JoinColumn(name = "post_id"), inverseJoinColumns = @JoinColumn(name = "book_id"))
     private List<BookEntity> relatedBooks;
 
     // 【添加】通过中间表关联 TopicEntity
@@ -80,12 +77,12 @@ public class PostEntity extends BaseEntity {
     // 软删除相关
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-    
+
     // 原有字段保持兼容
     public void setLikesCount(int likesCount) {
         this.likesCount = likesCount;
     }
-    
+
     public void setCommentsCount(int commentsCount) {
         this.commentsCount = commentsCount;
     }
@@ -95,57 +92,57 @@ public class PostEntity extends BaseEntity {
     public List<String> getTopics() {
         if (postTopics != null && !postTopics.isEmpty()) {
             return postTopics.stream()
-                .map(postTopic -> postTopic.getTopic() != null ? postTopic.getTopic().getTopicName() : null)
-                .filter(topicName -> topicName != null && !topicName.trim().isEmpty())
-                .collect(Collectors.toList());
+                    .map(postTopic -> postTopic.getTopic() != null ? postTopic.getTopic().getTopicName() : null)
+                    .filter(topicName -> topicName != null && !topicName.trim().isEmpty())
+                    .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
-    
+
     // 【添加】获取关联的 TopicEntity 列表
     @Transient
     public List<TopicEntity> getTopicEntities() {
         if (postTopics != null && !postTopics.isEmpty()) {
             return postTopics.stream()
-                .map(PostTopicEntity::getTopic)
-                .filter(topic -> topic != null)
-                .collect(Collectors.toList());
+                    .map(PostTopicEntity::getTopic)
+                    .filter(topic -> topic != null)
+                    .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
-    
+
     // 【修改】mentionedBooks 相关的方法
     @Transient
     public List<BookEntity> getMentionedBooks() {
         return relatedBooks != null ? relatedBooks : new ArrayList<>();
     }
-    
+
     // 【添加】接口文档需要的其他方法
     @Transient
     public String getAuthorName() {
         return user != null ? user.getUsername() : null;
     }
-    
+
     @Transient
     public String getAuthorAvatar() {
         return user != null ? user.getAvatar() : null;
     }
-    
+
     @Transient
     public LocalDateTime getPublishTime() {
         return getCreatedAt();
     }
-    
+
     @Transient
     public String getPostTitle() {
         return title;
     }
-    
+
     @Transient
     public Integer getCommentCount() {
         return commentsCount;
     }
-    
+
     @Transient
     public Integer getLikeCount() {
         return likesCount;

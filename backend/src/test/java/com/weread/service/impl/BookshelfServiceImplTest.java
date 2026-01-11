@@ -2,10 +2,20 @@ package com.weread.service.impl;
 
 import com.weread.dto.bookshelf.*;
 import com.weread.entity.*;
-import com.weread.repository.AuthorRepository;
-import com.weread.repository.BookRepository;
-import com.weread.repository.BookshelfRepository;
-import com.weread.repository.ReadingProgressRepository;
+import com.weread.entity.author.AuthorEntity;
+import com.weread.entity.book.BookEntity;
+import com.weread.entity.book.ReadingProgressEntity;
+import com.weread.entity.bookshelf.BookshelfEntity;
+import com.weread.repository.author.AuthorRepository;
+import com.weread.repository.book.BookRepository;
+import com.weread.repository.book.ReadingProgressRepository;
+import com.weread.repository.bookshelf.BookshelfRepository;
+import com.weread.service.impl.bookshelf.BookshelfServiceImpl;
+import com.weread.vo.bookshelf.BookAddVO;
+import com.weread.vo.bookshelf.BookShelfVO;
+import com.weread.vo.bookshelf.BookStatusVO;
+import com.weread.vo.bookshelf.ReadingProgressVO;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -410,8 +420,7 @@ public class BookshelfServiceImplTest {
         when(bookRepository.findById(1002)).thenReturn(Optional.of(book2));
         when(authorRepository.findById(authorId)).thenReturn(Optional.of(new AuthorEntity())); // ƥ�� authorId=2001
         when(progressRepository.findByUserIdAndBookId(anyLong(), any(Integer.class)))
-        .thenReturn(Optional.of(new ReadingProgressEntity()));
-
+                .thenReturn(Optional.of(new ReadingProgressEntity()));
 
         // 3. ִ�з���
         List<BookShelfVO> result = bookshelfService.getUserBooks(dto, userId);
@@ -435,5 +444,3 @@ public class BookshelfServiceImplTest {
         assertTrue(result.isEmpty());
     }
 }
-
-

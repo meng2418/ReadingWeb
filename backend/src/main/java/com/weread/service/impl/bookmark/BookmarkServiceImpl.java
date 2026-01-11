@@ -1,10 +1,10 @@
 package com.weread.service.impl.bookmark;
 
 import com.weread.dto.bookmark.BookmarkCreateDTO;
-import com.weread.entity.BookmarkEntity;
-import com.weread.repository.BookRepository;
-import com.weread.repository.BookmarkRepository;
-import com.weread.repository.book.BookChapterRepository;
+import com.weread.entity.note.BookmarkEntity;
+import com.weread.repository.book.ChapterRepository;
+import com.weread.repository.book.BookRepository;
+import com.weread.repository.note.BookmarkRepository;
 import com.weread.service.bookmark.BookmarkService;
 import com.weread.vo.bookmark.BookmarkVO;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final BookRepository bookRepository;
-    private final BookChapterRepository chapterRepository;
+    private final ChapterRepository chapterRepository;
 
     @Override
     @Transactional
@@ -98,4 +98,3 @@ public class BookmarkServiceImpl implements BookmarkService {
         return vo;
     }
 }
-

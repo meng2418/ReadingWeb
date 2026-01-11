@@ -2,7 +2,7 @@ package com.weread.entity.book;
 
 import com.weread.entity.base.BaseEntity;
 import com.weread.entity.user.UserEntity;
-import com.weread.entity.BookEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
@@ -11,7 +11,7 @@ import jakarta.persistence.*;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "user_book_access_info", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "book_id"})
+        @UniqueConstraint(columnNames = { "user_id", "book_id" })
 })
 public class UserBookAccessEntity extends BaseEntity {
 

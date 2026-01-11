@@ -3,7 +3,7 @@ package com.weread.service.book;
 import com.weread.dto.book.BookCreateDTO;
 import com.weread.dto.book.BookQueryDTO;
 import com.weread.dto.book.BookUpdateDTO;
-import com.weread.entity.BookEntity;
+import com.weread.entity.book.BookEntity;
 import com.weread.vo.book.AuthorWorkVO;
 import com.weread.vo.book.BookDetailVO;
 import com.weread.vo.book.BookListVO;
@@ -17,7 +17,7 @@ import java.util.List;
  * 书籍服务接口
  */
 public interface BookService {
-    
+
     /**
      * 将 BookEntity 转换为用于展示的 BookSummaryVO
      */
@@ -40,6 +40,7 @@ public interface BookService {
 
     /**
      * 根据ID获取书籍详情（包含用户相关状态）
+     * 
      * @param bookId 书籍ID
      * @param userId 用户ID（可为null，如果为null则不查询用户相关状态）
      */
@@ -77,6 +78,7 @@ public interface BookService {
 
     /**
      * 获取作者代表作（基于指定书籍，返回该作者的其他作品，最多3部）
+     * 
      * @param bookId 书籍ID
      * @return 作者代表作列表（最多3部）
      */
@@ -84,6 +86,7 @@ public interface BookService {
 
     /**
      * 获取相关推荐作品（基于指定书籍，返回同分类的其他作品，最多3部）
+     * 
      * @param bookId 书籍ID
      * @return 相关推荐作品列表（最多3部）
      */

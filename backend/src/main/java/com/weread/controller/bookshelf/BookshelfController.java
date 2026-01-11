@@ -1,0 +1,194 @@
+package com.weread.controller.bookshelf;
+
+import com.weread.dto.BookConverter;
+import com.weread.dto.Result;
+import com.weread.dto.book.SimpleBookDTO;
+import com.weread.dto.bookshelf.*;
+import com.weread.entity.user.UserEntity;
+import com.weread.service.bookshelf.BookshelfService;
+import com.weread.vo.bookshelf.BookShelfVO;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Bookshelf Module Controller.
+ * All interface return results are encapsulated with Result<T>.
+ */
+@RestController
+@RequestMapping("bookshelf")
+@RequiredArgsConstructor
+@Tag(name = "Bookshelf", description = "Interfaces for bookshelf management")
+@SecurityRequirement(name = "bearerAuth") // Require JWT authentication
+public class BookshelfController {
+
+    private final BookshelfService bookshelfService;
+
+    /**
+     * Retrieve the user's bookshelf list, supports filtering by read status.
+     */
+
+    @GetMapping
+    @Operation(summary = "获取书架全部书籍")
+    public Result<List<SimpleBookDTO>> getBookshelf( // 注意返回类型！
+            @RequestParam(required = false, defaultValue = "all") String status) {
+
+        Long userId = getCurrentUserId();
+        BookshelfQueryDTO dto = new BookshelfQueryDTO();
+
+        if (!"all".equals(status)) {
+            dto.setStatus(status);
+        }
+
+        // 1. 获取原始数据
+        List<BookShelfVO> books = bookshelfService.getUserBooks(dto, userId);
+
+        // 2. 转换为与文档一致的DTO
+        List<SimpleBookDTO> result = BookConverter.toSimpleBookDTOList(books);
+
+        // 3. 返回转换后的结果
+        return Result.success(result);
+    }
+
+    @GetMapping("/{status}")
+    public Result<List<SimpleBookDTO>> getBookshelfByStatus(@PathVariable String status) {
+        Long userId = getCurrentUserId();
+        BookshelfQueryDTO dto = new BookshelfQueryDTO();
+        dto.setStatus(status);
+
+        List<BookShelfVO> books = bookshelfService.getUserBooks(dto, userId);
+        List<SimpleBookDTO> result = BookConverter.toSimpleBookDTOList(books);
+
+        return Result.success(result);
+    }
+
+    /**
+     * Add a book to the bookshelf.
+     */
+    @PostMapping
+    @Operation(summary = "Add to Bookshelf", description = "Add a specified book to the user's bookshelf (default status: unread)")
+    public Result<Void> addToBookshelf(@RequestBody BookAddDTO dto) {
+
+        Long userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+        bookshelfService.addBookToShelf(dto, userId);
+
+        return Result.success();
+    }
+
+    /**
+     * Remove a book from the bookshelf.
+     */
+    @DeleteMapping("/{bookId}")
+    @Operation(summary = "Remove from Bookshelf", description = "Delete the specified book from the user's bookshelf")
+    public Result<Void> removeFromBookshelf(@PathVariable Integer bookId) {
+
+        Long userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+        bookshelfService.removeBookFromShelf(bookId, userId);
+
+        return Result.success();
+    }
+
+    /**
+     * Update the book's reading status.
+     */
+    @PutMapping("/{bookId}")
+    @Operation(summary = "Update Reading Status", description = "Modify the reading status of a book in the bookshelf (unread/reading/finished)")
+    public Result<Void> updateBookStatus(
+            @PathVariable Integer bookId,
+            @RequestBody BookStatusUpdateDTO dto) {
+
+        Long userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+
+        BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
+        statusDTO.setBookId(bookId);
+        statusDTO.setStatus(dto.getStatus());
+
+        bookshelfService.updateBookStatus(statusDTO, userId);
+
+        return Result.success();
+    }
+
+    /**
+     * Batch operation (delete or update status).
+     */
+    @DeleteMapping("/batch-remove")
+    @Operation(summary = "Batch remove books from bookshelf", description = "批量从书架移除书籍")
+    public Result<Void> batchRemove(@RequestBody BatchRemoveDTO dto) {
+        // 1. 获取当前用户ID（从SecurityContext）
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return Result.fail("用户ID不能为空");
+        }
+
+        // 2. 校验入参（指定400状态码）
+        if (dto.getBookIds() == null || dto.getBookIds().isEmpty()) {
+            // 明确返回400状态码 + 错误信息
+            return Result.fail("bookIds不能为空");
+        }
+
+        try {
+            // 3. 调用服务层执行删除（捕获异常）
+            bookshelfService.batchRemoveBooksFromShelf(dto, userId);
+            // 4. 成功响应：带明确提示
+            return Result.success();
+        } catch (IllegalArgumentException e) {
+            // 业务异常（比如书籍不存在）→ 返回400 + 异常信息
+            return Result.fail(e.getMessage());
+        } catch (Exception e) {
+            // 系统异常 → 返回500 + 通用提示
+            return Result.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 从SecurityContext获取当前登录用户ID
+     * 需要根据你的UserEntity类调整类型转换
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("用户未认证");
+        }
+
+        // 根据你的实际UserEntity类调整
+        // 如果Principal是UserDetails，需要转换为你的实体类
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof com.weread.entity.user.UserEntity) {
+            // 如果是UserEntity类型，直接获取用户ID
+            UserEntity user = (UserEntity) principal;
+
+            // 处理可能的类型转换问题
+            Object userIdObj = user.getUserId();
+
+            // 根据实际情况进行类型转换
+            Long userId;
+            if (userIdObj instanceof Integer) {
+                userId = ((Integer) userIdObj).longValue(); // Integer转Long
+            } else if (userIdObj instanceof Long) {
+                userId = (Long) userIdObj; // 直接转换
+            } else {
+                throw new RuntimeException("用户ID类型不支持：" + userIdObj.getClass().getName());
+            }
+
+            return userId;
+
+        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+            // 如果是UserDetails，可能需要从用户名查询用户ID
+            throw new RuntimeException("无法从UserDetails获取用户ID，请检查认证配置");
+        } else {
+            throw new RuntimeException("未知的Principal类型：" + principal.getClass().getName());
+        }
+    }
+}

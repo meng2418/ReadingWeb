@@ -3,18 +3,18 @@ package com.weread.service.impl.book;
 import com.weread.dto.book.BookCreateDTO;
 import com.weread.dto.book.BookQueryDTO;
 import com.weread.dto.book.BookUpdateDTO;
-import com.weread.entity.AuthorEntity;
-import com.weread.entity.BookEntity;
-import com.weread.entity.BookshelfEntity;
-import com.weread.entity.ReadingProgressEntity;
-import com.weread.entity.book.BookCategoryEntity;
-import com.weread.repository.AuthorRepository;
-import com.weread.repository.BookRepository;
-import com.weread.repository.BookshelfRepository;
-import com.weread.repository.ReadingProgressRepository;
+import com.weread.entity.author.AuthorEntity;
+import com.weread.entity.book.CategoryEntity;
+import com.weread.entity.book.ReadingProgressEntity;
+import com.weread.entity.bookshelf.BookshelfEntity;
+import com.weread.entity.book.BookEntity;
+import com.weread.repository.author.AuthorRepository;
 import com.weread.repository.book.BookCategoryRepository;
-import com.weread.repository.book.BookChapterRepository;
+import com.weread.repository.book.ChapterRepository;
+import com.weread.repository.book.BookRepository;
 import com.weread.repository.book.BookReviewRepository;
+import com.weread.repository.book.ReadingProgressRepository;
+import com.weread.repository.bookshelf.BookshelfRepository;
 import com.weread.service.book.BookService;
 import com.weread.service.book.BookReviewService;
 import com.weread.vo.book.AuthorWorkVO;
@@ -45,7 +45,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final AuthorRepository authorRepository;
     private final BookCategoryRepository categoryRepository;
-    private final BookChapterRepository chapterRepository;
+    private final ChapterRepository chapterRepository;
     private final BookshelfRepository bookshelfRepository;
     private final ReadingProgressRepository readingProgressRepository;
     private final BookReviewRepository bookReviewRepository;
@@ -58,11 +58,11 @@ public class BookServiceImpl implements BookService {
         vo.setTitle(bookEntity.getTitle());
         vo.setCover(bookEntity.getCover());
         vo.setDescription(bookEntity.getDescription());
-        
+
         if (bookEntity.getAuthor() != null) {
             vo.setAuthorName(bookEntity.getAuthor().getName());
         }
-        
+
         return vo;
     }
 
@@ -74,7 +74,7 @@ public class BookServiceImpl implements BookService {
                 .orElseThrow(() -> new RuntimeException("作者不存在"));
 
         // 验证分类是否存在
-        BookCategoryEntity category = categoryRepository.findById(dto.getCategoryId())
+        CategoryEntity category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("分类不存在"));
 
         // 创建书籍实体
@@ -118,7 +118,7 @@ public class BookServiceImpl implements BookService {
             book.setDescription(dto.getDescription());
         }
         if (dto.getCategoryId() != null) {
-            BookCategoryEntity category = categoryRepository.findById(dto.getCategoryId())
+            CategoryEntity category = categoryRepository.findById(dto.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("分类不存在"));
             book.setCategoryId(dto.getCategoryId());
         }
@@ -172,7 +172,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Page<BookListVO> searchBooks(BookQueryDTO queryDTO) {
-        Pageable pageable = createPageable(queryDTO.getPage(), queryDTO.getSize(), 
+        Pageable pageable = createPageable(queryDTO.getPage(), queryDTO.getSize(),
                 queryDTO.getSortBy(), queryDTO.getSortOrder());
 
         Page<BookEntity> bookPage;
@@ -186,8 +186,7 @@ public class BookServiceImpl implements BookService {
                     queryDTO.getCategoryId(),
                     queryDTO.getIsFree(),
                     queryDTO.getIsMemberOnly(),
-                    pageable
-            );
+                    pageable);
         }
 
         return bookPage.map(this::convertToListVO);
@@ -232,23 +231,23 @@ public class BookServiceImpl implements BookService {
         // 1. 查询书籍信息
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new RuntimeException("书籍不存在，ID: " + bookId));
-        
+
         // 2. 获取作者ID
         Long authorId = book.getAuthorId();
         if (authorId == null) {
             return List.of(); // 如果没有作者，返回空列表
         }
-        
+
         // 3. 查询该作者的其他作品（排除当前书籍，按阅读量排序，最多3部）
         Pageable pageable = PageRequest.of(0, 3);
         List<BookEntity> works = bookRepository.findAuthorRepresentativeWorks(authorId, bookId, pageable);
-        
+
         // 4. 转换为VO
         return works.stream()
                 .map(this::convertToAuthorWorkVO)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * 将 BookEntity 转换为 AuthorWorkVO
      */
@@ -267,23 +266,23 @@ public class BookServiceImpl implements BookService {
         // 1. 查询书籍信息
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new RuntimeException("书籍不存在，ID: " + bookId));
-        
+
         // 2. 获取分类ID
         Integer categoryId = book.getCategoryId();
         if (categoryId == null) {
             return List.of(); // 如果没有分类，返回空列表
         }
-        
+
         // 3. 查询同分类的其他书籍（排除当前书籍，按阅读量和评分排序，最多3部）
         Pageable pageable = PageRequest.of(0, 3);
         List<BookEntity> relatedBooks = bookRepository.findRelatedBooksByCategory(categoryId, bookId, pageable);
-        
+
         // 4. 转换为VO
         return relatedBooks.stream()
                 .map(this::convertToRelatedBookVO)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * 将 BookEntity 转换为 RelatedBookVO
      */
@@ -293,26 +292,26 @@ public class BookServiceImpl implements BookService {
         vo.setCover(book.getCover() != null ? book.getCover() : "");
         vo.setTitle(book.getTitle());
         vo.setDescription(book.getDescription() != null ? book.getDescription() : "");
-        
+
         // 作者名
         if (book.getAuthor() != null) {
             vo.setAuthorName(book.getAuthor().getName());
         } else {
             vo.setAuthorName("");
         }
-        
+
         // 评分
         vo.setRating(book.getRating() != null ? book.getRating() : 0f);
-        
+
         // 阅读量
         vo.setReadCount(book.getReadCount() != null ? book.getReadCount() : 0);
-        
+
         // 价格
         vo.setPrice(book.getPrice() != null ? book.getPrice() : 0);
-        
+
         // 是否免费
         vo.setIsFree(book.getIsFree() != null ? book.getIsFree() : false);
-        
+
         return vo;
     }
 
@@ -328,13 +327,13 @@ public class BookServiceImpl implements BookService {
      */
     private BookDetailVO convertToDetailVO(BookEntity book, Long userId) {
         BookDetailVO vo = new BookDetailVO();
-        
+
         // 基础信息
         vo.setBookId(book.getBookId());
         vo.setTitle(book.getTitle());
         vo.setBookTitle(book.getTitle()); // 前端期望的字段名
         vo.setAuthorId(book.getAuthorId());
-        
+
         // 作者信息
         if (book.getAuthor() != null) {
             vo.setAuthorName(book.getAuthor().getName());
@@ -346,15 +345,15 @@ public class BookServiceImpl implements BookService {
             // 如果没有作者信息，设置默认值
             vo.setAuthorBio("");
         }
-        
+
         vo.setCover(book.getCover());
         vo.setDescription(book.getDescription());
         vo.setCategoryId(book.getCategoryId());
-        
+
         // 获取分类名称
-        Optional<BookCategoryEntity> category = categoryRepository.findById(book.getCategoryId());
+        Optional<CategoryEntity> category = categoryRepository.findById(book.getCategoryId());
         category.ifPresent(c -> vo.setCategoryName(c.getName()));
-        
+
         vo.setPublisher(book.getPublisher());
         vo.setPublishDate(book.getPublishDate());
         vo.setIsbn(book.getIsbn());
@@ -385,20 +384,21 @@ public class BookServiceImpl implements BookService {
         vo.setReadCount(book.getReadCount());
         vo.setCreatedAt(book.getCreatedAt());
         vo.setUpdatedAt(book.getUpdatedAt());
-        
+
         // 用户相关状态（如果提供了userId）
         if (userId != null) {
             // 检查是否在书架中
             Optional<BookshelfEntity> bookshelf = bookshelfRepository.findByUserIdAndBookId(userId, book.getBookId());
             vo.setIsInBookshelf(bookshelf.isPresent());
-            
+
             // 检查阅读进度
-            Optional<ReadingProgressEntity> progress = readingProgressRepository.findByUserIdAndBookId(userId, book.getBookId());
+            Optional<ReadingProgressEntity> progress = readingProgressRepository.findByUserIdAndBookId(userId,
+                    book.getBookId());
             if (progress.isPresent()) {
                 ReadingProgressEntity progressEntity = progress.get();
                 Float progressValue = progressEntity.getProgress();
                 vo.setHasStarted(progressValue != null && progressValue > 0);
-                
+
                 // 判断阅读状态
                 if (progressValue == null || progressValue == 0) {
                     vo.setReadingStatus("not_started");
@@ -422,17 +422,17 @@ public class BookServiceImpl implements BookService {
             vo.setReadingStatus("not_started");
             vo.setIsFinished(false);
         }
-        
+
         // 统计信息
         Long readingCount = readingProgressRepository.countReadingUsers(book.getBookId());
         Long finishedCount = readingProgressRepository.countFinishedUsers(book.getBookId());
         vo.setReadingCount(readingCount != null ? readingCount.intValue() : 0);
         vo.setFinishedCount(finishedCount != null ? finishedCount.intValue() : 0);
-        
+
         // 点评统计
         Long ratingCount = bookReviewRepository.countByBookId(book.getBookId());
         vo.setRatingCount(ratingCount != null ? ratingCount.intValue() : 0);
-        
+
         // 点评详情
         BookReviewService.RatingStats ratingStats = bookReviewService.getRatingStats(book.getBookId());
         BookDetailVO.RatingDetailVO ratingDetail = new BookDetailVO.RatingDetailVO();
@@ -447,7 +447,7 @@ public class BookServiceImpl implements BookService {
             ratingDetail.setNotRecommendPercent(0.0);
         }
         vo.setRatingDetail(ratingDetail);
-        
+
         return vo;
     }
 
@@ -464,11 +464,11 @@ public class BookServiceImpl implements BookService {
         vo.setCover(book.getCover());
         vo.setDescription(book.getDescription());
         vo.setCategoryId(book.getCategoryId());
-        
+
         // 获取分类名称
-        Optional<BookCategoryEntity> category = categoryRepository.findById(book.getCategoryId());
+        Optional<CategoryEntity> category = categoryRepository.findById(book.getCategoryId());
         category.ifPresent(c -> vo.setCategoryName(c.getName()));
-        
+
         vo.setPrice(book.getPrice());
         vo.setIsFree(book.getIsFree());
         vo.setIsMemberOnly(book.getIsMemberOnly());
@@ -476,7 +476,7 @@ public class BookServiceImpl implements BookService {
         vo.setRating(book.getRating());
         vo.setReadCount(book.getReadCount());
         vo.setCreatedAt(book.getCreatedAt());
-        
+
         return vo;
     }
 
@@ -488,7 +488,7 @@ public class BookServiceImpl implements BookService {
         size = size != null && size > 0 ? size : 20;
         sortBy = sortBy != null ? sortBy : "createdAt";
         sortOrder = sortOrder != null && sortOrder.equalsIgnoreCase("ASC") ? "ASC" : "DESC";
-        
+
         Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
         return PageRequest.of(page, size, sort);
     }
