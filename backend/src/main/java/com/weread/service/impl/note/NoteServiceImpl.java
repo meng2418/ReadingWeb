@@ -6,11 +6,11 @@ import com.weread.dto.note.ChapterNoteResponseDTO;
 import com.weread.dto.note.NoteResponseDTO;
 import com.weread.dto.note.UserNoteDTO;
 import com.weread.dto.note.UserNotesResponseDTO;
-import com.weread.entity.BookEntity;
+import com.weread.entity.book.BookEntity;
 import com.weread.entity.note.NoteEntity;
 import com.weread.vo.user.HighlightVO;
-import com.weread.repository.BookRepository;
-import com.weread.repository.book.BookChapterRepository;
+import com.weread.repository.book.BookRepository;
+import com.weread.repository.book.ChapterRepository;
 import com.weread.repository.note.NoteRepository;
 import com.weread.service.note.NoteService;
 import com.weread.vo.note.NoteVO;
@@ -39,9 +39,10 @@ public class NoteServiceImpl implements NoteService {
 
     private final NoteRepository noteRepository;
     private final BookRepository bookRepository;
-    private final BookChapterRepository chapterRepository;
+    private final ChapterRepository chapterRepository;
 
-    public NoteServiceImpl(NoteRepository noteRepository, BookRepository bookRepository, BookChapterRepository chapterRepository) {
+    public NoteServiceImpl(NoteRepository noteRepository, BookRepository bookRepository,
+            ChapterRepository chapterRepository) {
         this.noteRepository = noteRepository;
         this.bookRepository = bookRepository;
         this.chapterRepository = chapterRepository;
@@ -55,10 +56,12 @@ public class NoteServiceImpl implements NoteService {
         }
         newNote.setUserId(userId);
         newNote.setCreatedAt(LocalDateTime.now());
-        
+
         // 自动设置默认值和非空约束
-        if (newNote.getIsPublic() == null) newNote.setIsPublic(false);
-        if (newNote.getType() == null) newNote.setType("highlight");
+        if (newNote.getIsPublic() == null)
+            newNote.setIsPublic(false);
+        if (newNote.getType() == null)
+            newNote.setType("highlight");
 
         return noteRepository.save(newNote);
     }
@@ -85,7 +88,7 @@ public class NoteServiceImpl implements NoteService {
         if (color != null) {
             note.setColor(color);
         }
-        
+
         return noteRepository.save(note);
     }
 
@@ -94,13 +97,13 @@ public class NoteServiceImpl implements NoteService {
     public void deleteNote(Integer noteId, Integer userId) {
         NoteEntity note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "笔记不存在。"));
-        
+
         // 检查权限
         if (!note.getUserId().equals(userId)) {
             logger.warn("用户 {} 尝试删除非自己的笔记 {}", userId, noteId);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权删除他人笔记。");
         }
-        
+
         noteRepository.delete(note);
     }
 
@@ -115,7 +118,7 @@ public class NoteServiceImpl implements NoteService {
         // ... set other fields
         return vo;
     }
-    
+
     @Override
     public Page<NoteVO> getUserNotes(Integer userId, Pageable pageable) {
         Page<NoteEntity> entities = noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
@@ -126,7 +129,7 @@ public class NoteServiceImpl implements NoteService {
     public List<NoteVO> getPublicChapterNotes(Integer chapterId) {
         // 获取某一章节的所有笔记，然后过滤出公开的，并转换
         List<NoteEntity> entities = noteRepository.findByChapterIdOrderByCreatedAtDesc(chapterId);
-        
+
         return entities.stream()
                 .filter(NoteEntity::getIsPublic) // 仅显示公开笔记
                 .map(this::convertToNoteVO)
@@ -136,7 +139,7 @@ public class NoteServiceImpl implements NoteService {
     @Override
     @Transactional
     public NoteResponseDTO createNoteFromDTO(Integer userId, Integer bookId, Integer chapterId,
-                                              String quote, String lineType, String thought) {
+            String quote, String lineType, String thought) {
         // 验证书籍是否存在
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "书籍不存在"));
@@ -155,7 +158,7 @@ public class NoteServiceImpl implements NoteService {
         note.setType("highlight"); // 默认类型
         note.setIsPublic(false); // 默认不公开
         note.setCreatedAt(LocalDateTime.now());
-        
+
         // 将lineType映射到color字段（或者可以扩展实体添加lineType字段）
         // 这里暂时使用color字段存储lineType信息
         note.setColor(lineType != null ? lineType : "marker");
@@ -178,7 +181,7 @@ public class NoteServiceImpl implements NoteService {
         // 查询指定用户、指定书籍和章节的笔记
         List<NoteEntity> entities = noteRepository.findByUserIdAndBookIdAndChapterIdOrderByCreatedAtDesc(
                 userId, bookId, chapterId);
-        
+
         return entities.stream()
                 .map(this::convertToChapterNoteResponseDTO)
                 .collect(Collectors.toList());
@@ -214,11 +217,11 @@ public class NoteServiceImpl implements NoteService {
     public List<BookNoteResponseDTO> getBookNotes(Integer userId, Integer bookId) {
         // 查询指定用户、指定书籍的所有笔记
         List<NoteEntity> entities = noteRepository.findByUserIdAndBookIdOrderByCreatedAtDesc(userId, bookId);
-        
+
         // 获取书籍信息
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "书籍不存在"));
-        
+
         // 转换为DTO
         return entities.stream()
                 .map(entity -> convertToBookNoteResponseDTO(entity, book))
@@ -234,7 +237,7 @@ public class NoteServiceImpl implements NoteService {
         dto.setBookId(entity.getBookId());
         dto.setBookTitle(book.getTitle());
         dto.setChapterId(entity.getChapterId());
-        
+
         // 获取章节名称
         if (entity.getChapterId() != null) {
             chapterRepository.findById(entity.getChapterId())
@@ -243,7 +246,7 @@ public class NoteServiceImpl implements NoteService {
         if (dto.getChapterName() == null) {
             dto.setChapterName("");
         }
-        
+
         // 根据type字段判断noteType
         // "highlight" 对应 "line"，其他可能对应 "thought"
         if ("highlight".equals(entity.getType())) {
@@ -251,21 +254,21 @@ public class NoteServiceImpl implements NoteService {
         } else {
             dto.setNoteType("thought");
         }
-        
+
         dto.setQuote(entity.getContent()); // content字段存储quote
         dto.setStartIndex(0); // 数据库中没有此字段，使用默认值0
         dto.setEndIndex(entity.getContent() != null ? entity.getContent().length() : 0); // 使用内容长度作为endIndex
         dto.setPageNumber(entity.getPage() != null ? entity.getPage() : 0); // page字段映射到pageNumber
-        
+
         // lineType从color字段获取
         dto.setLineType(entity.getColor() != null ? entity.getColor() : "marker");
-        
+
         // thought字段：数据库中没有单独存储，暂时使用空字符串
         // 如果后续需要支持，可以在NoteEntity中添加thought字段
         dto.setThought("");
-        
+
         dto.setNoteCreatedAt(entity.getCreatedAt());
-        
+
         return dto;
     }
 
@@ -331,7 +334,7 @@ public class NoteServiceImpl implements NoteService {
         UserNoteDTO dto = new UserNoteDTO();
         dto.setMarkId(entity.getNoteId());
         dto.setBookId(entity.getBookId());
-        
+
         // 获取书籍信息
         BookEntity book = bookRepository.findByBookId(entity.getBookId()).orElse(null);
         if (book != null) {
@@ -339,9 +342,9 @@ public class NoteServiceImpl implements NoteService {
         } else {
             dto.setBookTitle("");
         }
-        
+
         dto.setChapterId(entity.getChapterId());
-        
+
         // 获取章节信息
         if (entity.getChapterId() != null) {
             chapterRepository.findById(entity.getChapterId())
@@ -350,12 +353,12 @@ public class NoteServiceImpl implements NoteService {
         if (dto.getChapterName() == null) {
             dto.setChapterName("");
         }
-        
+
         dto.setQuote(entity.getContent()); // content字段存储quote
         dto.setStartIndex(0); // 数据库中没有此字段，使用默认值0
         dto.setEndIndex(entity.getContent() != null ? entity.getContent().length() : 0);
         dto.setPageNumber(entity.getPage() != null ? entity.getPage() : 0);
-        
+
         // lineTypes从color字段解析（可能是单个值或逗号分隔的多个值）
         List<String> lineTypes = new ArrayList<>();
         if (entity.getColor() != null && !entity.getColor().isEmpty()) {
@@ -368,13 +371,13 @@ public class NoteServiceImpl implements NoteService {
             lineTypes = Arrays.asList("marker"); // 默认值
         }
         dto.setLineTypes(lineTypes);
-        
+
         // noteContent：数据库中没有单独存储，暂时使用空字符串
         // 如果type是"thought"，可以考虑从content中提取，或者后续扩展数据库字段
         dto.setNoteContent("");
-        
+
         dto.setNoteCreatedAt(entity.getCreatedAt());
-        
+
         // noteType：根据type字段判断
         // "highlight" 对应 "highlight"，其他可能对应 "thought"
         if ("highlight".equals(entity.getType())) {
@@ -382,7 +385,7 @@ public class NoteServiceImpl implements NoteService {
         } else {
             dto.setNoteType("thought");
         }
-        
+
         return dto;
     }
 
@@ -404,7 +407,7 @@ public class NoteServiceImpl implements NoteService {
      */
     private BookNoteDTO convertToBookNoteDTO(NoteEntity entity) {
         BookNoteDTO dto = new BookNoteDTO();
-        
+
         // 获取书籍标题
         BookEntity book = bookRepository.findByBookId(entity.getBookId()).orElse(null);
         if (book != null) {
@@ -412,24 +415,24 @@ public class NoteServiceImpl implements NoteService {
         } else {
             dto.setBookTitle("");
         }
-        
+
         // quote：从content字段获取
         dto.setQuote(entity.getContent() != null ? entity.getContent() : "");
-        
+
         // noteContent：目前数据库中没有单独存储想法内容，暂时使用空字符串
         // 如果type是"thought"，可以考虑将content作为noteContent，但根据现有逻辑，content存储的是quote
         dto.setNoteContent("");
-        
+
         // noteDate：从createdAt格式化为字符串（格式：YYYY-MM-DD）
         if (entity.getCreatedAt() != null) {
             dto.setNoteDate(entity.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE));
         } else {
             dto.setNoteDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
         }
-        
+
         // chapterId：从entity获取章节ID
         dto.setChapterId(entity.getChapterId());
-        
+
         return dto;
     }
 
@@ -446,7 +449,8 @@ public class NoteServiceImpl implements NoteService {
                 .filter(note -> "highlight".equals(note.getType()))
                 .filter(note -> {
                     String color = note.getColor();
-                    return color != null && (color.equals("marker") || color.equals("wavy") || color.equals("underline"));
+                    return color != null
+                            && (color.equals("marker") || color.equals("wavy") || color.equals("underline"));
                 })
                 .limit(3) // 确保只返回3条
                 .map(this::convertToHighlightVO)
@@ -458,7 +462,7 @@ public class NoteServiceImpl implements NoteService {
      */
     private HighlightVO convertToHighlightVO(NoteEntity entity) {
         HighlightVO vo = new HighlightVO();
-        
+
         // 获取书籍标题
         BookEntity book = bookRepository.findByBookId(entity.getBookId()).orElse(null);
         if (book != null) {
@@ -466,10 +470,10 @@ public class NoteServiceImpl implements NoteService {
         } else {
             vo.setBookTitle("");
         }
-        
+
         // 划线内容：从content字段获取
         vo.setContent(entity.getContent() != null ? entity.getContent() : "");
-        
+
         // 获取章节名称
         if (entity.getChapterId() != null) {
             chapterRepository.findById(entity.getChapterId())
@@ -478,14 +482,14 @@ public class NoteServiceImpl implements NoteService {
         if (vo.getChapterName() == null) {
             vo.setChapterName("");
         }
-        
+
         // 划线日期：从createdAt转换为LocalDate
         if (entity.getCreatedAt() != null) {
             vo.setHighlightDate(entity.getCreatedAt().toLocalDate());
         } else {
             vo.setHighlightDate(LocalDate.now());
         }
-        
+
         return vo;
     }
 

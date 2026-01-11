@@ -1,14 +1,14 @@
 package com.weread.service.impl.book;
 
 import com.weread.dto.book.BookReviewCreateDTO;
-import com.weread.dto.book.BookReviewItemDTO;
 import com.weread.dto.book.RecentBookReviewDTO;
 import com.weread.dto.book.UserBookReviewsResponseDTO;
-import com.weread.entity.BookEntity;
+import com.weread.dto.book.BookReviewItemDTO;
+import com.weread.entity.book.BookEntity;
 import com.weread.entity.book.BookReviewEntity;
 import com.weread.entity.user.UserEntity;
-import com.weread.repository.AuthorRepository;
-import com.weread.repository.BookRepository;
+import com.weread.repository.author.AuthorRepository;
+import com.weread.repository.book.BookRepository;
 import com.weread.repository.book.BookReviewRepository;
 import com.weread.repository.user.UserRepository;
 import com.weread.service.book.BookReviewService;
@@ -223,7 +223,7 @@ public class BookReviewServiceImpl implements BookReviewService {
      */
     private RecentBookReviewDTO convertToRecentBookReviewDTO(BookReviewEntity review) {
         RecentBookReviewDTO dto = new RecentBookReviewDTO();
-        
+
         // 加载书籍信息
         BookEntity book = bookRepository.findById(review.getBookId()).orElse(null);
         if (book != null) {
@@ -262,7 +262,7 @@ public class BookReviewServiceImpl implements BookReviewService {
      */
     private BookReviewItemDTO convertToBookReviewItemDTO(BookReviewEntity review) {
         BookReviewItemDTO dto = new BookReviewItemDTO();
-        
+
         // 加载书籍信息
         BookEntity book = bookRepository.findById(review.getBookId()).orElse(null);
         if (book != null) {
@@ -327,7 +327,7 @@ public class BookReviewServiceImpl implements BookReviewService {
         if (book != null) {
             vo.setBookTitle(book.getTitle());
             vo.setBookCover(book.getCover());
-            
+
             // 填充book对象（SimpleBook格式）
             SimpleBookVO simpleBook = new SimpleBookVO();
             simpleBook.setCover(book.getCover());
@@ -347,13 +347,13 @@ public class BookReviewServiceImpl implements BookReviewService {
                 simpleBook.setRating(0);
             }
             simpleBook.setReadCount(book.getReadCount() != null ? book.getReadCount() : 0);
-            
+
             // 设置作者名（通过authorRepository查询，避免LazyInitializationException）
             if (book.getAuthorId() != null) {
                 authorRepository.findById(book.getAuthorId())
                         .ifPresent(author -> simpleBook.setAuthorName(author.getAuthorName()));
             }
-            
+
             vo.setBook(simpleBook);
         }
 
@@ -369,4 +369,3 @@ public class BookReviewServiceImpl implements BookReviewService {
         return vo;
     }
 }
-

@@ -2,12 +2,12 @@ package com.weread.service.impl.book;
 
 import com.weread.dto.book.ChapterCreateDTO;
 import com.weread.dto.book.ChapterDTO;
-import com.weread.entity.BookEntity;
-import com.weread.entity.ReadingProgressEntity;
-import com.weread.entity.book.BookChapterEntity;
-import com.weread.repository.BookRepository;
+import com.weread.entity.book.ChapterEntity;
+import com.weread.entity.book.ReadingProgressEntity;
+import com.weread.entity.book.BookEntity;
+import com.weread.repository.book.ChapterRepository;
+import com.weread.repository.book.BookRepository;
 import com.weread.repository.ReadingProgressRepository;
-import com.weread.repository.book.BookChapterRepository;
 import com.weread.service.asset.MemberService;
 import com.weread.service.book.BookChapterService;
 import com.weread.service.book.BookService;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookChapterServiceImpl implements BookChapterService {
 
-    private final BookChapterRepository chapterRepository;
+    private final ChapterRepository chapterRepository;
     private final BookRepository bookRepository;
     private final BookService bookService;
     private final ReadingProgressRepository readingProgressRepository;
@@ -48,7 +48,7 @@ public class BookChapterServiceImpl implements BookChapterService {
                 });
 
         // 创建章节
-        BookChapterEntity chapter = new BookChapterEntity();
+        ChapterEntity chapter = new ChapterEntity();
         chapter.setBookId(dto.getBookId());
         chapter.setTitle(dto.getTitle());
         chapter.setChapterNumber(dto.getChapterNumber());
@@ -74,7 +74,7 @@ public class BookChapterServiceImpl implements BookChapterService {
     @Override
     @Transactional
     public ChapterVO updateChapter(Integer chapterId, ChapterCreateDTO dto) {
-        BookChapterEntity chapter = chapterRepository.findById(chapterId)
+        ChapterEntity chapter = chapterRepository.findById(chapterId)
                 .orElseThrow(() -> new RuntimeException("章节不存在"));
 
         // 更新字段
@@ -109,14 +109,14 @@ public class BookChapterServiceImpl implements BookChapterService {
 
     @Override
     public ChapterVO getChapterById(Integer chapterId) {
-        BookChapterEntity chapter = chapterRepository.findById(chapterId)
+        ChapterEntity chapter = chapterRepository.findById(chapterId)
                 .orElseThrow(() -> new RuntimeException("章节不存在"));
         return convertToVO(chapter);
     }
 
     @Override
     public List<ChapterVO> getChaptersByBookId(Integer bookId) {
-        List<BookChapterEntity> chapters = chapterRepository.findByBookIdOrderByChapterNumberAsc(bookId);
+        List<ChapterEntity> chapters = chapterRepository.findByBookIdOrderByChapterNumberAsc(bookId);
         return chapters.stream()
                 .map(this::convertToVO)
                 .collect(Collectors.toList());
@@ -125,9 +125,9 @@ public class BookChapterServiceImpl implements BookChapterService {
     @Override
     @Transactional
     public void deleteChapter(Integer chapterId) {
-        BookChapterEntity chapter = chapterRepository.findById(chapterId)
+        ChapterEntity chapter = chapterRepository.findById(chapterId)
                 .orElseThrow(() -> new RuntimeException("章节不存在"));
-        
+
         Integer bookId = chapter.getBookId();
         chapterRepository.delete(chapter);
 
@@ -164,7 +164,7 @@ public class BookChapterServiceImpl implements BookChapterService {
     @Override
     public ChapterContentVO getChapterContent(Integer bookId, Integer chapterId, Integer userId) {
         // 获取章节信息
-        BookChapterEntity chapter = chapterRepository.findById(chapterId)
+        ChapterEntity chapter = chapterRepository.findById(chapterId)
                 .orElseThrow(() -> new RuntimeException("章节不存在"));
 
         // 验证章节是否属于指定书籍
@@ -212,6 +212,7 @@ public class BookChapterServiceImpl implements BookChapterService {
         vo.setNextChapterId(chapter.getNextChapterId() != null ? chapter.getNextChapterId() : 0);
 
         // 获取最后阅读位置（如果有用户ID）
+        long UserId = userId.longValue();
         int lastReadPosition = 0;
         if (userId != null) {
             Optional<ReadingProgressEntity> progressOpt = readingProgressRepository
@@ -234,36 +235,36 @@ public class BookChapterServiceImpl implements BookChapterService {
     @Override
     public List<ChapterDTO> getBookChapters(Integer bookId) {
         // 获取书籍的所有章节，按章节序号排序
-        List<BookChapterEntity> chapters = chapterRepository.findByBookIdOrderByChapterNumberAsc(bookId);
-        
+        List<ChapterEntity> chapters = chapterRepository.findByBookIdOrderByChapterNumberAsc(bookId);
+
         // 每页字数（与getChapterContent中的设置保持一致）
         int wordsPerPage = 500;
-        
+
         // 计算每个章节的起始页码
         int currentPage = 1; // 第一页从1开始
         List<ChapterDTO> chapterDTOs = new java.util.ArrayList<>();
-        
-        for (BookChapterEntity chapter : chapters) {
+
+        for (ChapterEntity chapter : chapters) {
             ChapterDTO dto = new ChapterDTO();
             dto.setStartPage(currentPage);
             dto.setChapterNumber(chapter.getChapterNumber());
             dto.setChapterName(chapter.getTitle());
-            
+
             chapterDTOs.add(dto);
-            
+
             // 计算下一章的起始页码：当前页码 + 当前章节的页数
             int chapterWordCount = chapter.getWordCount() != null ? chapter.getWordCount() : 0;
             int chapterPages = chapterWordCount > 0 ? (int) Math.ceil((double) chapterWordCount / wordsPerPage) : 1;
             currentPage += chapterPages;
         }
-        
+
         return chapterDTOs;
     }
 
     /**
      * 设置章节的上一章和下一章链接
      */
-    private void setChapterLinks(BookChapterEntity chapter) {
+    private void setChapterLinks(ChapterEntity chapter) {
         Integer bookId = chapter.getBookId();
         Integer chapterNumber = chapter.getChapterNumber();
 
@@ -281,7 +282,7 @@ public class BookChapterServiceImpl implements BookChapterService {
     /**
      * 转换为VO
      */
-    private ChapterVO convertToVO(BookChapterEntity chapter) {
+    private ChapterVO convertToVO(ChapterEntity chapter) {
         ChapterVO vo = new ChapterVO();
         vo.setChapterId(chapter.getChapterId());
         vo.setBookId(chapter.getBookId());
@@ -299,4 +300,3 @@ public class BookChapterServiceImpl implements BookChapterService {
         return vo;
     }
 }
-

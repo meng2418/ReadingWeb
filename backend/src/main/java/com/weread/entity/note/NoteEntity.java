@@ -1,8 +1,9 @@
 package com.weread.entity.note;
 
 import com.weread.entity.user.UserEntity;
-import com.weread.entity.BookEntity;
-import com.weread.entity.ChapterEntity;
+import com.weread.entity.book.ChapterEntity;
+import com.weread.entity.book.BookEntity;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;

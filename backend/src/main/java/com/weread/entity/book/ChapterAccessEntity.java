@@ -1,6 +1,6 @@
 package com.weread.entity.book;
 
-import com.weread.entity.ChapterEntity;
+import com.weread.entity.book.ChapterEntity;
 import lombok.Data;
 import jakarta.persistence.*;
 

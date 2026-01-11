@@ -148,6 +148,7 @@ DROP TABLE IF EXISTS `book_info`;
 CREATE TABLE `book_info` (
   `book_id` int NOT NULL AUTO_INCREMENT,
   `author_id` bigint NOT NULL,
+  `parentCategory_id` int NOT NULL,
   `category_id` int NOT NULL,
   `cover` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime(6) DEFAULT NULL,
@@ -302,6 +303,7 @@ CREATE TABLE `chapter_info` (
   `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `order` int NOT NULL,
+  `chapter_number` int NOT NULL,  --新增字段
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`chapter_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

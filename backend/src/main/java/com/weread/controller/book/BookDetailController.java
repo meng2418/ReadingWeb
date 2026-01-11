@@ -2,8 +2,8 @@ package com.weread.controller.book;
 
 import com.weread.dto.Result;
 import com.weread.entity.user.UserEntity;
-import com.weread.service.BookshelfService;
 import com.weread.service.book.BookService;
+import com.weread.service.bookshelf.BookshelfService;
 import com.weread.service.book.BookReviewService;
 import com.weread.vo.book.AuthorWorkVO;
 import com.weread.vo.book.BookDetailVO;
@@ -39,8 +39,9 @@ public class BookDetailController {
     public Result<BookDetailVO> getBookDetail(
             @PathVariable Integer bookId,
             @AuthenticationPrincipal UserEntity currentUser) {
-        Integer userId = (currentUser != null && currentUser.getUserId() != null) 
-                ? currentUser.getUserId() : null;
+        Integer userId = (currentUser != null && currentUser.getUserId() != null)
+                ? currentUser.getUserId()
+                : null;
         return Result.success(bookService.getBookById(bookId, userId));
     }
 
@@ -79,4 +80,3 @@ public class BookDetailController {
         return Result.success(result);
     }
 }
-
