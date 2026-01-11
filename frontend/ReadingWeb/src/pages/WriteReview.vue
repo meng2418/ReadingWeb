@@ -43,7 +43,7 @@
         placeholder="写下你的阅读感受..."
         rows="10"
       ></textarea>
-      <div class="character-count">{{ reviewText.length }}/1000</div>
+      <div class="character-count">{{ reviewText.length }}/2000</div>
     </div>
 
     <!-- 公开选项 -->
@@ -100,6 +100,7 @@ import {
   getUserReview,
 } from '@/composables/useReviews'
 import type { Review } from '@/types/review'
+import { submitBookReview } from '@/api/bookreview'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,7 +115,8 @@ const isEditMode = ref(false) // 是否是编辑模式
 
 // 计算属性：是否可以提交
 const canSubmit = computed(() => {
-  return reviewText.value.trim().length > 0 && reviewText.value.length <= 1000
+  const text = reviewText.value.trim()
+  return text.length > 0 && text.length <= 2000
 })
 
 // 加载用户已有的点评（如果是编辑模式）
@@ -158,7 +160,7 @@ const handleBack = () => {
 }
 
 // 提交点评
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!canSubmit.value) return
 
   const currentUserId = ensureCurrentUserId()
@@ -178,6 +180,11 @@ const handleSubmit = () => {
   }
 
   try {
+    // 调用API提交书评
+    const apiResponse = await submitBookReview(bookId.value, selectedRating.value, reviewText.value, isPublic.value)
+    console.log('API提交书评成功:', apiResponse)
+
+    // 如果API调用成功，也更新本地存储以保持一致性
     upsertUserReview(review)
     if (isPublic.value) {
       upsertPublicReview(bookId.value, review)
@@ -197,17 +204,28 @@ const handleSubmit = () => {
       }
     })
   } catch (error) {
-    console.error('保存点评失败:', error)
-    alert('保存失败，请重试')
+    console.error('❌ API提交点评失败:', error)
+    alert('网络连接失败，请检查网络后重试')
+
+    // 不再回退到本地存储，直接提示用户重试
+    return
   }
 }
 
 // 删除点评
-const handleDelete = () => {
+const handleDelete = async () => {
   if (!confirm('确定要删除这条点评吗？')) return
 
   try {
+    // 首先尝试调用API删除点评
+    // 注意：这里需要知道点评的ID，但当前实现可能没有保存
+    // 暂时先调用本地删除，后面可以根据实际需求调整
     const currentUserId = ensureCurrentUserId()
+
+    // 如果有具体的点评ID，可以调用API
+    // await deleteUserReview(reviewId)
+
+    // 同时删除本地存储
     removeUserReview(bookId.value, currentUserId)
     removePublicReview(bookId.value, currentUserId)
 
@@ -223,7 +241,7 @@ const handleDelete = () => {
       }
     })
   } catch (error) {
-    console.error('删除点评失败:', error)
+    console.error('❌ 删除点评失败:', error)
     alert('删除失败，请重试')
   }
 }
