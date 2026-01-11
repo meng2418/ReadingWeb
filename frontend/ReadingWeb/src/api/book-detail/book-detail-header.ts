@@ -8,7 +8,6 @@ const unwrap = (res: any): any => {
 export interface BookDetailRaw {
   cover: string
   bookTitle: string
-  author: string
   authorName: string
   authorId: number
   rating: number
@@ -64,7 +63,7 @@ export interface BookDetail {
 const mapBookDetail = (raw: BookDetailRaw, bookId: string | number): BookDetail => ({
   id: bookId,
   title: raw.bookTitle,
-  author: raw.authorName || raw.author,
+  author: raw.authorName,
   authorId: raw.authorId,
   cover: raw.cover,
   description: raw.description,
