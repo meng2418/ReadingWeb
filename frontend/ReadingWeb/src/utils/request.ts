@@ -4,7 +4,8 @@ import axios from 'axios'
 const service = axios.create({
   // 🔴 重点修改：不要写死 http://localhost:8080
   // 改成 '/api'，这样请求发给前端服务器，Vite 代理才会拦截并转发
-  baseURL: '/api',  
+  // baseURL: '/api',
+  baseURL: 'https://m1.apifoxmock.com/m1/7605134-7343879-default',
   timeout: 5000,
 })
 
@@ -13,7 +14,7 @@ service.interceptors.request.use((config) => {
   // 🔴 重点修改：你之前的 Store 和 Login 逻辑里，存的 key 是 'user_token'
   // 如果这里写 'token'，是取不到值的！
   const token = localStorage.getItem('user_token')
-  
+
   if (token) {
     // 注意：有些后端要求 'Bearer ' (有个空格)，有些不需要，看文档
     config.headers.Authorization = `Bearer ${token}`

@@ -60,6 +60,7 @@ export interface BookDetail {
   authorBio: string
 }
 
+
 const mapBookDetail = (raw: BookDetailRaw, bookId: string | number): BookDetail => ({
   id: bookId,
   title: raw.bookTitle,
@@ -150,3 +151,4 @@ export const removeFromBookshelf = async (bookId: string | number): Promise<bool
     return true
   }
 }
+
