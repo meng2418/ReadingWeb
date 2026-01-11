@@ -45,7 +45,7 @@ public class SearchServiceImpl implements SearchService {
 
         // 模糊搜索作者（根据姓名）
         List<AuthorSearchResultDto> authors = authorRepository
-                .findByAuthornameContainingIgnoreCase(keyword)
+                .findByAuthorNameContainingIgnoreCase(keyword)
                 .stream()
                 .map(this::convertToAuthorSearchResultDto)
                 .collect(Collectors.toList());
@@ -67,7 +67,7 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public List<AuthorSearchResultDto> searchAuthors(String keyword) {
-        return authorRepository.findByAuthornameContainingIgnoreCase(keyword)
+        return authorRepository.findByAuthorNameContainingIgnoreCase(keyword)
                 .stream()
                 .map(this::convertToAuthorSearchResultDto)
                 .collect(Collectors.toList());
