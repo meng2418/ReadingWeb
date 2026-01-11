@@ -106,8 +106,8 @@ onMounted(async () => {
     ])
 
     posts.value = postsData
-    commentList.value = commentsData
-    likeList.value = likesData
+    commentList.value = commentsData.comments
+    likeList.value = likesData.likes
 
     // 更新用户信息
     Object.assign(currentUser, {

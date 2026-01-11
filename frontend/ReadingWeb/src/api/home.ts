@@ -45,7 +45,7 @@ const mapToRankBook = (raw: SimpleBookRaw, index: number): RankBook => ({
    最近阅读
    ======================= */
 const mapToRecentBook = (raw: any, index: number): RecentBook => ({
-  id: raw.bookId ?? index,
+  bookId: raw.bookId ?? index,
   title: raw.bookTitle,
   cover: raw.cover,
 })

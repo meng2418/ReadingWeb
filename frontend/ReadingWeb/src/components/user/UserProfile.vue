@@ -179,9 +179,12 @@ const openRechargeDialog = () => {
 
 const handleRechargeSuccess = (option: any) => {
   console.log('充值成功:', option)
-  props.user.payCoin += option.amount + (option.bonus || 0)
+  // 使用 coinAmount 和 bonusCoins，如果没有则使用 amount 和 bonus
+  const coinAmount = option.coinAmount || option.amount || 0
+  const bonusCoins = option.bonusCoins || option.bonus || 0
+  props.user.payCoin += coinAmount + bonusCoins
   ElMessage.success(
-    `成功充值${option.amount}书币${option.bonus ? '，赠送${option.bonus}书币' : ''}`,
+    `成功充值${coinAmount}充值币${bonusCoins > 0 ? `，赠送${bonusCoins}充值币` : ''}`,
   )
 }
 

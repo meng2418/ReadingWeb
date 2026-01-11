@@ -309,8 +309,8 @@ const fetchUserPosts = async () => {
 const fetchUserThoughts = async () => {
   try {
     isLoadingThoughts.value = true
-    const allNotes = await getUserNotes()
-    thoughts.value = allNotes
+    const allNotesResponse = await getUserNotes()
+    thoughts.value = allNotesResponse.notes
       .filter((n: any) => n.noteType === 'thought')
       // 确保这里的 id 对应的是 noteId，方便后续删除使用
       .map((n: any) => ({

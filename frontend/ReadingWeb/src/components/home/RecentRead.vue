@@ -2,7 +2,12 @@
   <div class="recent-read">
     <div class="cover-list">
       <!-- 遍历计算后的 displayBooks -->
-      <div v-for="(book, index) in displayBooks" :key="book.id || index" class="cover-item">
+      <div 
+        v-for="(book, index) in displayBooks" 
+        :key="book.bookId || index" 
+        class="cover-item"
+        @click="handleBookClick(book)"
+      >
         <!-- 如果有封面则显示图片 -->
         <img v-if="book.cover" :src="book.cover" :alt="book.title" class="cover-img" />
         <!-- 如果没有封面则显示白色占位块 -->
@@ -14,12 +19,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 interface RecentBook {
-  id: number | string
+  bookId: number
   title: string
   cover: string
 }
+
+const router = useRouter()
 
 const props = defineProps<{
   books: RecentBook[]
@@ -33,13 +41,29 @@ const displayBooks = computed(() => {
   // 如果不足4本，用空对象补齐
   while (result.length < maxCount) {
     result.push({
-      id: `empty-${result.length}`,
+      bookId: 0,
       title: '',
       cover: '',
     })
   }
   return result
 })
+
+const handleBookClick = (book: RecentBook) => {
+  // 如果是空占位（bookId为0），不处理
+  if (!book.bookId || book.bookId === 0) {
+    return
+  }
+  
+  // 跳转到阅读器页面
+  router.push({
+    name: 'ReaderPage',
+    params: {
+      bookId: book.bookId,
+      chapterId: 1 // 默认跳转到第一章
+    }
+  })
+}
 </script>
 
 <style scoped>
