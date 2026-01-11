@@ -51,12 +51,11 @@ public class BookReviewController {
     public Result<Map<String, Object>> deleteReview(
             @RequestAttribute("userId") Integer userId,
             @PathVariable Integer reviewId) {
-        bookReviewService.deleteReview(userId, reviewId);
+        Integer remainingCount = bookReviewService.deleteReview(userId, reviewId);
         
         Map<String, Object> response = new HashMap<>();
         response.put("deletedReviewId", reviewId);
-        // 可以返回剩余评论数，这里简化处理
-        response.put("remainingReviewCount", 0);
+        response.put("remainingReviewCount", remainingCount);
         return Result.success(response);
     }
 

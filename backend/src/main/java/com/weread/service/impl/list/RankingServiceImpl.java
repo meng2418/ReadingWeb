@@ -560,7 +560,7 @@ public class RankingServiceImpl implements RankingService {
             return "未知作者";
         }
         // 优先获取作者名称，兜底返回未知
-        return Optional.ofNullable(author.getName()).orElse("未知作者");
+        return Optional.ofNullable(author.getAuthorName()).orElse("未知作者");
     }
 
     /**

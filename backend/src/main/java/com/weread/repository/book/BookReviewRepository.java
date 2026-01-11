@@ -2,6 +2,7 @@ package com.weread.repository.book;
 
 import com.weread.entity.book.BookReviewEntity;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -56,5 +57,38 @@ public interface BookReviewRepository extends JpaRepository<BookReviewEntity, In
            "AND r.status = 1 " +
            "AND r.isPublic = true")
     Long countByBookId(@Param("bookId") Integer bookId);
+
+    /**
+     * 游标分页查询用户书评（第一页）
+     * 按创建时间倒序，reviewId 倒序
+     */
+    @Query("SELECT r FROM BookReviewEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.status = 1 " +
+           "ORDER BY r.createdAt DESC, r.reviewId DESC")
+    List<BookReviewEntity> findUserReviewsFirstPage(@Param("userId") Integer userId, PageRequest pageable);
+
+    /**
+     * 游标分页查询用户书评（后续页）
+     * cursor 是 reviewId，查询创建时间小于等于指定reviewId的书评
+     */
+    @Query("SELECT r FROM BookReviewEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.status = 1 " +
+           "AND (r.createdAt < (SELECT r2.createdAt FROM BookReviewEntity r2 WHERE r2.reviewId = :cursor) " +
+           "OR (r.createdAt = (SELECT r2.createdAt FROM BookReviewEntity r2 WHERE r2.reviewId = :cursor) " +
+           "AND r.reviewId < :cursor)) " +
+           "ORDER BY r.createdAt DESC, r.reviewId DESC")
+    List<BookReviewEntity> findUserReviewsByCursor(@Param("userId") Integer userId, 
+                                                    @Param("cursor") Integer cursor, 
+                                                    PageRequest pageable);
+
+    /**
+     * 统计用户总书评数
+     */
+    @Query("SELECT COUNT(r) FROM BookReviewEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.status = 1")
+    Long countByUserId(@Param("userId") Integer userId);
 }
 

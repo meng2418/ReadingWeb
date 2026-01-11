@@ -47,7 +47,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return Progress update result VO
      */
-    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Long userId);
+    ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Integer userId);
 
     /**
      * Queries the user's bookshelf list, supports status filtering.
@@ -66,7 +66,7 @@ public interface BookshelfService {
      * @return MarkFinishedVO with book status, finished time, total finished books
      *         count, and milestone info
      */
-    com.weread.vo.book.MarkFinishedVO markBookFinished(Integer bookId, Long userId);
+    com.weread.vo.book.MarkFinishedVO markBookFinished(Integer bookId, Integer userId);
 
     /**
      * 补充1：查询书架书籍（支持全部/按状态筛选）

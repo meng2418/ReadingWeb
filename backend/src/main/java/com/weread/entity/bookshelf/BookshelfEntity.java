@@ -23,7 +23,7 @@ public class BookshelfEntity {
     private Integer bookshelfId; // 主键：保持 Integer
 
     @Column(name = "user_id", nullable = false)
-    private Long userId; // 核心修正：必须是 Long，引用 UserEntity
+    private Integer userId; // 核心修正：必须是 Long，引用 UserEntity
 
     @Column(name = "book_id", nullable = false)
     private Integer bookId; // 外键：保持 Integer，引用 BookEntity

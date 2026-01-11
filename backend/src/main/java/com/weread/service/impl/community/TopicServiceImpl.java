@@ -4,7 +4,7 @@ import com.weread.dto.response.community.TopicListResponse;
 import com.weread.entity.community.TopicEntity;
 import com.weread.repository.community.TopicRepository;
 import com.weread.repository.community.PostRepository;
-import com.weread.repository.user.FollowRepository;
+import com.weread.repository.community.TopicFollowRepository;
 import com.weread.service.community.TopicService;
 import com.weread.vo.community.HotTopicVO;
 import com.weread.vo.community.TopicDetailRelatedVO;
@@ -29,7 +29,7 @@ public class TopicServiceImpl implements TopicService {
 
     private final TopicRepository topicRepository;
     private final PostRepository postRepository;
-    private final FollowRepository followRepository;
+    private final TopicFollowRepository topicFollowRepository;
 
     @Override
     @Transactional
@@ -135,6 +135,7 @@ public class TopicServiceImpl implements TopicService {
     
         return topics.stream().map(topic -> {
             HotTopicVO vo = new HotTopicVO();
+            vo.setTopicId(topic.getTopicId());
             vo.setTopicName(topic.getTopicName());  // 实体字段是topicName
             return vo;
         }).collect(Collectors.toList());
@@ -154,10 +155,11 @@ public class TopicServiceImpl implements TopicService {
         // 3. 查询今日帖子数（需要单独统计）
         Integer todayPostCount = postRepository.countTodayPostsByTopic(topicId);
     
-        // 4. 查询是否已关注（需要FollowRepository）
+        // 4. 查询是否已关注（使用 TopicFollowRepository）
         Boolean isFollowing = false;
         if (currentUserId != null) {
-            isFollowing = followRepository.existsByUserIdAndTopicId(currentUserId, topicId);
+            // 使用 topicFollowRepository 检查用户是否关注话题
+            isFollowing = topicFollowRepository.existsByUserIdAndTopicId(currentUserId, topicId);
         }
     
         // 5. 构建响应

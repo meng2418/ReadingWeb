@@ -112,8 +112,8 @@ public class CategoryServiceImpl implements CategoryService {
      * 获取作者名称（处理空值）
      */
     private String getAuthorName(BookEntity book) {
-        if (book.getAuthor() != null && book.getAuthor().getName() != null) {
-            return book.getAuthor().getName();
+        if (book.getAuthor() != null && book.getAuthor().getAuthorName() != null) {
+            return book.getAuthor().getAuthorName();
         }
         // 如果Author实体没有name字段，可能有authorName字段
         if (book.getAuthorName() != null) {

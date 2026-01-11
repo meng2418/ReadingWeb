@@ -23,7 +23,7 @@ public interface FollowRepository extends JpaRepository<FollowEntity, Integer> {
             + "ORDER BY u.userId ASC")
     List<UserEntity> findFollowing(
             @Param("userId") Integer userId,
-            @Param("cursor") String cursor,
+            @Param("cursor") Integer cursor,
             @Param("limit") int limit);
 
     /**
@@ -68,5 +68,7 @@ public interface FollowRepository extends JpaRepository<FollowEntity, Integer> {
         // 如果将来需要实现话题关注，需要创建单独的 TopicFollowEntity
         return false;
     }
+
+    boolean existsByFollowerIdAndFollowingId(Integer followerId, Integer followingId);
 
 }

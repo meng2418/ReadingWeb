@@ -14,7 +14,7 @@ public class BookDetailVO {
     private String bookTitle; // 前端期望的字段名
     private String title; // 兼容字段
 
-    private Long authorId;
+    private Integer authorId;
     private String authorName;
     private String author; // 前端期望的字段名
     private String authorBio; // 作者简介

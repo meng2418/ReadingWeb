@@ -51,55 +51,95 @@ export const fetchCommunityPosts = async (): Promise<Post[]> => {
   }))
 }
 
-/** 获取我收到的评论 **/
+/** 获取我收到的评论瀑布流 **/
 interface RawComment {
+  commentId: number
+  postId: number
   postTitle: string
   commenter: {
+    userId: number
     username: string
     avatar: string
   }
   commentContent: string
   commentTime: string
+  parentCommentId?: number
 }
 
-export const fetchMyComments = async () => {
-  const res = await request.get('/messages/my-posts/comments')
-  const list: RawComment[] = res.data.data?.comments ?? []
-
-  return list.map((item) => ({
-    user: {
-      username: item.commenter.username,
-      avatar: item.commenter.avatar,
-    },
-    content: item.commentContent,
-    rightCardText: item.postTitle,
-    time: item.commentTime,
-  }))
+export interface MyCommentsResponse {
+  comments: RawComment[]
+  hasMore: boolean
+  nextCursor: number | null
 }
 
-/** 获取我收到的点赞 **/
+export const fetchMyComments = async (params?: {
+  cursor?: number
+  limit?: number
+}): Promise<MyCommentsResponse> => {
+  const res = await request.get('/messages/my-posts/comments', { params })
+  const data = res.data.data ?? {}
+  
+  return {
+    comments: (data.comments ?? []).map((item: RawComment) => ({
+      user: {
+        username: item.commenter.username,
+        avatar: item.commenter.avatar,
+      },
+      content: item.commentContent,
+      rightCardText: item.postTitle,
+      time: item.commentTime,
+      commentId: item.commentId,
+      postId: item.postId,
+      parentCommentId: item.parentCommentId,
+    })),
+    hasMore: data.hasMore ?? false,
+    nextCursor: data.nextCursor ?? null,
+  }
+}
+
+/** 获取我收到的点赞瀑布流 **/
 interface RawLike {
+  likeId: number
+  targetType: 'post' | 'comment'
+  targetId: number
   postTitle: string
   commentContent?: string
   liker: {
+    userId: number
     username: string
     avatar: string
   }
   likeTime: string
 }
 
-export const fetchMyLikes = async () => {
-  const res = await request.get('/messages/likes')
-  const list: RawLike[] = res.data.data?.likes ?? []
+export interface MyLikesResponse {
+  likes: RawLike[]
+  hasMore: boolean
+  nextCursor: number | null
+}
 
-  return list.map((item) => ({
-    user: {
-      username: item.liker.username,
-      avatar: item.liker.avatar,
-    },
-    rightCardText: item.commentContent || item.postTitle,
-    time: item.likeTime,
-  }))
+export const fetchMyLikes = async (params?: {
+  cursor?: number
+  limit?: number
+}): Promise<MyLikesResponse> => {
+  const res = await request.get('/messages/likes', { params })
+  const data = res.data.data ?? {}
+  
+  return {
+    likes: (data.likes ?? []).map((item: RawLike) => ({
+      user: {
+        username: item.liker.username,
+        avatar: item.liker.avatar,
+      },
+      rightCardText: item.commentContent || item.postTitle,
+      time: item.likeTime,
+      likeId: item.likeId,
+      targetType: item.targetType,
+      targetId: item.targetId,
+    })),
+    hasMore: data.hasMore ?? false,
+    nextCursor: data.nextCursor ?? null,
+  }
 }
 
 /** 点赞/取消点赞参数 */

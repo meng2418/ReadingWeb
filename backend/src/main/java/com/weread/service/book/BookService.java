@@ -44,7 +44,7 @@ public interface BookService {
      * @param bookId 书籍ID
      * @param userId 用户ID（可为null，如果为null则不查询用户相关状态）
      */
-    BookDetailVO getBookById(Integer bookId, Long userId);
+    BookDetailVO getBookById(Integer bookId, Integer userId);
 
     /**
      * 删除书籍（软删除，设置为下架）

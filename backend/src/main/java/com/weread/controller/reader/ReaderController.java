@@ -71,7 +71,7 @@ public class ReaderController {
         Integer bookIdInt = parseInteger(bookId, "bookId");
         Integer chapterIdInt = parseInteger(chapterId, "chapterId");
         
-        Long userId = loginUser.getUserId().longValue();
+        Integer userId = loginUser.getUserId();
         List<ChapterNoteResponseDTO> notes = noteService.getChapterNotes(userId, bookIdInt, chapterIdInt);
         return Result.success(notes);
     }

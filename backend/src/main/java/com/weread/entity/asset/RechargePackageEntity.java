@@ -23,8 +23,8 @@ public class RechargePackageEntity {
     @Column(name = "bonus_coins", nullable = false)
     private Integer bonusCoins;      // 赠送充值币数
     
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true; // 是否启用
+    @Column(name = "is_active")
+    private Integer isActive;  // 0 或 1
     
     @Column(name = "display_order")
     private Integer displayOrder;    // 显示顺序

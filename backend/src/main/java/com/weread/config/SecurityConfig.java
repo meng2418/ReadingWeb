@@ -54,12 +54,18 @@ public class SecurityConfig {
                 
                 // 判断是否需要返回JSON格式的401响应
                 // /books/{bookId}/chapters/{chapterId}/notes 接口需要返回JSON格式
-                if (requestPath != null && requestPath.matches("/books/\\d+/chapters/\\d+/notes")) {
+                // /user/notes 接口需要返回JSON格式
+                // /user/book-reviews 接口需要返回JSON格式
+                if (requestPath != null && (
+                    requestPath.matches("/books/\\d+/chapters/\\d+/notes") ||
+                    requestPath.equals("/user/notes") ||
+                    requestPath.equals("/user/book-reviews")
+                )) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.setCharacterEncoding("UTF-8");
                     
-                    // 返回JSON格式的响应
+                    // 返回JSON格式的响应（空对象，符合接口定义）
                     Map<String, Object> body = new HashMap<>();
                     ObjectMapper mapper = new ObjectMapper();
                     String json = mapper.writeValueAsString(body);

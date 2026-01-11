@@ -36,6 +36,11 @@ public class GlobalExceptionHandler {
             return true;
         }
         
+        // /user/notes 接口需要返回 JSON 格式（401响应）
+        if (requestPath != null && requestPath.equals("/user/notes")) {
+            return true;
+        }
+        
         // /book-reviews 接口返回空 body
         if (requestPath != null && requestPath.startsWith("/book-reviews")) {
             return false;
@@ -84,7 +89,17 @@ public class GlobalExceptionHandler {
             }
         }
         
-        // 其他状态码返回空 body（如 401 等）
+        // 401 状态码根据路径返回不同格式
+        if (status == HttpStatus.UNAUTHORIZED) {
+            if (shouldReturnJson) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new java.util.HashMap<>());
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        }
+        
+        // 其他状态码返回空 body
         return ResponseEntity.status(status).build();
     }
 

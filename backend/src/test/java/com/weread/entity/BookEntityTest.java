@@ -6,7 +6,6 @@ import com.weread.entity.book.BookEntity;
 
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
-import java.time.LocalDateTime;
 
 public class BookEntityTest {
 
@@ -16,7 +15,7 @@ public class BookEntityTest {
     public void setUp() {
         book = new BookEntity();
         book.setTitle("测试书籍");
-        book.setAuthorId(1L);
+        book.setAuthorId(1);
         book.setCategoryId(1);
     }
 

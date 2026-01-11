@@ -14,7 +14,7 @@ public class BookCreateDTO {
     private String title;
 
     @NotNull(message = "作者ID不能为空")
-    private Long authorId;
+    private Integer authorId;
 
     private String cover; // 封面URL
 
@@ -33,6 +33,7 @@ public class BookCreateDTO {
 
     private Boolean isMemberOnly = false; // 是否会员专属
 
-    private String tags; // 标签（逗号分隔）
+    private String topics; // 标签（逗号分隔）
+
 }
 

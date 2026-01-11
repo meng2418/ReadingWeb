@@ -31,10 +31,17 @@ public class PostEntity extends BaseEntity {
     @Column(name = "author_id", nullable = false)
     private Integer authorId;
 
+    @Column(name = "title", nullable = false)
     private String title;
 
-    @Lob
+    @Column(name = "content", nullable = false)
     private String content;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     // 发布地点
     @Column(name = "publish_location")
@@ -131,6 +138,14 @@ public class PostEntity extends BaseEntity {
     @Transient
     public LocalDateTime getPublishTime() {
         return getCreatedAt();
+    }
+
+    public void setPublishLocation(String publishLocation) {
+        this.publishLocation = publishLocation;
+    }
+
+    public String getPublishLocation() {
+        return publishLocation;
     }
 
     @Transient

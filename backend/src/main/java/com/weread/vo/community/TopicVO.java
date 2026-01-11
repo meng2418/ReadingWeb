@@ -12,5 +12,9 @@ public class TopicVO {
     private String topicName;
     private String image;
     private Integer postCount; 
+
+    public String getImage() {
+        return image != null ? image : "";
+    }
     
 }

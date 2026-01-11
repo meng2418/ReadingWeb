@@ -12,13 +12,21 @@ public interface FollowService {
      * @param limit 最大返回条数
      * @return 关注用户列表
      */
-    List<UserWithFollowVO> getFollowingUsers(Integer userId, String cursor, int limit);
+    List<UserWithFollowVO> getFollowingUsers(Integer userId, Integer cursor, int limit);
 
-    List<UserWithFollowVO> getFollowers(Integer userId, String cursor, int limit);
+    List<UserWithFollowVO> getFollowers(Integer userId, Integer cursor, int limit);
 
     FollowResultResponse followUser(Integer loginUserId, Integer targetUserId);
 
     FollowResultResponse unfollowUser(Integer loginUserId, Integer targetUserId);
 
     FollowResultResponse getFollowResult(Integer loginUserId, Integer targetUserId);
+
+    /**
+     * 检查当前用户是否关注了指定用户
+     * @param currentUserId 当前登录用户ID
+     * @param userId 要检查的用户ID
+     * @return 是否关注
+     */
+    boolean isFollowing(Integer currentUserId, Integer userId);
 }

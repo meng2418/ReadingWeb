@@ -6,8 +6,10 @@ import com.weread.dto.community.BookSearchResultDTO;
 import com.weread.dto.community.BookSimpleDTO;
 import com.weread.dto.community.PostCreationDTO;
 import com.weread.dto.community.PostSquareDTO;
+import com.weread.dto.community.RelatedBookDTO;
 import com.weread.dto.community.TopicSearchResponseDTO;
 import com.weread.dto.community.TopicSearchResultDTO;
+import com.weread.dto.community.UserPostsResponseDTO;
 import com.weread.vo.book.AuthorVO;
 import com.weread.vo.book.MentionedBookVO;
 import com.weread.vo.community.PostListVO;
@@ -20,6 +22,7 @@ import com.weread.repository.book.BookRepository;
 import com.weread.repository.community.LikeRepository;
 import com.weread.repository.user.UserRepository;
 import com.weread.repository.community.PostRepository;
+import com.weread.repository.community.TopicFollowRepository;
 import com.weread.repository.user.FollowRepository;
 import com.weread.repository.community.TopicRepository;
 import com.weread.service.book.BookService;
@@ -50,26 +53,29 @@ public class PostServiceImpl implements PostService {
     private final BookService bookService;
     private final PostRepository postRepository;
     private final FollowRepository followRepository;
+    private final TopicFollowRepository topicFollowRepository;
     private final BookRepository bookRepository;
     private final LikeRepository likeRepository;
     private final UserRepository userRepository;
-    private final TopicRepository topicRepository; // 新增
-    private final FollowService followService; // 新增，需要创建
-    private final LikeService likeService; // 新增，需要创建
+    private final TopicRepository topicRepository;
+    private final FollowService followService;
+    private final LikeService likeService;
 
     public PostServiceImpl(BookService bookService, PostRepository postRepository,
-            FollowRepository followRepository, BookRepository bookRepository,
+            FollowRepository followRepository, TopicFollowRepository topicFollowRepository,
+            BookRepository bookRepository,
             LikeRepository likeRepository, UserRepository userRepository,
             TopicRepository topicRepository, FollowService followService, LikeService likeService) {
         this.bookService = bookService;
         this.postRepository = postRepository;
         this.followRepository = followRepository;
+        this.topicFollowRepository = topicFollowRepository;
         this.bookRepository = bookRepository;
         this.likeRepository = likeRepository;
         this.userRepository = userRepository;
-        this.topicRepository = topicRepository; // 新增
-        this.followService = followService; // 新增
-        this.likeService = likeService; // 新增
+        this.topicRepository = topicRepository;
+        this.followService = followService;
+        this.likeService = likeService;
     }
 
     // ========================================================
@@ -101,7 +107,7 @@ public class PostServiceImpl implements PostService {
         if (cursor != null && cursor > 0) {
             // cursor-based 查询：postId > cursor
             Pageable pageable = PageRequest.of(0, limit);
-            posts = postRepository.findPostsByTopicAndCursor(topicId, sort, cursor, limit, pageable);
+            posts = postRepository.findPostsByTopicAndCursor(topicId, sort, cursor, limit);
         } else {
             // 第一页：查询最新的limit条
             posts = postRepository.findPostsByTopicAndSort(topicId, sort, limit);
@@ -236,7 +242,6 @@ public class PostServiceImpl implements PostService {
         post.setAuthorId(authorId);
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
-        post.setPublishLocation(dto.getPublishLocation());
 
         // 处理关联书籍
         if (dto.getBookIds() != null && !dto.getBookIds().isEmpty()) {
@@ -400,7 +405,7 @@ public class PostServiceImpl implements PostService {
             bookSimple.setBookId(firstBook.getBookId());
             bookSimple.setBookTitle(firstBook.getTitle());
             bookSimple.setCover(firstBook.getCover());
-            bookSimple.setAuthorName(firstBook.getAuthor() != null ? firstBook.getAuthor().getName() : "未知作者");
+            bookSimple.setAuthorName(firstBook.getAuthor() != null ? firstBook.getAuthor().getAuthorName() : "未知作者");
             dto.setMentionedFirstBook(bookSimple);
         }
 
@@ -465,10 +470,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public BookSearchResponseDTO searchBooks(String keyword, String cursor, int limit) {
+    public BookSearchResponseDTO searchBooks(String keyword, Integer cursor, int limit) {
         // 参数验证
         if (keyword == null || keyword.trim().isEmpty()) {
-            return new BookSearchResponseDTO(new ArrayList<>(), null, false);
+            return new BookSearchResponseDTO(new ArrayList<>(), 0, false); // 改为整数0
         }
 
         if (limit <= 0)
@@ -488,14 +493,13 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toList());
 
         // 生成游标（如果有下一页）
-        String nextCursor = null;
+        Integer nextCursor = 0; // 默认值设为0
         boolean hasMore = bookPage.hasNext();
 
         if (hasMore) {
-            // 使用最后一本书的ID和时间戳作为游标
+            // 使用最后一本书的ID作为游标
             BookEntity lastBook = bookPage.getContent().get(bookPage.getContent().size() - 1);
-            long timestamp = System.currentTimeMillis() / 1000;
-            nextCursor = String.format("book_%d_%d", lastBook.getBookId(), timestamp);
+            nextCursor = lastBook.getBookId(); // 直接返回书的ID
         }
 
         return new BookSearchResponseDTO(bookDTOs, nextCursor, hasMore);
@@ -503,10 +507,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public TopicSearchResponseDTO searchTopics(String keyword, String cursor, int limit) {
+    public TopicSearchResponseDTO searchTopics(String keyword, Integer cursor, int limit) {
         // 参数验证
         if (keyword == null || keyword.trim().isEmpty()) {
-            return new TopicSearchResponseDTO(new ArrayList<>(), null, false);
+            return new TopicSearchResponseDTO(new ArrayList<>(), 0, false);
         }
 
         if (limit <= 0)
@@ -526,14 +530,13 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toList());
 
         // 生成游标（如果有下一页）
-        String nextCursor = null;
+        Integer nextCursor = 0; // 默认返回0
         boolean hasMore = topicPage.hasNext();
 
         if (hasMore) {
-            // 使用最后一个话题的ID和时间戳作为游标
+            // 使用最后一个话题的ID作为游标
             TopicEntity lastTopic = topicPage.getContent().get(topicPage.getContent().size() - 1);
-            long timestamp = System.currentTimeMillis() / 1000;
-            nextCursor = String.format("topic_%d_%d", lastTopic.getTopicId(), timestamp);
+            nextCursor = lastTopic.getTopicId(); // 直接返回话题ID
         }
 
         return new TopicSearchResponseDTO(topicDTOs, nextCursor, hasMore);
@@ -543,7 +546,7 @@ public class PostServiceImpl implements PostService {
         BookSearchResultDTO dto = new BookSearchResultDTO();
         dto.setBookId(book.getBookId());
         dto.setBookTitle(book.getTitle());
-        dto.setAuthorName(book.getAuthor() != null ? book.getAuthor().getName() : "未知作者");
+        dto.setAuthorName(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
         return dto;
     }
 
@@ -554,5 +557,122 @@ public class PostServiceImpl implements PostService {
         dto.setViewCount(0); // 如果需要查看次数，需要在TopicEntity中添加字段
         dto.setDiscussionCount(topic.getPostCount() != null ? topic.getPostCount() : 0);
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RelatedBookDTO> getPostRelatedBooks(Integer postId) {
+        // 验证帖子存在
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "帖子不存在"));
+
+        // 获取相关书籍
+        if (post.getRelatedBooks() == null || post.getRelatedBooks().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 转换为DTO
+        return post.getRelatedBooks().stream()
+                .map(this::convertToRelatedBookDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserPostsResponseDTO getUserPosts(Integer userId, String cursor, int limit) {
+        // 验证用户存在
+        if (!userRepository.existsById(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在");
+        }
+
+        // 解析游标
+        Integer cursorId = null;
+        if (cursor != null && !cursor.isEmpty()) {
+            try {
+                // 游标格式：post_123_时间戳
+                String[] parts = cursor.split("_");
+                if (parts.length >= 2) {
+                    cursorId = Integer.parseInt(parts[1]);
+                }
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的游标格式");
+            }
+        }
+
+        // 构建查询条件
+        Pageable pageable = PageRequest.of(0, limit);
+        List<PostEntity> posts;
+
+        if (cursorId != null) {
+            // 使用游标查询：postId < cursorId（按时间倒序，所以用小于）
+            posts = postRepository.findByAuthorIdAndPostIdLessThanOrderByCreatedAtDesc(
+                    userId, cursorId, pageable);
+        } else {
+            // 第一页查询
+            posts = postRepository.findByAuthorIdOrderByCreatedAtDesc(userId, pageable);
+        }
+
+        // 转换为DTO
+        List<PostSquareDTO> postDTOs = posts.stream()
+                .map(post -> convertToPostSquareDTO(post, userId)) // 使用之前的方法
+                .collect(Collectors.toList());
+
+        // 计算是否还有更多数据
+        boolean hasMore = false;
+        String nextCursor = null;
+
+        if (!posts.isEmpty()) {
+            // 检查是否还有更多帖子
+            PostEntity lastPost = posts.get(posts.size() - 1);
+            long count = postRepository.countByAuthorIdAndPostIdLessThan(
+                    userId, lastPost.getPostId());
+            hasMore = count > 0;
+
+            if (hasMore) {
+                // 生成下一页的游标
+                long timestamp = System.currentTimeMillis() / 1000;
+                nextCursor = String.format("post_%d_%d", lastPost.getPostId(), timestamp);
+            }
+        }
+
+        // 统计用户帖子相关数据
+        Integer postCount = postRepository.countByUserId(userId);
+        Integer commentCount = postRepository.sumCommentsByUserId(userId);
+        Integer likeCount = postRepository.sumLikesByUserId(userId);
+
+        return new UserPostsResponseDTO(
+                postDTOs,
+                hasMore,
+                nextCursor,
+                postCount != null ? postCount : 0,
+                commentCount != null ? commentCount : 0,
+                likeCount != null ? likeCount : 0);
+    }
+
+    private RelatedBookDTO convertToRelatedBookDTO(BookEntity book) {
+        RelatedBookDTO dto = new RelatedBookDTO();
+        dto.setBookId(book.getBookId());
+        dto.setCover(book.getCover());
+        dto.setTitle(book.getTitle());
+        dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
+
+        // 截取描述，避免过长
+        if (book.getDescription() != null && book.getDescription().length() > 100) {
+            dto.setDescription(book.getDescription().substring(0, 100) + "...");
+        } else {
+            dto.setDescription(book.getDescription());
+        }
+
+        return dto;
+    }
+
+    // 检查是否关注用户
+    public boolean isFollowingUser(Integer followerId, Integer followingId) {
+        return followRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
+    }
+
+    // 检查是否关注话题
+    public boolean isFollowingTopic(Integer userId, Integer topicId) {
+        return topicFollowRepository.existsByUserIdAndTopicId(userId, topicId);
     }
 }

@@ -1,5 +1,7 @@
 package com.weread.service.user;
 
+import java.util.Map;
+
 import com.weread.dto.user.UpdateProfileDTO;
 import com.weread.vo.user.FollowListVO;
 import com.weread.vo.user.UserProfileVO;
@@ -34,4 +36,9 @@ public interface UserService {
     FollowListVO getFollowers(Integer userId, int page, int limit, Integer currentUserId);
 
     FollowListVO getFollowings(Integer userId, int page, int limit, Integer currentUserId);
+
+    /**
+     * 获取用户帖子瀑布流
+     */
+    Map<String, Object> getUserPosts(Integer userId, Integer cursor, Integer limit);
 }

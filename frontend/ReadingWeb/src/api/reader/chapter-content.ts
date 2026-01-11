@@ -1,7 +1,8 @@
 // src/api/reader/chapter-content.ts - 阅读器章节内容相关API
 import request from '@/utils/request'
+import type { AxiosResponse } from 'axios'
 
-const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
+const unwrap = (res: AxiosResponse): ChapterContentResponse => res?.data?.data ?? res?.data ?? {}
 
 /** 章节内容响应接口 */
 export interface ChapterContentResponse {

@@ -15,16 +15,16 @@ public interface UserFollowAuthorRepository extends JpaRepository<UserFollowAuth
     /**
      * 检查用户是否关注了作者
      */
-    Optional<UserFollowAuthorEntity> findByUserIdAndAuthorId(Integer userId, Long authorId);
+    Optional<UserFollowAuthorEntity> findByUserIdAndAuthorId(Integer userId, Integer authorId);
 
     /**
      * 统计作者的关注者数量
      */
-    int countByAuthorId(Long authorId);
+    int countByAuthorId(Integer authorId);
 
     /**
      * 删除关注关系
      */
-    void deleteByUserIdAndAuthorId(Integer userId, Long authorId);
+    void deleteByUserIdAndAuthorId(Integer userId, Integer authorId);
 }
 

@@ -18,4 +18,25 @@ public class TopicDetailVO {
     private LocalDateTime createdAt;
     private String adminName;
     private List<TopicDetailRelatedVO> relatedTopics;
+
+    // 确保字符串字段不为null
+    public String getImage() {
+        return image != null ? image : "";
+    }
+    
+    public String getTopicName() {
+        return topicName != null ? topicName : "";
+    }
+    
+    public String getDescription() {
+        return description != null ? description : "";
+    }
+    
+    public String getIntroduction() {
+        return introduction != null ? introduction : "";
+    }
+    
+    public String getAdminName() {
+        return adminName != null ? adminName : "";
+    }
 }

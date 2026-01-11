@@ -41,23 +41,23 @@ public class FollowEntity {
 
     // 【修改】方法从关联实体获取信息
     public String getUsername() {
-        return followingUser != null ? followingUser.getUsername() : null;
+        return followingUser != null ? followingUser.getUsername() : "momo";
     }
 
     public String getAvatar() {
-        return followingUser != null ? followingUser.getAvatar() : null;
+        return followingUser != null ? followingUser.getAvatar() : "../../../../../data/pictures/default_avatar.jpg";
     }
 
     public String getBio() {
-        return followingUser != null ? followingUser.getBio() : null;
+        return followingUser != null ? followingUser.getBio() : "暂无简介";
     }
     
     // 【添加】获取关注者用户名的便捷方法
     public String getFollowerUsername() {
-        return followerUser != null ? followerUser.getUsername() : null;
+        return followerUser != null ? followerUser.getUsername() : "momo";
     }
     
     public String getFollowerAvatar() {
-        return followerUser != null ? followerUser.getAvatar() : null;
+        return followerUser != null ? followerUser.getAvatar() : "";
     }
 }

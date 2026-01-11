@@ -37,7 +37,7 @@ public class MembershipPackageEntity {
     private Boolean isHot = false;
     
     @Column(name = "is_active")
-    private Boolean isActive = true;
+    private Integer isActive = 1;
     
     @Column(name = "display_order")
     private Integer displayOrder = 0;

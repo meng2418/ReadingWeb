@@ -10,7 +10,7 @@ import java.util.List;
  */
 @Data
 public class ChapterNoteResponseDTO {
-    private Long noteId;
+    private Integer noteId;
     private String quote;
     private Integer startIndex;
     private Integer endIndex;

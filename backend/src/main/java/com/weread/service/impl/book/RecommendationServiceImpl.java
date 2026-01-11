@@ -58,7 +58,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         SimpleBookDTO dto = new SimpleBookDTO();
         dto.setBookId(book.getBookId());
         dto.setBookTitle(book.getTitle());
-        dto.setAuthor(book.getAuthor().getName());
+        dto.setAuthor(book.getAuthor().getAuthorName());
         dto.setCover(book.getCoverImage());
         dto.setReadingStatus("unread"); // 推荐书籍默认未读
         return dto;

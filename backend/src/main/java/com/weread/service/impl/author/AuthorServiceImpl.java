@@ -27,21 +27,22 @@ public class AuthorServiceImpl implements AuthorService {
 
     @Override
     @Transactional(readOnly = true)
-    public AuthorDetailVO getAuthorDetail(Long authorId, Integer currentUserId) {
+    public AuthorDetailVO getAuthorDetail(Integer authorId, Integer currentUserId) {
         // 1. 查询作者信息
         AuthorEntity author = authorRepository.findById(authorId)
                 .orElseThrow(() -> new RuntimeException("作者不存在，ID: " + authorId));
+        Long authorIdLong = authorId.longValue();
 
         // 2. 查询作者的所有作品
-        List<BookEntity> books = bookRepository.findByAuthorIdAndIsPublishedTrue(authorId);
+        List<BookEntity> books = bookRepository.findByAuthorIdAndIsPublishedTrue(authorIdLong);
 
         // 3. 统计作品数量
-        int workCount = bookRepository.countByAuthorIdAndIsPublishedTrue(authorId);
+        int workCount = bookRepository.countByAuthorIdAndIsPublishedTrue(authorIdLong);
 
         // 4. 构建响应对象
         AuthorDetailVO vo = new AuthorDetailVO();
         vo.setAuthorId(author.getAuthorId());
-        vo.setAuthorName(author.getName());
+        vo.setAuthorName(author.getAuthorName());
         vo.setAuthorBio(author.getBio() != null ? author.getBio() : "");
         vo.setWorkCount(workCount);
 
@@ -73,7 +74,7 @@ public class AuthorServiceImpl implements AuthorService {
         AuthorDetailVO.AuthorWorkVO workVO = new AuthorDetailVO.AuthorWorkVO();
         workVO.setBookId(book.getBookId());
         workVO.setBookTitle(book.getTitle());
-        workVO.setAuthorName(book.getAuthor() != null ? book.getAuthor().getName() : "");
+        workVO.setAuthorName(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "");
         workVO.setCover(book.getCover() != null ? book.getCover() : "");
         workVO.setRating(book.getRating() != null ? book.getRating().intValue() : 0);
         workVO.setReadCount(book.getReadCount() != null ? book.getReadCount() : 0);

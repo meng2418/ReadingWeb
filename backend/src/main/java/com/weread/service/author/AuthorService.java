@@ -13,6 +13,6 @@ public interface AuthorService {
      * @param currentUserId 当前登录用户ID（可为null）
      * @return 作者详情
      */
-    AuthorDetailVO getAuthorDetail(Long authorId, Integer currentUserId);
+    AuthorDetailVO getAuthorDetail(Integer authorId, Integer currentUserId);
 }
 

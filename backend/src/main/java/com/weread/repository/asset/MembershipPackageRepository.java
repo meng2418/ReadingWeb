@@ -35,6 +35,6 @@ public interface MembershipPackageRepository extends JpaRepository<MembershipPac
     /**
      * 查询指定ID列表的套餐
      */
-    @Query("SELECT m FROM MembershipPackageEntity m WHERE m.packageId IN :ids AND m.isActive = true")
+    @Query("SELECT m FROM MembershipPackageEntity m WHERE m.packageId IN :ids AND m.isActive = 1")
     List<MembershipPackageEntity> findActivePackagesByIds(@Param("ids") List<Integer> ids);
 }

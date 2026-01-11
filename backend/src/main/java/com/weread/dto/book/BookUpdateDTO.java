@@ -10,7 +10,7 @@ public class BookUpdateDTO {
 
     private String title;
 
-    private Long authorId;
+    private Integer authorId;
 
     private String cover;
 
@@ -30,6 +30,6 @@ public class BookUpdateDTO {
 
     private Boolean isMemberOnly;
 
-    private String tags;
-}
+    private String topics;
 
+}

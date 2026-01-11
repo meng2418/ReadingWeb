@@ -45,7 +45,7 @@ public class SearchServiceImpl implements SearchService {
 
         // 模糊搜索作者（根据姓名）
         List<AuthorSearchResultDto> authors = authorRepository
-                .findByNameContainingIgnoreCase(keyword)
+                .findByAuthornameContainingIgnoreCase(keyword)
                 .stream()
                 .map(this::convertToAuthorSearchResultDto)
                 .collect(Collectors.toList());
@@ -67,7 +67,7 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public List<AuthorSearchResultDto> searchAuthors(String keyword) {
-        return authorRepository.findByNameContainingIgnoreCase(keyword)
+        return authorRepository.findByAuthornameContainingIgnoreCase(keyword)
                 .stream()
                 .map(this::convertToAuthorSearchResultDto)
                 .collect(Collectors.toList());
@@ -80,7 +80,7 @@ public class SearchServiceImpl implements SearchService {
         dto.setCover(book.getCover());
 
         // 现在 author 已经通过 JOIN FETCH 加载，可以直接访问
-        dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getName() : "未知作者");
+        dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
 
         dto.setRating(book.getRating());
         dto.setReadCount(book.getReadCount());
@@ -90,7 +90,7 @@ public class SearchServiceImpl implements SearchService {
     private AuthorSearchResultDto convertToAuthorSearchResultDto(AuthorEntity author) {
         AuthorSearchResultDto result = new AuthorSearchResultDto();
         result.setAvatar(author.getAvatar());
-        result.setAuthorName(author.getName());
+        result.setAuthorName(author.getAuthorName());
         result.setAuthorBio(author.getBio());
 
         // 设置默认值

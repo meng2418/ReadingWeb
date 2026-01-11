@@ -39,8 +39,8 @@ public class BookDetailController {
     public Result<BookDetailVO> getBookDetail(
             @PathVariable Integer bookId,
             @AuthenticationPrincipal UserEntity currentUser) {
-        Long userId = (currentUser != null && currentUser.getUserId() != null)
-                ? currentUser.getUserId().longValue()
+        Integer userId = (currentUser != null && currentUser.getUserId() != null)
+                ? currentUser.getUserId()
                 : null;
         return Result.success(bookService.getBookById(bookId, userId));
     }
@@ -75,7 +75,7 @@ public class BookDetailController {
         if (currentUser == null || currentUser.getUserId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户未登录");
         }
-        Long userId = currentUser.getUserId().longValue();
+        Integer userId = currentUser.getUserId();
         MarkFinishedVO result = bookshelfService.markBookFinished(bookId, userId);
         return Result.success(result);
     }

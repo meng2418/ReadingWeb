@@ -87,7 +87,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
        @Query("SELECT b FROM BookEntity b " +
                      "LEFT JOIN b.author a " +
                      "WHERE (b.title LIKE %:keyword% OR " +
-                     "       (a IS NOT NULL AND a.name LIKE %:keyword%)) " +
+                     "       (a IS NOT NULL AND a.authorName LIKE %:keyword%)) " +
                      "AND b.isPublished = true " +
                      "ORDER BY b.readCount DESC, b.createdAt DESC")
        Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
@@ -208,7 +208,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer> {
        List<BookEntity> findByTitleContainingIgnoreCaseWithAuthor(@Param("title") String title);
 
        // 如果需要搜索作者名
-       @Query("SELECT b FROM BookEntity b WHERE b.author.name LIKE %:keyword%")
+       @Query("SELECT b FROM BookEntity b WHERE b.author.authorName LIKE %:keyword%")
        List<BookEntity> findByAuthorNameContaining(@Param("keyword") String keyword);
 
        // 获取作者的代表作

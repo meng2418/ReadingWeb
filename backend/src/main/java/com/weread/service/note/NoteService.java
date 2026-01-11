@@ -1,8 +1,10 @@
 package com.weread.service.note;
 
 import com.weread.dto.note.NoteResponseDTO;
+import com.weread.dto.note.UserNotesResponseDTO;
 import com.weread.entity.note.NoteEntity;
 import com.weread.vo.note.NoteVO;
+import com.weread.vo.user.HighlightVO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,7 +18,7 @@ public interface NoteService {
      * @param noteEntity 笔记内容实体
      * @return 创建的笔记实体
      */
-    NoteEntity createNote(Long userId, NoteEntity noteEntity);
+    NoteEntity createNote(Integer userId, NoteEntity noteEntity);
 
     /**
      * 发布笔记（根据API规范）
@@ -34,17 +36,26 @@ public interface NoteService {
     /**
      * 更新笔记内容或公开状态（只允许作者修改）
      */
-    NoteEntity updateNote(Long noteId, Long userId, String content, Boolean isPublic, String color);
+    NoteEntity updateNote(Integer noteId, Integer userId, String content, Boolean isPublic, String color);
 
     /**
      * 删除笔记（只允许作者删除）
      */
-    void deleteNote(Long noteId, Long userId);
+    void deleteNote(Integer noteId, Integer userId);
 
     /**
      * 分页查询用户的个人笔记列表
      */
-    Page<NoteVO> getUserNotes(Long userId, Pageable pageable);
+    Page<NoteVO> getUserNotes(Integer userId, Pageable pageable);
+
+    /**
+     * 游标分页查询用户的笔记瀑布流
+     * @param userId 用户ID
+     * @param cursor 游标（noteId），第一次请求为null
+     * @param limit 每页数量
+     * @return 笔记瀑布流响应DTO
+     */
+    UserNotesResponseDTO getUserNotesWithCursor(Integer userId, Integer cursor, Integer limit);
 
     /**
      * 获取某章节的所有公开笔记
@@ -58,7 +69,7 @@ public interface NoteService {
      * @param chapterId 章节ID
      * @return 章节笔记响应DTO列表
      */
-    List<com.weread.dto.note.ChapterNoteResponseDTO> getChapterNotes(Long userId, Integer bookId, Integer chapterId);
+    List<com.weread.dto.note.ChapterNoteResponseDTO> getChapterNotes(Integer userId, Integer bookId, Integer chapterId);
 
     /**
      * 获取指定用户、指定书籍的所有笔记列表（全书笔记）
@@ -66,5 +77,26 @@ public interface NoteService {
      * @param bookId 书籍ID
      * @return 全书笔记响应DTO列表
      */
-    List<com.weread.dto.note.BookNoteResponseDTO> getBookNotes(Long userId, Integer bookId);
+    List<com.weread.dto.note.BookNoteResponseDTO> getBookNotes(Integer userId, Integer bookId);
+
+    /**
+     * 获取用户最新的6条笔记
+     * @param userId 用户ID
+     * @return 最新6条笔记DTO列表
+     */
+    List<com.weread.dto.note.BookNoteDTO> getUserRecentNotes6(Integer userId);
+
+    /**
+     * 获取用户最新的3条划线
+     * @param userId 用户ID
+     * @return 最新3条划线VO列表
+     */
+    List<HighlightVO> getUserRecentHighlights3(Integer userId);
+
+    /**
+     * 获取用户的笔记总数
+     * @param userId 用户ID
+     * @return 笔记总数
+     */
+    Integer getUserNoteCount(Integer userId);
 }

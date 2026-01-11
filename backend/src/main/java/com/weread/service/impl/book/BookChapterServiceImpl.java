@@ -7,7 +7,7 @@ import com.weread.entity.book.ReadingProgressEntity;
 import com.weread.entity.book.BookEntity;
 import com.weread.repository.book.ChapterRepository;
 import com.weread.repository.book.BookRepository;
-import com.weread.repository.book.ReadingProgressRepository;
+import com.weread.repository.ReadingProgressRepository;
 import com.weread.service.asset.MemberService;
 import com.weread.service.book.BookChapterService;
 import com.weread.service.book.BookService;
@@ -212,10 +212,11 @@ public class BookChapterServiceImpl implements BookChapterService {
         vo.setNextChapterId(chapter.getNextChapterId() != null ? chapter.getNextChapterId() : 0);
 
         // 获取最后阅读位置（如果有用户ID）
+        long UserId = userId.longValue();
         int lastReadPosition = 0;
         if (userId != null) {
             Optional<ReadingProgressEntity> progressOpt = readingProgressRepository
-                    .findByUserIdAndBookId(userId.longValue(), bookId);
+                    .findByUserIdAndBookId(userId, bookId);
             if (progressOpt.isPresent()) {
                 ReadingProgressEntity progress = progressOpt.get();
                 // 如果当前章节是用户正在阅读的章节，使用currentPage计算位置

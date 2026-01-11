@@ -9,10 +9,10 @@
         class="review-item"
       >
         <div class="user-avatar">
-          <img v-if="review.avatar" :src="review.avatar" :alt="review.userName" class="avatar-image" @error="handleAvatarError" />
-          <span v-else class="avatar-text">{{ getInitials(review.userName) }}</span>
+          <img v-if="review.avatar" :src="review.avatar" :alt="review.userName || '用户'" class="avatar-image" @error="handleAvatarError" />
+          <span v-else class="avatar-text">{{ getInitials(review.userName || '用户') }}</span>
           <!-- 当前用户的点评标记 -->
-          <span class="current-user-badge" v-if="isCurrentUserReview(review.userId)">我</span>
+          <span class="current-user-badge" v-if="review.userId && isCurrentUserReview(review.userId)">我</span>
         </div>
 
         <div class="review-content">
@@ -24,7 +24,7 @@
               <!-- 编辑按钮（仅当前用户可见） -->
               <button
                 class="edit-button"
-                v-if="isCurrentUserReview(review.userId)"
+                v-if="review.userId && isCurrentUserReview(review.userId)"
                 @click="handleEditReview(review)"
               >
                 编辑
@@ -210,7 +210,7 @@ onMounted(() => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   padding: 20px;
   margin-bottom: 20px;
-  min-height: 485px;
+  /* 移除固定最小高度，让组件高度自适应内容 */
 }
 
 .component-title {
@@ -400,7 +400,9 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  margin-top: 10px;
+  padding-top: 10px;
+  /* 移除gap，使用margin-top和padding-top来控制间距 */
 }
 
 .view-more-btn {
