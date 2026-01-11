@@ -125,6 +125,7 @@ const getRatingText = (rating: string | undefined): string => {
     case 'recommend': return '推荐';
     case 'average': return '一般';
     case 'poor': return '不行';
+    case 'not_recommend': return '不行'; // API返回的枚举值
     default: return '';
   }
 };
@@ -344,7 +345,8 @@ onMounted(() => {
   border-color: #ffd591;
 }
 
-.rating-tag.poor {
+.rating-tag.poor,
+.rating-tag.not_recommend {
   background-color: #fff1f0;
   color: #f5222d;
   border-color: #ffa39e;

@@ -1,7 +1,8 @@
 // src/api/book-detail/book-recommendation-section.ts - BookRecommendationSection组件相关API
 import request from '@/utils/request'
 
-const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const unwrap = <T>(res: any): T => res?.data?.data ?? res?.data ?? {}
 
 export interface BookRating {
   rating: 'recommend' | 'average' | 'not_recommend'

@@ -22,7 +22,7 @@ export interface BookMetrics extends BookContent {
 }
 // 最近阅读封面数据
 export interface RecentBook {
-  id: number
+  bookId: number
   title: string
   cover: string
 }

@@ -4,7 +4,12 @@
   <div class="longest-read">
     <h3>阅读最久</h3>
 
-    <div class="book-item" v-for="(book, i) in topBooks" :key="i">
+    <div 
+      class="book-item" 
+      v-for="(book, i) in topBooks" 
+      :key="i"
+      @click="handleBookClick(book)"
+    >
       <div class="rank-num">{{ i + 1 }}</div>
       <img :src="book.cover" alt="book cover" class="book-cover" />
 
@@ -17,10 +22,25 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import type { TopBook } from '@/types/user'
+
+const router = useRouter()
+
 const props = defineProps({
   topBooks: { type: Array as () => TopBook[], default: () => [] },
 })
+
+const handleBookClick = (book: TopBook) => {
+  if (book.bookId) {
+    router.push({
+      path: '/bookdetail',
+      query: { id: book.bookId }
+    })
+  } else {
+    console.warn('书籍bookId不存在，无法跳转', book)
+  }
+}
 </script>
 
 <style scoped>
@@ -40,6 +60,12 @@ const props = defineProps({
   display: flex;
   align-items: center;
   margin-bottom: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.book-item:hover {
+  opacity: 0.8;
 }
 
 .rank-num {

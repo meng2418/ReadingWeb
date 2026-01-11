@@ -8,7 +8,6 @@ const unwrap = (res: any): any => {
 export interface BookDetailRaw {
   cover: string
   bookTitle: string
-  author: string
   authorName: string
   authorId: number
   rating: number
@@ -61,10 +60,11 @@ export interface BookDetail {
   authorBio: string
 }
 
+
 const mapBookDetail = (raw: BookDetailRaw, bookId: string | number): BookDetail => ({
   id: bookId,
   title: raw.bookTitle,
-  author: raw.authorName || raw.author,
+  author: raw.authorName,
   authorId: raw.authorId,
   cover: raw.cover,
   description: raw.description,
@@ -151,3 +151,4 @@ export const removeFromBookshelf = async (bookId: string | number): Promise<bool
     return true
   }
 }
+

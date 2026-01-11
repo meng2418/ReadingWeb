@@ -257,11 +257,19 @@ export const getTopBooks = async (
 
   const list = res.data?.data?.topBooks ?? []
 
-  return list.map((item) => ({
-    cover: item.cover,
-    title: item.bookTitle,
-    readingTime: item.readingTime,
-  }))
+  return list.map((item) => {
+    // 确保bookId存在，如果API没有返回则抛出错误或使用默认值
+    if (!item.bookId) {
+      console.error('API返回的书籍数据缺少bookId:', item)
+    }
+    
+    return {
+      bookId: item.bookId ?? 0, // 如果确实没有，设为0，跳转时会检查
+      cover: item.cover ?? '',
+      title: item.bookTitle ?? '',
+      readingTime: item.readingTime ?? 0,
+    }
+  }).filter(item => item.bookId > 0) // 过滤掉没有bookId的项
 }
 
 /* =========================
