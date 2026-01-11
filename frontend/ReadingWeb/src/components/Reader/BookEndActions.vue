@@ -159,7 +159,7 @@ const formatCompleteTime = (time: string) => {
 .end-title-text {
   font-size: 3rem;
   font-weight: 300;
-  color: #666;
+  color: var(--text-secondary);
   letter-spacing: 4px;
   position: relative;
   display: inline-block;
@@ -172,7 +172,7 @@ const formatCompleteTime = (time: string) => {
   top: 50%;
   width: 100px;
   height: 1px;
-  background-color: #ddd;
+  background-color: var(--border-color);
 }
 
 .end-title-text::before {
@@ -190,11 +190,12 @@ const formatCompleteTime = (time: string) => {
   margin-bottom: 60px;
   padding: 30px;
   border-radius: 12px;
-  background-color: rgba(250, 250, 250, 0.8);
+  background-color: var(--shadow-green);
   transition: background-color 0.3s ease;
 }
+
 .mark-complete-btn {
-  background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--thrid-green) 100%);
   color: white;
   border: none;
   padding: 15px 40px;
@@ -210,46 +211,50 @@ const formatCompleteTime = (time: string) => {
   min-width: 160px;
 }
 
-.mark-complete-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
-}
 
 .mark-complete-btn.completed {
-  background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--thrid-green) 100%);
+  opacity: 0.9;
+}
+
+.complete-time {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 400;
 }
 
 /* 深色模式样式 */
 .book-end-actions.dark-mode .end-title-text {
-  color: #aaa;
+  color: var(--text-secondary);
 }
 
 .book-end-actions.dark-mode .end-title-text::before,
 .book-end-actions.dark-mode .end-title-text::after {
-  background-color: #444;
+  background-color: var(--border-color);
+  opacity: 0.5;
 }
 
 .book-end-actions.dark-mode .mark-complete-section {
-  background-color: rgba(40, 40, 40, 0.8);
+  background-color: rgba(51, 51, 51, 0.8);
 }
 
 /* 深色模式下的按钮样式 */
 .book-end-actions.dark-mode .mark-complete-btn {
-  background: linear-gradient(135deg, #494a49 0%, #252926 100%);
-  color: #e0e0e0;
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--thrid-green) 100%);
+  color: white;
+  opacity: 0.9;
 }
 
-.book-end-actions.dark-mode .mark-complete-btn:hover:not(:disabled) {
-  box-shadow: 0 8px 20px rgba(46, 125, 50, 0.3);
-}
 
 .book-end-actions.dark-mode .mark-complete-btn.completed {
-  background: linear-gradient(135deg, #494a49 0%, #252926 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--thrid-green) 100%);
+  color: white;
+  opacity: 0.8;
 }
 
 .book-end-actions.dark-mode .complete-time {
-  color: #aaa;
+  color: var(--text-secondary);
 }
 
 /* 推荐值组件的包装容器 */

@@ -4,7 +4,8 @@ import axios from 'axios'
 const service = axios.create({
   // 🔴 重点修改：不要写死 http://localhost:8080
   // 改成 '/api'，这样请求发给前端服务器，Vite 代理才会拦截并转发
-  baseURL: '/api',  
+  // baseURL: '/api',  
+  baseURL: 'https://m1.apifoxmock.com/m1/7605134-7343879-default',
   timeout: 5000,
 })
 

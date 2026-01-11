@@ -8,6 +8,7 @@
       @close="closePanels"
       :chapters="chapters"
       :currentChapterId="currentChapterId"
+      :bookId="bookId"
       @select="handleChapterSelect"
       :isDarkMode="isDarkMode"
     />
@@ -26,7 +27,7 @@
         :typography="typography"
         :annotations="showThoughts ? currentChapterAnnotations : currentChapterAnnotations.filter((a) => a.type !== 'thought')"
         :hasPrevChapter="currentChapterIndex > 0"
-        :hasNextChapter="currentChapterIndex < chapters.length - 1"
+        :hasNextChapter="currentChapterIndex >= 0 && currentChapterIndex < chapters.length - 1"
         :isLastChapter="isLastChapter"
         :bookEndData="{
           bookId: bookData.id,
@@ -144,7 +145,7 @@ const route = useRoute()
 
 // 从路由参数获取书籍ID和章节ID
 const bookId = ref(route.params.bookId as string || '1')
-let currentChapterId = Number(route.params.chapterId as string) || 1
+const currentChapterId = ref(Number(route.params.chapterId as string) || 1)
 
 // API数据状态
 const currentChapterData = ref<ChapterContent | null>(null)
@@ -224,7 +225,7 @@ const chapterContents = {
 // 将TOC数据转换为章节格式
 const chapters = computed<Chapter[]>(() => {
   return bookTOC.value.map(item => ({
-    id: item.id,
+    id: item.chapterId, // 使用 chapterId 作为章节ID
     title: item.chapterName,
     page: item.startPage + 1 // 将从0开始的索引转换为从1开始的页码
   }))
@@ -245,18 +246,17 @@ const displayedPageData = computed<BookPage>(() => {
 })
 
 const currentChapterIndex = computed(() => {
-  return chapters.value.findIndex(chapter => chapter.id === currentChapterId)
+  return chapters.value.findIndex(chapter => chapter.id === currentChapterId.value)
 })
 
 // 计算是否是最后一章
 const isLastChapter = computed(() => {
-  // 假设最后一章是 5
-  return currentChapterId === 5
+  return currentChapterIndex.value >= 0 && currentChapterIndex.value === chapters.value.length - 1
 })
 
 // 计算当前章节的标注
 const currentChapterAnnotations = computed(() => {
-  return annotations.value.filter(ann => ann.chapterId === currentChapterId)
+  return annotations.value.filter(ann => ann.chapterId === String(currentChapterId.value))
 })
 
 const goToPrevChapter = () => {
@@ -275,12 +275,16 @@ const goToPrevChapter = () => {
 }
 
 const goToNextChapter = () => {
+  // 确保当前章节索引有效，并且不是最后一章
+  if (currentChapterIndex.value < 0 || currentChapterIndex.value >= chapters.value.length - 1) {
+    return
+  }
+  
   const nextIndex = currentChapterIndex.value + 1
-  if (nextIndex < chapters.value.length) {
-    const nextChapter = chapters.value[nextIndex]
-    if (nextChapter) {
-      handleChapterSelect(nextChapter.id)
-    }
+  const nextChapter = chapters.value[nextIndex]
+  
+  if (nextChapter) {
+    handleChapterSelect(nextChapter.id)
     // 滚动到顶部
     const article = document.querySelector('.reader-article')
     if (article) {
@@ -355,7 +359,7 @@ const loadChapterContent = async (chapterId: number) => {
     loading.value = true
     const data = await getChapterContent(bookId.value, chapterId)
     currentChapterData.value = data
-    currentChapterId = chapterId
+    currentChapterId.value = chapterId
   } catch (error) {
     console.error('加载章节内容失败:', error)
   } finally {
@@ -374,11 +378,11 @@ const loadBookTOC = async () => {
       // 使用基于现有章节内容的模拟目录数据
       console.warn('TOC API returned empty data, using fallback data')
       bookTOC.value = [
-        { id: '1', startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
-        { id: '2', startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
-        { id: '3', startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
-        { id: '4', startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
-        { id: '5', startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
+        { id: 1, chapterId: 1, startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
+        { id: 2, chapterId: 2, startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
+        { id: 3, chapterId: 3, startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
+        { id: 4, chapterId: 4, startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
+        { id: 5, chapterId: 5, startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
       ]
     }
   } catch (error: any) {
@@ -386,11 +390,11 @@ const loadBookTOC = async () => {
 
     // API调用失败时使用模拟数据
     bookTOC.value = [
-      { id: '1', startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
-      { id: '2', startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
-      { id: '3', startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
-      { id: '4', startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
-      { id: '5', startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
+      { id: 1, chapterId: 1, startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
+      { id: 2, chapterId: 2, startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
+      { id: 3, chapterId: 3, startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
+      { id: 4, chapterId: 4, startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
+      { id: 5, chapterId: 5, startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
     ]
   }
 }
@@ -423,7 +427,7 @@ const showThoughts = ref(true)
 const notes = computed<Note[]>(() => {
   return chapterNotes.value.map(note => ({
     id: note.id,
-    chapterId: currentChapterId,
+    chapterId: String(currentChapterId.value),
     quote: note.quote,
     note: note.thought,
     date: new Date(note.createdAt).toLocaleDateString(),
@@ -479,13 +483,13 @@ const togglePanel = (panel: 'toc' | 'typography' | 'notes') => {
 }
 
 const handleChapterSelect = async (id: number) => {
-  currentChapterId = id
+  currentChapterId.value = id
   closePanels()
 
   // 加载新章节的内容和笔记
   await Promise.all([
     loadChapterContent(id),
-    loadChapterNotes(id),
+    loadChapterNotes(id.toString()),
   ])
 }
 
@@ -503,7 +507,7 @@ const handleDeleteAnnotation = async (annotationId: string) => {
 
       // 如果是想法标注，调用API删除笔记
       if (annotation && annotation.type === 'thought' && annotation.noteId) {
-        await deleteChapterNote(bookId.value, currentChapterId, annotation.noteId)
+        await deleteChapterNote(bookId.value, currentChapterId.value, annotation.noteId)
       }
 
       // 从本地状态中移除
@@ -518,7 +522,7 @@ const handleDeleteAnnotation = async (annotationId: string) => {
       }
 
       // 重新加载章节笔记以保持同步
-      await loadChapterNotes(currentChapterId)
+      await loadChapterNotes(currentChapterId.value.toString())
     }
   } catch (error) {
     console.error('删除标注失败:', error)
@@ -531,14 +535,14 @@ const handleAddAnnotation = (newAnn: Omit<Annotation, 'id'>) => {
   const annotation = {
     ...newAnn,
     id,
-    chapterId: currentChapterId // 确保使用当前章节ID
+    chapterId: String(currentChapterId.value) // 确保使用当前章节ID
   }
   annotations.value.push(annotation)
 
   if (['marker', 'wave', 'line'].includes(newAnn.type)) {
     const newNote: Note = {
       id: `note-${id}`,
-      chapterId: currentChapterId, // 确保笔记也关联到当前章节
+      chapterId: String(currentChapterId.value), // 确保笔记也关联到当前章节
       quote:
         displayedPageData.value?.content[newAnn.pIndex]?.substring(newAnn.start, newAnn.end) || '',
       note: `[Highlight: ${newAnn.type}]`,
@@ -568,7 +572,7 @@ const handleThoughtsBubbleAction = (action: string) => {
 
   if (['marker', 'wave', 'line'].includes(action) && activeContext.value.range) {
     handleAddAnnotation({
-      chapterId: currentChapterId, // 确保使用当前章节ID
+      chapterId: String(currentChapterId.value), // 确保使用当前章节ID
       pIndex: activeContext.value.range.pIndex,
       start: activeContext.value.range.start,
       end: activeContext.value.range.end,
@@ -582,7 +586,7 @@ const submitNote = async (noteContent: string) => {
     try {
       // 调用API创建笔记
       const noteData = {
-        chapterId: currentChapterId,
+        chapterId: currentChapterId.value,
         quote: activeContext.value.text,
         startIndex: activeContext.value.range.start,
         endIndex: activeContext.value.range.end,
@@ -591,12 +595,12 @@ const submitNote = async (noteContent: string) => {
         pageNumber: activeContext.value.range.pIndex + 1, // 页码从1开始
       }
 
-      const createdNote = await createChapterNote(bookId.value, currentChapterId, noteData)
+      const createdNote = await createChapterNote(bookId.value, currentChapterId.value, noteData)
 
       // 更新本地状态
       const newNote: Note = {
         id: createdNote.id,
-        chapterId: currentChapterId,
+        chapterId: String(currentChapterId.value),
         quote: createdNote.quote,
         note: createdNote.thought,
         date: new Date(createdNote.createdAt).toLocaleDateString(),
@@ -605,7 +609,7 @@ const submitNote = async (noteContent: string) => {
 
       const newAnn: Annotation = {
         id: `ann-${createdNote.id}`,
-        chapterId: currentChapterId,
+        chapterId: String(currentChapterId.value),
         pIndex: activeContext.value.range.pIndex,
         start: activeContext.value.range.start,
         end: activeContext.value.range.end,
@@ -617,7 +621,7 @@ const submitNote = async (noteContent: string) => {
       activePanel.value = 'notes'
 
       // 重新加载章节笔记以保持同步
-      await loadChapterNotes(currentChapterId)
+      await loadChapterNotes(currentChapterId.value.toString())
     } catch (error) {
       console.error('创建笔记失败:', error)
     }
@@ -663,19 +667,24 @@ watch(
 
     if (newBookId !== bookId.value) {
       bookId.value = newBookId
-      // 书籍ID改变时，重新加载所有数据
+      // 书籍ID改变时，先加载目录，再加载章节数据
+      await loadBookTOC()
       await Promise.all([
-        loadBookTOC(),
+        loadChapterContent(newChapterId),
+        loadChapterNotes(newChapterId.toString()),
         loadAllBookNotes(),
       ])
-    }
-
-    if (newChapterId !== currentChapterId) {
-      // 章节ID改变时，加载新章节数据
+      currentChapterId.value = newChapterId
+    } else if (newChapterId !== currentChapterId.value) {
+      // 章节ID改变时，确保目录已加载，然后加载新章节数据
+      if (bookTOC.value.length === 0) {
+        await loadBookTOC()
+      }
       await Promise.all([
         loadChapterContent(newChapterId),
         loadChapterNotes(newChapterId.toString()),
       ])
+      currentChapterId.value = newChapterId
     }
   },
   { immediate: false } // 已经在onMounted中处理了初始加载
@@ -683,11 +692,22 @@ watch(
 
 // 组件挂载时加载数据
 onMounted(async () => {
-  // 并行加载书籍目录和当前章节内容
+  // 先加载书籍目录，确保章节列表可用
+  await loadBookTOC()
+  
+  // 确保 currentChapterId 与目录中的章节ID匹配
+  if (chapters.value.length > 0) {
+    // 如果当前章节ID不在目录中，使用第一个章节
+    const foundChapter = chapters.value.find(ch => ch.id === currentChapterId.value)
+    if (!foundChapter && chapters.value[0]) {
+      currentChapterId.value = chapters.value[0].id
+    }
+  }
+  
+  // 然后并行加载当前章节内容和笔记
   await Promise.all([
-    loadBookTOC(),
-    loadChapterContent(currentChapterId),
-    loadChapterNotes(currentChapterId.toString()),
+    loadChapterContent(currentChapterId.value),
+    loadChapterNotes(currentChapterId.value.toString()),
     loadAllBookNotes(),
   ])
 
