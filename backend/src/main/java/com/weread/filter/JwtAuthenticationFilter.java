@@ -163,6 +163,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                requestURI.startsWith("/swagger") ||
                requestURI.startsWith("/v3/api-docs") ||
                requestURI.startsWith("/webjars") ||
-               requestURI.startsWith("/actuator");
+               requestURI.startsWith("/actuator") ||
+               requestURI.startsWith("/static/");  // 静态资源不需要认证
     }
 }
