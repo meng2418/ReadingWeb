@@ -21,10 +21,10 @@
           <button
             v-for="chapter in chapters"
             :key="chapter.id"
-            @click="$emit('select', chapter.id)"
+            @click="handleChapterClick(chapter.id)"
             class="chapter-item"
             :class="{
-              active: currentChapterId === chapter.id,
+              active: Number(currentChapterId) === chapter.id,
             }"
           >
             <div class="page-num">Page {{ chapter.page }}</div>
@@ -38,19 +38,41 @@
 
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import type { Chapter } from './types'
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean
   chapters: Chapter[]
-  currentChapterId: string
+  currentChapterId: string | number
   isDarkMode: boolean
+  bookId?: string | number
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'select', id: number): void
 }>()
+
+const router = useRouter()
+
+const handleChapterClick = (chapterId: number) => {
+  // 如果提供了 bookId，则进行路由跳转
+  if (props.bookId) {
+    router.push({
+      name: 'ReaderPage',
+      params: {
+        bookId: props.bookId,
+        chapterId: chapterId
+      }
+    })
+  } else {
+    // 否则触发 select 事件（保持向后兼容）
+    emit('select', chapterId)
+  }
+  // 关闭目录面板
+  emit('close')
+}
 </script>
 
 <style scoped>
@@ -94,17 +116,19 @@ const emit = defineEmits<{
 }
 
 .panel-content {
-  padding: 1.5rem;
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2rem;
+  padding: 1.5rem;
+  padding-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .title {
@@ -136,9 +160,15 @@ const emit = defineEmits<{
 .chapter-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  padding: 0 1.5rem;
+  padding-bottom: 2rem;
+  min-height: 0;
+  /* 确保滚动条可以滚动到底部 */
+  scroll-padding-bottom: 1rem;
 }
 
 .chapter-item {

@@ -7,7 +7,7 @@ import type { Post } from '@/types/post'
 interface UserPostsRaw {
   posts: any[]
   hasMore: boolean
-  nextCursor?: string
+  nextCursor?: number
   postCount: number
   commentCount: number
   likeCount: number
@@ -30,10 +30,12 @@ export interface GetUserPostsResult {
 }
 
 /**
- * 获取「我的帖子」
+ * 获取「我的帖子」瀑布流
+ * @param cursor 游标，第一次请求不传，后续传上次返回的nextCursor
+ * @param limit 每页数量，默认20，最大50
  */
 export async function getPosts(params?: {
-  cursor?: string
+  cursor?: number
   limit?: number
 }): Promise<GetUserPostsResult> {
   const res = await request.get<UserPostsResponse>('/user/posts', {
@@ -46,7 +48,7 @@ export async function getPosts(params?: {
     list: raw.posts.map(mapPost),
     total: raw.postCount,
     hasMore: raw.hasMore,
-    nextCursor: raw.nextCursor,
+    nextCursor: raw.nextCursor ? String(raw.nextCursor) : undefined,
   }
 }
 

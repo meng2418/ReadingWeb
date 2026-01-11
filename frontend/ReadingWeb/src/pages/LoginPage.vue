@@ -91,7 +91,7 @@ const handleMouseMove = (e: MouseEvent) => {
 }
 
 const animate = () => {
-  if (!ctx || !canvasRef.value) return
+  if (!ctx || !canvasRef.value || !particles.length) return
   ctx.clearRect(0, 0, canvasRef.value.width, canvasRef.value.height)
 
   particles.forEach((p, i) => {
@@ -213,13 +213,12 @@ async function submitLogin() {
         ...user,
         // 后端返回的是 username，这里映射为 Store 需要的 name
         // 这样可以确保右上角正确显示用户名
-        name: user.username
-      }
+        name: user.username,
+      },
     })
 
     // 跳转到首页
     router.push('/')
-
   } catch (err: any) {
     console.error('登录失败:', err)
     // 优先显示后端返回的错误信息，否则显示默认提示
