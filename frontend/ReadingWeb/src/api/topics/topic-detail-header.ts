@@ -1,13 +1,14 @@
 // src/api/topics/topic-detail-header.ts - 话题详情页头部相关API
 import request from '@/utils/request'
+import type { AxiosResponse } from 'axios'
 import type { Post } from '@/types/post'
 
-const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
+const unwrap = (res: AxiosResponse): RawTopic => res?.data?.data ?? res?.data ?? {}
 
 /** 后端话题详情结构 */
 export interface RawTopic {
   image: string
-  name: string
+  topicName: string
   postCount: number
   description: string
   followerCount: number
@@ -20,12 +21,13 @@ export interface RawTopic {
     image: string
     name: string
     postCount: number
+    topicId: number
   }>
 }
 
 /** 前端话题详情结构 */
 export interface TopicDetail {
-  id: string
+  id: number
   title: string
   name: string
   description: string
@@ -37,7 +39,7 @@ export interface TopicDetail {
   createTime: string
   manager: string
   relatedTopics: Array<{
-    id: string
+    id: number
     cover: string
     title: string
     postCount: number
@@ -45,10 +47,10 @@ export interface TopicDetail {
 }
 
 /** 数据转换函数 */
-const mapTopicDetail = (raw: RawTopic, topicId: string): TopicDetail => ({
+const mapTopicDetail = (raw: RawTopic, topicId: number): TopicDetail => ({
   id: topicId,
-  title: raw.name,
-  name: raw.name,
+  title: raw.topicName,
+  name: raw.topicName,
   description: raw.description,
   fullDescription: raw.introduction,
   cover: raw.image,
@@ -57,8 +59,8 @@ const mapTopicDetail = (raw: RawTopic, topicId: string): TopicDetail => ({
   dailyActive: raw.todayPostCount,
   createTime: raw.createdAt,
   manager: raw.adminName,
-  relatedTopics: raw.relatedTopics.map((topic, index) => ({
-    id: `related-${index}`,
+  relatedTopics: raw.relatedTopics.map((topic) => ({
+    id: topic.topicId,
     cover: topic.image,
     title: topic.name,
     postCount: topic.postCount,
@@ -66,7 +68,7 @@ const mapTopicDetail = (raw: RawTopic, topicId: string): TopicDetail => ({
 })
 
 /** 获取话题详情 */
-export const getTopicDetail = async (topicId: string): Promise<TopicDetail> => {
+export const getTopicDetail = async (topicId: number): Promise<TopicDetail> => {
   const res = await request.get<RawTopic>(`/topics/${topicId}`)
   const rawData = unwrap(res)
   return mapTopicDetail(rawData, topicId)

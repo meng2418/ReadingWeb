@@ -85,6 +85,7 @@ const router = createRouter({
       name: 'TopicDetail',
       component: TopicDetail,
       props: true,
+      meta: { title: '微信读书 - 话题详情' },
     },
     {
       path: '/userposts/:id?',

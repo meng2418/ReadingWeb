@@ -1,8 +1,9 @@
 // src/api/topics/topic-posts-section.ts - 话题帖子列表相关API
 import request from '@/utils/request'
+import type { AxiosResponse } from 'axios'
 import type { Post } from '@/types/post'
 
-const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
+const unwrap = (res: AxiosResponse): RawTopicPost[] => res?.data?.data ?? res?.data ?? []
 
 /** 后端帖子结构 */
 interface RawTopicPost {
@@ -40,7 +41,7 @@ const mapPost = (raw: RawTopicPost): Post => ({
   isLiked: raw.isLiked,
   book: raw.mentionedFirstBook
     ? {
-        id: raw.postId, // 临时使用postId作为bookId
+        bookId: raw.postId, // 使用postId作为bookId
         title: raw.mentionedFirstBook.bookTitle,
         author: raw.mentionedFirstBook.authorName,
         cover: raw.mentionedFirstBook.cover,
@@ -50,7 +51,7 @@ const mapPost = (raw: RawTopicPost): Post => ({
 
 /** 获取话题帖子 */
 export const getTopicPosts = async (
-  topicId: string,
+  topicId: number,
   sort: 'latest' | 'hot' | 'quality' = 'latest',
   page: number = 1,
   limit: number = 20

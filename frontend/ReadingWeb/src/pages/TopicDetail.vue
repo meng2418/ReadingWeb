@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
@@ -130,7 +130,7 @@ import BackToTop from '@/components/layout/BackToTop.vue'
 import { usePostInteractions } from '@/composables/usePostInteractions'
 import { getTopicDetail, type TopicDetail } from '@/api/topics/topic-detail-header'
 import { getTopicPosts } from '@/api/topics/topic-posts-section'
-import { getHotTopics, type HotTopic } from '@/api/topics/hot-topics'
+import { useTitle } from '@/stores/useTitle'
 import type { Post } from '@/types/post'
 
 const route = useRoute()
@@ -153,9 +153,14 @@ const topic = ref<TopicDetail>({
   relatedTopics: [],
 })
 const posts = ref<Post[]>([])
-const hotTopics = ref<HotTopic[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+
+// 动态页面标题
+const title = computed(() =>
+  topic.value.title && topic.value.title !== '' ? `${topic.value.title} - 话题详情` : '话题详情'
+)
+useTitle(title)
 
 // 相关话题数据池
 const allRelatedTopicsRef = ref<Array<{id: string, cover: string, title: string, postCount: number}>>([])
@@ -191,25 +196,13 @@ const fetchTopicData = async (id: string) => {
     error.value = '获取帖子失败'
   }
 
-  try {
-    // 获取热门话题
-    const hotTopicsData = await getHotTopics()
-    hotTopics.value = hotTopicsData
-  } catch (err) {
-    console.error('获取热门话题失败:', err)
-    error.value = '获取热门话题失败'
-  }
+  // 使用API返回的相关话题数据
+  const allRelatedTopics = topic.value.relatedTopics || []
 
-  // 合并热门话题和相关话题作为相关话题池
-  const allRelatedTopics = [
-    ...hotTopics.value.slice(0, 5), // 取前5个热门话题
-    ...(topic.value.relatedTopics || [])
-  ]
-
-  // 更新相关话题数据
-  allRelatedTopicsRef.value = allRelatedTopics.map((t, index) => ({
-    id: t.id || `related-${index}`,
-    cover: t.cover,
+  // 更新相关话题数据，直接使用API返回的数据
+  allRelatedTopicsRef.value = allRelatedTopics.map((t) => ({
+    id: t.id,
+    cover: t.cover || '',
     title: t.title,
     postCount: t.postCount,
   }))
@@ -238,7 +231,7 @@ const currentFilter = ref<'latest' | 'hot' | 'quality'>('latest')
 const page = ref(1)
 const pageSize = 20
 
-const filterTabs = [
+const filterTabs: Array<{ value: 'latest' | 'hot' | 'quality', label: string }> = [
   { value: 'latest', label: '最新' },
   { value: 'hot', label: '热门' },
   { value: 'quality', label: '精华' },
@@ -313,7 +306,9 @@ const goToTopic = (id: string) => {
 // 刷新相关话题 - 显示下一批3个话题
 const refreshRelatedTopics = () => {
   const totalBatches = Math.ceil(allRelatedTopicsRef.value.length / 3)
-  relatedTopicsBatchIndex.value = (relatedTopicsBatchIndex.value + 1) % totalBatches
+  if (totalBatches > 1) {
+    relatedTopicsBatchIndex.value = (relatedTopicsBatchIndex.value + 1) % totalBatches
+  }
 }
 
 // PostCard 事件处理（统一封装）
