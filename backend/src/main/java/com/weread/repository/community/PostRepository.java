@@ -131,7 +131,7 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
     @Query("SELECT DISTINCT b FROM BookEntity b " +
            "LEFT JOIN b.author a " +
            "WHERE (b.title LIKE %:keyword% OR " +
-           "       (a IS NOT NULL AND a.name LIKE %:keyword%)) " +
+           "       (a IS NOT NULL AND a.authorName LIKE %:keyword%)) " +
            "AND b.isPublished = true " +
            "ORDER BY b.readCount DESC, b.createdAt DESC")
     Page<BookEntity> searchBooks(@Param("keyword") String keyword, Pageable pageable);
