@@ -182,18 +182,49 @@ async function submitLogin() {
     alert('请输入手机号')
     return
   }
+
+  // 构造登录参数
   const payload: LoginParams = {
     phone: phone.value,
     type: isCaptchaLogin.value ? 'verificationCode' : 'password',
     password: isCaptchaLogin.value ? null : password.value,
     verificationCode: isCaptchaLogin.value ? code.value : null,
   }
+
   try {
+    // 发起登录请求
     const res = await login(payload)
-    userStore.setUser(res.data.data)
+
+    // 解析数据层级
+    // 第一层 .data 是 Axios 的响应体
+    // 第二层 .data 是后端返回的业务数据 (包含 token 和 user)
+    const backendData = res.data.data
+
+    if (!backendData) {
+      throw new Error('返回数据格式异常')
+    }
+
+    const { token, user } = backendData
+
+    // 调用 Store 的 login 方法保存状态
+    userStore.login({
+      token: token,
+      userInfo: {
+        ...user,
+        // 后端返回的是 username，这里映射为 Store 需要的 name
+        // 这样可以确保右上角正确显示用户名
+        name: user.username
+      }
+    })
+
+    // 跳转到首页
     router.push('/')
+
   } catch (err: any) {
-    alert(err?.response?.data?.message || '登录失败')
+    console.error('登录失败:', err)
+    // 优先显示后端返回的错误信息，否则显示默认提示
+    const message = err.response?.data?.message || '登录失败，请检查网络或账号'
+    alert(message)
   }
 }
 

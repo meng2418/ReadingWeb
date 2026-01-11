@@ -1,9 +1,7 @@
 package com.weread.repository.user;
 
 import com.weread.entity.user.UserReadingRecordEntity;
-
-import org.springdoc.core.converters.models.Pageable;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,14 +40,19 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
     /**
      * 按月统计阅读时长
      */
-    @Query("SELECT DATE_FORMAT(r.readDate, '%Y-%m'), SUM(r.readingTime) FROM UserReadingRecordEntity r " +
+    @Query("SELECT FUNCTION('DATE_FORMAT', r.readDate, '%Y-%m'), SUM(r.readingTime) FROM UserReadingRecordEntity r " +
            "WHERE r.userId = :userId AND r.readDate BETWEEN :startDate AND :endDate " +
-           "GROUP BY DATE_FORMAT(r.readDate, '%Y-%m') ORDER BY DATE_FORMAT(r.readDate, '%Y-%m')")
+           "GROUP BY FUNCTION('DATE_FORMAT', r.readDate, '%Y-%m') " +
+           "ORDER BY FUNCTION('DATE_FORMAT', r.readDate, '%Y-%m')")
     List<Object[]> findMonthlyStatsByUserIdAndDateRange(@Param("userId") Integer userId,
                                                        @Param("startDate") LocalDate startDate,
                                                        @Param("endDate") LocalDate endDate);
 
-    Integer countDistinctBooksByUserId(Integer userId);
+    /**
+     * 统计用户阅读过的不同书籍数量
+     */
+    @Query("SELECT COUNT(DISTINCT r.bookId) FROM UserReadingRecordEntity r WHERE r.userId = :userId AND r.bookId IS NOT NULL")
+    Integer countDistinctBooksByUserId(@Param("userId") Integer userId);
 
     /**
      * 查找用户在指定日期范围内阅读时间最长的书籍
@@ -65,31 +68,33 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
     List<Object[]> findTopBooksByUserIdAndPeriod(@Param("userId") Integer userId, 
                                                   @Param("startDate") LocalDate startDate, 
                                                   @Param("endDate") LocalDate endDate, 
-                                                  org.springframework.data.domain.Pageable pageable);
+                                                  Pageable pageable);
 
-    Integer countFinishedBooksByUserId(Integer userId);
+    /**
+     * 统计用户已读完的书籍数量（通过record_type判断）
+     */
+    @Query("SELECT COUNT(DISTINCT r.bookId) FROM UserReadingRecordEntity r WHERE r.userId = :userId AND r.recordType = 2")
+    Integer countFinishedBooksByUserId(@Param("userId") Integer userId);
 
-    @Query("SELECT YEAR(urr.readDate), SUM(urr.readingTime) " +
-       "FROM UserReadingRecordEntity urr " +
-       "WHERE urr.userId = :userId " +
-       "GROUP BY YEAR(urr.readDate) " +
-       "ORDER BY YEAR(urr.readDate) DESC")
-       List<Object[]> findYearlyStatsByUserId(@Param("userId") Integer userId);
+    /**
+     * 按年统计阅读时长
+     */
+    @Query("SELECT YEAR(r.readDate), SUM(r.readingTime) " +
+           "FROM UserReadingRecordEntity r " +
+           "WHERE r.userId = :userId " +
+           "GROUP BY YEAR(r.readDate) " +
+           "ORDER BY YEAR(r.readDate) DESC")
+    List<Object[]> findYearlyStatsByUserId(@Param("userId") Integer userId);
 
-    List<UserReadingRecordEntity> findTopByUserIdOrderByReadDateDesc(Integer userId, PageRequest of);
+    /**
+     * 获取用户最近的阅读记录
+     */
+    List<UserReadingRecordEntity> findByUserIdOrderByReadDateDesc(@Param("userId") Integer userId, Pageable pageable);
 
-    List<UserReadingRecordEntity> findFinishedBooksByUserId(Integer userId, PageRequest of);
-
-    @Query("SELECT r.book.id, b.title, SUM(r.readingDuration) " +
-       "FROM UserReadingRecordEntity r " +
-       "JOIN BookEntity b ON r.book.id = b.id " +
-       "WHERE r.user.id = :userId " +
-       "AND r.createdAt BETWEEN :startDate AND :endDate " +
-       "GROUP BY r.book.id, b.title " +
-       "ORDER BY SUM(r.readingDuration) DESC")
-List<Object[]> findTopBooksByUserIdAndPeriod(@Param("userId") Integer userId,
-                                             @Param("startDate") LocalDate startDate,
-                                             @Param("endDate") LocalDate endDate,
-                                             Pageable pageable);
+    /**
+     * 获取用户已完成的书籍记录
+     */
+    List<UserReadingRecordEntity> findByUserIdAndRecordTypeOrderByReadDateDesc(@Param("userId") Integer userId, 
+                                                                              @Param("recordType") Integer recordType, 
+                                                                              Pageable pageable);
 }
-

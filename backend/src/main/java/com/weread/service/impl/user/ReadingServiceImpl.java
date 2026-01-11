@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -521,8 +522,9 @@ public TopBooksVO getTopBooksByPeriod(Integer userId, String period) {
             }
         
             // 获取最近阅读的书籍
+            Pageable pageable = PageRequest.of(0, 1);
             List<UserReadingRecordEntity> recentRecords = readingRecordRepository
-                .findTopByUserIdOrderByReadDateDesc(userId, PageRequest.of(0, 1));
+                .findByUserIdOrderByReadDateDesc(userId, pageable);
         
             milestone.setTargetCount(achievedTarget);
             milestone.setAchievedBookTitle(
@@ -622,18 +624,19 @@ public TopBooksVO getTopBooksByPeriod(Integer userId, String period) {
             }
         
             // 获取最近读完的书籍（假设有is_finished字段）
-            List<UserReadingRecordEntity> finishedBooks = readingRecordRepository
-                .findFinishedBooksByUserId(userId, PageRequest.of(0, 1));
+            Pageable pageable = PageRequest.of(0, 1);
+            List<UserReadingRecordEntity> recentRecords = readingRecordRepository
+                .findByUserIdOrderByReadDateDesc(userId, pageable);
         
             milestone.setTargetCount(achievedTarget);
             milestone.setAchievedBookTitle(
-                !finishedBooks.isEmpty() ? 
-                finishedBooks.get(0).getBookTitle() : 
-                "《您读完的书籍》"
+                !recentRecords.isEmpty() ? 
+                recentRecords.get(0).getBookTitle() : 
+                "《您的书籍》"
             );
             milestone.setAchievedAt(
-                !finishedBooks.isEmpty() ? 
-                finishedBooks.get(0).getReadDate().atStartOfDay() : 
+                !recentRecords.isEmpty() ? 
+                recentRecords.get(0).getReadDate().atStartOfDay() : 
                 LocalDateTime.now()
             );
             milestone.setMessage(String.format("恭喜！您已读完%d本书", achievedTarget));

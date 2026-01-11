@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * ReadingProgress Data Access Interface.
@@ -49,11 +50,50 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
            "AND r.progress >= 1")
     Long countFinishedUsers(@Param("bookId") Integer bookId);
 
-    Integer countTotalBooksRead(Integer userId);
+    /**
+     * 统计用户阅读过的书籍总数（progress > 0）
+     */
+    @Query("SELECT COUNT(DISTINCT r.bookId) FROM ReadingProgressEntity r " +
+           "WHERE r.userId = :userId AND r.progress > 0")
+    Integer countTotalBooksRead(@Param("userId") Integer userId);
 
-    Integer countBooksFinished(Integer userId);
+    /**
+     * 统计用户已读完的书籍数量（progress = 1）
+     */
+    @Query("SELECT COUNT(DISTINCT r.bookId) FROM ReadingProgressEntity r " +
+           "WHERE r.userId = :userId AND r.progress >= 1")
+    Integer countBooksFinished(@Param("userId") Integer userId);
 
-    Integer countBooksReadByPeriod(Integer userId, LocalDateTime start, LocalDateTime end);
+    /**
+     * 统计用户在指定时间段内阅读过的书籍数量
+     */
+    @Query("SELECT COUNT(DISTINCT r.bookId) FROM ReadingProgressEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.progress > 0 " +
+           "AND r.lastReadAt BETWEEN :start AND :end")
+    Integer countBooksReadByPeriod(@Param("userId") Integer userId, 
+                                   @Param("start") LocalDateTime start, 
+                                   @Param("end") LocalDateTime end);
 
-    Integer countBooksFinishedByPeriod(Integer userId, LocalDateTime start, LocalDateTime end);
+    /**
+     * 统计用户在指定时间段内读完的书籍数量
+     */
+    @Query("SELECT COUNT(DISTINCT r.bookId) FROM ReadingProgressEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.progress >= 1 " +
+           "AND r.lastReadAt BETWEEN :start AND :end")
+    Integer countBooksFinishedByPeriod(@Param("userId") Integer userId, 
+                                       @Param("start") LocalDateTime start, 
+                                       @Param("end") LocalDateTime end);
+
+    /**
+     * 获取用户在指定时间段内阅读的书籍列表
+     */
+    @Query("SELECT DISTINCT r.bookId FROM ReadingProgressEntity r " +
+           "WHERE r.userId = :userId " +
+           "AND r.lastReadAt BETWEEN :start AND :end " +
+           "ORDER BY r.lastReadAt DESC")
+    List<Integer> findBookIdsReadByPeriod(@Param("userId") Integer userId, 
+                                         @Param("start") LocalDateTime start, 
+                                         @Param("end") LocalDateTime end);
 }
