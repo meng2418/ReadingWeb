@@ -68,6 +68,7 @@ export interface UserHomeData {
 }
 
 export interface TopBook {
+  bookId: number
   cover: string
   title: string
   readingTime: number

@@ -100,11 +100,15 @@
       <div class="payment-info">
         <div class="payment-amount">
           <span class="label">支付金额：</span>
-          <span class="value">¥{{ selectedPlanObj?.price || 0 }}</span>
+          <span class="value">¥{{ paymentInfo?.discountAmount || selectedPlanObj?.price || 0 }}</span>
+        </div>
+        <div v-if="paymentInfo?.originalAmount && paymentInfo.originalAmount > (paymentInfo.discountAmount || 0)" class="payment-original">
+          <span class="label">原价：</span>
+          <span class="value" style="text-decoration: line-through; color: #999;">¥{{ paymentInfo.originalAmount }}</span>
         </div>
         <div class="payment-duration">
           <span class="label">开通时长：</span>
-          <span class="value">{{ selectedPlanObj?.duration || '' }}</span>
+          <span class="value">{{ paymentInfo?.durationDays ? `${paymentInfo.durationDays}天` : selectedPlanObj?.duration || '' }}</span>
         </div>
       </div>
 
@@ -116,8 +120,11 @@
             v-for="method in paymentMethods"
             :key="method.id"
             class="payment-item"
-            :class="{ 'active': selectedMethod === method.id }"
-            @click="selectedMethod = method.id"
+            :class="{ 
+              'active': selectedMethod === method.id,
+              'disabled': availablePaymentMethods.length > 0 && !availablePaymentMethods.includes(method.id)
+            }"
+            @click="handlePaymentMethodClick(method.id)"
           >
             <div class="method-info">
               <el-icon class="method-icon"><component :is="method.icon" /></el-icon>
@@ -157,6 +164,11 @@ import {
   Wallet,
   CreditCard
 } from '@element-plus/icons-vue'
+import {
+  getMembershipPaymentInfo,
+  purchaseMembership,
+  type MembershipPaymentInfo
+} from '@/api/payment'
 
 interface VipBenefit {
   id: number
@@ -173,7 +185,8 @@ interface VipPlan {
   duration: string
   savings?: number
   popular: boolean
-  days?: number // 添加天数字段
+  days?: number
+  packageId?: number
 }
 
 interface PaymentMethod {
@@ -187,9 +200,11 @@ const emit = defineEmits(['purchase-success'])
 const dialogVisible = ref(false)
 const paymentDialogVisible = ref(false)
 const loading = ref(false)
-const selectedPlan = ref(2) // 默认选择月度套餐
+const selectedPlan = ref<number | null>(null)
 const selectedMethod = ref('wechat')
 const agreed = ref(true)
+const paymentInfo = ref<MembershipPaymentInfo | null>(null)
+const availablePaymentMethods = ref<string[]>([])
 
 const vipBenefits: VipBenefit[] = [
   { id: 1, name: '免费读全场', description: '海量图书免费读', icon: Reading },
@@ -200,12 +215,12 @@ const vipBenefits: VipBenefit[] = [
   { id: 6, name: '尊贵标识', description: '专属会员标识', icon: Star },
 ]
 
-const vipPlans: VipPlan[] = [
+const vipPlans = ref<VipPlan[]>([
   { id: 1, name: '周会员', price: 9, duration: '7天', days: 7, popular: false },
   { id: 2, name: '月会员', price: 25, originalPrice: 30, duration: '30天', days: 30, savings: 5, popular: true },
   { id: 3, name: '季会员', price: 68, originalPrice: 90, duration: '90天', days: 90, savings: 22, popular: false },
   { id: 4, name: '年会员', price: 238, originalPrice: 360, duration: '365天', days: 365, savings: 122, popular: false },
-]
+])
 
 const paymentMethods: PaymentMethod[] = [
   { id: 'wechat', name: '微信支付', icon: ChatDotRound },
@@ -215,18 +230,65 @@ const paymentMethods: PaymentMethod[] = [
 ]
 
 const selectedPlanObj = computed(() =>
-  vipPlans.find(plan => plan.id === selectedPlan.value)
+  vipPlans.value.find(plan => plan.id === selectedPlan.value)
 )
 
+// 加载会员支付信息
+const loadPaymentInfo = async (packageId?: number) => {
+  try {
+    const info = await getMembershipPaymentInfo(packageId)
+    paymentInfo.value = info
+    
+    // 更新套餐信息 - 根据packageId或当前选择的套餐ID匹配
+    const plan = vipPlans.value.find(p => {
+      if (packageId) {
+        return p.packageId === packageId || p.id === packageId
+      }
+      return p.id === (selectedPlan.value || 2)
+    })
+    
+    if (plan) {
+      plan.packageId = info.packageId
+      plan.price = info.discountAmount
+      plan.originalPrice = info.originalAmount
+      plan.days = info.durationDays
+    }
+    
+    availablePaymentMethods.value = info.paymentMethods
+    
+    // 如果当前选择的支付方式不可用，切换到第一个可用方式
+    if (!availablePaymentMethods.value.includes(selectedMethod.value)) {
+      if (availablePaymentMethods.value.length > 0) {
+        selectedMethod.value = availablePaymentMethods.value[0]
+      }
+    }
+  } catch (error: any) {
+    console.error('加载会员支付信息失败:', error)
+    // 使用默认支付方式
+    availablePaymentMethods.value = ['wechat', 'alipay']
+  }
+}
+
 const selectPlan = (id: number) => {
+  if (loading.value) return // 如果正在加载，不允许切换
   selectedPlan.value = id
 }
 
-const goToPaymentStep = () => {
+const goToPaymentStep = async () => {
   if (!agreed.value) {
     ElMessage.warning('请先阅读并同意会员协议')
     return
   }
+
+  if (!selectedPlan.value) {
+    ElMessage.warning('请选择会员套餐')
+    return
+  }
+
+  // 加载支付信息 - 使用当前选择的套餐ID
+  const plan = selectedPlanObj.value
+  // 如果套餐还没有packageId，先尝试加载，使用套餐的id作为packageId
+  await loadPaymentInfo(plan?.packageId || plan?.id)
 
   // 关闭套餐选择弹窗，打开支付弹窗
   dialogVisible.value = false
@@ -255,10 +317,26 @@ const handlePurchase = async () => {
     return
   }
 
+  if (!selectedPlan.value || !selectedPlanObj.value) {
+    ElMessage.error('请选择会员套餐')
+    return
+  }
+
+  // 使用packageId，如果没有则使用id
+  const packageId = selectedPlanObj.value.packageId || selectedPlanObj.value.id
+  
+  if (!packageId) {
+    ElMessage.error('套餐信息不完整')
+    return
+  }
+
   loading.value = true
   try {
-    // 模拟支付过程
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // 调用开通会员API
+    const result = await purchaseMembership({
+      packageId: packageId,
+      paymentMethod: selectedMethod.value as 'wechat' | 'alipay' | 'balance' | 'card'
+    })
 
     // 关闭支付弹窗
     paymentDialogVisible.value = false
@@ -268,7 +346,7 @@ const handlePurchase = async () => {
       `<div class="success-content">
          <div class="success-title">您已成功开通会员</div>
          <div class="success-desc">
-           已成功开通 ${selectedPlanObj.value?.name}，有效期 ${selectedPlanObj.value?.duration}
+           已成功开通 ${selectedPlanObj.value?.name}，有效期 ${result.durationDays}天
          </div>
          <div class="success-tip">
            会员特权已生效，立即享受会员服务
@@ -286,21 +364,32 @@ const handlePurchase = async () => {
     )
 
     // 触发成功事件，通知父组件更新会员信息
-    emit('purchase-success', selectedPlanObj.value)
+    emit('purchase-success', {
+      ...selectedPlanObj.value,
+      durationDays: result.durationDays,
+      durationType: result.durationType
+    })
 
-  } catch (error) {
+  } catch (error: any) {
     // 支付失败处理
-    ElMessage.error('开通失败，请重试')
+    const errorMessage = error?.response?.data?.message || error?.message || '开通失败，请重试'
+    ElMessage.error(errorMessage)
   } finally {
     loading.value = false
   }
 }
 // 暴露方法供父组件调用
-const open = () => {
+const open = async () => {
   dialogVisible.value = true
-  selectedPlan.value = 2
+  selectedPlan.value = 2 // 默认选择月度套餐
   selectedMethod.value = 'wechat'
   agreed.value = true
+  
+  // 加载默认套餐的支付信息
+  const defaultPlan = vipPlans.value.find(p => p.id === 2)
+  if (defaultPlan?.packageId) {
+    await loadPaymentInfo(defaultPlan.packageId)
+  }
 }
 
 defineExpose({
@@ -552,6 +641,24 @@ defineExpose({
 .payment-item.active {
   border-color: var(--primary-green);
   background-color: rgba(126, 180, 143, 0.1); /* 使用 --bg-green 的浅色版本 */
+}
+
+.payment-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.payment-item:not(.disabled) {
+  cursor: pointer;
+}
+
+.payment-original {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
 }
 
 .method-info {

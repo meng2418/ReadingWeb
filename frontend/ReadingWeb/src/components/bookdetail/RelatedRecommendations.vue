@@ -57,7 +57,7 @@ const emit = defineEmits<Emits>()
 // 响应式数据
 const currentIndex = ref(0)
 
-const { openInCurrent } = useBookNavigation()
+const { openInNewTab } = useBookNavigation()
 
 // 计算属性
 const displayedBooks = computed(() => {
@@ -80,14 +80,14 @@ const goToBookDetail = (book: BookListItem): void => {
   // 触发事件通知父组件
   emit('bookSelect', book)
 
-  // 然后跳转到详情页
+  // 在新标签页打开书籍详情页
   // 优先使用 book.bookId，如果不存在则用 book.id
   const bookId = book.bookId || book.id
 
   if (bookId) {
-    openInCurrent(bookId)
+    openInNewTab(bookId)
   } else {
-    openInCurrent()
+    openInNewTab()
   }
 }
 

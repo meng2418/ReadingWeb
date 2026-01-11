@@ -24,13 +24,13 @@ paths:
     post:
       summary: 发送验证码
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 认证
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -48,14 +48,14 @@ paths:
                   pattern: ^1[3-9]\d{9}$
         required: true
       responses:
-        "200":
+        '200':
           description: 验证码发送成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiResponse"
+                $ref: '#/components/schemas/ApiResponse'
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -65,9 +65,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "429":
+        '429':
           type: object
           properties:
             code:
@@ -77,20 +77,20 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /auth/register:
     post:
       summary: 注册
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 认证
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -124,24 +124,24 @@ paths:
                   type: string
         required: true
       responses:
-        "201":
+        '201':
           description: 注册成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           user:
-                            $ref: "#/components/schemas/UserSimpleVO"
+                            $ref: '#/components/schemas/UserSimpleVO'
                           token:
                             type: string
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -151,20 +151,20 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /auth/login:
     post:
       summary: 登录
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 认证
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -195,24 +195,24 @@ paths:
             examples: {}
         required: true
       responses:
-        "200":
+        '200':
           description: 登录成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           user:
-                            $ref: "#/components/schemas/UserSimpleVO"
+                            $ref: '#/components/schemas/UserSimpleVO'
                           token:
                             type: string
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -222,9 +222,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -234,20 +234,20 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /auth/reset-password:
     post:
       summary: 找回密码
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 认证
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -276,14 +276,14 @@ paths:
                   type: string
         required: true
       responses:
-        "200":
+        '200':
           description: 密码重置成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiResponse"
+                $ref: '#/components/schemas/ApiResponse'
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -293,27 +293,27 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /home/recent-books:
     get:
       summary: 获取用户最新阅读的4本书
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 首页
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -349,25 +349,25 @@ paths:
     get:
       summary: 获取本周/月/总阅读时长
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 首页
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -391,25 +391,25 @@ paths:
     get:
       summary: 获取猜你想看书籍（6本）
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 首页
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 返回6本推荐书籍
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -443,7 +443,7 @@ paths:
     get:
       summary: 获取书籍榜单（10本）
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 首页
       parameters:
@@ -455,7 +455,7 @@ paths:
             - new: 新书榜
             - masterpiece: 神作榜
           required: true
-          example: ""
+          example: ''
           schema:
             type: string
             enum:
@@ -465,19 +465,19 @@ paths:
               - masterpiece
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 返回10本榜单书籍
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -524,25 +524,25 @@ paths:
     get:
       summary: 获取全部分类
       deprecated: true
-      description: ""
+      description: ''
       tags:
         - 分类
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -562,20 +562,20 @@ paths:
     get:
       summary: 获取分类下的书籍（最多50本）
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 分类
       parameters:
         - name: categoryId
           in: path
-          description: ""
+          description: ''
           required: true
-          example: 0
+          example: 1
           schema:
             type: integer
         - name: page
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
@@ -583,7 +583,7 @@ paths:
             minimum: 1
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
@@ -592,19 +592,19 @@ paths:
             maximum: 50
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 返回分类书籍列表
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -658,13 +658,13 @@ paths:
     delete:
       summary: 批量从书架移除书籍
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 书架
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -684,8 +684,8 @@ paths:
             examples: {}
         required: true
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -696,7 +696,7 @@ paths:
                   message:
                     type: string
                   data:
-                    type: "null"
+                    type: 'null'
                 required:
                   - code
                   - message
@@ -711,26 +711,26 @@ paths:
     get:
       summary: 获取书架未读/在读/读完书籍
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: status
           in: path
-          description: ""
+          description: ''
           required: true
           example: finished
           schema:
             type: string
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -750,25 +750,25 @@ paths:
     get:
       summary: 获取书架全部书籍
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 书架
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -805,32 +805,32 @@ paths:
     get:
       summary: 获取我的帖子的评论瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 消息通知
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -891,32 +891,32 @@ paths:
     get:
       summary: 获取我的帖子的点赞瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 消息通知
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -965,7 +965,7 @@ paths:
                       hasMore:
                         type: boolean
                       nextCursor:
-                        type: string
+                        type: integer
                     required:
                       - likes
                       - hasMore
@@ -988,7 +988,7 @@ paths:
                         userId: 0
                         username: string
                         avatar: string
-                      likeTime: "2025-12-25T08:36:21.182Z"
+                      likeTime: '2025-12-25T08:36:21.182Z'
                   hasMore: true
                   nextCursor: string
           headers: {}
@@ -997,13 +997,13 @@ paths:
     post:
       summary: 点赞/取赞帖子或评论
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 社区
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -1033,13 +1033,13 @@ paths:
             examples: {}
         required: true
       responses:
-        "200":
+        '200':
           description: 操作成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1066,19 +1066,19 @@ paths:
     post:
       summary: 回复评论
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 社区
       parameters:
         - name: commentId
           in: path
-          description: ""
+          description: ''
           required: true
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -1097,8 +1097,8 @@ paths:
               content: string
         required: true
       responses:
-        "201":
-          description: ""
+        '201':
+          description: ''
           content:
             application/json:
               schema:
@@ -1158,7 +1158,7 @@ paths:
                     username: string
                     avatar: string
                     content: string
-                    commentTime: "2025-12-26T09:05:57.482Z"
+                    commentTime: '2025-12-26T09:05:57.482Z'
                     replyToUsername: string
                     parentCommentId: 0
                   replyCount: 0
@@ -1168,37 +1168,37 @@ paths:
     get:
       summary: 发帖时搜索书籍
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: keyword
           in: query
-          description: ""
+          description: ''
           required: true
           schema:
             type: string
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -1250,37 +1250,37 @@ paths:
     get:
       summary: 发帖时搜索话题
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: keyword
           in: query
-          description: ""
+          description: ''
           required: true
           schema:
             type: string
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -1335,13 +1335,13 @@ paths:
     get:
       summary: 获取广场/关注页帖子
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 社区
       parameters:
         - name: type
           in: query
-          description: ""
+          description: ''
           required: true
           schema:
             type: string
@@ -1350,33 +1350,33 @@ paths:
               - following
         - name: page
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 1
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 20
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1460,13 +1460,13 @@ paths:
     post:
       summary: 发布帖子
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 社区
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -1475,11 +1475,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PublishPostRequest"
+              $ref: '#/components/schemas/PublishPostRequest'
             examples: {}
         required: true
       responses:
-        "201":
+        '201':
           description: 发布成功
           content:
             application/json:
@@ -1507,32 +1507,32 @@ paths:
     get:
       summary: 获取帖子详情
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 社区
       parameters:
         - name: postId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1622,25 +1622,25 @@ paths:
     delete:
       summary: 删除帖子
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: postId
           in: path
-          description: ""
+          description: ''
           required: true
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -1682,26 +1682,26 @@ paths:
       parameters:
         - name: postId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功（仅作者可见）
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1725,7 +1725,7 @@ paths:
                                   type: string
                                   format: date-time
           headers: {}
-        "403":
+        '403':
           type: object
           properties:
             code:
@@ -1735,9 +1735,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "404":
+        '404':
           type: object
           properties:
             code:
@@ -1747,53 +1747,53 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /posts/{postId}/comments:
     get:
       summary: 获取评论列表
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 社区
       parameters:
         - name: postId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: page
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 1
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 20
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1842,20 +1842,20 @@ paths:
     post:
       summary: 发布帖子评论
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 社区
       parameters:
         - name: postId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -1875,13 +1875,13 @@ paths:
             examples: {}
         required: true
       responses:
-        "201":
+        '201':
           description: 评论成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1920,7 +1920,7 @@ paths:
                           commentCount:
                             type: integer
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -1930,9 +1930,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -1942,9 +1942,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "404":
+        '404':
           type: object
           properties:
             code:
@@ -1954,39 +1954,39 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /topics:
     get:
       summary: 获取所有话题瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 话题
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -2012,6 +2012,8 @@ paths:
                               type: string
                             postCount:
                               type: integer
+                          minProperties: 8
+                        minItems: 8
                       hasMore:
                         type: boolean
                       nextCursor:
@@ -2036,8 +2038,8 @@ paths:
                   hasMore: true
                   nextCursor: 25
           headers: {}
-        "400":
-          description: ""
+        '400':
+          description: ''
           content:
             application/json:
               schema:
@@ -2059,8 +2061,8 @@ paths:
                 message: 参数错误
                 data: {}
           headers: {}
-        "500":
-          description: ""
+        '500':
+          description: ''
           content:
             application/json:
               schema:
@@ -2087,25 +2089,25 @@ paths:
     post:
       summary: 关注话题
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: topicId
           in: path
-          description: ""
+          description: ''
           required: true
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -2135,25 +2137,25 @@ paths:
     delete:
       summary: 取消关注话题
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: topicId
           in: path
-          description: ""
+          description: ''
           required: true
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -2185,25 +2187,25 @@ paths:
     get:
       summary: 获取热门话题列表10个
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 话题
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -2215,11 +2217,15 @@ paths:
                               type: string
                             topicId:
                               type: integer
+                              minimum: 9
+                              maximum: 9
                           required:
                             - topicId
                             - topicName
                           minProperties: 9
                           maxProperties: 9
+                        minItems: 9
+                        maxItems: 9
                     minProperties: 9
                     maxProperties: 9
           headers: {}
@@ -2228,32 +2234,32 @@ paths:
     get:
       summary: 获取话题详情页
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 话题
       parameters:
         - name: topicId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -2308,7 +2314,7 @@ paths:
                               required:
                                 - topicId
                               minProperties: 9
-                              maxProperties: 9
+                            minItems: 9
                         required:
                           - topicName
                           - image
@@ -2320,20 +2326,20 @@ paths:
     get:
       summary: 获取话题最新/热门/精华帖子瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 话题
       parameters:
         - name: topicId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: sort
           in: query
-          description: ""
+          description: ''
           required: true
           schema:
             type: string
@@ -2343,40 +2349,40 @@ paths:
               - quality
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 1
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 20
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
                           allOf:
-                            - $ref: "#/components/schemas/Post"
+                            - $ref: '#/components/schemas/Post'
                             - type: object
                               properties:
                                 relatedTopics:
@@ -2397,61 +2403,61 @@ paths:
     get:
       summary: 获取登录用户个人中心
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 用户中心
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/UserProfile"
+                        $ref: '#/components/schemas/UserProfile'
           headers: {}
       security: []
   /user/posts:
     get:
       summary: 获取登录用户帖子瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 个人中心
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -2543,7 +2549,7 @@ paths:
                     - postId: 0
                       authorAvatar: string
                       authorName: string
-                      publishTime: "2025-12-25T07:24:24.887Z"
+                      publishTime: '2025-12-25T07:24:24.887Z'
                       publishLocation: string
                       isFollowingAuthor: true
                       postTitle: string
@@ -2578,26 +2584,26 @@ paths:
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -2649,11 +2655,10 @@ paths:
                               description: 枚举类型highlight/thought
                           required:
                             - noteType
-                        minItems: 4
                       hasMore:
                         type: boolean
                       nextCursor:
-                        type: string
+                        type: integer
                       noteCount:
                         type: integer
                     required:
@@ -2682,13 +2687,13 @@ paths:
                       lineTypes:
                         - marker
                       noteContent: string
-                      noteCreatedAt: "2025-12-25T07:45:25.915Z"
+                      noteCreatedAt: '2025-12-25T07:45:25.915Z'
                   hasMore: true
                   nextCursor: string
                   noteCount: 0
           headers: {}
-        "401":
-          description: ""
+        '401':
+          description: ''
           content:
             application/json:
               schema:
@@ -2700,32 +2705,32 @@ paths:
     get:
       summary: 获取登录用户书评瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 个人中心
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -2762,7 +2767,7 @@ paths:
                       hasMore:
                         type: boolean
                       nextCursor:
-                        type: string
+                        type: integer
                       reviewCount:
                         type: integer
                     required:
@@ -2781,7 +2786,7 @@ paths:
                   reviews:
                     - cover: string
                       bookTitle: string
-                      reviewDate: "2025-12-25"
+                      reviewDate: '2025-12-25'
                       helpfulCount: 0
                       reviewContent: string
                       rating: recommend
@@ -2789,8 +2794,8 @@ paths:
                   nextCursor: string
                   reviewCount: 0
           headers: {}
-        "401":
-          description: ""
+        '401':
+          description: ''
           content:
             application/json:
               schema:
@@ -2813,14 +2818,14 @@ paths:
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -2899,18 +2904,18 @@ paths:
                   totalReadingMilestone:
                     targetCount: 40
                     achievedBookTitle: string
-                    achievedAt: "2025-12-25T08:13:35.898Z"
+                    achievedAt: '2025-12-25T08:13:35.898Z'
                     message: 恭喜！您已累计阅读40本书
                   noteCountMilestone:
                     targetCount: 50
                     achievedBookTitle: string
                     achievedNoteContent: string
-                    achievedAt: "2025-12-25T08:13:35.898Z"
+                    achievedAt: '2025-12-25T08:13:35.898Z'
                     message: 恭喜！您已创作50条笔记
                   finishedReadingMilestone:
                     targetCount: 10
                     achievedBookTitle: string
-                    achievedAt: "2025-12-25T08:13:35.898Z"
+                    achievedAt: '2025-12-25T08:13:35.898Z'
                     message: 恭喜！您已读完10本书
           headers: {}
       security: []
@@ -2918,13 +2923,13 @@ paths:
     get:
       summary: 获取用户特定时间段阅读最久3本
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 阅读统计
       parameters:
         - name: period
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: string
@@ -2935,13 +2940,13 @@ paths:
               - total
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
@@ -3001,19 +3006,19 @@ paths:
     post:
       summary: 领取阅读激励
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 个人中心
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 领取成功
           content:
             application/json:
@@ -3040,7 +3045,7 @@ paths:
                 message: success
                 data: {}
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -3050,9 +3055,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -3062,7 +3067,7 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /user/reading-stats/timeline:
@@ -3074,14 +3079,14 @@ paths:
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3099,13 +3104,13 @@ paths:
                     type: object
                     properties:
                       week:
-                        $ref: "#/components/schemas/ReadingTimelineItem"
+                        $ref: '#/components/schemas/ReadingTimelineItem'
                       month:
-                        $ref: "#/components/schemas/ReadingTimelineItem"
+                        $ref: '#/components/schemas/ReadingTimelineItem'
                       year:
-                        $ref: "#/components/schemas/ReadingTimelineItem"
+                        $ref: '#/components/schemas/ReadingTimelineItem'
                       total:
-                        $ref: "#/components/schemas/ReadingTimelineItem"
+                        $ref: '#/components/schemas/ReadingTimelineItem'
               example:
                 code: 3
                 message: in
@@ -3113,24 +3118,24 @@ paths:
                   week:
                     unit: year
                     list:
-                      - date: "2026-08-22"
+                      - date: '2026-08-22'
                         readingTime: 35991579
-                      - date: "2026-07-16"
+                      - date: '2026-07-16'
                         readingTime: 62892147
                   month:
                     unit: day
                     list:
-                      - date: "2025-09-04"
+                      - date: '2025-09-04'
                         readingTime: 43768181
                   year:
                     unit: month
                     list:
-                      - date: "2026-12-06"
+                      - date: '2026-12-06'
                         readingTime: 23940059
                   total:
                     unit: year
                     list:
-                      - date: "2026-08-19"
+                      - date: '2026-08-19'
                         readingTime: 78019187
           headers: {}
       security: []
@@ -3138,20 +3143,20 @@ paths:
     get:
       summary: 获取今日阅读时长
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 个人中心
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3180,16 +3185,16 @@ paths:
                 data:
                   readingTime: 45
           headers: {}
-        "401":
-          description: ""
+        '401':
+          description: ''
           content:
             application/json:
               schema:
                 type: object
                 properties: {}
           headers: {}
-        "500":
-          description: ""
+        '500':
+          description: ''
           content:
             application/json:
               schema:
@@ -3201,26 +3206,26 @@ paths:
     delete:
       summary: 删除书评
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: reviewId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 26
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3256,26 +3261,26 @@ paths:
     delete:
       summary: 删除笔记
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: noteId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 26
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3311,13 +3316,13 @@ paths:
     put:
       summary: 编辑个人信息
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 个人中心
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -3344,7 +3349,7 @@ paths:
             examples: {}
         required: true
       responses:
-        "200":
+        '200':
           description: 个人信息更新成功
           content:
             application/json:
@@ -3381,7 +3386,7 @@ paths:
                     avatar: string
                     bio: string
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -3391,9 +3396,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -3403,7 +3408,7 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /user/highlights/recent:
@@ -3416,29 +3421,29 @@ paths:
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: "#/components/schemas/Highlight"
+                          $ref: '#/components/schemas/Highlight'
                         maxItems: 5
                         minItems: 3
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -3448,42 +3453,42 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /user/notes/recent6:
     get:
       summary: 获取登录用户最新的6条笔记
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 个人中心
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: "#/components/schemas/BookNote"
+                          $ref: '#/components/schemas/BookNote'
                         maxItems: 6
                         minItems: 6
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -3493,7 +3498,7 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security:
         - bearerAuth: []
@@ -3501,35 +3506,35 @@ paths:
     get:
       summary: 获取登录用户最新的4条书评
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 个人中心
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: "#/components/schemas/BookReview"
+                          $ref: '#/components/schemas/BookReview'
                         maxItems: 4
                         minItems: 4
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -3539,40 +3544,40 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /user/following:
     get:
       summary: 获取登录用户关注瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 用户关系
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 20
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3635,33 +3640,33 @@ paths:
     get:
       summary: 获取登录用户粉丝瀑布流
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 用户关系
       parameters:
         - name: cursor
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: limit
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
             default: 20
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3724,32 +3729,32 @@ paths:
     post:
       summary: 关注用户
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 用户关系
       parameters:
         - name: userId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 关注成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -3758,7 +3763,7 @@ paths:
                           isFollowing:
                             type: boolean
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -3768,9 +3773,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -3780,38 +3785,38 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
     delete:
       summary: 取消关注用户
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 用户关系
       parameters:
         - name: userId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 0
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 取消关注成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -3826,7 +3831,7 @@ paths:
                             type: integer
                             description: 被关注用户的粉丝数
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -3836,9 +3841,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -3848,27 +3853,27 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /membership/packages:
     get:
       summary: 获取会员套餐列表
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 支付
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3912,25 +3917,25 @@ paths:
     get:
       summary: 获取会员支付页
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: packageId
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -3990,12 +3995,12 @@ paths:
     post:
       summary: 开通会员
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -4018,8 +4023,8 @@ paths:
               paymentMethod: wechat
         required: true
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -4054,79 +4059,79 @@ paths:
     get:
       summary: 获取充值套餐列表
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 支付
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: "#/components/schemas/RechargePackage"
+                          $ref: '#/components/schemas/RechargePackage'
           headers: {}
       security: []
   /recharge/payment-page:
     get:
       summary: 获取充值支付页
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 支付
       parameters:
         - name: packageId
           in: query
-          description: ""
+          description: ''
           required: true
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/PaymentInfo"
+                        $ref: '#/components/schemas/PaymentInfo'
           headers: {}
       security: []
   /recharge:
     post:
       summary: 充值充值币
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 支付
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -4151,13 +4156,13 @@ paths:
             examples: {}
         required: true
       responses:
-        "200":
+        '200':
           description: 充值成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -4170,7 +4175,7 @@ paths:
                           bonusCoins:
                             type: integer
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -4180,9 +4185,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -4192,26 +4197,26 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /search:
     get:
       summary: 搜索
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 搜索
       parameters:
         - name: keyword
           in: query
-          description: ""
+          description: ''
           required: true
           schema:
             type: string
         - name: type
           in: query
-          description: ""
+          description: ''
           required: false
           schema:
             type: string
@@ -4222,36 +4227,36 @@ paths:
             default: all
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/SearchResult"
+                        $ref: '#/components/schemas/SearchResult'
           headers: {}
       security: []
   /book-reviews:
     post:
       summary: 发布书评
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 书籍详情
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -4288,13 +4293,13 @@ paths:
               isPublic: false
         required: true
       responses:
-        "201":
+        '201':
           description: 书评发布成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -4306,7 +4311,7 @@ paths:
                               reviewId:
                                 type: integer
                               book:
-                                $ref: "#/components/schemas/SimpleBook"
+                                $ref: '#/components/schemas/SimpleBook'
                               rating:
                                 type: string
                               content:
@@ -4317,7 +4322,7 @@ paths:
                                 type: string
                                 format: date-time
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -4327,9 +4332,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -4339,33 +4344,33 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /authors/{authorId}:
     get:
       summary: 获取作者详情
       deprecated: false
-      description: ""
+      description: ''
       tags: []
       parameters:
         - name: authorId
           in: path
-          description: ""
+          description: ''
           required: true
-          example: "50"
+          example: '50'
           schema:
             type: string
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -4440,8 +4445,8 @@ paths:
                       description: string
                   workCount: 0
           headers: {}
-        "404":
-          description: ""
+        '404':
+          description: ''
           content:
             application/json:
               schema:
@@ -4453,68 +4458,68 @@ paths:
     get:
       summary: 获取书详情
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 书籍详情
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 1
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/BookDetail"
+                        $ref: '#/components/schemas/BookDetail'
           headers: {}
       security: []
   /books/{bookId}/reviews:
     get:
       summary: 获取用户书评3条
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 书籍详情
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 1
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -4538,38 +4543,40 @@ paths:
                               format: date-time
                             content:
                               type: string
+                          minProperties: 9
+                        minItems: 9
           headers: {}
       security: []
   /books/{bookId}/author-works:
     get:
       summary: 获取作者代表作3部
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 书籍详情
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 1
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -4590,38 +4597,42 @@ paths:
                             - bookId
                           minProperties: 3
                           maxProperties: 3
+                        minItems: 3
+                        maxItems: 3
+                    minProperties: 3
+                    maxProperties: 3
           headers: {}
       security: []
   /books/{bookId}/related:
     get:
       summary: 获取相关推荐作品3部
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 书籍详情
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 1
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -4638,37 +4649,39 @@ paths:
                               type: string
                             bookId:
                               type: integer
+                              minimum: 9
                           required:
                             - bookId
                           minProperties: 9
-                          maxProperties: 9
+                        minItems: 9
+                    minProperties: 9
           headers: {}
       security: []
   /books/{bookId}/mark-finished:
     put:
       summary: 标记书籍为已读完
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 阅读器
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 1
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -4710,21 +4723,21 @@ paths:
                 data:
                   bookId: 0
                   newStatus: finished
-                  finishedAt: "2025-12-25T07:13:15.740Z"
+                  finishedAt: '2025-12-25T07:13:15.740Z'
                   totalFinishedBooks: 0
                   milestoneAchieved: true
                   milestoneMessage: string
           headers: {}
-        "400":
-          description: ""
+        '400':
+          description: ''
           content:
             application/json:
               schema:
                 type: object
                 properties: {}
           headers: {}
-        "404":
-          description: ""
+        '404':
+          description: ''
           content:
             application/json:
               schema:
@@ -4736,13 +4749,13 @@ paths:
     post:
       summary: 发布笔记
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 阅读器
       parameters:
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
@@ -4777,13 +4790,13 @@ paths:
             example: "{\r\n    \"bookId\": 1,\r\n    \"chapterId\": 1,\r\n    \"quote\": \"科学边界这个组织很神秘。\",\r\n    \"lineType\": \"marker\"\r\n    // 不传 thought\r\n}"
         required: true
       responses:
-        "201":
+        '201':
           description: 笔记发布成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -4804,7 +4817,7 @@ paths:
                                 type: string
                                 format: date-time
           headers: {}
-        "400":
+        '400':
           type: object
           properties:
             code:
@@ -4814,9 +4827,9 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
-        "401":
+        '401':
           type: object
           properties:
             code:
@@ -4826,41 +4839,41 @@ paths:
               type: string
             details:
               type: string
-          description: ""
+          description: ''
           headers: {}
       security: []
   /books/{bookId}/chapters/{chapterId}:
     get:
       summary: 获取章节信息和内容
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 阅读器
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
-          example: "1"
+          example: '1'
           schema:
             type: string
         - name: chapterId
           in: path
-          description: ""
+          description: ''
           required: true
-          example: "1"
+          example: '1'
           schema:
             type: string
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -4936,34 +4949,34 @@ paths:
     get:
       summary: 获取章节笔记列表
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 阅读器
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
-          example: "1"
+          example: '1'
           schema:
             type: string
         - name: chapterId
           in: path
-          description: ""
+          description: ''
           required: true
-          example: "1"
+          example: '1'
           schema:
             type: string
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -5011,11 +5024,11 @@ paths:
                     lineType:
                       - marker
                     thought: string
-                    createdAt: "2025-12-26T06:03:43.045Z"
+                    createdAt: '2025-12-26T06:03:43.045Z'
                     pageNumber: 0
           headers: {}
-        "401":
-          description: ""
+        '401':
+          description: ''
           content:
             application/json:
               schema:
@@ -5028,76 +5041,77 @@ paths:
     get:
       summary: 获取书籍目录
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 阅读器
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 1
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: "#/components/schemas/Chapter"
+                          $ref: '#/components/schemas/Chapter'
+                        minItems: 10
           headers: {}
       security: []
   /reader/{bookId}/notes:
     get:
       summary: 获取全书笔记列表
       deprecated: false
-      description: ""
+      description: ''
       tags:
         - 阅读器
       parameters:
         - name: bookId
           in: path
-          description: ""
+          description: ''
           required: true
           example: 1
           schema:
             type: integer
         - name: Authorization
           in: header
-          description: ""
+          description: ''
           example: Bearer {{token}}
           schema:
             type: string
             default: Bearer {{token}}
       responses:
-        "200":
+        '200':
           description: 成功
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: "#/components/schemas/Note"
+                          $ref: '#/components/schemas/Note'
           headers: {}
       security: []
 components:
@@ -5207,7 +5221,7 @@ components:
         - authorId
     BookDetail:
       allOf:
-        - $ref: "#/components/schemas/SimpleBook"
+        - $ref: '#/components/schemas/SimpleBook'
         - type: object
           properties:
             isInBookshelf:
@@ -5303,6 +5317,7 @@ components:
           type: integer
           description: 体验卡数
           maximum: 30
+          minimum: 0
         coinCount:
           type: integer
           description: 充值币数
@@ -5445,7 +5460,7 @@ components:
         mentionedBooks:
           type: array
           items:
-            $ref: "#/components/schemas/SimpleBook"
+            $ref: '#/components/schemas/SimpleBook'
           description: 帖子提及书籍列表
         commentCount:
           type: integer
@@ -5558,7 +5573,7 @@ components:
         books:
           type: array
           items:
-            $ref: "#/components/schemas/SimpleBook"
+            $ref: '#/components/schemas/SimpleBook'
         authors:
           type: array
           items:
@@ -5588,6 +5603,10 @@ components:
           type: integer
         chapterName:
           type: string
+        chapterId:
+          type: integer
+      required:
+        - chapterId
     Note:
       type: object
       properties:

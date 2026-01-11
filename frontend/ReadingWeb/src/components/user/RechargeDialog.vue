@@ -70,13 +70,13 @@
           <span class="label">支付金额：</span>
           <span class="value">¥{{ selectedOption?.price || 0 }}</span>
         </div>
-        <div v-if="selectedOption?.bonus" class="payment-bonus">
+        <div v-if="paymentInfo?.bonusCoins || selectedOption?.bonus" class="payment-bonus">
           <span class="label">赠送充值币：</span>
-          <span class="value">{{ selectedOption.bonus }}书币</span>
+          <span class="value">{{ paymentInfo?.bonusCoins || selectedOption?.bonus || 0 }}充值币</span>
         </div>
         <div class="payment-total">
           <span class="label">实付金额：</span>
-          <span class="value total-amount">¥{{ selectedOption?.price || 0 }}</span>
+          <span class="value total-amount">¥{{ paymentInfo?.actualAmount || selectedOption?.price || 0 }}</span>
         </div>
       </div>
 
@@ -88,8 +88,11 @@
             v-for="method in paymentMethods"
             :key="method.id"
             class="payment-item"
-            :class="{ 'active': selectedMethod === method.id }"
-            @click="selectedMethod = method.id"
+            :class="{ 
+              'active': selectedMethod === method.id,
+              'disabled': availablePaymentMethods.length > 0 && !availablePaymentMethods.includes(method.id)
+            }"
+            @click="handlePaymentMethodClick(method.id)"
           >
             <div class="method-info">
               <el-icon class="method-icon"><component :is="method.icon" /></el-icon>
@@ -123,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineEmits, defineExpose } from 'vue'
+import { ref, computed, defineEmits, defineExpose, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Wallet,
@@ -131,12 +134,20 @@ import {
   ChatDotRound,
   Money
 } from '@element-plus/icons-vue'
+import {
+  getRechargePackages,
+  getRechargePaymentPage,
+  recharge,
+  type RechargePackage,
+  type RechargePaymentInfo
+} from '@/api/payment'
 
 interface RechargeOption {
   id: number
   amount: number
   price: number
   bonus: number
+  packageId?: number
 }
 
 interface PaymentMethod {
@@ -150,20 +161,14 @@ const emit = defineEmits(['recharge-success'])
 const dialogVisible = ref(false)
 const loading = ref(false)
 const step = ref(1)
-const selectedAmount = ref(1) // 默认选择60书币
+const selectedAmount = ref<number | null>(null)
 const selectedMethod = ref('wechat')
 const agreed = ref(true)
 const activeCollapse = ref([])
 const currentBalance = ref(0)
-
-const rechargeOptions: RechargeOption[] = [
-  { id: 1, amount: 60, price: 6, bonus: 6 },
-  { id: 2, amount: 100, price: 10, bonus: 10 },
-  { id: 3, amount: 200, price: 20, bonus: 20 },
-  { id: 4, amount: 500, price: 50, bonus: 55 },
-  { id: 5, amount: 1000, price: 100, bonus: 120 },
-  { id: 6, amount: 2000, price: 200, bonus: 240 },
-]
+const rechargeOptions = ref<RechargeOption[]>([])
+const availablePaymentMethods = ref<string[]>([])
+const paymentInfo = ref<RechargePaymentInfo | null>(null)
 
 const paymentMethods: PaymentMethod[] = [
   { id: 'wechat', name: '微信支付', icon: ChatDotRound },
@@ -173,18 +178,99 @@ const paymentMethods: PaymentMethod[] = [
 ]
 
 const selectedOption = computed(() =>
-  rechargeOptions.find(option => option.id === selectedAmount.value)
+  rechargeOptions.value.find(option => option.id === selectedAmount.value)
 )
+
+// 加载充值套餐列表
+const loadRechargePackages = async () => {
+  try {
+    const packages = await getRechargePackages()
+    // 将API返回的套餐转换为前端使用的格式
+    // 注意：如果后端不返回packageId，我们使用索引+1作为packageId
+    rechargeOptions.value = packages.map((pkg, index) => ({
+      id: index + 1,
+      amount: pkg.coinAmount,
+      price: pkg.cnyAmount,
+      bonus: pkg.bonusCoins,
+      packageId: pkg.packageId || (index + 1) // 如果没有packageId，使用索引+1
+    }))
+    
+    // 如果没有套餐，使用默认套餐
+    if (rechargeOptions.value.length === 0) {
+      rechargeOptions.value = [
+        { id: 1, amount: 60, price: 6, bonus: 6 },
+        { id: 2, amount: 100, price: 10, bonus: 10 },
+        { id: 3, amount: 200, price: 20, bonus: 20 },
+        { id: 4, amount: 500, price: 50, bonus: 55 },
+        { id: 5, amount: 1000, price: 100, bonus: 120 },
+        { id: 6, amount: 2000, price: 200, bonus: 240 },
+      ]
+    }
+    
+    // 默认选择第二个套餐
+    if (rechargeOptions.value.length > 1) {
+      selectedAmount.value = rechargeOptions.value[1].id
+    } else if (rechargeOptions.value.length > 0) {
+      selectedAmount.value = rechargeOptions.value[0].id
+    }
+  } catch (error) {
+    console.error('加载充值套餐失败:', error)
+    // 使用默认套餐
+    rechargeOptions.value = [
+      { id: 1, amount: 60, price: 6, bonus: 6 },
+      { id: 2, amount: 100, price: 10, bonus: 10 },
+      { id: 3, amount: 200, price: 20, bonus: 20 },
+      { id: 4, amount: 500, price: 50, bonus: 55 },
+      { id: 5, amount: 1000, price: 100, bonus: 120 },
+      { id: 6, amount: 2000, price: 200, bonus: 240 },
+    ]
+    if (rechargeOptions.value.length > 1) {
+      selectedAmount.value = rechargeOptions.value[1].id
+    }
+  }
+}
+
+// 加载支付页信息
+const loadPaymentPage = async () => {
+  if (!selectedOption.value) {
+    ElMessage.error('请先选择充值套餐')
+    return
+  }
+  
+  // 使用packageId，如果没有则使用id
+  const packageId = selectedOption.value.packageId || selectedOption.value.id
+  
+  try {
+    const info = await getRechargePaymentPage(packageId)
+    paymentInfo.value = info
+    availablePaymentMethods.value = info.paymentMethods
+    
+    // 如果当前选择的支付方式不可用，切换到第一个可用方式
+    if (!availablePaymentMethods.value.includes(selectedMethod.value)) {
+      if (availablePaymentMethods.value.length > 0) {
+        selectedMethod.value = availablePaymentMethods.value[0]
+      }
+    }
+  } catch (error: any) {
+    console.error('加载支付页信息失败:', error)
+    ElMessage.error(error?.message || '加载支付信息失败')
+    // 使用默认支付方式
+    availablePaymentMethods.value = ['wechat', 'alipay']
+  }
+}
 
 const selectAmount = (id: number) => {
   selectedAmount.value = id
 }
 
-const goToPaymentStep = () => {
+const goToPaymentStep = async () => {
   if (!selectedAmount.value) {
     ElMessage.warning('请选择充值金额')
     return
   }
+  
+  // 加载支付页信息
+  await loadPaymentPage()
   step.value = 2
 }
 
@@ -204,20 +290,26 @@ const handleRecharge = async () => {
     return
   }
 
+  if (!selectedOption.value) {
+    ElMessage.error('请选择充值套餐')
+    return
+  }
+
   // 防止重复点击
   if (loading.value) {
     return
   }
 
+  // 使用packageId，如果没有则使用id
+  const packageId = selectedOption.value.packageId || selectedOption.value.id
+
   loading.value = true
 
   try {
-    // 模拟支付过程 - 1.5秒延迟
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        // 固定支付成功
-        resolve('success')
-      }, 1500)
+    // 调用充值API
+    const result = await recharge({
+      packageId: packageId,
+      paymentMethod: selectedMethod.value as 'wechat' | 'alipay' | 'unionpay'
     })
 
     // 支付成功 - 先重置loading状态
@@ -231,8 +323,8 @@ const handleRecharge = async () => {
       `<div class="success-content">
          <div class="success-title">您已充值成功</div>
          <div class="success-desc">
-           已成功充值 ${selectedOption.value?.amount || 0} 充值币
-           ${selectedOption.value?.bonus ? `+ 赠送 ${selectedOption.value.bonus} 充值币` : ''}
+           已成功充值 ${result.coinAmount} 充值币
+           ${result.bonusCoins > 0 ? `+ 赠送 ${result.bonusCoins} 充值币` : ''}
          </div>
        </div>`,
       '充值成功',
@@ -247,11 +339,19 @@ const handleRecharge = async () => {
     )
 
     // 触发成功事件，通知父组件更新余额
-    emit('recharge-success', selectedOption.value)
+    emit('recharge-success', {
+      ...selectedOption.value,
+      coinAmount: result.coinAmount,
+      bonusCoins: result.bonusCoins,
+      orderId: result.orderId
+    })
 
-
-  }
-  finally {
+  } catch (error: any) {
+    // 支付失败处理
+    loading.value = false
+    const errorMessage = error?.response?.data?.message || error?.message || '充值失败，请重试'
+    ElMessage.error(errorMessage)
+  } finally {
     // 重置加载状态
     loading.value = false
   }
@@ -334,7 +434,7 @@ const showPaymentAgreement = () => {
     <div class="agreement-content">
       <h3>支付服务协议</h3>
       <p>1. 支付过程中请确保网络畅通，避免重复支付。</p>
-      <p>2. 支付成功后，系统会自动为您添加相应的书币。</p>
+            <p>2. 支付成功后，系统会自动为您添加相应的充值币。</p>
       <p>3. 如支付过程中遇到问题，请及时联系客服。</p>
       <p>4. 支付信息将严格保密，不会泄露给第三方。</p>
       <p>5. 请确认支付金额无误后再进行支付操作。</p>
@@ -351,14 +451,16 @@ const showPaymentAgreement = () => {
 }
 
 // 暴露方法供父组件调用
-const open = (balance: number) => {
+const open = async (balance: number) => {
   currentBalance.value = balance
   dialogVisible.value = true
   step.value = 1
-  selectedAmount.value = 2
   selectedMethod.value = 'wechat'
   agreed.value = true
   loading.value = false
+  
+  // 加载充值套餐列表
+  await loadRechargePackages()
 }
 
 defineExpose({
@@ -601,6 +703,16 @@ defineExpose({
 .payment-item.active {
   border-color: var(--primary-green);
   background-color: rgba(126, 180, 143, 0.1); /* 使用 --bg-green 的浅色版本 */
+}
+
+.payment-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.payment-item:not(.disabled) {
+  cursor: pointer;
 }
 
 .method-info {
