@@ -44,9 +44,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useBookNavigation } from '@/composables/useBookNavigation'
 import type { AuthorWork, AuthorInfo } from '@/types/author'
 // 添加路由
 const router = useRouter()
+const { openInNewTab } = useBookNavigation()
 // 定义props
 interface Props {
   author: AuthorInfo
@@ -81,6 +83,13 @@ const handleImageError = (event: Event) => {
 const handleWorkClick = (work: AuthorWork) => {
   emit('workClick', work)
   console.log('点击作品:', work.title)
+
+  // 在新标签页打开书籍详情页
+  if (work.id) {
+    openInNewTab(work.id)
+  } else {
+    console.warn('作品缺少ID，无法跳转到详情页')
+  }
 }
 
 // 查看全部作品 - 在新标签页打开作者详情页
