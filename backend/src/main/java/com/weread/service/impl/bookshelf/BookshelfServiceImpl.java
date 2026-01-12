@@ -11,6 +11,7 @@ import com.weread.repository.ReadingProgressRepository;
 import com.weread.repository.bookshelf.BookshelfRepository;
 import com.weread.service.bookshelf.BookshelfService;
 import com.weread.service.user.ReadingService;
+import com.weread.util.ImagePathUtils;
 import com.weread.vo.book.MarkFinishedVO;
 import com.weread.vo.book.SimpleBookVO;
 import com.weread.vo.bookshelf.BookAddVO;
@@ -85,7 +86,7 @@ public class BookshelfServiceImpl implements BookshelfService {
         vo.setBookId(book.getBookId());
         vo.setTitle(book.getTitle());
         vo.setAuthor(author.getAuthorName());
-        vo.setCoverUrl(book.getCover());
+        vo.setCoverUrl(ImagePathUtils.processCoverPath(book.getCover()));
         vo.setStatus(dto.getStatus());
         vo.setAddedAt(shelfEntity.getAddedAt());
         vo.setMessage("图书已成功添加到书架");
@@ -226,7 +227,7 @@ public class BookshelfServiceImpl implements BookshelfService {
             vo.setBookId(book.getBookId());
             vo.setTitle(book.getTitle());
             vo.setAuthor(author.getAuthorName());
-            vo.setCoverUrl(book.getCover());
+            vo.setCoverUrl(ImagePathUtils.processCoverPath(book.getCover()));
             vo.setStatus(shelf.getStatus());
             vo.setChapterId(progress.getChapterId());
             vo.setProgress(progress.getProgress());

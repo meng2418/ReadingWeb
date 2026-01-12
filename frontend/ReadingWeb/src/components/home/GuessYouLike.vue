@@ -2,7 +2,9 @@
   <div class="guess-you-like">
     <div class="header">
       <h2>猜你想看</h2>
-      <button @click="emit('refresh')" class="change-btn">换一批</button>
+      <button @click="emit('refresh')" class="change-btn" :disabled="isRefreshing">
+        {{ isRefreshing ? '加载中...' : '换一批' }}
+      </button>
     </div>
 
     <div class="book-cards-container">
@@ -20,16 +22,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import BookCard from '@/components/home/BookCardBig.vue'
 import type { BookListItem, GuessBook } from '@/types/book'
 
 const props = defineProps<{
   books: GuessBook[]
+  isRefreshing?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
+
+const isRefreshing = computed(() => props.isRefreshing ?? false)
 </script>
 
 <style scoped>
@@ -66,6 +72,11 @@ h2 {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
+}
+
+.change-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .change-btn:hover {

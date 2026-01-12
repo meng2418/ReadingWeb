@@ -122,14 +122,23 @@ onMounted(() => {
   margin-bottom: 15px;
 }
 
+/* 修改部分 1：标题区域调整 */
 .section-title {
   font-size: 24px;
   font-weight: 600;
   color: #333;
   margin: 0;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* width: 100%;  <-- 删除这一行 */
+  flex: 1;      /* <-- 新增：自动占据剩余空间 */
+  min-width: 0; /* <-- 新增：保证Flex布局下省略号生效的关键 */
+  margin-right: 10px; /* <-- 新增：给按钮留点间距 */
 }
 
-/* 换一批按钮样式 */
+/* 修改部分 2：按钮样式调整 */
 .refresh-button {
   padding: 6px 12px;
   background: transparent;
@@ -140,6 +149,10 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
+  
+  /* 新增以下两行 */
+  white-space: nowrap; /* 核心修复：强制文字不换行 */
+  flex-shrink: 0;      /* 核心修复：防止按钮宽度被压缩 */
 }
 
 .refresh-button:hover {
@@ -210,6 +223,13 @@ onMounted(() => {
   color: #333;
   margin-bottom: 4px;
   line-height: 1.3;
+    
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* 限制 2 行 */
+  line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .book-intro {

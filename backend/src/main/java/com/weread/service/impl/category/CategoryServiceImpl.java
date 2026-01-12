@@ -5,6 +5,7 @@ import com.weread.entity.book.BookEntity;
 import com.weread.repository.book.BookRepository;
 import com.weread.repository.category.CategoryRepository;
 import com.weread.service.category.CategoryService;
+import com.weread.util.ImagePathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -93,7 +94,7 @@ public class CategoryServiceImpl implements CategoryService {
         dto.setAuthorName(getAuthorName(book));
         dto.setAuthorId(getAuthorId(book));  // 新增：设置authorId
 
-        dto.setCover(book.getCover());
+        dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         dto.setReadingStatus("unread"); // 默认未读
 
         // 修复：使用ifPresent的正确方式

@@ -4,6 +4,7 @@ import com.weread.service.book.RecommendationService;
 import com.weread.dto.book.SimpleBookDTO;
 import com.weread.entity.book.BookEntity;
 import com.weread.repository.book.BookRepository;
+import com.weread.util.ImagePathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,25 @@ public class RecommendationServiceImpl implements RecommendationService {
             // 方法1：直接使用数据库随机（最简单）
             List<BookEntity> randomBooks = bookRepository.findRandomBooks();
 
-            // 如果数据库返回不足6本（比如书籍总数不够），查询所有书籍
+            // 如果数据库返回空列表，尝试查询所有已发布的书籍
+            if (randomBooks == null || randomBooks.isEmpty()) {
+                log.warn("随机查询返回空列表，尝试查询所有已发布的书籍");
+                randomBooks = bookRepository.findAllPublishedBooks();
+                
+                // 如果仍然为空，返回空列表
+                if (randomBooks == null || randomBooks.isEmpty()) {
+                    log.warn("数据库中没有任何已发布的书籍");
+                    return Collections.emptyList();
+                }
+                
+                // 如果书籍数量超过6本，随机选择6本
+                if (randomBooks.size() > RECOMMENDATION_COUNT) {
+                    Collections.shuffle(randomBooks);
+                    randomBooks = randomBooks.subList(0, RECOMMENDATION_COUNT);
+                }
+            }
+
+            // 如果数据库返回不足6本（比如书籍总数不够），返回所有书籍
             if (randomBooks.size() < RECOMMENDATION_COUNT) {
                 log.info("书籍数量不足{}本，返回所有{}本书籍",
                         RECOMMENDATION_COUNT, randomBooks.size());
@@ -36,7 +55,7 @@ public class RecommendationServiceImpl implements RecommendationService {
             return convertToDTOs(randomBooks);
 
         } catch (Exception e) {
-            log.error("获取推荐书籍失败: {}", e.getMessage());
+            log.error("获取推荐书籍失败: {}", e.getMessage(), e);
             // 异常时返回空列表，避免500错误
             return Collections.emptyList();
         }
@@ -60,11 +79,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         dto.setBookTitle(book.getTitle());
         dto.setAuthorName(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
         // 处理cover路径：如果是相对路径（如"1_cover.jpeg"），拼接为完整路径
-        String cover = book.getCoverImage();
-        if (cover != null && !cover.startsWith("/") && !cover.startsWith("http")) {
-            cover = "/static/images/" + cover;
-        }
-        dto.setCover(cover);
+        dto.setCover(ImagePathUtils.processCoverPath(book.getCoverImage()));
         dto.setDescription(book.getDescription() != null ? book.getDescription() : "");
         dto.setReadingStatus("unread"); // 推荐书籍默认未读
         return dto;

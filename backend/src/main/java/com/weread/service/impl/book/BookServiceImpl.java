@@ -22,6 +22,7 @@ import com.weread.vo.book.BookDetailVO;
 import com.weread.vo.book.BookListVO;
 import com.weread.vo.book.BookSummaryVO;
 import com.weread.vo.book.RelatedBookVO;
+import com.weread.util.ImagePathUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +57,7 @@ public class BookServiceImpl implements BookService {
         BookSummaryVO vo = new BookSummaryVO();
         vo.setBookId(bookEntity.getBookId());
         vo.setTitle(bookEntity.getTitle());
-        vo.setCover(bookEntity.getCover());
+        vo.setCover(ImagePathUtils.processCoverPath(bookEntity.getCover()));
         vo.setDescription(bookEntity.getDescription());
 
         if (bookEntity.getAuthor() != null) {
@@ -256,7 +257,7 @@ public class BookServiceImpl implements BookService {
         AuthorWorkVO vo = new AuthorWorkVO();
         // 将 bookId 转换为 String 类型
         vo.setBookId(book.getBookId() != null ? String.valueOf(book.getBookId()) : "");
-        vo.setCover(book.getCover() != null ? book.getCover() : "");
+        vo.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         vo.setBookTitle(book.getTitle());
         return vo;
     }
@@ -290,7 +291,7 @@ public class BookServiceImpl implements BookService {
     private RelatedBookVO convertToRelatedBookVO(BookEntity book) {
         RelatedBookVO vo = new RelatedBookVO();
         vo.setBookId(book.getBookId());
-        vo.setCover(book.getCover() != null ? book.getCover() : "");
+        vo.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         vo.setTitle(book.getTitle());
         vo.setDescription(book.getDescription() != null ? book.getDescription() : "");
 
@@ -347,7 +348,7 @@ public class BookServiceImpl implements BookService {
             vo.setAuthorBio("");
         }
 
-        vo.setCover(book.getCover());
+        vo.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         vo.setDescription(book.getDescription());
         vo.setCategoryId(book.getCategoryId());
 
@@ -463,7 +464,7 @@ public class BookServiceImpl implements BookService {
         if (book.getAuthor() != null) {
             vo.setAuthorName(book.getAuthor().getAuthorName());
         }
-        vo.setCover(book.getCover());
+        vo.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         vo.setDescription(book.getDescription());
         vo.setCategoryId(book.getCategoryId());
 

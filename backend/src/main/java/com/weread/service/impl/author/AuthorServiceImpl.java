@@ -6,6 +6,7 @@ import com.weread.repository.author.AuthorRepository;
 import com.weread.repository.author.UserFollowAuthorRepository;
 import com.weread.repository.book.BookRepository;
 import com.weread.service.author.AuthorService;
+import com.weread.util.ImagePathUtils;
 import com.weread.vo.author.AuthorDetailVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -75,7 +76,7 @@ public class AuthorServiceImpl implements AuthorService {
         workVO.setBookId(book.getBookId());
         workVO.setBookTitle(book.getTitle());
         workVO.setAuthorName(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "");
-        workVO.setCover(book.getCover() != null ? book.getCover() : "");
+        workVO.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         workVO.setRating(book.getRating() != null ? book.getRating().intValue() : 0);
         workVO.setReadCount(book.getReadCount() != null ? book.getReadCount() : 0);
         workVO.setDescription(book.getDescription() != null ? book.getDescription() : "");

@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 import type { ReviewCardItem } from '@/types/review'
 
 const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
@@ -29,6 +30,8 @@ export interface SubmitReviewResponse {
     content: string
     isPublic: boolean
     createdAt: string
+    username?: string // 用户名
+    avatar?: string // 用户头像
   }
 }
 
@@ -66,7 +69,7 @@ export const getUserReviews = async () => {
       id: item.id || `${item.bookTitle}-${index}`, // 如果后端没给ID，生成一个临时ID
       userName: '我',
       bookName: item.bookTitle,
-      cover: item.cover,
+      cover: processCoverPath(item.cover),
       rating: mapRating(item.rating),
       date: item.reviewDate,
       likes: item.helpfulCount || 0,

@@ -95,6 +95,7 @@ public class SecurityConfig {
 
                 // 静态资源（图片等）不需要认证
                 .requestMatchers("/static/**").permitAll()
+                .requestMatchers("/bookresources/**").permitAll()
 
                 // 其他全部需要登录
                 .anyRequest().authenticated()

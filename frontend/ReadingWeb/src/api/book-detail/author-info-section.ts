@@ -1,5 +1,6 @@
 // src/api/book-detail/author-info-section.ts - AuthorInfoSection组件相关API
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 
 const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
 
@@ -52,9 +53,9 @@ export interface AuthorDetailResponse {
 export const getAuthorWorks = async (bookId: string | number): Promise<AuthorWork[]> => {
   const res = await request.get<AuthorWork[]>(`/books/${bookId}/author-works`)
   const data: AuthorWork[] = unwrap(res)
-  // 确保返回的数据包含所有必需字段
+  // 确保返回的数据包含所有必需字段，并处理封面路径
   return data.map((work: AuthorWork) => ({
-    cover: work.cover,
+    cover: processCoverPath(work.cover),
     bookTitle: work.bookTitle,
     description: work.description,
     bookId: work.bookId,
@@ -84,12 +85,12 @@ export const getAuthorAllWorks = async (authorId: number): Promise<AuthorWorkWit
   const res = await request.get<AuthorDetailResponse>(`/authors/${authorId}`)
   const data = unwrap(res)
 
-  // 将接口数据映射为前端需要的格式
+  // 将接口数据映射为前端需要的格式，并处理封面路径
   return data.works.map((work: AuthorDetailResponse['works'][0]) => ({
     id: work.bookId,
     title: work.bookTitle,
     summary: work.description,
-    cover: work.cover,
+    cover: processCoverPath(work.cover),
     readersCount: work.readCount,
     recommendationRate: work.rating,
     authorName: work.authorName

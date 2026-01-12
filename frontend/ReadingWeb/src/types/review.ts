@@ -3,6 +3,7 @@ export type RatingValue = 'recommend' | 'average' | 'poor' | string
 // 基础点评模型（与存储层结构一致）
 export interface Review {
   id: number | string
+  reviewId?: number | string // API返回的书评ID
   bookId?: string
   bookTitle?: string
   userId?: string
