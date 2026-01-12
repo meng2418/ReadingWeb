@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -37,16 +38,11 @@ public class ReaderController {
     public Result<ChapterContentVO> getChapterContent(
             @PathVariable String bookId,
             @PathVariable String chapterId,
-            @AuthenticationPrincipal UserEntity loginUser) {
+            @AuthenticationPrincipal Integer userId) {
         // 将String类型的路径参数转换为Integer
         Integer bookIdInt = parseInteger(bookId, "bookId");
         Integer chapterIdInt = parseInteger(chapterId, "chapterId");
         
-        // 获取当前用户ID（如果已登录）
-        Integer userId = null;
-        if (loginUser != null) {
-            userId = loginUser.getUserId();
-        }
         return Result.success(chapterService.getChapterContent(bookIdInt, chapterIdInt, userId));
     }
 
@@ -60,9 +56,9 @@ public class ReaderController {
     public Result<List<ChapterNoteResponseDTO>> getChapterNotes(
             @PathVariable String bookId,
             @PathVariable String chapterId,
-            @AuthenticationPrincipal UserEntity loginUser) {
+            @AuthenticationPrincipal Integer userId) {
         // 必须已登录才能获取笔记列表
-        if (loginUser == null) {
+        if (userId == null) {
             throw new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.UNAUTHORIZED, "未认证");
         }
@@ -71,7 +67,6 @@ public class ReaderController {
         Integer bookIdInt = parseInteger(bookId, "bookId");
         Integer chapterIdInt = parseInteger(chapterId, "chapterId");
         
-        Integer userId = loginUser.getUserId();
         List<ChapterNoteResponseDTO> notes = noteService.getChapterNotes(userId, bookIdInt, chapterIdInt);
         return Result.success(notes);
     }

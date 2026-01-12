@@ -2,6 +2,7 @@ package com.weread.controller.bookshelf;
 
 import com.weread.dto.BookConverter;
 import com.weread.dto.Result;
+import com.weread.dto.SimpleResult;
 import com.weread.dto.book.SimpleBookDTO;
 import com.weread.dto.bookshelf.*;
 import com.weread.entity.user.UserEntity;
@@ -14,8 +15,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 
@@ -70,27 +73,31 @@ public class BookshelfController {
         return Result.success(result);
     }
 
-    /**
-     * Add a book to the bookshelf.
-     */
-    @PostMapping
-    @Operation(summary = "Add to Bookshelf", description = "Add a specified book to the user's bookshelf (default status: unread)")
-    public Result<Void> addToBookshelf(@RequestBody BookAddDTO dto) {
-
-        Integer userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+    @PostMapping("/add/{bookId}")
+    @Operation(summary = "添加书籍到书架（简化版）", description = "通过路径参数传入书籍ID，默认状态为未读")
+    public Result<Void> addBookToShelfSimple(
+            @PathVariable Integer bookId,
+            @AuthenticationPrincipal Integer userId) {
+    
+        BookAddDTO dto = new BookAddDTO();
+        dto.setBookId(bookId);
+        dto.setStatus("unread");
+    
         bookshelfService.addBookToShelf(dto, userId);
-
         return Result.success();
     }
+
 
     /**
      * Remove a book from the bookshelf.
      */
     @DeleteMapping("/{bookId}")
     @Operation(summary = "Remove from Bookshelf", description = "Delete the specified book from the user's bookshelf")
-    public Result<Void> removeFromBookshelf(@PathVariable Integer bookId) {
+    public Result<Void> removeFromBookshelf(
+        @PathVariable Integer bookId,
+        @AuthenticationPrincipal Integer userId) {
 
-        Integer userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+        
         bookshelfService.removeBookFromShelf(bookId, userId);
 
         return Result.success();

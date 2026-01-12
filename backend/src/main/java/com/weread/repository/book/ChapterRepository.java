@@ -45,4 +45,7 @@ public interface ChapterRepository extends JpaRepository<ChapterEntity, Integer>
          */
         Optional<ChapterEntity> findByBookIdAndChapterNumberGreaterThanOrderByChapterNumberAsc(
                         Integer bookId, Integer chapterNumber);
+
+        // 缺少这个方法！
+        Optional<ChapterEntity> findByBookIdAndChapterId(Integer bookId, Integer chapterId);
 }

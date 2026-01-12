@@ -55,9 +55,9 @@ public class ReaderTOCController {
     @Operation(summary = "获取全书笔记列表", description = "获取指定书籍的所有笔记列表，仅返回当前用户的笔记")
     public Result<List<BookNoteResponseDTO>> getBookNotes(
             @PathVariable String bookId,
-            @AuthenticationPrincipal UserEntity loginUser) {
+            @AuthenticationPrincipal Integer userId) {
         // 必须已登录才能获取笔记列表
-        if (loginUser == null) {
+        if (userId == null) {
             throw new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.UNAUTHORIZED, "未认证");
         }
@@ -65,7 +65,6 @@ public class ReaderTOCController {
         // 将String类型的路径参数转换为Integer
         Integer bookIdInt = parseInteger(bookId, "bookId");
         
-        Integer userId = loginUser.getUserId();
         List<BookNoteResponseDTO> notes = noteService.getBookNotes(userId, bookIdInt);
         return Result.success(notes);
     }
