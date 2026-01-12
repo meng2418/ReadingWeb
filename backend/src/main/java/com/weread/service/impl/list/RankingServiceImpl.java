@@ -5,6 +5,7 @@ import com.weread.entity.book.BookEntity;
 import com.weread.entity.author.AuthorEntity;
 import com.weread.repository.book.BookRepository;
 import com.weread.service.list.RankingService;
+import com.weread.util.ImagePathUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -546,7 +547,7 @@ public class RankingServiceImpl implements RankingService {
         // 处理作者信息（解决类型不匹配问题）
         dto.setAuthor(getAuthorName(book.getAuthor()));
 
-        dto.setCover(book.getCover());
+        dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         dto.setReadingStatus("unread"); // 榜单书籍默认未读
 
         return dto;

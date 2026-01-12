@@ -12,6 +12,7 @@ import com.weread.repository.asset.MemberCardRepository;
 import com.weread.repository.user.ReadingMilestoneRepository;
 import com.weread.repository.note.NoteRepository;
 import com.weread.service.user.ReadingService;
+import com.weread.util.ImagePathUtils;
 import com.weread.vo.user.MilestoneVO;
 import com.weread.vo.user.ReadingTimeStatItemVO;
 import com.weread.vo.user.TodayReadingTimeVO;
@@ -309,7 +310,7 @@ public class ReadingServiceImpl implements ReadingService {
             Optional<BookEntity> bookOpt = bookRepository.findById(bookId);
             if (bookOpt.isPresent()) {
                 BookEntity book = bookOpt.get();
-                item.setCover(book.getCover());
+                item.setCover(ImagePathUtils.processCoverPath(book.getCover()));
                 item.setAuthorName(book.getAuthorName());
                 item.setCategoryId(book.getCategoryId());
             }

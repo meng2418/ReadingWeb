@@ -28,6 +28,7 @@ import com.weread.repository.community.TopicRepository;
 import com.weread.service.book.BookService;
 import com.weread.service.community.PostService;
 import com.weread.service.user.FollowService;
+import com.weread.util.ImagePathUtils;
 import com.weread.service.community.LikeService;
 import com.weread.vo.community.PostVO;
 import com.weread.vo.community.TopicPostVO;
@@ -220,7 +221,7 @@ public class PostServiceImpl implements PostService {
 
     private MentionedBookVO convertToMentionedBookVO(BookEntity book) {
         MentionedBookVO vo = new MentionedBookVO();
-        vo.setCover(book.getCover() != null ? book.getCover() : "");
+        vo.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         vo.setBookTitle(book.getTitle() != null ? book.getTitle() : "");
         vo.setAuthorName(book.getAuthorName() != null ? book.getAuthorName() : "");
         vo.setAuthorId(book.getAuthorId() != null ? book.getAuthorId() : 0);
@@ -404,7 +405,7 @@ public class PostServiceImpl implements PostService {
             BookSimpleDTO bookSimple = new BookSimpleDTO();
             bookSimple.setBookId(firstBook.getBookId());
             bookSimple.setBookTitle(firstBook.getTitle());
-            bookSimple.setCover(firstBook.getCover());
+            bookSimple.setCover(ImagePathUtils.processCoverPath(firstBook.getCover()));
             bookSimple.setAuthorName(firstBook.getAuthor() != null ? firstBook.getAuthor().getAuthorName() : "未知作者");
             dto.setMentionedFirstBook(bookSimple);
         }
@@ -652,7 +653,7 @@ public class PostServiceImpl implements PostService {
     private RelatedBookDTO convertToRelatedBookDTO(BookEntity book) {
         RelatedBookDTO dto = new RelatedBookDTO();
         dto.setBookId(book.getBookId());
-        dto.setCover(book.getCover());
+        dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         dto.setTitle(book.getTitle());
         dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
 

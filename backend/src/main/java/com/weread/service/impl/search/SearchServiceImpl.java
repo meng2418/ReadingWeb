@@ -8,6 +8,7 @@ import com.weread.entity.author.AuthorEntity;
 import com.weread.repository.book.BookRepository;
 import com.weread.repository.author.AuthorRepository;
 import com.weread.service.search.SearchService;
+import com.weread.util.ImagePathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -77,7 +78,7 @@ public class SearchServiceImpl implements SearchService {
         SimpleBookDTO dto = new SimpleBookDTO();
         dto.setBookId(book.getBookId());
         dto.setBookTitle(book.getTitle());
-        dto.setCover(book.getCover());
+        dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
 
         // 现在 author 已经通过 JOIN FETCH 加载，可以直接访问
         dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");

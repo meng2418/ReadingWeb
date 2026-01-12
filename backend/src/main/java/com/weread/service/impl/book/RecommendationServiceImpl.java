@@ -4,6 +4,7 @@ import com.weread.service.book.RecommendationService;
 import com.weread.dto.book.SimpleBookDTO;
 import com.weread.entity.book.BookEntity;
 import com.weread.repository.book.BookRepository;
+import com.weread.util.ImagePathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,11 +61,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         dto.setBookTitle(book.getTitle());
         dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
         // 处理cover路径：如果是相对路径（如"1_cover.jpeg"），拼接为完整路径
-        String cover = book.getCoverImage();
-        if (cover != null && !cover.startsWith("/") && !cover.startsWith("http")) {
-            cover = "/static/images/" + cover;
-        }
-        dto.setCover(cover);
+        dto.setCover(ImagePathUtils.processCoverPath(book.getCoverImage()));
         dto.setDescription(book.getDescription() != null ? book.getDescription() : "");
         dto.setReadingStatus("unread"); // 推荐书籍默认未读
         return dto;

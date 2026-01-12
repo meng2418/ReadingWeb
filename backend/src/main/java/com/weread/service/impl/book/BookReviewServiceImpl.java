@@ -12,6 +12,7 @@ import com.weread.repository.book.BookRepository;
 import com.weread.repository.book.BookReviewRepository;
 import com.weread.repository.user.UserRepository;
 import com.weread.service.book.BookReviewService;
+import com.weread.util.ImagePathUtils;
 import com.weread.vo.book.BookReviewVO;
 import com.weread.vo.book.SimpleBookVO;
 import lombok.RequiredArgsConstructor;
@@ -227,7 +228,7 @@ public class BookReviewServiceImpl implements BookReviewService {
         // 加载书籍信息
         BookEntity book = bookRepository.findById(review.getBookId()).orElse(null);
         if (book != null) {
-            dto.setCover(book.getCover() != null ? book.getCover() : "");
+            dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
             dto.setBookTitle(book.getTitle() != null ? book.getTitle() : "");
         } else {
             dto.setCover("");
@@ -266,7 +267,7 @@ public class BookReviewServiceImpl implements BookReviewService {
         // 加载书籍信息
         BookEntity book = bookRepository.findById(review.getBookId()).orElse(null);
         if (book != null) {
-            dto.setCover(book.getCover() != null ? book.getCover() : "");
+            dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
             dto.setBookTitle(book.getTitle() != null ? book.getTitle() : "");
         } else {
             dto.setCover("");
@@ -326,11 +327,11 @@ public class BookReviewServiceImpl implements BookReviewService {
 
         if (book != null) {
             vo.setBookTitle(book.getTitle());
-            vo.setBookCover(book.getCover());
+            vo.setBookCover(ImagePathUtils.processCoverPath(book.getCover()));
 
             // 填充book对象（SimpleBook格式）
             SimpleBookVO simpleBook = new SimpleBookVO();
-            simpleBook.setCover(book.getCover());
+            simpleBook.setCover(ImagePathUtils.processCoverPath(book.getCover()));
             simpleBook.setBookTitle(book.getTitle());
             simpleBook.setAuthorId(book.getAuthorId());
             simpleBook.setDescription(book.getDescription());

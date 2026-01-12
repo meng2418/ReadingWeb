@@ -6,6 +6,7 @@ import com.weread.repository.book.BookRepository;
 import com.weread.repository.user.UserReadingRecordRepository;
 import com.weread.repository.user.UserReadingRecordRepository;
 import com.weread.service.user.RecentBookService;
+import com.weread.util.ImagePathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -49,8 +50,9 @@ public class RecentBookServiceImpl implements RecentBookService {
         Map<Integer, String> coverMap = new HashMap<>();
         for (BookEntity book : books) {
             if (book != null) {
-                coverMap.put(book.getBookId(),
-                        book.getCover() != null ? book.getCover() : getDefaultCover());
+                String cover = ImagePathUtils.processCoverPathWithDefault(
+                    book.getCover(), getDefaultCover());
+                coverMap.put(book.getBookId(), cover);
             }
         }
 

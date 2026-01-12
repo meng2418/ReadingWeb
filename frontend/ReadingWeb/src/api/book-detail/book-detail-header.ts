@@ -1,5 +1,6 @@
 // src/api/book-detail/book-detail-header.ts - BookDetailHeader组件相关API
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 
 const unwrap = (res: any): any => {
   return res?.data?.data ?? res?.data ?? {};
@@ -66,7 +67,7 @@ const mapBookDetail = (raw: BookDetailRaw, bookId: string | number): BookDetail 
   title: raw.bookTitle,
   author: raw.authorName,
   authorId: raw.authorId,
-  cover: raw.cover,
+  cover: processCoverPath(raw.cover),
   description: raw.description,
   rating: raw.rating,
   readCount: raw.readCount,

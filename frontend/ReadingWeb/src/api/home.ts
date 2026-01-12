@@ -1,5 +1,6 @@
 // src/api/home.ts
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 import type { HomeRanking, SimpleBookRaw } from '@/types/home'
 import type { GuessBook, RankBook, RecentBook } from '@/types/book'
 
@@ -16,20 +17,9 @@ interface GuessBookRaw {
 
 /** 猜你喜欢映射 */
 const mapToGuessBook = (raw: GuessBookRaw): GuessBook => {
-  // 处理cover路径：如果是相对路径，拼接为完整路径
-  let coverUrl = raw.cover || ''
-  if (coverUrl && !coverUrl.startsWith('http') && !coverUrl.startsWith('/api')) {
-    // 如果cover是"1_cover.jpeg"这种格式，拼接为"/api/static/images/1_cover.jpeg"
-    if (!coverUrl.startsWith('/static')) {
-      coverUrl = `/api/static/images/${coverUrl}`
-    } else {
-      coverUrl = `/api${coverUrl}`
-    }
-  }
-  
   return {
     bookId: raw.bookId,
-    cover: coverUrl,
+    cover: processCoverPath(raw.cover),
     title: raw.bookTitle,
     author: raw.author || '未知作者',  // 后端返回的是author字段
     reason: raw.description || '',  // description可能为空
@@ -50,7 +40,7 @@ const mapToRankBook = (raw: SimpleBookRaw, index: number): RankBook => ({
   id: Number(pickId(raw, index)),
   title: raw.bookTitle,
   author: raw.author,
-  cover: raw.cover,
+  cover: processCoverPath(raw.cover),
   recommend: raw.rating ? `${Number(raw.rating)} %` : '-',
 })
 
@@ -60,7 +50,7 @@ const mapToRankBook = (raw: SimpleBookRaw, index: number): RankBook => ({
 const mapToRecentBook = (raw: any, index: number): RecentBook => ({
   bookId: raw.bookId ?? index,
   title: raw.bookTitle,
-  cover: raw.cover,
+  cover: processCoverPath(raw.cover),
 })
 
 /* =======================
