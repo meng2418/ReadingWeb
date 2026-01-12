@@ -8,17 +8,17 @@ tags:
   - name: 首页
   - name: 分类
   - name: 书架
-  - name: 消息通知
   - name: 社区
   - name: 话题
-  - name: 用户中心
   - name: 个人中心
-  - name: 阅读统计
   - name: 用户关系
   - name: 支付
   - name: 搜索
   - name: 书籍详情
   - name: 阅读器
+  - name: 消息通知
+  - name: 用户中心
+  - name: 阅读统计
 paths:
   /auth/send-verification-code:
     post:
@@ -647,7 +647,6 @@ paths:
                                 - authorName
                                 - authorId
                             maxItems: 50
-                            minItems: 50
                           total:
                             type: integer
                             description: 该分类下书籍总数
@@ -712,7 +711,8 @@ paths:
       summary: 获取书架未读/在读/读完书籍
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 书架
       parameters:
         - name: status
           in: path
@@ -745,6 +745,66 @@ paths:
                     author: 余华
                     cover: https://img.example.com/huozhe.jpg
                     readingStatus: finished
+      security: []
+  /bookshelf/add/{bookId}:
+    post:
+      summary: 添加书籍到书架
+      deprecated: false
+      description: ''
+      tags:
+        - 书架
+      parameters:
+        - name: bookId
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+        - name: Authorization
+          in: header
+          description: ''
+          example: Bearer {{token}}
+          schema:
+            type: string
+            default: Bearer {{token}}
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: 'null'
+                required:
+                  - code
+                  - message
+                  - data
+              example:
+                code: 200
+                message: success
+          headers: {}
+        '400':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+          headers: {}
+        '401':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+          headers: {}
       security: []
   /bookshelf:
     get:
@@ -797,8 +857,6 @@ paths:
                                 - bookTitle
                                 - cover
                                 - bookId
-                        minItems: 10
-                        maxItems: 30
           headers: {}
       security: []
   /messages/my-posts/comments:
@@ -807,6 +865,7 @@ paths:
       deprecated: false
       description: ''
       tags:
+        - 社区
         - 消息通知
       parameters:
         - name: cursor
@@ -893,6 +952,7 @@ paths:
       deprecated: false
       description: ''
       tags:
+        - 社区
         - 消息通知
       parameters:
         - name: cursor
@@ -1169,7 +1229,8 @@ paths:
       summary: 发帖时搜索书籍
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 社区
       parameters:
         - name: keyword
           in: query
@@ -1251,7 +1312,8 @@ paths:
       summary: 发帖时搜索话题
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 社区
       parameters:
         - name: keyword
           in: query
@@ -1623,7 +1685,8 @@ paths:
       summary: 删除帖子
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 个人中心
       parameters:
         - name: postId
           in: path
@@ -2090,7 +2153,8 @@ paths:
       summary: 关注话题
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 话题
       parameters:
         - name: topicId
           in: path
@@ -2138,7 +2202,8 @@ paths:
       summary: 取消关注话题
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 话题
       parameters:
         - name: topicId
           in: path
@@ -2405,6 +2470,7 @@ paths:
       deprecated: false
       description: ''
       tags:
+        - 个人中心
         - 用户中心
       parameters:
         - name: Authorization
@@ -2925,6 +2991,7 @@ paths:
       deprecated: false
       description: ''
       tags:
+        - 个人中心
         - 阅读统计
       parameters:
         - name: period
@@ -3075,7 +3142,8 @@ paths:
       summary: 用户阅读时长时间序列展示柱形图
       deprecated: false
       description: 返回用户阅读时长数据，前端自己展示柱形图
-      tags: []
+      tags:
+        - 个人中心
       parameters:
         - name: Authorization
           in: header
@@ -3207,7 +3275,8 @@ paths:
       summary: 删除书评
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 个人中心
       parameters:
         - name: reviewId
           in: path
@@ -3262,7 +3331,8 @@ paths:
       summary: 删除笔记
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 个人中心
       parameters:
         - name: noteId
           in: path
@@ -3918,7 +3988,8 @@ paths:
       summary: 获取会员支付页
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 支付
       parameters:
         - name: packageId
           in: query
@@ -3996,7 +4067,8 @@ paths:
       summary: 开通会员
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 支付
       parameters:
         - name: Authorization
           in: header
@@ -4352,15 +4424,16 @@ paths:
       summary: 获取作者详情
       deprecated: false
       description: ''
-      tags: []
+      tags:
+        - 书籍详情
       parameters:
         - name: authorId
           in: path
           description: ''
           required: true
-          example: '50'
+          example: 50
           schema:
-            type: string
+            type: integer
         - name: Authorization
           in: header
           description: ''
@@ -4538,13 +4611,16 @@ paths:
                                 - recommend
                                 - average
                                 - not_recommend
+                              nullable: true
                             reviewTime:
                               type: string
                               format: date-time
                             content:
                               type: string
                           minProperties: 9
-                        minItems: 9
+                          required:
+                            - rating
+                        maxItems: 3
           headers: {}
       security: []
   /books/{bookId}/author-works:
@@ -4592,12 +4668,11 @@ paths:
                             description:
                               type: string
                             bookId:
-                              type: string
+                              type: integer
                           required:
                             - bookId
                           minProperties: 3
                           maxProperties: 3
-                        minItems: 3
                         maxItems: 3
                     minProperties: 3
                     maxProperties: 3
@@ -4649,12 +4724,10 @@ paths:
                               type: string
                             bookId:
                               type: integer
-                              minimum: 9
                           required:
                             - bookId
                           minProperties: 9
-                        minItems: 9
-                    minProperties: 9
+                    maxProperties: 3
           headers: {}
       security: []
   /books/{bookId}/mark-finished:
@@ -4854,16 +4927,16 @@ paths:
           in: path
           description: ''
           required: true
-          example: '1'
+          example: 1
           schema:
-            type: string
+            type: integer
         - name: chapterId
           in: path
           description: ''
           required: true
-          example: '1'
+          example: 1
           schema:
-            type: string
+            type: integer
         - name: Authorization
           in: header
           description: ''
@@ -4957,16 +5030,16 @@ paths:
           in: path
           description: ''
           required: true
-          example: '1'
+          example: 1
           schema:
-            type: string
+            type: integer
         - name: chapterId
           in: path
           description: ''
           required: true
-          example: '1'
+          example: 1
           schema:
-            type: string
+            type: integer
         - name: Authorization
           in: header
           description: ''
@@ -5035,8 +5108,7 @@ paths:
                 type: object
                 properties: {}
           headers: {}
-      security:
-        - bearerAuth: []
+      security: []
   /reader/{bookId}/chapters:
     get:
       summary: 获取书籍目录
@@ -5075,6 +5147,57 @@ paths:
                           $ref: '#/components/schemas/Chapter'
                         minItems: 10
           headers: {}
+      security: []
+  /reader/books/{bookId}/progress:
+    post:
+      summary: 更新阅读进度
+      deprecated: false
+      description: ''
+      tags:
+        - 阅读器
+      parameters:
+        - name: bookId
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: integer
+        - name: chapterId
+          in: query
+          description: ''
+          required: false
+          schema:
+            type: integer
+        - name: Authorization
+          in: header
+          description: ''
+          example: Bearer {{token}}
+          schema:
+            type: string
+            default: Bearer {{token}}
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties: {}
+                required:
+                  - code
+                  - message
+                  - data
+              example:
+                code: 200
+                message: success
+                data: {}
       security: []
   /reader/{bookId}/notes:
     get:
@@ -5116,21 +5239,6 @@ paths:
       security: []
 components:
   schemas:
-    ReadingStatBook:
-      type: object
-      properties:
-        cover:
-          type: string
-        title:
-          type: string
-        readingTime:
-          type: integer
-          minimum: 0
-          maximum: 300
-      required:
-        - cover
-        - title
-        - readingTime
     ReadingTimelineItem:
       type: object
       required:
@@ -5178,16 +5286,6 @@ components:
             - type: array
             - type: object
             - type: number
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-          example: 400
-        message:
-          type: string
-        details:
-          type: string
     SimpleBook:
       type: object
       properties:
@@ -5480,58 +5578,6 @@ components:
           description: 话题列表
       required:
         - author
-    Topic:
-      type: object
-      properties:
-        image:
-          type: string
-          format: uri
-          description: 话题图片
-        topicName:
-          type: string
-          description: 话题名称
-        postCount:
-          type: integer
-          description: 话题帖子数
-        description:
-          type: string
-          description: 话题简介
-        followerCount:
-          type: integer
-          description: 话题关注人数
-        todayPostCount:
-          type: integer
-          description: 话题今日发帖数
-        isFollowing:
-          type: boolean
-          description: 是否关注话题
-        introduction:
-          type: string
-          description: 话题介绍内容
-        createdAt:
-          type: string
-          format: date-time
-          description: 创建时间
-        adminName:
-          type: string
-          description: 管理员名字
-        relatedTopics:
-          type: array
-          items:
-            type: object
-            properties:
-              image:
-                type: string
-                format: uri
-              name:
-                type: string
-              postCount:
-                type: integer
-      required:
-        - topicName
-        - image
-        - postCount
-        - isFollowing
     Comment:
       type: object
       properties:
@@ -5707,19 +5753,6 @@ components:
             - recommend
             - average
             - not_recommend
-    ReadingRecord:
-      type: object
-      properties:
-        cover:
-          type: string
-          format: uri
-        title:
-          type: string
-        readingTime:
-          type: integer
-          description: 阅读时长（分钟）
-          maximum: 100
-          minimum: 0
     RechargePackage:
       type: object
       properties:
@@ -5756,118 +5789,6 @@ components:
               - balance
               - card
           description: 支付方式
-    SendSmsRequest:
-      type: object
-      properties:
-        phone:
-          type: string
-          pattern: ^1[3-9]\d{9}$
-    RegisterRequest:
-      type: object
-      properties:
-        username:
-          type: string
-          minLength: 2
-          maxLength: 20
-        phone:
-          type: string
-          pattern: ^1[3-9]\d{9}$
-        verificationCode:
-          type: string
-          pattern: ^\d{6}$
-        password:
-          type: string
-          minLength: 6
-        confirmPassword:
-          type: string
-      required:
-        - username
-        - phone
-        - verificationCode
-        - password
-        - confirmPassword
-    LoginRequest:
-      type: object
-      properties:
-        phone:
-          type: string
-          pattern: ^1[3-9]\d{9}$
-        type:
-          type: string
-          enum:
-            - password
-            - verificationCode
-        password:
-          type: string
-          nullable: true
-        verificationCode:
-          type: string
-          nullable: true
-      required:
-        - phone
-        - type
-    ResetPasswordRequest:
-      type: object
-      properties:
-        phone:
-          type: string
-          pattern: ^1[3-9]\d{9}$
-        verificationCode:
-          type: string
-          pattern: ^\d{6}$
-        newPassword:
-          type: string
-          minLength: 6
-        confirmPassword:
-          type: string
-      required:
-        - phone
-        - verificationCode
-        - newPassword
-        - confirmPassword
-    PublishBookReviewRequest:
-      type: object
-      properties:
-        bookId:
-          type: integer
-        rating:
-          type: string
-          enum:
-            - recommend
-            - average
-            - not_recommend
-        content:
-          type: string
-          minLength: 1
-          maxLength: 1000
-          description: 评论内容，1-1000字
-        isPublic:
-          type: boolean
-          default: true
-      required:
-        - bookId
-        - rating
-        - content
-    PublishNoteRequest:
-      type: object
-      properties:
-        bookId:
-          type: integer
-        chapterId:
-          type: integer
-        quote:
-          type: string
-        lineType:
-          type: string
-          enum:
-            - marker
-            - wavy
-            - straight
-        noteContent:
-          type: string
-      required:
-        - bookId
-        - quote
     PublishPostRequest:
       type: object
       properties:
@@ -5888,58 +5809,6 @@ components:
       required:
         - title
         - content
-    PublishCommentRequest:
-      type: object
-      properties:
-        postId:
-          type: integer
-        content:
-          type: string
-          minLength: 1
-        replyToCommentId:
-          type: integer
-          description: 回复的评论ID，null表示直接评论帖子
-          nullable: true
-      required:
-        - postId
-        - content
-    UpdateProfileRequest:
-      type: object
-      properties:
-        avatar:
-          type: string
-          format: uri
-          nullable: true
-        username:
-          type: string
-          minLength: 2
-          maxLength: 20
-          nullable: true
-        bio:
-          type: string
-          maxLength: 200
-          nullable: true
-    RechargeRequest:
-      type: object
-      properties:
-        packageId:
-          type: integer
-        paymentMethod:
-          type: string
-          enum:
-            - wechat
-            - alipay
-            - unionpay
-      required:
-        - packageId
-        - paymentMethod
-    FollowRequest:
-      type: object
-      properties:
-        userId:
-          type: integer
-      required:
-        - userId
     LikeRequest:
       type: object
       properties:
@@ -5959,7 +5828,5 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-servers:
-  - url: http://localhost:8080
-    description: 开发环境
+servers: []
 security: []
