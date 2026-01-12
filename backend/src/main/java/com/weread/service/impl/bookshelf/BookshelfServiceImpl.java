@@ -167,7 +167,6 @@ public class BookshelfServiceImpl implements BookshelfService {
                 userId,
                 dto.getBookId(),
                 dto.getChapterId(),
-                dto.getCurrentPage(),
                 dto.getProgress(),
                 now);
 
