@@ -125,18 +125,25 @@ export const startReading = async (bookId: string | number): Promise<{ readingSt
  * 加入书架
  */
 export const addToBookshelf = async (bookId: string | number): Promise<boolean> => {
-  // 在开发环境下，直接返回模拟成功响应，避免404错误
-  if (import.meta.env.DEV) {
-    console.log(`DEV: Simulating add to bookshelf success for book ${bookId}`)
-    return true
-  }
-
   try {
-    const res = await request.post('/bookshelf', { bookId })
-    return unwrap(res)
-  } catch (error) {
-    console.warn(`Add to bookshelf API not available for book ${bookId}, simulating success`)
-    return true
+    const res = await request.post(`/bookshelf/add/${bookId}`)
+    // 接口返回格式: { code: 200, message: 'success', data: null }
+    if (res.data?.code === 200) {
+      return true
+    }
+    throw new Error(res.data?.message || '加入书架失败')
+  } catch (error: any) {
+    // 如果书籍已在书架中，后端会抛出异常，这里需要处理
+    if (error?.response?.status === 400 || error?.response?.status === 500) {
+      const errorMessage = error?.response?.data?.message || error?.message || '加入书架失败'
+      // 如果错误信息包含"已在书架中"，返回true表示操作成功（因为已经在书架中了）
+      if (errorMessage.includes('已在书架中') || errorMessage.includes('已在书架')) {
+        console.log(`书籍 ${bookId} 已在书架中`)
+        return true
+      }
+      throw new Error(errorMessage)
+    }
+    throw error
   }
 }
 

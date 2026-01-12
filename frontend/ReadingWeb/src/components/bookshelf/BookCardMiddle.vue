@@ -13,7 +13,7 @@
         <div v-if="isRead && !disableJump" class="read-tag">读完</div>
       </div>
       <div class="book-info">
-        <h3 class="book-title">{{ title }}</h3>
+        <h3 class="book-title" :title="title">{{ title }}</h3>
       </div>
     </div>
   </a>
@@ -26,7 +26,7 @@
       <div v-if="isRead && !disableJump" class="read-tag">读完</div>
     </div>
     <div class="book-info">
-      <h3 class="book-title">{{ title }}</h3>
+      <h3 class="book-title" :title="title">{{ title }}</h3>
     </div>
   </div>
 </template>
@@ -107,7 +107,16 @@ const props = withDefaults(defineProps<Props>(), {
   margin: 0px;
   transition: color 0.2s ease;
   color: gray;
+  
+  /* 限制为两行，超出部分显示省略号 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   text-overflow: ellipsis;
+  word-wrap: break-word;
+  word-break: break-all;
 }
 
 /* 只有在可点击的情况下才显示悬停效果 */

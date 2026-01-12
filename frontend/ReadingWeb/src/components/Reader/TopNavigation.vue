@@ -46,57 +46,87 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 // 引入 Check 图标用于"已加入"状态
 import { BookOpen, Library, User, Check } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
+
+import { addToBookshelf, removeFromBookshelf } from '@/api/book-detail/book-detail-header'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 
 interface Props {
   title: string
   isDarkMode: boolean
   // 添加 bookId 参数，用于构建详情页路由
   bookId?: string | number
+  // 添加初始书架状态
+  initialBookshelfStatus?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   title: 'Vue 组件设计指南与精品开发',
   bookId: '',
+  initialBookshelfStatus: false,
 })
 
 const userStore = useUserStore()
-// --- 书架功能逻辑 ---
-// 状态：是否已在书架（实际项目中这里应该根据 API 返回的初始化数据来设定）
-const isAdded = ref(false)
+const router = useRouter()
 
-// 模拟 API 调用函数
-const mockApiRequest = (type: 'add' | 'remove') => {
-  return new Promise<void>((resolve) => {
-    console.log(`正在请求接口: ${type === 'add' ? '加入书架' : '移出书架'}...`)
-    console.log(`接口请求成功: ${type === 'add' ? '已加入' : '已移出'}`)
-    resolve()
-  })
-}
+// --- 书架功能逻辑 ---
+// 状态：是否已在书架（从 props 初始化）
+const isAdded = ref(props.initialBookshelfStatus)
+
+// 监听 props 变化，更新状态
+watch(() => props.initialBookshelfStatus, (newStatus) => {
+  isAdded.value = newStatus
+}, { immediate: true })
 
 const handleToggleLibrary = async () => {
-  // 1. 检查登录状态 (可选)
+  // 1. 检查登录状态
   if (!userStore.isLoggedIn) {
-    alert('请先登录')
-    // router.push('/login')
+    ElMessage.warning('请先登录')
+    router.push('/login')
     return
   }
 
-  // 2. 如果已经在书架中，执行移除逻辑
-  if (isAdded.value) {
-    // 弹出确认框
-    const confirmed = window.confirm('确定要将这本书移出书架吗？')
-    if (confirmed) {
-      await mockApiRequest('remove')
-      isAdded.value = false
-    }
+  // 2. 检查是否有 bookId
+  if (!props.bookId) {
+    ElMessage.error('缺少书籍ID，无法操作书架')
+    return
   }
-  // 3. 如果不在书架中，执行加入逻辑
-  else {
-    await mockApiRequest('add')
-    isAdded.value = true
+
+  try {
+    // 3. 如果已经在书架中，执行移除逻辑
+    if (isAdded.value) {
+      // 弹出确认框
+      try {
+        await ElMessageBox.confirm('确定要将这本书移出书架吗？', '确认移除', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        
+        await removeFromBookshelf(props.bookId)
+        isAdded.value = false
+        ElMessage.success('成功从书架移除')
+      } catch (error: any) {
+        // 用户取消操作
+        if (error === 'cancel') {
+          return
+        }
+        throw error
+      }
+    }
+    // 4. 如果不在书架中，执行加入逻辑
+    else {
+      await addToBookshelf(props.bookId)
+      isAdded.value = true
+      ElMessage.success('成功加入书架')
+    }
+  } catch (error: any) {
+    console.error('书架操作失败:', error)
+    const errorMessage = error?.response?.data?.message || error?.message || '操作失败，请稍后重试'
+    ElMessage.error(errorMessage)
   }
 }
 </script>

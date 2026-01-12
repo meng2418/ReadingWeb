@@ -1,7 +1,13 @@
 <!-- ReaderPage.vue -->
 <template>
   <div class="app-container" :class="{ 'dark-mode': isDarkMode }">
-    <TopNavigation title="她既想死，又想去巴黎" :isVisible="true" :isDarkMode="isDarkMode" />
+    <TopNavigation 
+      :title="bookTitle" 
+      :isVisible="true" 
+      :isDarkMode="isDarkMode" 
+      :book-id="bookId"
+      :initial-bookshelf-status="isInBookshelf"
+    />
 
     <TableOfContents
       :isOpen="activePanel === 'toc'"
@@ -96,7 +102,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 // API导入
 import {
@@ -121,6 +127,8 @@ import {
   deleteBookNote,
   type BookNote
 } from '@/api/reader/book-notes'
+import { getBookDetail } from '@/api/book-detail/book-detail-header'
+import type { BookDetail } from '@/api/book-detail/book-detail-header'
 
 // 组件路径 - 请根据实际项目路径确认
 import TopNavigation from '@/components/Reader/TopNavigation.vue'
@@ -142,10 +150,14 @@ import type {
 
 // 路由和响应式数据
 const route = useRoute()
+const router = useRouter()
 
 // 从路由参数获取书籍ID和章节ID
 const bookId = ref(route.params.bookId as string || '1')
-const currentChapterId = ref(Number(route.params.chapterId as string) || 1)
+// 注意：章节ID将在加载目录后确定，这里先使用路由参数或默认值
+const currentChapterId = ref<number>(
+  route.params.chapterId ? Number(route.params.chapterId as string) : 0
+)
 
 // API数据状态
 const currentChapterData = ref<ChapterContent | null>(null)
@@ -153,6 +165,7 @@ const bookTOC = ref<BookTOCItem[]>([])
 const chapterNotes = ref<ChapterNote[]>([])
 const allBookNotes = ref<BookNote[]>([])
 const loading = ref(false)
+const bookDetail = ref<BookDetail | null>(null)
 
 // --------------------------
 // 示例数据
@@ -357,11 +370,24 @@ const initialAnnotations: Annotation[] = [
 const loadChapterContent = async (chapterId: number) => {
   try {
     loading.value = true
+    console.log(`正在加载章节内容: bookId=${bookId.value}, chapterId=${chapterId}`)
     const data = await getChapterContent(bookId.value, chapterId)
+    
+    if (!data || !data.content) {
+      console.error('章节内容为空或无效')
+      throw new Error('章节内容为空或无效')
+    }
+    
     currentChapterData.value = data
     currentChapterId.value = chapterId
-  } catch (error) {
+    console.log('章节内容加载成功:', data.title)
+  } catch (error: any) {
     console.error('加载章节内容失败:', error)
+    const errorMessage = error?.response?.data?.message || error?.message || '加载章节内容失败'
+    console.error('错误详情:', errorMessage)
+    // 可以在这里添加用户提示，比如使用 ElMessage
+    // ElMessage.error(errorMessage)
+    throw error // 重新抛出错误，让调用者知道失败了
   } finally {
     loading.value = false
   }
@@ -369,33 +395,37 @@ const loadChapterContent = async (chapterId: number) => {
 
 const loadBookTOC = async () => {
   try {
+    console.log(`正在加载书籍目录: bookId=${bookId.value}`)
     const data = await getBookTOC(bookId.value)
 
-    // 如果API返回有效数据，使用它；否则使用模拟数据
+    // 如果API返回有效数据，使用它
     if (data && data.length > 0) {
       bookTOC.value = data
+      console.log(`目录加载成功，共 ${data.length} 个章节`)
     } else {
-      // 使用基于现有章节内容的模拟目录数据
-      console.warn('TOC API returned empty data, using fallback data')
-      bookTOC.value = [
-        { id: 1, chapterId: 1, startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
-        { id: 2, chapterId: 2, startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
-        { id: 3, chapterId: 3, startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
-        { id: 4, chapterId: 4, startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
-        { id: 5, chapterId: 5, startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
-      ]
+      // API返回空数据，说明该书籍可能没有目录数据
+      console.warn(`书籍 ${bookId.value} 的目录为空，可能该书籍没有章节数据`)
+      bookTOC.value = []
+      // 不再使用备用数据，让用户知道问题所在
     }
   } catch (error: any) {
-    console.error('加载书籍目录失败，使用备用数据:', error?.message)
+    console.error('加载书籍目录失败:', error)
+    const errorMessage = error?.response?.data?.message || error?.message || '加载目录失败'
+    const statusCode = error?.response?.status
+    console.error(`错误详情: ${errorMessage}, 状态码: ${statusCode}`)
 
-    // API调用失败时使用模拟数据
-    bookTOC.value = [
-      { id: 1, chapterId: 1, startPage: 0, chapterNumber: 1, chapterName: '译者序：爱与艺术的交响乐' },
-      { id: 2, chapterId: 2, startPage: 9, chapterNumber: 2, chapterName: '第一章：初遇' },
-      { id: 3, chapterId: 3, startPage: 19, chapterNumber: 3, chapterName: '第二章：书信的火焰' },
-      { id: 4, chapterId: 4, startPage: 29, chapterNumber: 4, chapterName: '第三章：矛盾与和解' },
-      { id: 5, chapterId: 5, startPage: 39, chapterNumber: 5, chapterName: '第四章：别离与永恒' }
-    ]
+    // 根据错误类型处理
+    if (statusCode === 404) {
+      console.error(`书籍 ${bookId.value} 不存在`)
+    } else if (statusCode === 401) {
+      console.error('未授权，请先登录')
+    } else {
+      console.error('加载目录时发生未知错误')
+    }
+    
+    // 不再使用备用数据，保持空数组
+    bookTOC.value = []
+    throw error // 重新抛出错误，让调用者知道失败了
   }
 }
 
@@ -449,6 +479,15 @@ const bookData = ref({
     average: 20,
     poor: 10
   }
+})
+
+// 计算书籍标题和书架状态
+const bookTitle = computed(() => {
+  return bookDetail.value?.title || bookData.value.title
+})
+
+const isInBookshelf = computed(() => {
+  return bookDetail.value?.isInBookshelf || false
 })
 
 // 添加阅读进度
@@ -663,55 +702,155 @@ watch(
   () => route.params,
   async (newParams) => {
     const newBookId = newParams.bookId as string
-    const newChapterId = Number(newParams.chapterId as string) || 1
+    const newChapterId = newParams.chapterId ? Number(newParams.chapterId as string) : null
 
     if (newBookId !== bookId.value) {
       bookId.value = newBookId
       // 书籍ID改变时，先加载目录，再加载章节数据
-      await loadBookTOC()
-      await Promise.all([
-        loadChapterContent(newChapterId),
-        loadChapterNotes(newChapterId.toString()),
-        loadAllBookNotes(),
-      ])
-      currentChapterId.value = newChapterId
-    } else if (newChapterId !== currentChapterId.value) {
-      // 章节ID改变时，确保目录已加载，然后加载新章节数据
-      if (bookTOC.value.length === 0) {
+      try {
         await loadBookTOC()
-    }
-      await Promise.all([
-        loadChapterContent(newChapterId),
-        loadChapterNotes(newChapterId.toString()),
-      ])
-      currentChapterId.value = newChapterId
+        
+        // 如果目录加载成功且有章节，才加载章节内容
+        if (chapters.value.length > 0) {
+          const targetChapterId = newChapterId || chapters.value[0].id
+          await Promise.all([
+            loadChapterContent(targetChapterId),
+            loadChapterNotes(targetChapterId.toString()),
+            loadAllBookNotes(),
+          ])
+          currentChapterId.value = targetChapterId
+        }
+      } catch (error) {
+        console.error('切换书籍时加载失败:', error)
+      }
+    } else if (newChapterId !== null && newChapterId !== currentChapterId.value) {
+      // 章节ID改变时，确保目录已加载，然后加载新章节数据
+      try {
+        if (bookTOC.value.length === 0) {
+          await loadBookTOC()
+        }
+        
+        // 检查章节是否在目录中
+        if (chapters.value.length > 0) {
+          const foundChapter = chapters.value.find(ch => ch.id === newChapterId)
+          if (foundChapter) {
+            await Promise.all([
+              loadChapterContent(newChapterId),
+              loadChapterNotes(newChapterId.toString()),
+            ])
+            currentChapterId.value = newChapterId
+          } else {
+            console.warn(`章节ID ${newChapterId} 不在目录中`)
+          }
+        }
+      } catch (error) {
+        console.error('切换章节时加载失败:', error)
+      }
     }
   },
   { immediate: false } // 已经在onMounted中处理了初始加载
 )
 
+// 加载书籍详情
+const loadBookDetail = async () => {
+  try {
+    if (bookId.value) {
+      const detail = await getBookDetail(bookId.value)
+      bookDetail.value = detail
+      // 更新 bookData 中的标题
+      bookData.value.title = detail.title
+    }
+  } catch (error) {
+    console.error('加载书籍详情失败:', error)
+    // 如果加载失败，使用默认数据
+  }
+}
+
 // 组件挂载时加载数据
 onMounted(async () => {
-  // 先加载书籍目录，确保章节列表可用
-  await loadBookTOC()
-  
-  // 确保 currentChapterId 与目录中的章节ID匹配
-  if (chapters.value.length > 0) {
-    // 如果当前章节ID不在目录中，使用第一个章节
-    const foundChapter = chapters.value.find(ch => ch.id === currentChapterId.value)
-    if (!foundChapter && chapters.value[0]) {
-      currentChapterId.value = chapters.value[0].id
+  try {
+    // 先加载书籍详情和目录
+    await Promise.all([
+      loadBookDetail(),
+      loadBookTOC()
+    ])
+    
+    // 确保 currentChapterId 与目录中的章节ID匹配
+    if (chapters.value.length > 0) {
+      // 如果路由中没有 chapterId，或者当前章节ID不在目录中，使用第一个章节
+      const routeChapterId = route.params.chapterId as string
+      if (!routeChapterId || currentChapterId.value === 0) {
+        // 没有传递 chapterId，使用目录中的第一个章节
+        currentChapterId.value = chapters.value[0].id
+        console.log(`未指定章节ID，使用第一个章节: ${currentChapterId.value}`)
+        
+        // 更新路由，添加章节ID
+        if (route.params.chapterId !== String(currentChapterId.value)) {
+          router.replace({
+            name: 'ReaderPage',
+            params: {
+              bookId: bookId.value,
+              chapterId: currentChapterId.value
+            }
+          })
+        }
+      } else {
+        // 有传递 chapterId，检查是否在目录中
+        const routeChapterIdNum = Number(routeChapterId)
+        const foundChapter = chapters.value.find(ch => ch.id === routeChapterIdNum)
+        if (!foundChapter) {
+          // 如果不在目录中，使用第一个章节
+          console.warn(`章节ID ${routeChapterId} 不在目录中，使用第一个章节`)
+          currentChapterId.value = chapters.value[0].id
+          
+          // 更新路由
+          router.replace({
+            name: 'ReaderPage',
+            params: {
+              bookId: bookId.value,
+              chapterId: currentChapterId.value
+            }
+          })
+        } else {
+          // 在目录中，使用传递的章节ID
+          currentChapterId.value = routeChapterIdNum
+        }
+      }
+      
+      // 确保章节ID有效后再加载内容
+      if (currentChapterId.value > 0) {
+        // 然后并行加载当前章节内容和笔记
+        await Promise.all([
+          loadChapterContent(currentChapterId.value),
+          loadChapterNotes(currentChapterId.value.toString()),
+          loadAllBookNotes(),
+        ])
+      } else {
+        console.error('无效的章节ID，无法加载内容')
+      }
+    } else {
+      // 如果目录为空，说明该书籍没有章节数据
+      console.error(`书籍 ${bookId.value} 没有目录数据，无法加载章节内容`)
+      // 不尝试加载章节内容，避免400错误
+      // 可以在这里显示友好的错误提示
+    }
+
+    loadReadingProgress()
+  } catch (error: any) {
+    console.error('初始化阅读器失败:', error)
+    const statusCode = error?.response?.status
+    const errorMessage = error?.response?.data?.message || error?.message || '初始化失败'
+    
+    if (statusCode === 404) {
+      console.error(`书籍 ${bookId.value} 不存在`)
+    } else if (statusCode === 400) {
+      console.error(`请求参数错误: ${errorMessage}`)
+    } else if (statusCode === 401) {
+      console.error('未授权，请先登录')
+    } else {
+      console.error(`初始化失败: ${errorMessage}`)
     }
   }
-  
-  // 然后并行加载当前章节内容和笔记
-  await Promise.all([
-    loadChapterContent(currentChapterId.value),
-    loadChapterNotes(currentChapterId.value.toString()),
-    loadAllBookNotes(),
-  ])
-
-  loadReadingProgress()
 })
 
 const loadReadingProgress = () => {

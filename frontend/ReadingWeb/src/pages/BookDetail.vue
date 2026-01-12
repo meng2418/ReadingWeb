@@ -93,6 +93,7 @@ import type { BookReview } from '@/api/book-detail/user-reviews'
 import type { AuthorWork } from '@/api/book-detail/author-info-section'
 import type { RelatedBook } from '@/api/book-detail/related-recommendations'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 const route = useRoute()
 const router = useRouter()
 const userProfileRef = ref() // UserProfile组件引用
@@ -449,16 +450,17 @@ const handleViewAllWorks = () => {
 const handleBookshelfToggle = async (isAdded: boolean) => {
   if (!bookId.value) {
     console.error('缺少书籍ID，无法操作书架')
+    ElMessage.error('缺少书籍ID，无法操作书架')
     return
   }
   try {
     const currentBookId = bookId.value
     if (isAdded) {
       await addToBookshelf(currentBookId)
-      console.log('成功加入书架')
+      ElMessage.success('成功加入书架')
     } else {
       await removeFromBookshelf(currentBookId)
-      console.log('成功从书架移除')
+      ElMessage.success('成功从书架移除')
     }
 
     // 重新获取书籍详情以更新状态
@@ -466,9 +468,10 @@ const handleBookshelfToggle = async (isAdded: boolean) => {
     if (bookDetail.value) {
       bookDetail.value.isInBookshelf = updatedBookDetail.isInBookshelf
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('书架操作失败:', error)
-    // 可以在这里添加错误提示
+    const errorMessage = error?.response?.data?.message || error?.message || '操作失败，请稍后重试'
+    ElMessage.error(errorMessage)
   }
 }
 
