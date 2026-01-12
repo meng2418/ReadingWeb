@@ -230,7 +230,6 @@ public class BookshelfServiceImpl implements BookshelfService {
             vo.setCoverUrl(ImagePathUtils.processCoverPath(book.getCover()));
             vo.setStatus(shelf.getStatus());
             vo.setChapterId(progress.getChapterId());
-            vo.setCurrentPage(progress.getCurrentPage());
             vo.setProgress(progress.getProgress());
             vo.setAddedAt(shelf.getAddedAt());
             vo.setLastReadTime(shelf.getLastReadAt());

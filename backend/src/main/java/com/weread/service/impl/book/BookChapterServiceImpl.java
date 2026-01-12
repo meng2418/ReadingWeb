@@ -207,7 +207,7 @@ public class BookChapterServiceImpl implements BookChapterService {
         vo.setNextChapterId(chapter.getNextChapterId() != null ? chapter.getNextChapterId() : 0);
 
         // 获取最后阅读位置（如果有用户ID）
-        long UserId = userId.longValue();
+        Integer UserId = userId;
         int lastReadPosition = 0;
         if (userId != null) {
             Optional<ReadingProgressEntity> progressOpt = readingProgressRepository
@@ -216,9 +216,6 @@ public class BookChapterServiceImpl implements BookChapterService {
                 ReadingProgressEntity progress = progressOpt.get();
                 // 如果当前章节是用户正在阅读的章节，使用currentPage计算位置
                 if (progress.getChapterId() != null && progress.getChapterId().equals(chapterId)) {
-                    int currentPage = progress.getCurrentPage() != null ? progress.getCurrentPage() : 1;
-                    // 计算阅读位置（字符位置，基于页码）
-                    lastReadPosition = Math.min((currentPage - 1) * wordsPerPage, totalWords);
                 }
             }
         }

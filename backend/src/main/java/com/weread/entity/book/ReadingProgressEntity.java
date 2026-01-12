@@ -22,9 +22,6 @@ public class ReadingProgressEntity {
     @Column(name = "chapter_id")
     private Integer chapterId;
 
-    @Column(name = "currentpage")
-    private Integer currentPage = 1;
-
     private Float progress = 0f; // 0-1 判断未读、正在读、读完
 
     @Column(name = "lastreadat")
