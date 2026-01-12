@@ -1,7 +1,6 @@
 package com.weread.controller.category;
 
 import com.weread.common.ApiResponse;
-import com.weread.dto.book.SimpleBookDTO;
 import com.weread.service.category.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

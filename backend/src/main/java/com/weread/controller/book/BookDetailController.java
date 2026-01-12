@@ -1,7 +1,6 @@
 package com.weread.controller.book;
 
 import com.weread.dto.Result;
-import com.weread.entity.user.UserEntity;
 import com.weread.service.book.BookService;
 import com.weread.service.bookshelf.BookshelfService;
 import com.weread.service.book.BookReviewService;
@@ -38,30 +37,30 @@ public class BookDetailController {
     @Operation(summary = "获取书详情", description = "根据ID获取书籍详细信息")
     public Result<BookDetailVO> getBookDetail(
             @PathVariable Integer bookId,
-            @AuthenticationPrincipal UserEntity currentUser) {
-        Integer userId = (currentUser != null && currentUser.getUserId() != null)
-                ? currentUser.getUserId()
-                : null;
+            @AuthenticationPrincipal Integer userId) {  // 改为 Integer
         return Result.success(bookService.getBookById(bookId, userId));
     }
 
     @GetMapping("/{bookId}/author-works")
     @Operation(summary = "获取作者代表作3部", description = "根据书籍ID获取该作者的代表作（最多3部，排除当前书籍）")
-    public Result<List<AuthorWorkVO>> getAuthorWorks(@PathVariable Integer bookId) {
-        List<AuthorWorkVO> works = bookService.getAuthorRepresentativeWorks(bookId);
+    public Result<List<AuthorWorkVO>> getAuthorWorks(
+            @PathVariable Integer bookId) {  
+        List<AuthorWorkVO> works = bookService.getAuthorRepresentativeWorks(bookId, userId);
         return Result.success(works);
     }
 
     @GetMapping("/{bookId}/related")
     @Operation(summary = "获取相关推荐作品3部", description = "根据书籍ID获取同分类的相关推荐作品（最多3部，排除当前书籍）")
-    public Result<List<RelatedBookVO>> getRelatedBooks(@PathVariable Integer bookId) {
-        List<RelatedBookVO> relatedBooks = bookService.getRelatedBooks(bookId);
+    public Result<List<RelatedBookVO>> getRelatedBooks(
+            @PathVariable Integer bookId) {  
+        List<RelatedBookVO> relatedBooks = bookService.getRelatedBooks(bookId, userId);
         return Result.success(relatedBooks);
     }
 
     @GetMapping("/{bookId}/reviews")
     @Operation(summary = "获取用户点评", description = "获取书籍的用户点评列表（最多3条）")
-    public Result<List<BookReviewVO>> getBookReviews(@PathVariable Integer bookId) {
+    public Result<List<BookReviewVO>> getBookReviews(
+            @PathVariable Integer bookId) {  
         List<BookReviewVO> reviews = bookReviewService.getBookReviewsLimited(bookId, 3);
         return Result.success(reviews);
     }
@@ -71,11 +70,10 @@ public class BookDetailController {
     @SecurityRequirement(name = "bearerAuth")
     public Result<MarkFinishedVO> markBookFinished(
             @PathVariable Integer bookId,
-            @AuthenticationPrincipal UserEntity currentUser) {
-        if (currentUser == null || currentUser.getUserId() == null) {
+            @AuthenticationPrincipal Integer userId) {  // 直接使用 Integer，必填
+        if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户未登录");
         }
-        Integer userId = currentUser.getUserId();
         MarkFinishedVO result = bookshelfService.markBookFinished(bookId, userId);
         return Result.success(result);
     }

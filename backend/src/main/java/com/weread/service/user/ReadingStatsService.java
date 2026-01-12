@@ -9,5 +9,5 @@ public interface ReadingStatsService {
      * @param userId 用户ID
      * @return 阅读统计数据
      */
-    ReadingStatsDTO getReadingStats(Long userId);
+    ReadingStatsDTO getReadingStats(Integer userId);
 }

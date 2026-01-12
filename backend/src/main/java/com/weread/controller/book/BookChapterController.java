@@ -16,7 +16,7 @@ import java.util.List;
  * 章节管理控制器
  */
 @RestController
-@RequestMapping("/api/v1/books/{bookId}/chapters")
+@RequestMapping("v1/books/{bookId}/chapters")
 @RequiredArgsConstructor
 @Tag(name = "章节管理", description = "书籍章节的增删改查")
 public class BookChapterController {

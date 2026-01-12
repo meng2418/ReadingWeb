@@ -11,7 +11,7 @@ public class BookConverter {
         SimpleBookDTO dto = new SimpleBookDTO();
         dto.setBookId(vo.getBookId());
         dto.setBookTitle(vo.getTitle());
-        dto.setAuthor(vo.getAuthor());
+        dto.setAuthorName(vo.getAuthor());
         dto.setCover(vo.getCoverUrl());
         dto.setReadingStatus(vo.getStatus());
         return dto;

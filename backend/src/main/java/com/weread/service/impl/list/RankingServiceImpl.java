@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,9 +34,9 @@ public class RankingServiceImpl implements RankingService {
     private static final int RANKING_SIZE = 10;
     private static final int NEW_BOOK_MONTHS = 3;
 
-    // 缓存近期阅读数据
-    private Map<Integer, RecentReadStats> weeklyReadStats = new HashMap<>();
-    private Map<Integer, RecentReadStats> monthlyReadStats = new HashMap<>();
+    // 使用 volatile 保证可见性，使用 ConcurrentHashMap 保证线程安全
+    private volatile Map<Integer, RecentReadStats> weeklyReadStats = new ConcurrentHashMap<>();
+    private volatile Map<Integer, RecentReadStats> monthlyReadStats = new ConcurrentHashMap<>();
 
     @Override
     public List<SimpleBookDTO> getRankingBooks(String type) {
@@ -326,10 +327,11 @@ public class RankingServiceImpl implements RankingService {
                 statsMap.put(bookId, new RecentReadStats(readCount, latestReadTime));
             }
 
+            // 使用同步块或直接赋值给 volatile 变量
             if (days <= 7) {
-                weeklyReadStats = statsMap;
+                this.weeklyReadStats = statsMap;
             } else {
-                monthlyReadStats = statsMap;
+                this.monthlyReadStats = statsMap;
             }
         } catch (Exception e) {
             log.warn("加载阅读统计数据失败: {}", e.getMessage());
@@ -538,17 +540,32 @@ public class RankingServiceImpl implements RankingService {
     /**
      * 单个BookEntity转SimpleBookDTO
      */
+    /**
+     * 单个BookEntity转SimpleBookDTO
+     */
     private SimpleBookDTO convertToDTO(BookEntity book) {
         SimpleBookDTO dto = new SimpleBookDTO();
         dto.setBookId(book.getBookId());
         dto.setBookTitle(book.getTitle());
-
-        // 处理作者信息（解决类型不匹配问题）
-        dto.setAuthor(getAuthorName(book.getAuthor()));
-
         dto.setCover(book.getCover());
         dto.setReadingStatus("unread"); // 榜单书籍默认未读
-
+    
+        // 处理作者信息 - 使用前端期望的字段名
+        AuthorEntity author = book.getAuthor();
+        if (author != null) {
+            dto.setAuthorName(author.getAuthorName() != null ? author.getAuthorName() : "未知作者");
+            dto.setAuthorId(author.getAuthorId() != null ? author.getAuthorId() : 0);
+        } else {
+            dto.setAuthorName("未知作者");
+            dto.setAuthorId(0);
+        }
+    
+        // 处理评分 - 确保不为null
+        dto.setRating(book.getRating() != null ? book.getRating() : 0.0f);
+    
+        // 处理阅读量 - 确保不为null且为Integer类型
+        dto.setReadCount(book.getReadCount() != null ? book.getReadCount() : 0);
+    
         return dto;
     }
 

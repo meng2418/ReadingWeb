@@ -26,7 +26,7 @@ public class UserEntity {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "avatar", length = 255)
+    @Column(name = "avatar", length = 2000)
     private String avatar = "../../../../../data/pictures/default_avatar.jpg";
 
     @Column(name = "bio", length = 255)

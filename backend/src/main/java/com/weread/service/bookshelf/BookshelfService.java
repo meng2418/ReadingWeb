@@ -20,7 +20,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return BookAddVO result
      */
-    BookAddVO addBookToShelf(BookAddDTO dto, Long userId);
+    BookAddVO addBookToShelf(BookAddDTO dto, Integer userId);
 
     /**
      * Removes a book from the bookshelf.
@@ -29,7 +29,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return Removal message string
      */
-    String removeBookFromShelf(Integer bookId, Long userId);
+    String removeBookFromShelf(Integer bookId, Integer userId);
 
     /**
      * Updates the book's reading status.
@@ -38,7 +38,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return Status update result VO
      */
-    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId);
+    BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Integer userId);
 
     /**
      * Updates the reading progress (chapter, page, progress).
@@ -56,7 +56,7 @@ public interface BookshelfService {
      * @param userId Current User ID
      * @return List of BookShelfVO
      */
-    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId);
+    List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Integer userId);
 
     /**
      * Marks a book as finished (completed reading).
@@ -77,7 +77,7 @@ public interface BookshelfService {
      * @param isSimple 是否返回简化版（只含cover/title，适配第二个接口）
      * @return 书籍列表（全部字段/简化字段）
      */
-    List<?> getUserBooksByStatus(String status, Long userId, boolean isSimple);
+    List<?> getUserBooksByStatus(String status, Integer userId, boolean isSimple);
 
     /**
      * 补充2：批量移除书架书籍
@@ -87,5 +87,5 @@ public interface BookshelfService {
      * @param userId 当前用户ID
      * @return 操作结果提示
      */
-    String batchRemoveBooksFromShelf(BatchRemoveDTO dto, Long userId);
+    String batchRemoveBooksFromShelf(BatchRemoveDTO dto, Integer userId);
 }

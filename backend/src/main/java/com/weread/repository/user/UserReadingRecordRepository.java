@@ -2,8 +2,6 @@ package com.weread.repository.user;
 
 import com.weread.entity.user.UserReadingRecordEntity;
 
-import jakarta.persistence.criteria.CriteriaBuilder.In;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -95,7 +93,7 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
                      "AND r.recordType = 1 " + // 1-阅读记录
                      "AND r.readDate >= :startOfWeek " +
                      "AND r.readDate <= :endOfWeek")
-       Integer findWeeklyReadingTime(@Param("userId") Long userId,
+       Integer findWeeklyReadingTime(@Param("userId") Integer userId,
                      @Param("startOfWeek") LocalDate startOfWeek,
                      @Param("endOfWeek") LocalDate endOfWeek);
 
@@ -107,7 +105,7 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
                      "AND r.recordType = 1 " +
                      "AND r.readDate >= :startOfMonth " +
                      "AND r.readDate <= :endOfMonth")
-       Integer findMonthlyReadingTime(@Param("userId") Long userId,
+       Integer findMonthlyReadingTime(@Param("userId") Integer userId,
                      @Param("startOfMonth") LocalDate startOfMonth,
                      @Param("endOfMonth") LocalDate endOfMonth);
 
@@ -119,7 +117,7 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
                      "AND r.recordType = 1 " +
                      "AND r.readDate >= :startOfYear " +
                      "AND r.readDate <= :endOfYear")
-       Integer findYearlyReadingTime(@Param("userId") Long userId,
+       Integer findYearlyReadingTime(@Param("userId") Integer userId,
                      @Param("startOfYear") LocalDate startOfYear,
                      @Param("endOfYear") LocalDate endOfYear);
 
@@ -129,7 +127,7 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
        @Query("SELECT COALESCE(SUM(r.readingTime), 0) FROM UserReadingRecordEntity r " +
                      "WHERE r.userId = :userId " +
                      "AND r.recordType = 1")
-       Integer findTotalReadingTime(@Param("userId") Long userId);
+       Integer findTotalReadingTime(@Param("userId") Integer userId);
 
        /**
         * 可选：查询最近一周每天的阅读时长（可用于后续扩展）
@@ -140,7 +138,7 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
                      "AND r.readDate >= :startDate " +
                      "GROUP BY r.readDate " +
                      "ORDER BY r.readDate")
-       List<Object[]> findDailyReadingTimeByDateRange(@Param("userId") Long userId,
+       List<Object[]> findDailyReadingTimeByDateRange(@Param("userId") Integer userId,
                      @Param("startDate") LocalDate startDate);
 
        /**
@@ -153,7 +151,7 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
                      "AND r.recordType = 1 " +
                      "GROUP BY r.bookId " +
                      "ORDER BY MAX(r.readDate) DESC, MAX(r.updatedAt) DESC")
-       List<Object[]> findRecentBookIdsWithMaxDate(@Param("userId") Long userId);
+       List<Object[]> findRecentBookIdsWithMaxDate(@Param("userId") Integer userId);
 
        /**
         * 获取用户最近的阅读记录（修复：删除冗余@Param）

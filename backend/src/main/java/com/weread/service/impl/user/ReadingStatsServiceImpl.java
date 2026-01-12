@@ -7,16 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-// 其他必要导入
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import com.weread.dto.Result;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -29,7 +21,7 @@ public class ReadingStatsServiceImpl implements ReadingStatsService {
     private UserReadingRecordRepository userReadingRecordRepository;
 
     @Override
-    public ReadingStatsDTO getReadingStats(Long userId) {
+    public ReadingStatsDTO getReadingStats(Integer userId) {
         ReadingStatsDTO stats = new ReadingStatsDTO();
 
         // 获取当前日期
@@ -69,7 +61,7 @@ public class ReadingStatsServiceImpl implements ReadingStatsService {
     /**
      * 可选扩展方法：获取最近7天的阅读数据
      */
-    public Map<LocalDate, Integer> getLast7DaysReadingStats(Long userId) {
+    public Map<LocalDate, Integer> getLast7DaysReadingStats(Integer userId) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(6);
 
