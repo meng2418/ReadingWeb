@@ -29,10 +29,14 @@ public class Result<T> {
     }
 
     /**
-     * Success response without data.
-     */
+ * Success response without data.
+ */
     public static <T> Result<T> success() {
-        return success(null);
+        Result<T> result = new Result<>();
+        result.setCode(200);
+        result.setMessage("success");
+        result.setData(null);
+        return result;
     }
 
     /**

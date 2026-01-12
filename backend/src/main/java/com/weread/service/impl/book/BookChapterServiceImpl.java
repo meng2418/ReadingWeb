@@ -163,14 +163,9 @@ public class BookChapterServiceImpl implements BookChapterService {
 
     @Override
     public ChapterContentVO getChapterContent(Integer bookId, Integer chapterId, Integer userId) {
-        // 获取章节信息
-        ChapterEntity chapter = chapterRepository.findById(chapterId)
-                .orElseThrow(() -> new RuntimeException("章节不存在"));
-
-        // 验证章节是否属于指定书籍
-        if (!chapter.getBookId().equals(bookId)) {
-            throw new RuntimeException("章节不属于指定书籍");
-        }
+        // 修改这里：使用新的方法，一次性验证
+        ChapterEntity chapter = chapterRepository.findByBookIdAndChapterId(bookId, chapterId)
+            .orElseThrow(() -> new RuntimeException("章节不存在或不属于指定书籍"));
 
         // 创建ChapterContentVO
         ChapterContentVO vo = new ChapterContentVO();
@@ -246,6 +241,7 @@ public class BookChapterServiceImpl implements BookChapterService {
 
         for (ChapterEntity chapter : chapters) {
             ChapterDTO dto = new ChapterDTO();
+            dto.setChapterId(chapter.getChapterId());  // 设置章节ID
             dto.setStartPage(currentPage);
             dto.setChapterNumber(chapter.getChapterNumber());
             dto.setChapterName(chapter.getTitle());

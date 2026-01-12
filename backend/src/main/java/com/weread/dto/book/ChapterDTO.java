@@ -23,5 +23,7 @@ public class ChapterDTO {
      * 章节名称
      */
     private String chapterName;
+
+    private Integer chapterId;
 }
 
