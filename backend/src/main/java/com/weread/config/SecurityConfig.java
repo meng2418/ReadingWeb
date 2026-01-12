@@ -93,6 +93,9 @@ public class SecurityConfig {
                 // 登录相关
                 .requestMatchers("/auth/**").permitAll()
 
+                // 静态资源（图片等）不需要认证
+                .requestMatchers("/static/**").permitAll()
+
                 // 其他全部需要登录
                 .anyRequest().authenticated()
             )

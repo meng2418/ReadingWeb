@@ -10,18 +10,31 @@ interface GuessBookRaw {
   bookId: number
   cover: string
   bookTitle: string
-  authorName: string
-  description: string
+  author: string  // 后端返回的是author，不是authorName
+  description?: string  // 可能为空
 }
 
 /** 猜你喜欢映射 */
-const mapToGuessBook = (raw: GuessBookRaw): GuessBook => ({
-  bookId: raw.bookId,
-  cover: raw.cover,
-  title: raw.bookTitle,
-  author: raw.authorName,
-  reason: raw.description,
-})
+const mapToGuessBook = (raw: GuessBookRaw): GuessBook => {
+  // 处理cover路径：如果是相对路径，拼接为完整路径
+  let coverUrl = raw.cover || ''
+  if (coverUrl && !coverUrl.startsWith('http') && !coverUrl.startsWith('/api')) {
+    // 如果cover是"1_cover.jpeg"这种格式，拼接为"/api/static/images/1_cover.jpeg"
+    if (!coverUrl.startsWith('/static')) {
+      coverUrl = `/api/static/images/${coverUrl}`
+    } else {
+      coverUrl = `/api${coverUrl}`
+    }
+  }
+  
+  return {
+    bookId: raw.bookId,
+    cover: coverUrl,
+    title: raw.bookTitle,
+    author: raw.author || '未知作者',  // 后端返回的是author字段
+    reason: raw.description || '',  // description可能为空
+  }
+}
 export const getGuessBooks = async (): Promise<GuessBook[]> => {
   const res = await request.get('/home/recommendations')
   const list = res.data?.data ?? []

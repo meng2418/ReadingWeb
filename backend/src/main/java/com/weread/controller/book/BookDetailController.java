@@ -45,7 +45,7 @@ public class BookDetailController {
     @Operation(summary = "获取作者代表作3部", description = "根据书籍ID获取该作者的代表作（最多3部，排除当前书籍）")
     public Result<List<AuthorWorkVO>> getAuthorWorks(
             @PathVariable Integer bookId) {  
-        List<AuthorWorkVO> works = bookService.getAuthorRepresentativeWorks(bookId, userId);
+        List<AuthorWorkVO> works = bookService.getAuthorRepresentativeWorks(bookId);
         return Result.success(works);
     }
 
@@ -53,7 +53,7 @@ public class BookDetailController {
     @Operation(summary = "获取相关推荐作品3部", description = "根据书籍ID获取同分类的相关推荐作品（最多3部，排除当前书籍）")
     public Result<List<RelatedBookVO>> getRelatedBooks(
             @PathVariable Integer bookId) {  
-        List<RelatedBookVO> relatedBooks = bookService.getRelatedBooks(bookId, userId);
+        List<RelatedBookVO> relatedBooks = bookService.getRelatedBooks(bookId);
         return Result.success(relatedBooks);
     }
 

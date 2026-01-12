@@ -10,6 +10,7 @@ public class SimpleBookDTO {
     private Integer authorId;   // 新增字段
     private String cover;
     private String readingStatus;
+    private String description;
     private Float rating;       // 建议使用 Float 而不是 float
     private Integer readCount;
 }

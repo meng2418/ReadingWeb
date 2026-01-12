@@ -73,6 +73,12 @@ const goToBookDetail = (): void => {
   font-weight: bold;
   font-size: 16px;
   margin: 4px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 显示两行 */
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .book-author {
@@ -87,6 +93,7 @@ const goToBookDetail = (): void => {
   margin-top: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2; /* 显示两行 */
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

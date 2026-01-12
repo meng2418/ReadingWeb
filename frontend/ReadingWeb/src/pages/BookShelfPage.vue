@@ -28,6 +28,14 @@ const loadBooks = async () => {
   try {
     books.value = await getBookshelfAll()
     selectedBookIds.value = []
+  } catch (error: any) {
+    console.error('加载书架失败:', error)
+    const errorMessage = error?.response?.data?.message || error?.message || '加载书架失败，请重试'
+    ElMessage.error(errorMessage)
+    // 如果是401错误，可能需要重新登录
+    if (error?.response?.status === 401) {
+      // 错误拦截器会处理跳转，这里不需要额外操作
+    }
   } finally {
     loading.value = false
   }
