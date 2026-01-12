@@ -106,6 +106,15 @@ import { getBookReviews } from '@/api/book-detail/user-reviews'
 const route = useRoute()
 const router = useRouter()
 
+// 转换bookId格式：如果是"book-123"格式，提取数字部分；如果是纯数字字符串，直接使用
+const convertBookId = (id: string | number): string => {
+  if (typeof id === 'string') {
+    const match = id.match(/book-(\d+)/)
+    return match ? match[1] : id
+  }
+  return String(id)
+}
+
 // 从路由参数获取信息
 const bookId = ref(route.query.bookId as string || '')
 const bookTitle = ref(route.query.bookTitle as string || '围城') // 默认值
@@ -132,7 +141,13 @@ const loadUserReview = async () => {
     const existingReview = getUserReview(bookId.value, currentUserId)
     if (existingReview) {
       selectedRating.value = existingReview.rating || selectedRating.value
-      reviewText.value = existingReview.content
+      // 如果内容包含默认测试文字，清空它
+      const defaultText = '嘻嘻嘻嘻嘻嘻嘻笑笑笑笑笑笑笑笑笑喜喜喜喜喜喜喜喜喜喜'
+      if (existingReview.content && existingReview.content.includes(defaultText)) {
+        reviewText.value = ''
+      } else {
+        reviewText.value = existingReview.content
+      }
       isPublic.value = existingReview.isPublic ?? true
       isEditMode.value = true
     }
@@ -264,7 +279,7 @@ const handleSubmit = async () => {
     router.push({
       path: '/bookdetail',
       query: {
-        bookId: bookId.value,
+        bookId: convertBookId(bookId.value),
         bookTitle: bookTitle.value,
         refresh: 'true', // 标记需要刷新数据
         timestamp: Date.now().toString() // 添加时间戳，强制刷新
@@ -302,7 +317,7 @@ const handleDelete = async () => {
     router.push({
       path: '/bookdetail',
       query: {
-        bookId: bookId.value,
+        bookId: convertBookId(bookId.value),
         bookTitle: bookTitle.value,
         refresh: 'true' // 标记需要刷新数据
       }

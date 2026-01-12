@@ -10,6 +10,10 @@ import java.util.List;
 @Schema(description = "作者搜索结果")
 public class AuthorSearchResultDto {
 
+    @Schema(description = "作者ID")
+    @JsonProperty("authorId")
+    private Integer authorId;
+
     @Schema(description = "作者头像URL", format = "uri")
     private String avatar;
 

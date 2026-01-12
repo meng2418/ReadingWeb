@@ -25,14 +25,19 @@ import com.weread.repository.community.PostRepository;
 import com.weread.repository.community.TopicFollowRepository;
 import com.weread.repository.user.FollowRepository;
 import com.weread.repository.community.TopicRepository;
+import com.weread.repository.community.PostTopicRepository;
+import com.weread.entity.community.PostTopicEntity;
 import com.weread.service.book.BookService;
 import com.weread.service.community.PostService;
+import com.weread.service.community.TopicService;
 import com.weread.service.user.FollowService;
 import com.weread.util.ImagePathUtils;
 import com.weread.service.community.LikeService;
 import com.weread.vo.community.PostVO;
 import com.weread.vo.community.TopicPostVO;
 import com.weread.vo.community.TopicPostRelatedVO;
+import com.weread.vo.community.TopicVO;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -59,6 +64,8 @@ public class PostServiceImpl implements PostService {
     private final LikeRepository likeRepository;
     private final UserRepository userRepository;
     private final TopicRepository topicRepository;
+    private final PostTopicRepository postTopicRepository;
+    private final TopicService topicService;
     private final FollowService followService;
     private final LikeService likeService;
 
@@ -66,7 +73,8 @@ public class PostServiceImpl implements PostService {
             FollowRepository followRepository, TopicFollowRepository topicFollowRepository,
             BookRepository bookRepository,
             LikeRepository likeRepository, UserRepository userRepository,
-            TopicRepository topicRepository, FollowService followService, LikeService likeService) {
+            TopicRepository topicRepository, PostTopicRepository postTopicRepository,
+            TopicService topicService, FollowService followService, LikeService likeService) {
         this.bookService = bookService;
         this.postRepository = postRepository;
         this.followRepository = followRepository;
@@ -75,6 +83,8 @@ public class PostServiceImpl implements PostService {
         this.likeRepository = likeRepository;
         this.userRepository = userRepository;
         this.topicRepository = topicRepository;
+        this.postTopicRepository = postTopicRepository;
+        this.topicService = topicService;
         this.followService = followService;
         this.likeService = likeService;
     }
@@ -234,34 +244,106 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public PostVO createPost(PostCreationDTO dto, Integer authorId) {
-        // 验证用户存在
-        UserEntity author = userRepository.findById(authorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
+        try {
+            // 验证用户存在
+            UserEntity author = userRepository.findById(authorId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
 
-        // 创建帖子
-        PostEntity post = new PostEntity();
-        post.setAuthorId(authorId);
-        post.setTitle(dto.getTitle());
-        post.setContent(dto.getContent());
+            // 创建帖子
+            PostEntity post = new PostEntity();
+            post.setAuthorId(authorId);
+            post.setTitle(dto.getTitle());
+            post.setContent(dto.getContent());
 
-        // 处理关联书籍
-        if (dto.getBookIds() != null && !dto.getBookIds().isEmpty()) {
-            List<BookEntity> books = bookRepository.findAllById(dto.getBookIds());
-            post.setRelatedBooks(books);
+            // 处理关联书籍
+            if (dto.getBookIds() != null && !dto.getBookIds().isEmpty()) {
+                List<BookEntity> books = bookRepository.findAllById(dto.getBookIds());
+                if (books != null && !books.isEmpty()) {
+                    post.setRelatedBooks(books);
+                }
+            }
+
+            // 保存帖子
+            PostEntity savedPost = postRepository.save(post);
+
+            // 处理话题 - 根据话题名称创建或获取TopicEntity，并建立关联
+            List<TopicEntity> savedTopics = new ArrayList<>();
+            if (dto.getTopics() != null && !dto.getTopics().isEmpty()) {
+                try {
+                    // 过滤空字符串和null
+                    Set<String> topicNames = dto.getTopics().stream()
+                            .filter(topic -> topic != null && !topic.trim().isEmpty())
+                            .collect(Collectors.toSet());
+                    
+                    if (!topicNames.isEmpty() && topicService != null) {
+                        // 获取或创建话题实体
+                        savedTopics = topicService.getOrCreateTopics(topicNames);
+                        
+                        if (savedTopics != null && !savedTopics.isEmpty()) {
+                            // 创建帖子-话题关联
+                            List<PostTopicEntity> postTopics = new ArrayList<>();
+                            for (TopicEntity topic : savedTopics) {
+                                if (topic != null && topic.getTopicId() != null) {
+                                    PostTopicEntity postTopic = new PostTopicEntity();
+                                    postTopic.setPostId(savedPost.getPostId());
+                                    postTopic.setTopicId(topic.getTopicId());
+                                    postTopics.add(postTopic);
+                                    
+                                    // 更新话题的帖子数
+                                    if (topic.getPostCount() == null) {
+                                        topic.setPostCount(0);
+                                    }
+                                    topic.setPostCount(topic.getPostCount() + 1);
+                                    topicRepository.save(topic);
+                                }
+                            }
+                            
+                            // 批量保存关联关系
+                            if (!postTopics.isEmpty() && postTopicRepository != null) {
+                                postTopicRepository.saveAll(postTopics);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // 话题处理失败不应该阻止帖子发布，只记录错误
+                    System.err.println("处理话题时出错: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+
+            // 重新加载帖子以获取所有关联（包括话题）
+            PostEntity reloadedPost = postRepository.findById(savedPost.getPostId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "帖子保存失败"));
+
+            // 转换为VO返回
+            PostVO vo = convertToPostVO(reloadedPost, authorId);
+            
+            // 手动设置话题信息（因为懒加载可能未触发）
+            if (!savedTopics.isEmpty()) {
+                List<TopicVO> topicVOs = savedTopics.stream()
+                        .filter(topic -> topic != null)
+                        .map(topic -> {
+                            TopicVO topicVO = new TopicVO();
+                            topicVO.setTopicId(topic.getTopicId());
+                            topicVO.setTopicName(topic.getTopicName());
+                            topicVO.setImage(topic.getImage());
+                            topicVO.setPostCount(topic.getPostCount());
+                            return topicVO;
+                        })
+                        .collect(Collectors.toList());
+                vo.setTopics(topicVOs);
+            } else {
+                vo.setTopics(Collections.emptyList());
+            }
+            
+            return vo;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                    "发布帖子失败: " + e.getMessage(), e);
         }
-
-        // 处理话题 - 需要根据话题名称创建或获取TopicEntity
-        if (dto.getTopics() != null && !dto.getTopics().isEmpty()) {
-            // 这里需要处理话题关联
-            // 暂时保存为字符串列表，后续需要改为关联TopicEntity
-            // post.setRelatedTopics(dto.getTopics());
-        }
-
-        // 保存帖子
-        PostEntity savedPost = postRepository.save(post);
-
-        // 转换为VO返回
-        return convertToPostVO(savedPost, authorId);
     }
 
     @Override
@@ -498,18 +580,48 @@ public class PostServiceImpl implements PostService {
         vo.setTitle(post.getTitle());
         vo.setContentSummary(getContentSummary(post.getContent()));
         vo.setCreatedAt(post.getCreatedAt());
-        vo.setLikesCount(post.getLikesCount());
-        vo.setCommentsCount(post.getCommentsCount());
+        vo.setLikesCount(post.getLikesCount() != null ? post.getLikesCount() : 0);
+        vo.setCommentsCount(post.getCommentsCount() != null ? post.getCommentsCount() : 0);
 
         // 获取作者信息
         UserEntity author = userRepository.findById(post.getAuthorId()).orElse(null);
         if (author != null) {
-            // 设置作者相关信息
+            // 设置作者相关信息（如果需要）
         }
 
         // 检查是否点赞
-        if (currentUserId != null) {
-            // 使用likeService检查
+        if (currentUserId != null && likeService != null) {
+            try {
+                // 使用likeService检查（如果需要设置isLiked字段）
+            } catch (Exception e) {
+                // 忽略错误
+            }
+        }
+
+        // 加载话题信息
+        try {
+            List<PostTopicEntity> postTopics = postTopicRepository.findByPostId(post.getPostId());
+            if (postTopics != null && !postTopics.isEmpty()) {
+                List<Integer> topicIds = postTopics.stream()
+                        .map(PostTopicEntity::getTopicId)
+                        .collect(Collectors.toList());
+                List<TopicEntity> topics = topicRepository.findAllById(topicIds);
+                List<TopicVO> topicVOs = topics.stream()
+                        .map(topic -> {
+                            TopicVO topicVO = new TopicVO();
+                            topicVO.setTopicId(topic.getTopicId());
+                            topicVO.setTopicName(topic.getTopicName());
+                            topicVO.setImage(topic.getImage());
+                            topicVO.setPostCount(topic.getPostCount());
+                            return topicVO;
+                        })
+                        .collect(Collectors.toList());
+                vo.setTopics(topicVOs);
+            } else {
+                vo.setTopics(Collections.emptyList());
+            }
+        } catch (Exception e) {
+            vo.setTopics(Collections.emptyList());
         }
 
         return vo;

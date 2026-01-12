@@ -90,6 +90,7 @@ public class SearchServiceImpl implements SearchService {
 
     private AuthorSearchResultDto convertToAuthorSearchResultDto(AuthorEntity author) {
         AuthorSearchResultDto result = new AuthorSearchResultDto();
+        result.setAuthorId(author.getAuthorId());
         result.setAvatar(author.getAvatar());
         result.setAuthorName(author.getAuthorName());
         result.setAuthorBio(author.getBio());

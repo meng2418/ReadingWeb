@@ -114,9 +114,21 @@ public class PostController {
         
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
+            // 打印详细错误信息以便调试
+            e.printStackTrace();
+            System.err.println("发布帖子失败，错误详情: " + e.getMessage());
+            if (e.getCause() != null) {
+                System.err.println("原因: " + e.getCause().getMessage());
+                e.getCause().printStackTrace();
+            }
+            
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("code", 500);
-            errorResponse.put("message", "发布帖子失败: " + e.getMessage());
+            String errorMessage = "发布帖子失败: " + e.getMessage();
+            if (e.getCause() != null) {
+                errorMessage += " - " + e.getCause().getMessage();
+            }
+            errorResponse.put("message", errorMessage);
             errorResponse.put("data", null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }

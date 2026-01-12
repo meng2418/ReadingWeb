@@ -8,8 +8,8 @@ import java.util.List;
 // 帖子话题关联仓库
 public interface PostTopicRepository extends JpaRepository<PostTopicEntity, PostTopicEntity.PostTopicId> {
     // 根据帖子ID查找所有关联
-    List<PostTopicEntity> findByPostId(Long postId); 
+    List<PostTopicEntity> findByPostId(Integer postId); 
     
     // 根据话题ID查找所有关联
-    List<PostTopicEntity> findByTopicId(Long topicId);
+    List<PostTopicEntity> findByTopicId(Integer topicId);
 }

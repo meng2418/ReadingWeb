@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
 import BookCardSuperBig from '@/components/category/BookCardSuperBig.vue'
 import AuthorCard from '@/components/Search/AuthorCard.vue'
+import { search } from '@/api/search'
 import type {
   SearchTab,
   SearchResultBook,
@@ -15,67 +16,82 @@ const route = useRoute()
 const router = useRouter()
 const searchQuery = ref<string>((route.query.q as string) || '')
 
+// 搜索状态
+const loading = ref(false)
+const error = ref<string | null>(null)
+const searchResults = ref<(SearchResultBook | SearchResultAuthor)[]>([])
+const currentTab = ref<SearchTab>('all')
+
+// 执行搜索
+const performSearch = async (keyword: string) => {
+  if (!keyword || keyword.trim() === '') {
+    searchResults.value = []
+    return
+  }
+
+  loading.value = true
+  error.value = null
+
+  try {
+    const response = await search(keyword.trim())
+    
+    // 将后端返回的数据转换为前端需要的格式
+    const books: SearchResultBook[] = (response.books || []).map((book) => ({
+      id: book.bookId,
+      type: 'book' as const,
+      title: book.bookTitle,
+      author: book.authorName || '未知作者',
+      cover: book.cover || '',
+      readersCount: book.readCount || 0,
+      recommend: book.rating ? `${book.rating.toFixed(1)}%` : '0%',
+      description: book.description || '',
+    }))
+
+    const authors: SearchResultAuthor[] = (response.authors || []).map((author) => ({
+      id: author.authorId,
+      type: 'author' as const,
+      name: author.authorName || '未知作者',
+      avatar: author.avatar || '',
+      readersCount: author.followerCount || 0,
+      works: author.representativeWorks?.join('、') || '暂无代表作',
+      description: author.authorBio || '',
+    }))
+
+    searchResults.value = [...books, ...authors]
+  } catch (err: any) {
+    console.error('搜索失败:', err)
+    error.value = err?.message || '搜索失败，请稍后重试'
+    searchResults.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 监听搜索关键词变化
 watch(
   () => route.query.q,
   (q) => {
-    searchQuery.value = (q as string) || ''
+    const newQuery = (q as string) || ''
+    searchQuery.value = newQuery
+    if (newQuery) {
+      performSearch(newQuery)
+    } else {
+      searchResults.value = []
+    }
   },
   { immediate: true },
 )
 
-// 模拟后端返回的数据
-// 后端通常会返回一个包含 list 的对象，或者我们前端自己把 list 分类
-const rawData = [
-  // --- 书籍数据 ---
-  {
-    id: 101,
-    type: 'book',
-    title: '黄金时代',
-    author: '王小波',
-    cover: `https://picsum.photos/seed/book1/200/300`,
-    readersCount: '25000',
-    recommend: '99.5%',
-    description: '王小波代表作，讲述了知青陈清扬和王二在特殊年代的荒诞故事。',
-  },
-  {
-    id: 102,
-    type: 'book',
-    title: '沉默的大多数',
-    author: '王小波',
-    cover: `https://picsum.photos/seed/book2/200/300`,
-    readersCount: '18000',
-    recommend: '98.2%',
-    description: '王小波杂文集，深刻剖析了中国人的思维方式和文化心理。',
-  },
-  // --- 作者数据 ---
-  {
-    id: 201,
-    type: 'author',
-    name: '王小波',
-    avatar: `https://picsum.photos/seed/author1/200/200`,
-    readersCount: '15000',
-    works: '《黄金时代》《一只特立独行的猪》', // 作者特有字段
-    description:
-      '中国当代学者、作家。代表作品有《黄金时代》、《白银时代》、《青铜时代》、《黑铁时代》等。',
-  },
-  // 假设还有一个同名或相关的书
-  {
-    id: 103,
-    type: 'book',
-    title: '王小波传',
-    author: '房伟',
-    cover: `https://picsum.photos/seed/book3/200/300`,
-    readersCount: '3000',
-    recommend: '91.0%',
-    description: '一本详尽的王小波传记，考证了大量一手资料。',
-  },
-]
+// 组件挂载时执行搜索
+onMounted(() => {
+  if (searchQuery.value) {
+    performSearch(searchQuery.value)
+  }
+})
+
 const goToAuthorPage = (id: number) => {
   router.push(`/authordetail/${id}`)
 }
-const searchResults = ref<(SearchResultBook | SearchResultAuthor)[]>(rawData as any)
-
-const currentTab = ref<SearchTab>('all')
 
 // 计算属性：将数据分类，方便模板渲染
 const categorizedResults = computed<CategorizedResults>(() => {
@@ -111,7 +127,18 @@ const selectTab = (tab: SearchTab) => {
 
       <hr class="thin-divider" />
 
-      <div v-if="currentTab === 'all'" class="results-container">
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-container">
+        <p>搜索中...</p>
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else-if="error" class="error-container">
+        <p>{{ error }}</p>
+      </div>
+
+      <!-- 搜索结果 -->
+      <div v-else-if="currentTab === 'all'" class="results-container">
         <section v-if="categorizedResults.authors.length > 0" class="result-section">
           <h3 class="section-title">相关作者</h3>
           <div class="list-group">
@@ -157,8 +184,12 @@ const selectTab = (tab: SearchTab) => {
           <BookCardSuperBig
             v-for="item in categorizedResults.books"
             :key="item.id"
-            v-bind="item"
+            :title="item.title"
+            :author="item.author"
+            :cover="item.cover"
+            :readers-count="item.readersCount"
             :recommendation-rate="Number.parseFloat(item.recommend || '0')"
+            :description="item.description"
             class="book-item-spacing"
           />
         </div>
@@ -258,5 +289,16 @@ const selectTab = (tab: SearchTab) => {
   text-align: center;
   color: #ccc;
   margin-top: 100px;
+}
+
+.loading-container,
+.error-container {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.error-container {
+  color: #f56c6c;
 }
 </style>

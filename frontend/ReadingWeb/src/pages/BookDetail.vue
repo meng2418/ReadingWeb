@@ -121,6 +121,16 @@ const bookId = computed(() => {
   return result
 })
 
+// 转换bookId格式：如果是"book-123"格式，提取数字部分；如果是纯数字字符串，直接使用
+const convertBookId = (id: string | null): string | null => {
+  if (!id) return null
+  if (typeof id === 'string') {
+    const match = id.match(/book-(\d+)/)
+    return match ? match[1] : id
+  }
+  return String(id)
+}
+
 // 提取获取数据的逻辑为独立函数，以便在路由变化时复用
 const fetchBookData = async (currentBookId: string | null) => {
   // 如果没有 bookId，显示错误提示
@@ -134,17 +144,29 @@ const fetchBookData = async (currentBookId: string | null) => {
     return
   }
 
+  // 转换bookId格式
+  const convertedBookId = convertBookId(currentBookId)
+  if (!convertedBookId) {
+    isLoading.value = false
+    errorMessage.value = '书籍ID格式错误，无法加载书籍详情'
+    bookDetail.value = null
+    reviewsData.value = []
+    authorWorks.value = []
+    relatedBooks.value = []
+    return
+  }
+
   isLoading.value = true
   errorMessage.value = null
   try {
-    console.log('正在获取书籍详情和点评数据，bookId:', currentBookId)
+    console.log('正在获取书籍详情和点评数据，bookId:', convertedBookId, '(原始:', currentBookId, ')')
 
     // 并行获取书籍详情和点评数据
     const [bookDetailData, reviews, authorWorksData, relatedBooksData] = await Promise.allSettled([
-      getBookDetail(currentBookId),
-      getBookReviews(currentBookId),
-      getAuthorWorks(currentBookId),
-      getRelatedBooks(currentBookId)
+      getBookDetail(convertedBookId),
+      getBookReviews(convertedBookId),
+      getAuthorWorks(convertedBookId),
+      getRelatedBooks(convertedBookId)
     ])
 
     // 处理每个API调用的结果，如果失败则使用空数据
