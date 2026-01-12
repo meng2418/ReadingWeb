@@ -18,7 +18,7 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
        // 1. Query the reading progress of a specific book for a user
        Optional<ReadingProgressEntity> findByUserIdAndBookId(Integer userId, Integer bookId);
 
-       // 2. Update the reading progress (chapterId, currentPage, progress, lastReadAt)
+       // 2. Update the reading progress (chapterId, progress, lastReadAt)
        @Modifying
        @Query("UPDATE ReadingProgressEntity r SET " +
                      "r.chapterId = :chapterId, " +
