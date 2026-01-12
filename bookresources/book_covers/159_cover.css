@@ -1,0 +1,239 @@
+.calibre {
+    display: block;
+    font-size: 1em;
+    line-height: 1.618em;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: justify;
+    margin: 0 5pt
+    }
+.calibre1 {
+    height: auto;
+    width: 100%
+    }
+.calibre2 {
+    color: gray;
+    display: block;
+    height: 2px;
+    margin: 0.5em auto;
+    border: currentColor inset 1px
+    }
+.calibre3 {
+    display: block;
+    font-size: 1em;
+    line-height: 1.618em;
+    padding-left: 0;
+    padding-right: 0;
+    margin: 0 5pt
+    }
+.calibre4 {
+    color: #00C
+    }
+.calibre5 {
+    display: block
+    }
+.calibre6 {
+    line-height: 1.2
+    }
+.calibre7 {
+    display: block;
+    text-indent: 2em;
+    margin: 1em 0
+    }
+.calibre8 {
+    font-size: 0.75em;
+    line-height: normal;
+    vertical-align: super
+    }
+.calibre9 {
+    display: block;
+    line-height: 1.2
+    }
+.calibre10 {
+    font-size: 0.9em;
+    line-height: normal;
+    vertical-align: super
+    }
+.calibre11 {
+    display: table-row;
+    vertical-align: middle
+    }
+.calibre12 {
+    display: block
+    }
+.empty {
+    display: block;
+    margin-bottom: 2.2em;
+    margin-top: 2.2em
+    }
+.fnote {
+    display: block;
+    font-size: 0.83333em;
+    line-height: 1.5em;
+    text-align: justify;
+    text-indent: 2em;
+    margin: 0.5em 0
+    }
+.font {
+    font-size: 1em;
+    line-height: 1.2
+    }
+.kindle-cn-bodycontent-div-alone {
+    display: block;
+    text-align: center;
+    width: 100%
+    }
+.kindle-cn-bodycontent-image-alone {
+    height: auto;
+    margin-bottom: 0.5em;
+    width: 80%
+    }
+.kindle-cn-bold {
+    font-weight: bold
+    }
+.kindle-cn-copyright-text {
+    display: block;
+    font-weight: bold;
+    line-height: 1.618em;
+    text-indent: 0;
+    margin: 1em 0
+    }
+.kindle-cn-copyright-text1 {
+    display: block;
+    line-height: 1.618em;
+    text-indent: 0;
+    margin: 1em 0
+    }
+.kindle-cn-heading {
+    display: block;
+    font-family: "MYing Hei S", Hei, "黑体";
+    font-size: 2em;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: center;
+    width: 100%;
+    margin: 0.67em 0;
+    border-top: #c7c7c7 dashed 2px;
+    border-bottom: #c7c7c7 dashed 2px;
+    padding: 0.75em 0
+    }
+.kindle-cn-heading1 {
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: left;
+    text-indent: 0;
+    width: 100%;
+    margin: 0.83em 0
+    }
+.kindle-cn-heading2 {
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: left;
+    text-indent: 0;
+    width: 100%;
+    margin: 0.83em 0
+    }
+.kindle-cn-heading3 {
+    display: block;
+    font-family: "MYing Hei S", Hei, "黑体";
+    font-size: 2em;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: center;
+    width: 100%;
+    margin: 0.67em 0 0;
+    border-bottom: #c7c7c7 dashed 2px
+    }
+.kindle-cn-heading4 {
+    display: block;
+    font-size: 1.83333em;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: left;
+    text-indent: 0;
+    margin: 1em 0
+    }
+.kindle-cn-italic {
+    font-style: italic
+    }
+.kindle-cn-kai {
+    display: block;
+    font-family: STKai, "MKai PRC", Kai, "楷体";
+    text-indent: 2em;
+    margin: 1em 0
+    }
+.kindle-cn-picture-txt-withfewcharactors {
+    display: block;
+    font-family: STKai, "MKai PRC", Kai, "楷体";
+    font-size: 0.83333em;
+    font-weight: bold;
+    text-align: center;
+    text-indent: 0;
+    margin: 0.3em 0 1em
+    }
+.kindle-cn-table-body {
+    border-bottom-style: none;
+    border-bottom-width: 1px;
+    border-collapse: separate;
+    border-left-style: none;
+    border-left-width: 1px;
+    border-right-style: solid;
+    border-right-width: 1px;
+    border-spacing: 2px;
+    border-top-style: solid;
+    border-top-width: 1px;
+    display: table;
+    text-indent: 0;
+    width: 100%;
+    margin: 1em auto
+    }
+.kindle-cn-table-dg {
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-left-style: solid;
+    border-left-width: 1px;
+    border-right-style: none;
+    border-right-width: 1px;
+    border-top-style: none;
+    border-top-width: 1px;
+    display: table-cell;
+    text-align: left;
+    vertical-align: middle;
+    padding: 0.5em
+    }
+.kindle-cn-table-th {
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-left-style: solid;
+    border-left-width: 1px;
+    border-right-style: solid;
+    border-right-width: 1px;
+    border-top-style: solid;
+    border-top-width: 1px;
+    display: table-cell;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.5em
+    }
+.kindle-cn-toc-level {
+    display: block;
+    margin-left: 0
+    }
+.kindle-cn-toc-level1 {
+    display: block
+    }
+.kindle-cn-toc-title {
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    letter-spacing: 1em;
+    line-height: 1.2;
+    text-align: center;
+    margin: 0.67em 0 0.5em;
+    border-bottom: #000 dotted 1.5px
+    }
