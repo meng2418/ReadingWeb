@@ -4,7 +4,12 @@
     <div class="top-section">
       <!-- 左侧：书籍封面 -->
       <div class="book-cover">
-        <img :src="coverImage" :alt="title" class="cover-image" @error="handleImageError" />
+        <img 
+          :src="coverImage" 
+          :alt="title" 
+          class="cover-image" 
+          @error="handleImageError" 
+        />
         <div v-if="!coverImage" class="cover-placeholder">
           <span>暂无封面</span>
         </div>
@@ -13,8 +18,9 @@
       <!-- 右侧：书籍信息 -->
       <div class="book-info">
         <!-- 书名和作者 -->
-        <h1 class="book-title">{{ title }}</h1>
-        <div class="book-author">{{ author }}</div>
+        <!-- 添加 :title 属性，悬停显示完整内容 -->
+        <h1 class="book-title" :title="title">{{ title }}</h1>
+        <div class="book-author" :title="author">{{ author }}</div>
 
         <!-- 右上角：操作按钮 -->
         <div class="action-buttons">
@@ -23,14 +29,15 @@
             :class="{ added: isInBookshelf }"
             @click="handleBookshelfToggle"
           >
-            {{ isInBookshelf ? '✔已在书架' : '加入书架' }}
+            {{ isInBookshelf ? '已在书架' : '加入书架' }}
           </button>
 
           <button class="read-button" @click="handleStartReading">开始阅读</button>
         </div>
+        
         <!-- 统计卡片 -->
         <div class="stats-cards">
-          <!-- 前三个卡片改为纯显示，移除点击事件和cursor:pointer -->
+          <!-- 前三个卡片：纯展示 -->
           <div class="stat-card display-only">
             <div class="stat-label">阅读</div>
             <div class="stat-value">{{ stats.readingCount }}</div>
@@ -49,7 +56,7 @@
             <div class="stat-subtitle">{{ stats.publishInfo }}</div>
           </div>
 
-          <!-- 体验卡可读卡片，保留点击功能 -->
+          <!-- 购买/体验卡片：可点击 -->
           <div
             :class="isPurchased ? 'stat-card display-only purchased' : 'stat-card clickable'"
             @click="!isPurchased && handleExperienceCardClick()"
@@ -65,7 +72,8 @@
     <!-- 下半部分：书籍简介 -->
     <div class="book-description-section">
       <h3 class="description-title">书籍简介</h3>
-      <div class="book-description">{{ description }}</div>
+      <!-- 添加 :title 属性，悬停显示完整简介 -->
+      <div class="book-description" :title="description">{{ description }}</div>
     </div>
 
     <!-- 购买确认对话框 -->
@@ -113,12 +121,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ShoppingCart } from '@element-plus/icons-vue'
 import router from '@/router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-// 定义props
+// 定义 Props 接口
+interface BookStats {
+  readingCount: string
+  readingSubtitle: string
+  myReadingStatus: string
+  myReadingSubtitle: string
+  wordCount: string
+  publishInfo: string
+  experienceCardStatus: string
+  priceInfo: string
+}
+
 interface Props {
   title: string
   author: string
@@ -126,37 +145,31 @@ interface Props {
   coverImage?: string
   initialBookshelfStatus?: boolean
   bookId?: string | number
-  stats: {
-    readingCount: string
-    readingSubtitle: string
-    myReadingStatus: string
-    myReadingSubtitle: string
-    wordCount: string
-    publishInfo: string
-    experienceCardStatus: string
-    priceInfo: string
-  }
-  // 添加用户充值币信息（可以从父组件传递）
+  stats?: BookStats
   userPayCoin?: number
-  // 添加是否已购买的初始状态
   initialPurchased?: boolean
+  // 新增：价格属性，用于替代之前写死的50币
+  price?: number
 }
 
+// 设置 Props 默认值 (已去除静态业务数据)
 const props = withDefaults(defineProps<Props>(), {
   coverImage: '',
   initialBookshelfStatus: false,
+  // 提供空的结构体防止模板报错
   stats: () => ({
-    readingCount: '18.3万人',
-    readingSubtitle: '7.6万人读完',
-    myReadingStatus: '在读',
-    myReadingSubtitle: '标记在读',
-    wordCount: '11.3万字',
-    publishInfo: '2021年7月出版',
+    readingCount: '-',
+    readingSubtitle: '',
+    myReadingStatus: '未读',
+    myReadingSubtitle: '',
+    wordCount: '-',
+    publishInfo: '',
     experienceCardStatus: '体验卡可读',
-    priceInfo: '电子书价格49元',
+    priceInfo: ''
   }),
-  userPayCoin: 180, // 默认值，与UserProfile.vue中的payCoin一致
-  initialPurchased: false // 默认未购买
+  userPayCoin: 0,
+  initialPurchased: false,
+  price: 0
 })
 
 // 定义事件
@@ -164,14 +177,17 @@ const emit = defineEmits<{
   toggleBookshelf: [isAdded: boolean]
   startReading: []
   statClick: [statType: string]
-  openRechargeDialog: [] // 添加打开充值弹窗的事件
+  openRechargeDialog: []
+  purchaseSuccess: [] // 新增：购买成功事件
 }>()
 
 // 本地状态
 const isInBookshelf = ref(props.initialBookshelfStatus)
 const isPurchased = ref(props.initialPurchased)
 const purchaseDialogVisible = ref(false)
-const requiredCoins = 50 // 假设本书需要50充值币
+
+// 计算所需代币 (从 Props 获取，不再写死)
+const requiredCoins = computed(() => props.price || 0)
 
 // 图片加载失败处理
 const handleImageError = (event: Event) => {
@@ -183,7 +199,6 @@ const handleImageError = (event: Event) => {
 const handleBookshelfToggle = () => {
   isInBookshelf.value = !isInBookshelf.value
   emit('toggleBookshelf', isInBookshelf.value)
-  console.log(`书籍${isInBookshelf.value ? '已加入' : '已移除'}书架`)
 }
 
 // 开始阅读
@@ -194,48 +209,42 @@ const handleStartReading = () => {
   } else {
     router.push('/reader')
   }
-  console.log('开始阅读')
 }
 
-// 统计卡片点击 - 只处理体验卡可读
+// 统计卡片点击
 const handleStatClick = (statType: string) => {
   emit('statClick', statType)
-  console.log(`点击统计卡片: ${statType}`)
 }
 
-// 体验卡可读点击
+// 体验卡/购买点击
 const handleExperienceCardClick = () => {
-  // 如果已经购买，直接返回，不弹出购买对话框
   if (isPurchased.value) return
-
   handleStatClick('experienceCard')
   purchaseDialogVisible.value = true
 }
 
-// 跳转到充值页面
-const goToRecharge = () => {
-  console.log('跳转到充值页面')
+// 处理充值点击
+const handleRechargeClick = () => {
   purchaseDialogVisible.value = false
   emit('openRechargeDialog')
-  // router.push('/recharge') // 如果需要跳转，取消注释
 }
 
-// 检查余额是否足够
+// 检查余额
 const checkBalance = () => {
-  return props.userPayCoin >= requiredCoins
+  return (props.userPayCoin || 0) >= requiredCoins.value
 }
 
 // 显示余额不足提示
 const showInsufficientBalanceAlert = () => {
   ElMessageBox.alert(
-    `您的充值币余额不足，当前余额${props.userPayCoin}充值币，购买本书需要${requiredCoins}充值币。`,
+    `您的充值币余额不足，当前余额${props.userPayCoin}充值币，购买本书需要${requiredCoins.value}充值币。`,
     '余额不足',
     {
       confirmButtonText: '去充值',
       type: 'warning',
       callback: (action: string) => {
         if (action === 'confirm') {
-          goToRecharge()
+          handleRechargeClick()
         }
       }
     }
@@ -244,16 +253,13 @@ const showInsufficientBalanceAlert = () => {
 
 // 确认购买
 const confirmPurchase = () => {
-  // 检查余额是否足够
   if (!checkBalance()) {
-    // 余额不足，显示提示框
     showInsufficientBalanceAlert()
     return
   }
 
-  // 余额足够，显示确认购买对话框
   ElMessageBox.confirm(
-    `确定使用${requiredCoins}充值币购买本书吗？`,
+    `确定使用${requiredCoins.value}充值币购买本书吗？`,
     '确认购买',
     {
       confirmButtonText: '确定',
@@ -261,31 +267,25 @@ const confirmPurchase = () => {
       type: 'warning'
     }
   ).then(() => {
-    // 用户确认购买
-    isPurchased.value = true // 设置已购买状态
+    // 实际项目中这里应调用 API
+    isPurchased.value = true
     ElMessage.success('购买成功！')
     purchaseDialogVisible.value = false
-
-    // 这里可以添加实际购买逻辑，如更新用户余额等
-    // 例如：更新用户余额，调用API等
-    console.log(`购买成功，扣除${requiredCoins}充值币`)
-
+    emit('purchaseSuccess')
   }).catch(() => {
-    // 用户取消购买
-    console.log('取消购买')
+    // 取消购买
   })
 }
 </script>
 
 <style scoped>
 .book-detail-header {
-  /* 移除固定最大宽度，让它填充父容器 */
   width: 100%;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  position: relative; /* 为对话框定位 */
+  position: relative;
 }
 
 /* 上半部分样式 */
@@ -305,6 +305,7 @@ const confirmPurchase = () => {
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   margin-top: 20px;
+  border-radius: 4px;
 }
 
 .cover-image {
@@ -331,9 +332,41 @@ const confirmPurchase = () => {
   flex-direction: column;
   justify-content: flex-start;
   margin-top: 15px;
+  /* 防止 Flex 子项内容溢出 */
+  overflow: hidden; 
 }
 
-/* 按钮区域样式 - 放在右上角 */
+/* 书名样式：限制为 2 行 */
+.book-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 5px 0;
+  line-height: 1.3;
+  
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+}
+
+/* 作者样式：限制为 1 行 */
+.book-author {
+  font-size: 18px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 30px;
+  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* 按钮区域 */
 .action-buttons {
   display: flex;
   gap: 20px;
@@ -384,23 +417,7 @@ const confirmPurchase = () => {
   transform: translateY(-2px);
 }
 
-/* 书名和作者样式 */
-.book-title {
-  font-size: 32px;
-  font-weight: bold;
-  color: #333;
-  margin: 0 0 5px 0;
-  line-height: 1.2;
-}
-
-.book-author {
-  font-size: 18px;
-  color: #666;
-  font-weight: 500;
-  margin-bottom: 30px;
-}
-
-/* 统计卡片样式 */
+/* 统计卡片区域 */
 .stats-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -408,7 +425,6 @@ const confirmPurchase = () => {
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
-  align-items: center;
   align-items: stretch;
 }
 
@@ -425,36 +441,29 @@ const confirmPurchase = () => {
   align-items: center;
 }
 
-/* 前三个卡片：纯显示，不可点击 */
-.stat-card.display-only {
-  cursor: default; /* 鼠标样式改为默认 */
-  background: #f0f0f0; /* 保持原有背景色 */
-}
-
+/* 纯展示卡片 */
+.stat-card.display-only,
 .stat-card.display-only:hover {
-  background: #f0f0f0; /* 悬停时保持原背景色 */
-  transform: none; /* 移除悬停效果 */
-}
-
-/* 已购买状态样式 */
-.stat-card.purchased {
   cursor: default;
-  background: #f0f0f0;
-}
-
-.stat-card.purchased:hover {
   background: #f0f0f0;
   transform: none;
 }
 
-/* 已购买状态的图标颜色可以稍微调整，表示已拥有 */
-.stat-card.purchased .el-icon {
-  color: #52c41a; /* 绿色表示已购买 */
+/* 已购买状态 */
+.stat-card.purchased,
+.stat-card.purchased:hover {
+  cursor: default;
+  background: #f0f0f0;
+  transform: none;
 }
 
-/* 可点击的卡片：体验卡可读 */
+.stat-card.purchased .el-icon {
+  color: #52c41a; /* 绿色 */
+}
+
+/* 可点击卡片 */
 .stat-card.clickable {
-  cursor: pointer; /* 保持手型指针 */
+  cursor: pointer;
 }
 
 .stat-card.clickable:hover {
@@ -462,7 +471,6 @@ const confirmPurchase = () => {
   transform: translateY(-2px);
 }
 
-/* 图标样式 */
 .stat-card .el-icon {
   font-size: 24px;
   color: #007cba;
@@ -480,11 +488,21 @@ const confirmPurchase = () => {
   font-weight: bold;
   color: #333;
   margin-bottom: 4px;
+  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .stat-subtitle {
   font-size: 12px;
   color: #999;
+  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* 下半部分：书籍简介样式 */
@@ -499,15 +517,23 @@ const confirmPurchase = () => {
   margin: 0 0 15px 0;
 }
 
+/* 简介样式：限制为 6 行 */
 .book-description {
   font-size: 20px;
   line-height: 1.6;
   color: #555;
+  
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-clamp: 6;
 }
 
 /* 购买对话框样式 */
 .purchase-dialog-content {
-  padding: 0 20px;
+  padding: 0 20px;  
 }
 
 .purchase-info {
@@ -641,6 +667,7 @@ const confirmPurchase = () => {
   .book-title {
     font-size: 24px;
     text-align: center;
+    -webkit-line-clamp: 2; 
   }
 
   .book-author {
@@ -673,6 +700,8 @@ const confirmPurchase = () => {
 
   .book-description {
     font-size: 16px;
+    -webkit-line-clamp: 5; 
+    line-clamp: 5;
   }
 
   .dialog-footer {

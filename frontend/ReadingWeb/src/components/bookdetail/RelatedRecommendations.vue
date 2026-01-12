@@ -127,6 +127,11 @@ onMounted(() => {
   font-weight: 600;
   color: #333;
   margin: 0;
+
+  white-space: nowrap;      /* 不换行 */
+  overflow: hidden;         /* 隐藏溢出 */
+  text-overflow: ellipsis;  /* 显示省略号 */
+  width: 100%;              /* 确保宽度填满以触发溢出 */
 }
 
 /* 换一批按钮样式 */
@@ -210,6 +215,13 @@ onMounted(() => {
   color: #333;
   margin-bottom: 4px;
   line-height: 1.3;
+    
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* 限制 2 行 */
+  line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .book-intro {

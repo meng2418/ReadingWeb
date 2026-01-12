@@ -91,7 +91,13 @@ const mapBookDetail = (raw: BookDetailRaw, bookId: string | number): BookDetail 
  */
 export const getBookDetail = async (bookId: string | number): Promise<BookDetail> => {
   const res = await request.get<BookDetailRaw>(`/books/${bookId}`)
+  console.log('getBookDetail 原始响应:', res)
+  console.log('getBookDetail res.data:', res.data)
   const rawData = unwrap(res)
+  console.log('getBookDetail unwrap后的数据:', rawData)
+  if (!rawData || Object.keys(rawData).length === 0) {
+    throw new Error('书籍详情数据为空')
+  }
   return mapBookDetail(rawData, bookId)
 }
 

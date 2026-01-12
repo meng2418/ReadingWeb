@@ -2,19 +2,27 @@
   <div class="book-detail-page">
     <NavBar />
     <!-- 添加导航栏 -->
-    <BackToTop />
-    <div class="book-detail-layout">
-      <!-- 左侧主要内容区域 -->
-      <div class="main-content">
+      <BackToTop />
+      <div class="book-detail-layout">
+        <!-- 错误提示 -->
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+        <!-- 加载中提示 -->
+        <div v-if="isLoading" class="loading-message">
+          加载中...
+        </div>
+        <!-- 左侧主要内容区域 -->
+        <div class="main-content" v-if="!isLoading && bookDetail">
         <!-- 书籍基本信息组件 -->
         <BookDetailHeader
           :title="bookTitle"
           :author="bookDetail?.author || '未知作者'"
-          :description="bookDetail?.description || bookDescription"
+          :description="bookDetail?.description || '暂无描述'"
           :cover-image="bookDetail?.cover || 'https://picsum.photos/200/280?random=25'"
           :initial-bookshelf-status="bookDetail?.isInBookshelf || false"
           :stats="computedBookStats"
-          :book-id="bookId"
+          :book-id="bookId || undefined"
           @toggle-bookshelf="handleBookshelfToggle"
           @start-reading="handleStartReading"
           @stat-click="handleStatClick"
@@ -26,7 +34,7 @@
           :recommendation-value="computedRatingStats.recommend"
           :review-count="computedReviewCount"
           :rating-stats="computedRatingStats"
-          :book-id="bookId"
+          :book-id="bookId || undefined"
           :book-title="bookTitle"
           @view-reviews="handleViewReviews"
           @rate-book="handleRateBook"
@@ -35,7 +43,7 @@
         <!-- 用户点评组件 -->
         <UserReviews
           :reviews="convertedReviews"
-          :book-id="bookId"
+          :book-id="bookId || undefined"
           @review-like="handleReviewLike"
           @load-more="handleLoadMoreReviews"
         />
@@ -84,118 +92,50 @@ import type { BookDetail } from '@/api/book-detail/book-detail-header'
 import type { BookReview } from '@/api/book-detail/user-reviews'
 import type { AuthorWork } from '@/api/book-detail/author-info-section'
 import type { RelatedBook } from '@/api/book-detail/related-recommendations'
-
-// 默认测试数据
-const getDefaultBookDetail = (): BookDetail => ({
-  id: 'book-123',
-  title: '少年Pi的奇幻漂流',
-  author: '扬·马特尔',
-  authorId: 1,
-  cover: 'https://picsum.photos/200/280?random=25',
-  description: '《少年Pi的奇幻漂流》是加拿大作家扬·马特尔于2001年发表的虚构小说，描述一名印度男孩Pi在太平洋上与一只孟加拉虎同船而行的冒险故事。这部小说探讨了信仰、生存和人类与自然的关系等深刻主题，获得了2002年的布克奖及亚洲/太平洋美洲文学奖。',
-  rating: 90.5,
-  readCount: 183000,
-  isFinished: false,
-  isInBookshelf: false,
-  hasStarted: true,
-  readingCount: 183000,
-  finishedCount: 76000,
-  readingStatus: 'reading',
-  wordCount: 113000,
-  publishDate: '2021-07-01',
-  isFreeForMember: true,
-  price: 4900,
-  ratingDetail: {
-    recommendPercent: 70,
-    averagePercent: 20,
-    notRecommendPercent: 10,
-  },
-  ratingCount: 1250,
-  authorBio: '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
-})
-
-const getDefaultReviews = (): BookReview[] => [
-  {
-    avatar: 'https://picsum.photos/40/40?random=1',
-    username: '书虫小张',
-    rating: 'recommend',
-    reviewTime: '2023-10-15T10:30:00Z',
-    content: '这本书真的让我爱不释手，故事情节紧凑，人物塑造生动。作者的文字功底深厚，能够将复杂的情感用简单的语言表达出来。特别是主角的成长历程，让我感同身受。'
-  },
-  {
-    avatar: 'https://picsum.photos/40/40?random=2',
-    username: '文学爱好者',
-    rating: 'average',
-    reviewTime: '2023-10-12T14:20:00Z',
-    content: '一开始是被封面吸引的，读完后发现内容更加精彩。作者对细节的把握非常到位，每一个场景都描绘得栩栩如生。虽然有些情节略显拖沓，但整体来说是一部值得推荐的作品。'
-  },
-  {
-    avatar: 'https://picsum.photos/40/40?random=3',
-    username: '深夜读书人',
-    rating: 'recommend',
-    reviewTime: '2023-10-08T20:15:00Z',
-    content: '这本书让我重新找回了阅读的乐趣。故事情节虽然简单，但蕴含的哲理却很深刻。适合在安静的夜晚慢慢品味，每一章都能带来新的思考。'
-  }
-]
-
-const getDefaultAuthorWorks = (): AuthorWork[] => [
-  {
-    cover: 'https://picsum.photos/80/100?random=21',
-    bookTitle: '少年Pi的奇幻漂流',
-    description: '一名印度男孩与孟加拉虎在太平洋上的生存故事',
-    bookId: '1'
-  },
-  {
-    cover: 'https://picsum.photos/80/100?random=22',
-    bookTitle: '标本师的魔幻剧本',
-    description: '关于大屠杀记忆与文学创作的深刻探讨',
-    bookId: '2'
-  },
-  {
-    cover: 'https://picsum.photos/80/100?random=23',
-    bookTitle: '赫尔曼',
-    description: '关于友谊、艺术与人生选择的温暖故事',
-    bookId: '3'
-  }
-]
-
-const getDefaultRelatedBooks = (): RelatedBook[] => [
-  {
-    cover: 'https://picsum.photos/80/100?random=1',
-    title: '时光旅行者的妻子',
-    description: '一段跨越时空的爱情故事，感人至深。',
-    bookId: 1
-  },
-  {
-    cover: 'https://picsum.photos/80/100?random=2',
-    title: '追风筝的人',
-    description: '关于友谊、背叛与救赎的动人故事。',
-    bookId: 2
-  },
-  {
-    cover: 'https://picsum.photos/80/100?random=3',
-    title: '解忧杂货店',
-    description: '穿越时空的信件，连接过去与未来。',
-    bookId: 3
-  }
-]
+import { useRouter } from 'vue-router'
 const route = useRoute()
+const router = useRouter()
 const userProfileRef = ref() // UserProfile组件引用
 const bookDetail = ref<BookDetail | null>(null)
 const reviewsData = ref<BookReview[]>([])
 const authorWorks = ref<AuthorWork[]>([])
 const relatedBooks = ref<RelatedBook[]>([])
 const isLoading = ref(true)
+const errorMessage = ref<string | null>(null)
 
-// 在组件挂载时滚动到顶部并获取书籍详情
-onMounted(async () => {
-  window.scrollTo({
-    top: 0,
-  })
+// 修改：从API获取书籍详情
+// 支持多种方式获取 bookId：
+// 1. 路径参数：/bookdetail/105
+// 2. query参数：/bookdetail?id=105 或 /bookdetail?bookId=105
+const bookId = computed(() => {
+  const paramId = route.params.id
+  const queryBookId = route.query.bookId
+  const queryId = route.query.id
+  const id = (Array.isArray(paramId) ? paramId[0] : paramId) ||
+             (Array.isArray(queryBookId) ? queryBookId[0] : queryBookId) ||
+             (Array.isArray(queryId) ? queryId[0] : queryId) ||
+             null
+  const result = id ? String(id) : null
+  console.log('获取 bookId:', { paramId, queryBookId, queryId, result, route: route.fullPath })
+  return result
+})
 
+// 提取获取数据的逻辑为独立函数，以便在路由变化时复用
+const fetchBookData = async (currentBookId: string | null) => {
+  // 如果没有 bookId，显示错误提示
+  if (!currentBookId) {
+    isLoading.value = false
+    errorMessage.value = '缺少书籍ID，无法加载书籍详情'
+    bookDetail.value = null
+    reviewsData.value = []
+    authorWorks.value = []
+    relatedBooks.value = []
+    return
+  }
+
+  isLoading.value = true
+  errorMessage.value = null
   try {
-    // 从路由参数获取bookId
-    const currentBookId = bookId.value
     console.log('正在获取书籍详情和点评数据，bookId:', currentBookId)
 
     // 并行获取书籍详情和点评数据
@@ -206,27 +146,91 @@ onMounted(async () => {
       getRelatedBooks(currentBookId)
     ])
 
-    // 处理每个API调用的结果，使用默认数据作为fallback
-    bookDetail.value = bookDetailData.status === 'fulfilled' ? bookDetailData.value : getDefaultBookDetail()
-    reviewsData.value = reviews.status === 'fulfilled' ? reviews.value : getDefaultReviews()
-    authorWorks.value = authorWorksData.status === 'fulfilled' ? authorWorksData.value : getDefaultAuthorWorks()
-    relatedBooks.value = relatedBooksData.status === 'fulfilled' ? relatedBooksData.value : getDefaultRelatedBooks()
+    // 处理每个API调用的结果，如果失败则使用空数据
+    if (bookDetailData.status === 'fulfilled') {
+      const detail = bookDetailData.value
+      console.log('API返回的原始书籍详情数据:', detail)
+      // 检查数据是否为空对象
+      if (detail && Object.keys(detail).length > 0) {
+        bookDetail.value = detail
+      } else {
+        console.warn('书籍详情数据为空')
+        bookDetail.value = null
+        errorMessage.value = '获取书籍详情失败：数据为空'
+      }
+    } else {
+      console.error('获取书籍详情失败:', bookDetailData.reason)
+      const error = bookDetailData.reason
+      // 检查是否是304错误
+      if (error?.response?.status === 304) {
+        errorMessage.value = '数据未更新（304），请刷新页面重试'
+      } else {
+        errorMessage.value = `获取书籍详情失败：${error?.message || '未知错误'}`
+      }
+      bookDetail.value = null
+    }
+
+    reviewsData.value = reviews.status === 'fulfilled' ? (reviews.value || []) : []
+    authorWorks.value = authorWorksData.status === 'fulfilled' ? (authorWorksData.value || []) : []
+    relatedBooks.value = relatedBooksData.status === 'fulfilled' ? (relatedBooksData.value || []) : []
 
     console.log('获取到的书籍详情:', bookDetail.value)
     console.log('获取到的点评数据:', reviewsData.value)
     console.log('获取到的作者作品:', authorWorks.value)
     console.log('获取到的相关推荐:', relatedBooks.value)
   } catch (err) {
-    console.error('获取数据失败，使用默认数据:', err)
-    // 使用默认数据作为fallback
-    bookDetail.value = getDefaultBookDetail()
-    reviewsData.value = getDefaultReviews()
-    authorWorks.value = getDefaultAuthorWorks()
-    relatedBooks.value = getDefaultRelatedBooks()
+    console.error('获取数据失败:', err)
+    errorMessage.value = '获取数据失败，请稍后重试'
+    bookDetail.value = null
+    reviewsData.value = []
+    authorWorks.value = []
+    relatedBooks.value = []
   } finally {
     isLoading.value = false
   }
+}
+
+// 在组件挂载时滚动到顶部并获取书籍详情
+onMounted(async () => {
+  window.scrollTo({
+    top: 0,
+  })
+  console.log('BookDetail onMounted, bookId:', bookId.value, 'route:', route.fullPath)
+  await fetchBookData(bookId.value)
 })
+
+// 监听 bookId 变化，当路由参数改变时重新获取数据
+watch(
+  () => bookId.value,
+  async (newBookId, oldBookId) => {
+    // 只有当 bookId 真正改变时才重新获取数据
+    if (newBookId !== oldBookId) {
+      console.log('bookId 变化:', { oldBookId, newBookId, route: route.fullPath })
+      window.scrollTo({
+        top: 0,
+      })
+      await fetchBookData(newBookId)
+    }
+  },
+  { immediate: false }
+)
+
+// 同时监听路由变化（包括 query 参数变化）
+watch(
+  () => route.query,
+  async (newQuery, oldQuery) => {
+    const newId = newQuery.id || newQuery.bookId
+    const oldId = oldQuery?.id || oldQuery?.bookId
+    if (newId !== oldId && newId) {
+      console.log('路由 query 参数变化:', { oldQuery, newQuery, newId })
+      window.scrollTo({
+        top: 0,
+      })
+      await fetchBookData(String(newId))
+    }
+  },
+  { immediate: false }
+)
 
 // 处理打开充值弹窗
 const handleOpenRechargeDialog = () => {
@@ -239,15 +243,6 @@ const handleOpenRechargeDialog = () => {
     console.log('打开充值弹窗')
   }
 }
-
-// 修改：从API获取书籍详情
-const bookId = computed(() => {
-  const paramId = route.params.id
-  const queryId = route.query.bookId
-  return (Array.isArray(paramId) ? paramId[0] : paramId) ||
-         (Array.isArray(queryId) ? queryId[0] : queryId) ||
-         'book-123'
-})
 const bookTitle = computed(() => bookDetail.value?.title || '加载中...')
 // 动态页面标题
 const title = computed(() =>
@@ -265,8 +260,7 @@ interface Work {
 // 修改：计算推荐值统计数据 - 直接使用API返回的百分比
 const computedRatingStats = computed(() => {
   if (!bookDetail.value?.ratingDetail) {
-    console.log('使用默认评分统计数据')
-    return { recommend: 70, average: 20, poor: 10 }
+    return { recommend: 0, average: 0, poor: 0 }
   }
 
   console.log('API返回的评分详情:', bookDetail.value.ratingDetail)
@@ -278,7 +272,7 @@ const computedRatingStats = computed(() => {
 
   // 确保三个百分比加起来等于100%
   const total = recommend + average + poor
-  if (total !== 100) {
+  if (total !== 100 && total > 0) {
     // 如果不等于100%，按比例调整
     const factor = 100 / total
     recommend = Math.round(recommend * factor)
@@ -305,7 +299,7 @@ const computedRatingStats = computed(() => {
 const convertedReviews = computed(() => {
   return reviewsData.value.map((review, index) => ({
     id: index + 1,
-    bookId: bookId.value.toString(),
+    bookId: bookId.value?.toString() || '',
     userName: review.username,
     content: review.content,
     date: review.reviewTime,
@@ -336,48 +330,44 @@ const convertedRelatedBooks = computed(() => {
 })
 
 const computedReviewCount = computed(() => {
+  if (!bookId.value) return 0
   if (!bookDetail.value?.ratingCount) {
     return countPublicReviews(bookId.value, convertedReviews.value.length)
   }
   return countPublicReviews(bookId.value, bookDetail.value.ratingCount)
 })
 
-// 监听路由变化，刷新数据
+// 监听路由变化，刷新数据（保留原有逻辑）
 watch(
   () => route.query,
   (newQuery) => {
     if (newQuery.refresh === 'true') {
       // 重新计算数据
       console.log('刷新页面数据')
+      fetchBookData(bookId.value)
     }
   },
 )
 
 // 作者信息数据 - 从API获取
 const computedAuthorInfo = computed(() => ({
-  id: bookDetail.value?.authorId || 1,
-  name: bookDetail.value?.author || '扬·马特尔',
-  description: bookDetail.value?.authorBio ||
-    '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
+  id: bookDetail.value?.authorId || 0,
+  name: bookDetail.value?.author || '未知作者',
+  description: bookDetail.value?.authorBio || '暂无作者简介',
 }))
-
-
-
-// 书籍描述
-const bookDescription = `《少年Pi的奇幻漂流》是加拿大作家扬·马特尔于2001年发表的虚构小说，描述一名印度男孩Pi在太平洋上与一只孟加拉虎同船而行的冒险故事。这部小说探讨了信仰、生存和人类与自然的关系等深刻主题，获得了2002年的布克奖及亚洲/太平洋美洲文学奖。`
 
 // 书籍统计信息 - 从API数据计算
 const computedBookStats = computed(() => {
   if (!bookDetail.value) {
     return {
-      readingCount: '18.3万人',
-      readingSubtitle: '7.6万人读完',
-      myReadingStatus: '在读',
-      myReadingSubtitle: '标记在读',
-      wordCount: '11.3万字',
-      publishInfo: '2021年7月出版',
-      experienceCardStatus: '体验卡可读',
-      priceInfo: '电子书价格49元',
+      readingCount: '0人',
+      readingSubtitle: '0人读完',
+      myReadingStatus: '未读',
+      myReadingSubtitle: '标记未读',
+      wordCount: '0字',
+      publishInfo: '未知',
+      experienceCardStatus: '未知',
+      priceInfo: '未知',
     }
   }
 
@@ -402,21 +392,15 @@ const computedBookStats = computed(() => {
     }
   }
 
-  // 提供默认值以防API数据无效
-  const defaultReadingCount = 183000
-  const defaultFinishedCount = 76000
-  const defaultWordCount = 113000
-  const defaultPrice = 4900
-
   return {
-    readingCount: readingCount > 0 ? `${(readingCount / 10000).toFixed(1)}万人` : `${(defaultReadingCount / 10000).toFixed(1)}万人`,
-    readingSubtitle: finishedCount > 0 ? `${(finishedCount / 10000).toFixed(1)}万人读完` : `${(defaultFinishedCount / 10000).toFixed(1)}万人读完`,
+    readingCount: readingCount > 0 ? `${(readingCount / 10000).toFixed(1)}万人` : '0人',
+    readingSubtitle: finishedCount > 0 ? `${(finishedCount / 10000).toFixed(1)}万人读完` : '0人读完',
     myReadingStatus: getReadingStatusText(readingStatus),
     myReadingSubtitle: getReadingStatusSubtitle(readingStatus),
-    wordCount: wordCount > 0 ? `${(wordCount / 10000).toFixed(1)}万字` : `${(defaultWordCount / 10000).toFixed(1)}万字`,
-    publishInfo: publishDate ? `${new Date(publishDate).getFullYear()}年${new Date(publishDate).getMonth() + 1}月出版` : '2021年7月出版',
-    experienceCardStatus: isFreeForMember !== undefined ? (isFreeForMember ? '体验卡可读' : '需购买') : '体验卡可读',
-    priceInfo: price > 0 ? `电子书价格${(price / 100).toFixed(0)}元` : `电子书价格${(defaultPrice / 100).toFixed(0)}元`,
+    wordCount: wordCount > 0 ? `${(wordCount / 10000).toFixed(1)}万字` : '0字',
+    publishInfo: publishDate ? `${new Date(publishDate).getFullYear()}年${new Date(publishDate).getMonth() + 1}月出版` : '未知',
+    experienceCardStatus: isFreeForMember !== undefined ? (isFreeForMember ? '体验卡可读' : '需购买') : '未知',
+    priceInfo: price > 0 ? `电子书价格${(price / 100).toFixed(0)}元` : '未知',
   }
 })
 
@@ -431,6 +415,10 @@ const handleViewAllWorks = () => {
 }
 
 const handleBookshelfToggle = async (isAdded: boolean) => {
+  if (!bookId.value) {
+    console.error('缺少书籍ID，无法操作书架')
+    return
+  }
   try {
     const currentBookId = bookId.value
     if (isAdded) {
@@ -453,6 +441,10 @@ const handleBookshelfToggle = async (isAdded: boolean) => {
 }
 
 const handleStartReading = async () => {
+  if (!bookId.value) {
+    console.error('缺少书籍ID，无法开始阅读')
+    return
+  }
   try {
     const currentBookId = bookId.value
     const result = await startReading(currentBookId)
@@ -465,11 +457,16 @@ const handleStartReading = async () => {
       bookDetail.value.hasStarted = updatedBookDetail.hasStarted
     }
 
-    // 可以在这里添加跳转到阅读器的逻辑
-    // router.push(`/reader/${currentBookId}`)
-  } catch (error) {
+    // 跳转到阅读器页面
+    router.push(`/reader/${currentBookId}`)
+  } catch (error: any) {
     console.error('开始阅读失败:', error)
-    // 可以在这里添加错误提示
+    // 如果是401错误，可能是token过期，但已经在request拦截器中处理了
+    // 这里只处理其他错误
+    if (error?.response?.status !== 401) {
+      // 可以在这里添加错误提示
+      console.error('开始阅读失败，错误信息:', error.message)
+    }
   }
 }
 
@@ -600,5 +597,22 @@ const handleLoadMoreReviews = () => {
     padding: 10px;
     gap: 16px;
   }
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid #fcc;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
 }
 </style>

@@ -19,6 +19,7 @@ const weeklyRank = ref<RankBook[]>([])
 const monthlyRank = ref<RankBook[]>([])
 const newRank = ref<RankBook[]>([])
 const masterpieceRank = ref<RankBook[]>([])
+const isRefreshing = ref(false) // 添加加载状态
 
 onMounted(async () => {
   const data = await getHomeData()
@@ -32,8 +33,28 @@ onMounted(async () => {
 })
 
 const refreshGuessBooks = async () => {
-  const list = await getGuessBooks()
-  guessBooks.value = list
+  // 防止重复点击
+  if (isRefreshing.value) {
+    return
+  }
+
+  try {
+    isRefreshing.value = true
+    const list = await getGuessBooks()
+    
+    // 只有当返回的数据有效且不为空时才更新
+    if (Array.isArray(list) && list.length > 0) {
+      guessBooks.value = list
+    } else {
+      console.warn('刷新失败：返回的数据为空或无效', list)
+      // 保持原有数据不变，不显示错误提示，避免影响用户体验
+    }
+  } catch (error) {
+    console.error('刷新猜你喜欢失败:', error)
+    // 请求失败时保持原有数据不变
+  } finally {
+    isRefreshing.value = false
+  }
 }
 </script>
 
@@ -48,7 +69,7 @@ const refreshGuessBooks = async () => {
         <RecentRead :books="recentBooks" />
       </div>
       <div class="guss-you-like">
-        <GuessYouLike :books="guessBooks" @refresh="refreshGuessBooks" />
+        <GuessYouLike :books="guessBooks" :is-refreshing="isRefreshing" @refresh="refreshGuessBooks" />
       </div>
       <div class="book-rank">
         <!-- 周榜 -->

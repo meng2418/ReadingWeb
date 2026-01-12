@@ -70,6 +70,6 @@ public class RecentBookServiceImpl implements RecentBookService {
     }
 
     private String getDefaultCover() {
-        return "/static/images/default-book-cover.jpg";
+        return "/bookresources/book_covers/default-book-cover.jpg";
     }
 }

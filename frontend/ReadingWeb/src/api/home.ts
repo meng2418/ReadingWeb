@@ -11,7 +11,8 @@ interface GuessBookRaw {
   bookId: number
   cover: string
   bookTitle: string
-  author: string  // 后端返回的是author，不是authorName
+  authorName?: string  // 后端返回的是authorName
+  author?: string  // 兼容旧字段
   description?: string  // 可能为空
 }
 
@@ -21,7 +22,7 @@ const mapToGuessBook = (raw: GuessBookRaw): GuessBook => {
     bookId: raw.bookId,
     cover: processCoverPath(raw.cover),
     title: raw.bookTitle,
-    author: raw.author || '未知作者',  // 后端返回的是author字段
+    author: raw.authorName || raw.author || '未知作者',  // 优先使用authorName，兼容author字段
     reason: raw.description || '',  // description可能为空
   }
 }
@@ -39,7 +40,7 @@ const pickId = (raw: SimpleBookRaw, index: number) =>
 const mapToRankBook = (raw: SimpleBookRaw, index: number): RankBook => ({
   id: Number(pickId(raw, index)),
   title: raw.bookTitle,
-  author: raw.author,
+  author: raw.authorName || raw.author || '未知作者',  // 优先使用authorName，兼容author字段
   cover: processCoverPath(raw.cover),
   recommend: raw.rating ? `${Number(raw.rating)} %` : '-',
 })

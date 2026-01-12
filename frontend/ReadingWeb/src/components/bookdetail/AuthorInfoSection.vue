@@ -2,11 +2,13 @@
   <div class="author-info-section">
     <!-- 作者信息标题 -->
     <div class="section-header">
-      <h3 class="section-title">{{ author.name }}</h3>
+      <!-- 添加 title 属性，鼠标悬停时可以看到全名 -->
+      <h3 class="section-title" :title="author.name">{{ author.name }}</h3>
     </div>
 
     <!-- 作者简介 -->
-    <div class="author-description">
+    <!-- 添加 title 属性，鼠标悬停可以看到完整简介(可选) -->
+    <div class="author-description" :title="author.description">
       {{ author.description }}
     </div>
 
@@ -33,7 +35,7 @@
           </div>
         </div>
         <div class="work-info">
-          <div class="work-title">{{ work.title }}</div>
+          <div class="work-title" :title="work.title">{{ work.title }}</div>
           <div class="work-summary">{{ work.summary }}</div>
         </div>
       </div>
@@ -42,73 +44,64 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref,computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBookNavigation } from '@/composables/useBookNavigation'
 import type { AuthorWork, AuthorInfo } from '@/types/author'
-// 添加路由
+
 const router = useRouter()
 const { openInNewTab } = useBookNavigation()
-// 定义props
+
 interface Props {
   author: AuthorInfo
   works: AuthorWork[]
   maxDisplayCount?: number
-  openInNewTab?: boolean // 新增：是否在新标签页打开
+  openInNewTab?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   maxDisplayCount: 3,
-  openInNewTab: true // 默认在新标签页打开
+  openInNewTab: true
 })
 
-// 定义事件
 const emit = defineEmits<{
   workClick: [work: AuthorWork]
   viewAllWorks: []
 }>()
-
-// 计算显示的著作数量
+//添加展开状态控制
+const isDescriptionExpanded = ref(false)
+const toggleDescription = () => {
+  isDescriptionExpanded.value = !isDescriptionExpanded.value
+}
 const displayedWorks = computed(() => {
   return props.works.slice(0, props.maxDisplayCount)
 })
 
-// 图片加载失败处理
 const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement
   img.style.display = 'none'
 }
 
-// 作品点击事件
 const handleWorkClick = (work: AuthorWork) => {
   emit('workClick', work)
-  console.log('点击作品:', work.title)
-
-  // 在新标签页打开书籍详情页
   if (work.id) {
     openInNewTab(work.id)
-  } else {
-    console.warn('作品缺少ID，无法跳转到详情页')
   }
 }
 
-// 查看全部作品 - 在新标签页打开作者详情页
 const handleViewAllWorks = () => {
-  const authorId = props.author.id || 1 // 这里假设author有id属性
+  const authorId = props.author.id || 1
   emit('viewAllWorks')
 
   if (props.openInNewTab) {
-    // 在新标签页打开作者详情页
     window.open(`/authordetail/${authorId}`, '_blank')
   } else {
-    // 在当前页打开
     router.push(`/authordetail/${authorId}`)
   }
 }
 </script>
 
 <style scoped>
-/* 样式保持不变 */
 .author-info-section {
   background: #fff;
   border-radius: 8px;
@@ -123,6 +116,7 @@ const handleViewAllWorks = () => {
   margin-bottom: 15px;
 }
 
+/* 1. 作者姓名：限制为 1 行，超出显示省略号 */
 .section-title {
   font-size: 24px;
   font-weight: bold;
@@ -130,34 +124,31 @@ const handleViewAllWorks = () => {
   margin: 0;
   padding-bottom: 8px;
   border-bottom: 1px solid #f0f0f0;
+  
+  white-space: nowrap;      /* 不换行 */
+  overflow: hidden;         /* 隐藏溢出 */
+  text-overflow: ellipsis;  /* 显示省略号 */
+  width: 100%;              /* 确保宽度填满以触发溢出 */
 }
 
+/* 2. 作者简介：限制为 6 行（可根据需要调整数字），超出显示省略号 */
 .author-description {
   font-size: 18px;
   line-height: 1.6;
   color: #555;
   margin-bottom: 20px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 5px;
-}
-
-.author-description::-webkit-scrollbar {
-  width: 4px;
-}
-
-.author-description::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 2px;
-}
-
-.author-description::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 2px;
-}
-
-.author-description::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  
+  /* 移除原本的滚动条样式*/
+  /* max-height: 400px;  
+  /* overflow-y: auto;   
+  
+  display: -webkit-box;           /* 必须结合的属性 */
+  -webkit-box-orient: vertical;   /* 必须结合的属性 */
+  -webkit-line-clamp: 6;          /* 限制显示 6 行 */
+  line-clamp: 6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;          /* 防止长单词撑破布局 */
 }
 
 .works-header {
@@ -180,10 +171,11 @@ const handleViewAllWorks = () => {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   color: #666;
-  font-size: 20px;
+  font-size: 14px; /* 稍微调小一点，原20px可能太大 */
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
+  white-space: nowrap;
 }
 
 .view-all-button:hover {
@@ -235,7 +227,7 @@ const handleViewAllWorks = () => {
   align-items: center;
   justify-content: center;
   color: #999;
-  font-size: 16px;
+  font-size: 12px; /* 稍微调小 */
 }
 
 .work-info {
@@ -243,24 +235,37 @@ const handleViewAllWorks = () => {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: hidden; /* 确保子元素溢出处理生效 */
 }
 
+/* 3. 作品标题：限制为 2 行 */
 .work-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
   margin-bottom: 4px;
   line-height: 1.3;
+  
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* 限制 2 行 */
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* 4. 作品简介：限制为 2 行 */
 .work-summary {
   font-size: 14px;
   color: #666;
   line-height: 1.4;
+  
   display: -webkit-box;
-  line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* 限制 2 行 */
+  line-clamp: 2;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 768px) {
@@ -273,9 +278,11 @@ const handleViewAllWorks = () => {
     font-size: 16px;
   }
 
+  /* 移动端可能希望显示的行数少一点或多一点，这里保持一致或微调 */
   .author-description {
     font-size: 13px;
-    max-height: 150px;
+    -webkit-line-clamp: 4; /* 移动端只显示4行 */
+    line-clamp: 4;
   }
 
   .works-title {
@@ -289,6 +296,8 @@ const handleViewAllWorks = () => {
 
   .work-title {
     font-size: 13px;
+    -webkit-line-clamp: 1; /* 移动端标题限制1行 */
+    line-clamp: 1;
   }
 
   .work-summary {

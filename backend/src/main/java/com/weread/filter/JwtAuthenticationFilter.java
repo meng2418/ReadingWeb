@@ -164,6 +164,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                requestURI.startsWith("/v3/api-docs") ||
                requestURI.startsWith("/webjars") ||
                requestURI.startsWith("/actuator") ||
-               requestURI.startsWith("/static/");  // 静态资源不需要认证
+               requestURI.startsWith("/static/") ||  // 静态资源不需要认证
+               requestURI.startsWith("/bookresources/");  // 书籍封面资源不需要认证
     }
 }

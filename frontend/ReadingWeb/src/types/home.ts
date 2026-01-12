@@ -2,7 +2,8 @@
 export interface SimpleBookRaw {
   cover: string
   bookTitle: string
-  author: string
+  authorName?: string  // 后端返回的是authorName
+  author?: string  // 兼容旧字段
   rating: number
   readCount: number
   description?: string
