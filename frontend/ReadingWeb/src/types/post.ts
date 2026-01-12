@@ -19,6 +19,7 @@ export interface PostBase {
   id: number
   username: string
   avatar?: string
+  authorId?: number // 添加作者ID，用于关注功能
   postTime: string
   timestamp?: number
   title?: string

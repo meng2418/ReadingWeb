@@ -4,7 +4,7 @@
     <div class="profile-header">
       <div class="user-info">
         <div class="avatar">
-          <img :src="user.avatar" alt="用户头像" />
+          <img :src="avatarUrl" alt="用户头像" @error="handleAvatarError" />
         </div>
         <div class="text-info">
           <h1 class="nickname">{{ user.nickname }}</h1>
@@ -159,6 +159,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useTheme, themes } from '@/composables/useTheme'
 import { updateProfile } from '@/api/profile'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 // 添加路由实例
 const router = useRouter()
 
@@ -174,6 +175,17 @@ const emit = defineEmits<{
 
 // 使用传入的主题，如果没有则创建新的主题实例
 const theme = props.theme || useTheme()
+
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.user?.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
 
 // 跳转到UserPosts页面的对应标签页 - 在新标签页打开
 const goToUserPosts = (tab: string) => {

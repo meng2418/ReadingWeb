@@ -37,7 +37,7 @@
         <!-- 登录状态：使用下拉菜单 -->
         <el-dropdown @command="handleCommand">
           <div class="user-dropdown-trigger">
-            <img class="avatar" :src="userStore.userInfo.avatar" alt="用户头像" />
+            <img class="avatar" :src="avatarUrl" alt="用户头像" @error="handleAvatarError" />
             <span class="username">{{ userStore.userInfo.name || '用户' }}</span>
             <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
           </div>
@@ -70,15 +70,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getProfileHome } from '@/api/profile' // 引入获取用户信息的接口
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, ArrowDown, User, SwitchButton } from '@element-plus/icons-vue'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(userStore.userInfo?.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
+
 // --- 新增：组件挂载时获取最新用户信息 ---
 onMounted(async () => {
   // 如果已经登录，且当前 store 里没头像（或者想每次刷新都同步一下）

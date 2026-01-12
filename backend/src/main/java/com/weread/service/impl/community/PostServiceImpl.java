@@ -265,16 +265,19 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public PostVO getPostById(Integer postId) {
+    @Transactional
+    public com.weread.dto.community.PostDetailDTO getPostById(Integer postId, Integer currentUserId) {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "帖子不存在"));
 
-        // 增加查看次数
+        // 增加查看次数（需要在事务内执行）
+        if (post.getViewCount() == null) {
+            post.setViewCount(0);
+        }
         post.setViewCount(post.getViewCount() + 1);
         postRepository.save(post);
 
-        return convertToPostVO(post, null);
+        return convertToPostDetailDTO(post, currentUserId);
     }
 
     @Override
@@ -353,9 +356,34 @@ public class PostServiceImpl implements PostService {
             postPage = postRepository.findByStatusOrderByCreatedAtDesc(1, pageable);
         }
 
-        // 转换为 PostSquareDTO
+        // 转换为 PostSquareDTO（安全处理，避免单个帖子转换失败影响整个列表）
         return postPage.getContent().stream()
-                .map(post -> convertToPostSquareDTO(post, currentUserId))
+                .map(post -> {
+                    try {
+                        return convertToPostSquareDTO(post, currentUserId);
+                    } catch (Exception e) {
+                        // 如果单个帖子转换失败，记录错误但继续处理其他帖子
+                        e.printStackTrace();
+                        // 返回一个基本的DTO，避免返回null
+                        PostSquareDTO dto = new PostSquareDTO();
+                        dto.setPostId(post.getPostId());
+                        dto.setPostTitle(post.getTitle() != null ? post.getTitle() : "");
+                        dto.setContent(post.getContent() != null ? post.getContent() : "");
+                        dto.setPublishTime(post.getCreatedAt());
+                        dto.setCommentCount(post.getCommentsCount() != null ? post.getCommentsCount() : 0);
+                        dto.setLikeCount(post.getLikesCount() != null ? post.getLikesCount() : 0);
+                        dto.setIsLiked(false);
+                        dto.setIsFollowingAuthor(false);
+                        dto.setTopics(Collections.emptyList());
+                        // 设置默认作者信息
+                        AuthorInfoDTO authorInfo = new AuthorInfoDTO();
+                        authorInfo.setAuthorId(post.getAuthorId());
+                        authorInfo.setAuthorName("未知用户");
+                        authorInfo.setAuthorAvatar("");
+                        dto.setAuthor(authorInfo);
+                        return dto;
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
@@ -366,17 +394,17 @@ public class PostServiceImpl implements PostService {
         dto.setContent(post.getContent());
         dto.setPublishTime(post.getCreatedAt());
         dto.setPublishLocation(post.getPublishLocation());
-        dto.setCommentCount(post.getCommentsCount());
-        dto.setLikeCount(post.getLikesCount());
+        dto.setCommentCount(post.getCommentsCount() != null ? post.getCommentsCount() : 0);
+        dto.setLikeCount(post.getLikesCount() != null ? post.getLikesCount() : 0);
 
         // 获取作者信息
         UserEntity author = userRepository.findById(post.getAuthorId()).orElse(null);
+        AuthorInfoDTO authorInfo = new AuthorInfoDTO();
         if (author != null) {
-            AuthorInfoDTO authorInfo = new AuthorInfoDTO();
-            authorInfo.setAuthorAvatar(author.getAvatar());
-            authorInfo.setAuthorName(author.getUsername());
-            dto.setAuthor(authorInfo);
-
+            authorInfo.setAuthorId(author.getUserId());
+            authorInfo.setAuthorAvatar(author.getAvatar() != null ? author.getAvatar() : "");
+            authorInfo.setAuthorName(author.getUsername() != null ? author.getUsername() : "未知用户");
+            
             // 检查当前用户是否关注作者
             if (currentUserId != null) {
                 boolean isFollowing = followRepository.findByFollowerIdAndFollowingId(currentUserId, author.getUserId())
@@ -385,7 +413,14 @@ public class PostServiceImpl implements PostService {
             } else {
                 dto.setIsFollowingAuthor(false);
             }
+        } else {
+            // 如果作者不存在，设置默认值
+            authorInfo.setAuthorId(post.getAuthorId());
+            authorInfo.setAuthorAvatar("");
+            authorInfo.setAuthorName("未知用户");
+            dto.setIsFollowingAuthor(false);
         }
+        dto.setAuthor(authorInfo);
 
         // 检查是否点赞
         if (currentUserId != null) {
@@ -397,17 +432,35 @@ public class PostServiceImpl implements PostService {
         }
 
         // 获取话题列表
-        dto.setTopics(post.getTopics());
+        dto.setTopics(post.getTopics() != null ? post.getTopics() : Collections.emptyList());
 
-        // 获取提到的第一本书
-        if (post.getRelatedBooks() != null && !post.getRelatedBooks().isEmpty()) {
-            BookEntity firstBook = post.getRelatedBooks().get(0);
-            BookSimpleDTO bookSimple = new BookSimpleDTO();
-            bookSimple.setBookId(firstBook.getBookId());
-            bookSimple.setBookTitle(firstBook.getTitle());
-            bookSimple.setCover(ImagePathUtils.processCoverPath(firstBook.getCover()));
-            bookSimple.setAuthorName(firstBook.getAuthor() != null ? firstBook.getAuthor().getAuthorName() : "未知作者");
-            dto.setMentionedFirstBook(bookSimple);
+        // 获取提到的第一本书（安全处理懒加载）
+        try {
+            List<BookEntity> relatedBooks = post.getRelatedBooks();
+            if (relatedBooks != null && !relatedBooks.isEmpty()) {
+                BookEntity firstBook = relatedBooks.get(0);
+                if (firstBook != null) {
+                    BookSimpleDTO bookSimple = new BookSimpleDTO();
+                    bookSimple.setBookId(firstBook.getBookId());
+                    bookSimple.setBookTitle(firstBook.getTitle() != null ? firstBook.getTitle() : "");
+                    bookSimple.setCover(ImagePathUtils.processCoverPath(firstBook.getCover()));
+                    // 安全地获取作者名称
+                    String authorName = "未知作者";
+                    try {
+                        if (firstBook.getAuthor() != null && firstBook.getAuthor().getAuthorName() != null) {
+                            authorName = firstBook.getAuthor().getAuthorName();
+                        }
+                    } catch (Exception e) {
+                        // 如果获取作者信息失败，使用默认值
+                        authorName = "未知作者";
+                    }
+                    bookSimple.setAuthorName(authorName);
+                    dto.setMentionedFirstBook(bookSimple);
+                }
+            }
+        } catch (Exception e) {
+            // 如果获取相关书籍失败，不设置 mentionedFirstBook，继续处理其他字段
+            // 这样可以避免因为懒加载问题导致整个请求失败
         }
 
         return dto;
@@ -467,6 +520,96 @@ public class PostServiceImpl implements PostService {
             return content;
         }
         return content.substring(0, 100) + "...";
+    }
+
+    /**
+     * 转换为帖子详情 DTO
+     */
+    private com.weread.dto.community.PostDetailDTO convertToPostDetailDTO(PostEntity post, Integer currentUserId) {
+        com.weread.dto.community.PostDetailDTO dto = new com.weread.dto.community.PostDetailDTO();
+        dto.setPostId(post.getPostId());
+        dto.setPostTitle(post.getTitle());
+        dto.setContent(post.getContent());
+        dto.setPublishTime(post.getCreatedAt());
+        dto.setPublishLocation(post.getPublishLocation());
+        dto.setCommentCount(post.getCommentsCount() != null ? post.getCommentsCount() : 0);
+        dto.setLikeCount(post.getLikesCount() != null ? post.getLikesCount() : 0);
+
+        // 获取作者信息
+        UserEntity author = userRepository.findById(post.getAuthorId()).orElse(null);
+        AuthorInfoDTO authorInfo = new AuthorInfoDTO();
+        if (author != null) {
+            authorInfo.setAuthorId(author.getUserId());
+            authorInfo.setAuthorAvatar(author.getAvatar() != null ? author.getAvatar() : "");
+            authorInfo.setAuthorName(author.getUsername() != null ? author.getUsername() : "未知用户");
+            
+            // 检查当前用户是否关注作者
+            if (currentUserId != null) {
+                boolean isFollowing = followRepository.findByFollowerIdAndFollowingId(currentUserId, author.getUserId())
+                        .isPresent();
+                dto.setIsFollowingAuthor(isFollowing);
+            } else {
+                dto.setIsFollowingAuthor(false);
+            }
+        } else {
+            authorInfo.setAuthorId(post.getAuthorId());
+            authorInfo.setAuthorAvatar("");
+            authorInfo.setAuthorName("未知用户");
+            dto.setIsFollowingAuthor(false);
+        }
+        dto.setAuthor(authorInfo);
+
+        // 检查是否点赞
+        if (currentUserId != null) {
+            boolean isLiked = likeRepository.findByPostIdAndUserId(post.getPostId(), currentUserId)
+                    .isPresent();
+            dto.setIsLiked(isLiked);
+        } else {
+            dto.setIsLiked(false);
+        }
+
+        // 获取关联的书籍（安全处理懒加载）
+        List<com.weread.dto.community.MentionedBookDTO> mentionedBooks = new ArrayList<>();
+        try {
+            List<BookEntity> relatedBooks = post.getMentionedBooks();
+            if (relatedBooks != null && !relatedBooks.isEmpty()) {
+                mentionedBooks = relatedBooks.stream()
+                        .map(book -> {
+                            com.weread.dto.community.MentionedBookDTO bookDTO = new com.weread.dto.community.MentionedBookDTO();
+                            bookDTO.setBookId(book.getBookId());
+                            bookDTO.setCover(book.getCover() != null ? book.getCover() : "");
+                            bookDTO.setBookTitle(book.getTitle() != null ? book.getTitle() : "");
+                            bookDTO.setAuthorName(book.getAuthorName() != null ? book.getAuthorName() : "");
+                            bookDTO.setDescription(book.getDescription() != null ? book.getDescription() : "");
+                            return bookDTO;
+                        })
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            // 如果懒加载失败，记录日志但不影响其他数据返回
+            System.err.println("获取帖子关联书籍失败: " + e.getMessage());
+            e.printStackTrace();
+            // 设置空列表，继续处理其他字段
+            mentionedBooks = new ArrayList<>();
+        }
+        dto.setMentionedBooks(mentionedBooks);
+
+        // 获取话题列表（安全处理懒加载）
+        List<String> topics = new ArrayList<>();
+        try {
+            topics = post.getTopics();
+            if (topics == null) {
+                topics = new ArrayList<>();
+            }
+        } catch (Exception e) {
+            // 如果获取话题失败，记录日志但不影响其他数据返回
+            System.err.println("获取帖子话题列表失败: " + e.getMessage());
+            e.printStackTrace();
+            topics = new ArrayList<>();
+        }
+        dto.setTopics(topics);
+
+        return dto;
     }
 
     @Override

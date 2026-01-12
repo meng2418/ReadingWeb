@@ -25,9 +25,10 @@ public interface PostService {
     /**
      * 获取单个帖子详情
      * @param postId 帖子 ID
-     * @return 帖子 VO
+     * @param currentUserId 当前登录用户ID（可为null）
+     * @return 帖子详情 DTO
      */
-    PostVO getPostById(Integer postId);
+    com.weread.dto.community.PostDetailDTO getPostById(Integer postId, Integer currentUserId);
 
     /**
      * 获取帖子列表并根据类型和标签筛选

@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class UserProfileVO {
     
+    private Integer userId; // 添加用户ID字段
     private String avatar;
     private String username;
     private String bio;

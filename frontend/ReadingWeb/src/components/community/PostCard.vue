@@ -3,8 +3,7 @@
     <!-- 用户信息 -->
     <div class="post-header">
       <div class="avatar-container">
-        <img v-if="avatar" :src="avatar" class="avatar-img" :alt="`${username}的头像`" />
-        <div v-else class="avatar-placeholder">{{ username.charAt(0) }}</div>
+        <img :src="avatarUrl" class="avatar-img" :alt="`${username}的头像`" @error="handleAvatarError" />
       </div>
 
       <div class="user-info">
@@ -71,6 +70,7 @@ import { Comment } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
 import { Heart } from 'lucide-vue-next'
 import type { Post, PostBookSummary, PostCardEmits } from '@/types/post'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
 interface Props extends Post {
   postId?: number // 补充postId类型定义，修复跳转TS警告
@@ -95,6 +95,17 @@ const maxChars = 120 // 控制显示多少字
 const localIsLiked = ref<boolean>(props.isLiked)
 const localLikeCount = ref<number>(props.likeCount)
 const localIsFollowing = ref<boolean>(props.isFollowing)
+
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
 
 // 内容截断计算
 const isTruncated = computed((): boolean => {

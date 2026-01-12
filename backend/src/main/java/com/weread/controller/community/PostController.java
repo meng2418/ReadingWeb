@@ -79,7 +79,12 @@ public class PostController {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(ApiResponse.error(500, "获取帖子列表失败"));
+            // 返回更详细的错误信息以便调试
+            String errorMessage = "获取帖子列表失败: " + e.getMessage();
+            if (e.getCause() != null) {
+                errorMessage += " - " + e.getCause().getMessage();
+            }
+            return ResponseEntity.status(500).body(ApiResponse.error(500, errorMessage));
         }
     }
 
@@ -121,12 +126,24 @@ public class PostController {
      * GET /posts/{postId} - 获取帖子详情
      */
     @GetMapping("/{postId}")
-    public ResponseEntity<PostVO> getPostDetail(@PathVariable Integer postId) {
-        PostVO post = postService.getPostById(postId);
-        if (post == null) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<ApiResponse<com.weread.dto.community.PostDetailDTO>> getPostDetail(
+            @PathVariable Integer postId,
+            @AuthenticationPrincipal Integer currentUserId) {
+        try {
+            if (postId == null || postId <= 0) {
+                return ResponseEntity.status(400).body(ApiResponse.error(400, "无效的帖子ID"));
+            }
+            com.weread.dto.community.PostDetailDTO post = postService.getPostById(postId, currentUserId);
+            if (post == null) {
+                return ResponseEntity.status(404).body(ApiResponse.error(404, "帖子不存在"));
+            }
+            return ResponseEntity.ok(ApiResponse.ok(post));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(ApiResponse.error(e.getStatusCode().value(), e.getReason()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(ApiResponse.error(500, "获取帖子详情失败: " + e.getMessage()));
         }
-        return ResponseEntity.ok(post);
     }
 
     /**

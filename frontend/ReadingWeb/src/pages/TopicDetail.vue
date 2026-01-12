@@ -6,7 +6,7 @@
     <BackToTop />
     <!-- 话题头部 -->
     <div class="topic-header">
-      <div class="topic-cover" :style="{ backgroundImage: `url(${topic.cover})` }">
+      <div class="topic-cover" :style="{ backgroundImage: `url(${topicCoverUrl})` }">
         <div class="cover-overlay"></div>
       </div>
 
@@ -107,7 +107,7 @@
             @click="goToTopic(relatedTopic.id)"
           >
             <div class="related-topic-cover">
-              <img :src="relatedTopic.cover" alt="话题封面" />
+              <img :src="getTopicCoverUrl(relatedTopic.cover)" alt="话题封面" />
             </div>
             <div class="related-topic-info">
               <h4>{{ relatedTopic.title }}</h4>
@@ -132,6 +132,7 @@ import { getTopicDetail, type TopicDetail } from '@/api/topics/topic-detail-head
 import { getTopicPosts } from '@/api/topics/topic-posts-section'
 import { useTitle } from '@/stores/useTitle'
 import type { Post } from '@/types/post'
+import { getTopicCoverUrl } from '@/utils/defaultImages'
 
 const route = useRoute()
 const router = useRouter()
@@ -154,6 +155,9 @@ const topic = ref<TopicDetail>({
 })
 const posts = ref<Post[]>([])
 const isLoading = ref(true)
+
+// 计算话题封面URL，使用默认图片
+const topicCoverUrl = computed(() => getTopicCoverUrl(topic.value.cover))
 const error = ref<string | null>(null)
 
 // 动态页面标题

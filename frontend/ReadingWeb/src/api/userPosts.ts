@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 import type { Post } from '@/types/post'
 
 /**
@@ -74,7 +75,7 @@ function mapPost(item: any): Post {
       ? {
           title: item.mentionedBooks[0].bookTitle,
           author: item.mentionedBooks[0].authorName,
-          cover: item.mentionedBooks[0].cover,
+          cover: processCoverPath(item.mentionedBooks[0].cover),
         }
       : null,
   }

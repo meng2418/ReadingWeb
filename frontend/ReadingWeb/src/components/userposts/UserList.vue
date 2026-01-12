@@ -42,6 +42,7 @@
 import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import UserCard from '@/components/userposts/UserCard.vue'
+import { followUserApi, unfollowUserApi } from '@/api/userRelations'
 
 import type { FollowUser } from '@/types/user'
 
@@ -72,22 +73,53 @@ const emptyHint = computed(() => {
 })
 
 // 处理取消关注
-const handleUnfollow = (userId: number) => {
-  const updatedUsers = props.users.filter(user => user.id !== userId)
-  emit('update', updatedUsers)
-  ElMessage.success('已取消关注')
+const handleUnfollow = async (userId: number) => {
+  try {
+    const res = await unfollowUserApi(userId)
+    const data = res?.data?.data || res?.data || {}
+    
+    // 从列表中移除该用户（如果是关注列表）
+    if (props.type === 'following') {
+      const updatedUsers = props.users.filter(user => user.id !== userId)
+      emit('update', updatedUsers)
+    } else {
+      // 如果是粉丝列表，更新 isFollowing 状态
+      const updatedUsers = props.users.map(user => {
+        if (user.id === userId) {
+          return { ...user, isFollowing: false }
+        }
+        return user
+      })
+      emit('update', updatedUsers)
+    }
+    
+    ElMessage.success('已取消关注')
+  } catch (error: any) {
+    console.error('取消关注失败:', error)
+    ElMessage.error(error?.response?.data?.message || '取消关注失败，请重试')
+  }
 }
 
 // 处理关注
-const handleFollow = (userId: number) => {
-  const updatedUsers = props.users.map(user => {
-    if (user.id === userId) {
-      return { ...user, isFollowing: !user.isFollowing }
-    }
-    return user
-  })
-  emit('update', updatedUsers)
-  ElMessage.success(updatedUsers.find(u => u.id === userId)?.isFollowing ? '关注成功' : '已取消关注')
+const handleFollow = async (userId: number) => {
+  try {
+    const res = await followUserApi(userId)
+    const data = res?.data?.data || res?.data || {}
+    
+    // 更新用户的关注状态
+    const updatedUsers = props.users.map(user => {
+      if (user.id === userId) {
+        return { ...user, isFollowing: data.isFollowing !== undefined ? data.isFollowing : true }
+      }
+      return user
+    })
+    emit('update', updatedUsers)
+    
+    ElMessage.success('关注成功')
+  } catch (error: any) {
+    console.error('关注失败:', error)
+    ElMessage.error(error?.response?.data?.message || '关注失败，请重试')
+  }
 }
 </script>
 

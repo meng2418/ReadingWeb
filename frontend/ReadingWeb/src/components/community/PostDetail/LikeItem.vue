@@ -1,6 +1,6 @@
 <template>
   <div class="like-item">
-    <img :src="user.avatar" :alt="user.name" class="user-avatar" />
+    <img :src="avatarUrl" :alt="user.name" class="user-avatar" @error="handleAvatarError" />
     <div class="like-info">
       <div class="user-name">{{ user.name }}</div>
       <div class="like-time">{{ timeAgo(timestamp) }}</div>
@@ -9,7 +9,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { formatDistanceToNow } from 'date-fns'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
 const props = defineProps<{
   user: {
@@ -19,6 +21,17 @@ const props = defineProps<{
   }
   timestamp: Date | string // 可以是 Date 对象或 ISO 字符串
 }>()
+
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.user?.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
 
 /**
  * 格式化时间为 "多久以前" 的形式

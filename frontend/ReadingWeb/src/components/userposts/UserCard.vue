@@ -3,7 +3,7 @@
   <div class="user-card" :class="{ 'user-card-hover': hover }" @mouseenter="hover = true" @mouseleave="hover = false">
     <!-- 左侧头像 -->
     <div class="user-avatar-container">
-      <img :src="user.avatar" alt="用户头像" class="user-avatar">
+      <img :src="avatarUrl" alt="用户头像" class="user-avatar" @error="handleAvatarError">
     </div>
     <!-- 右侧内容 -->
     <div class="user-right-content">
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ElMessageBox } from 'element-plus'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
 // 定义用户类型
 interface User {
@@ -49,6 +50,17 @@ const emit = defineEmits<{
 
 const hover = ref(false)
 const isFollowing = ref(props.user.isFollowing || false)
+
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.user.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
 
 // 计算按钮文本
 const getButtonText = computed(() => {

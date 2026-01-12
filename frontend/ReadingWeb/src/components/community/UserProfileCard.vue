@@ -1,7 +1,7 @@
 <template>
   <div class="user-profile-card">
     <div class="user-avatar">
-      <img :src="user.avatar" alt="用户头像" />
+      <img :src="avatarUrl" alt="用户头像" @error="handleAvatarError" />
     </div>
     <div class="user-info">
       <div class="username">{{ user.username }}</div>
@@ -25,7 +25,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
 const router = useRouter()
 
@@ -43,6 +45,17 @@ interface User {
 const props = defineProps<{
   user: User,
 }>()
+
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.user.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
 
 // 如果没有传入user，使用默认数据
 const defaultUser = props.user || {

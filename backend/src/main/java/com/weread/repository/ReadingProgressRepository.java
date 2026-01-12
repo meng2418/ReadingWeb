@@ -22,7 +22,6 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
        @Modifying
        @Query("UPDATE ReadingProgressEntity r SET " +
                      "r.chapterId = :chapterId, " +
-                     "r.currentPage = :currentPage, " +
                      "r.progress = :progress, " +
                      "r.lastReadAt = :lastReadAt " +
                      "WHERE r.userId = :userId AND r.bookId = :bookId")
@@ -30,7 +29,6 @@ public interface ReadingProgressRepository extends JpaRepository<ReadingProgress
                      @Param("userId") Integer userId,
                      @Param("bookId") Integer bookId,
                      @Param("chapterId") Integer chapterId,
-                     @Param("currentPage") Integer currentPage,
                      @Param("progress") Float progress,
                      @Param("lastReadAt") LocalDateTime lastReadAt);
 

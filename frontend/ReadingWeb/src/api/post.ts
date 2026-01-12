@@ -1,5 +1,6 @@
 // src/api/post.ts
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 
 // 定义接口返回的类型（可选，方便排查）
 interface RawComment {
@@ -39,8 +40,51 @@ export interface PostDetailResponse {
 
 /** 获取帖子详情 */
 export const getPostDetail = async (postId: string | number): Promise<PostDetailResponse> => {
-  const res = await request.get(`/posts/${postId}`)
-  return res.data.data
+  // 确保 postId 是数字类型
+  const numericPostId = typeof postId === 'string' ? parseInt(postId, 10) : postId
+  if (isNaN(numericPostId)) {
+    throw new Error('无效的帖子ID')
+  }
+  const res = await request.get(`/posts/${numericPostId}`)
+  // 处理不同的响应格式
+  const data = res?.data?.data ?? res?.data
+  if (!data) {
+    throw new Error('帖子详情数据为空')
+  }
+  // 确保返回的数据结构正确
+  if (!data.postId) {
+    console.error('帖子详情数据格式不正确: 缺少postId', data)
+    throw new Error('帖子详情数据格式不正确: 缺少postId')
+  }
+  
+  // 如果作者信息缺失，设置默认值
+  if (!data.author) {
+    console.warn('帖子详情缺少作者信息，使用默认值', data)
+    data.author = {
+      authorId: 0,
+      authorName: '未知用户',
+      authorAvatar: '',
+    }
+  } else {
+    // 确保作者信息完整
+    if (!data.author.authorName) {
+      data.author.authorName = '未知用户'
+    }
+    if (!data.author.authorAvatar) {
+      data.author.authorAvatar = ''
+    }
+    if (!data.author.authorId) {
+      data.author.authorId = 0
+    }
+  }
+  // 处理书籍封面路径
+  if (data.mentionedBooks && Array.isArray(data.mentionedBooks)) {
+    data.mentionedBooks = data.mentionedBooks.map((book: any) => ({
+      ...book,
+      cover: processCoverPath(book.cover),
+    }))
+  }
+  return data
 }
 
 /** 获取评论列表 */
@@ -51,18 +95,21 @@ export const getPostComments = async (postId: string | number) => {
   // 【关键点】：这里返回的字段必须和 CommentSection 里的 initialComments 对应
   // CommentSection 在 computed 里找的是: item.username, item.commentTime
   return list.map((item: any) => ({
-    id: item.id,
+    id: item.id || item.commentId,
     username: item.username || item.authorName || '匿名用户', // 兼容后端可能的不同字段
     avatar: item.avatar || '',
     content: item.content,
     commentTime: item.commentTime || item.createTime, // 兼容时间字段
     likeCount: item.likeCount || 0,
+    isLiked: item.isLiked || false, // 添加点赞状态
     replies: (item.replies || []).map((r: any) => ({
-      id: r.id,
+      id: r.id || r.commentId,
       username: r.username,
       avatar: r.avatar,
       content: r.content,
       commentTime: r.commentTime,
+      likeCount: r.likeCount || 0,
+      isLiked: r.isLiked || false, // 子评论也添加点赞状态
     })),
   }))
 }

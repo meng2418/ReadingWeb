@@ -1,10 +1,12 @@
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 import type { Post } from '@/types/post'
 
 /** 后端原始结构 */
 interface RawPost {
   postId: number
   author: {
+    authorId: number
     authorName: string
     authorAvatar: string
   }
@@ -25,27 +27,34 @@ interface RawPost {
 }
 
 /** 获取社区帖子 */
-export const fetchCommunityPosts = async (): Promise<Post[]> => {
-  const res = await request.get('/posts')
+export const fetchCommunityPosts = async (type: 'square' | 'following' = 'square'): Promise<Post[]> => {
+  const res = await request.get('/posts', {
+    params: {
+      type,
+      page: 1,
+      limit: 20,
+    },
+  })
   const list: RawPost[] = res.data.data ?? []
 
   return list.map((item) => ({
     id: item.postId,
-    username: item.author.authorName,
-    avatar: item.author.authorAvatar,
+    username: item.author?.authorName || '未知用户',
+    avatar: item.author?.authorAvatar || '',
+    authorId: item.author?.authorId || 0, // 添加 authorId，如果缺失则设为0
     postTime: item.publishTime,
     title: item.postTitle,
     content: item.content,
-    likeCount: item.likeCount,
-    commentCount: item.commentCount,
-    isFollowing: item.isFollowingAuthor,
-    isLiked: item.isLiked,
+    likeCount: item.likeCount || 0,
+    commentCount: item.commentCount || 0,
+    isFollowing: item.isFollowingAuthor || false,
+    isLiked: item.isLiked || false,
     book: item.mentionedFirstBook
       ? {
           bookId: item.mentionedFirstBook.bookId,
           title: item.mentionedFirstBook.bookTitle,
           author: item.mentionedFirstBook.authorName,
-          cover: item.mentionedFirstBook.cover,
+          cover: processCoverPath(item.mentionedFirstBook.cover),
         }
       : null,
   }))
@@ -146,9 +155,18 @@ export const fetchMyLikes = async (params?: {
 export interface LikeParams {
   commentId: number // 如果是帖子点赞，传 0
   postId: number
+  targetId: number // 目标ID：帖子ID或评论ID
+  targetType: 'post' | 'comment' // 目标类型
 }
 
 /** 点赞或取消点赞 */
 export const toggleLikeApi = (data: LikeParams) => {
-  return request.post('/likes', data)
+  // 根据接口文档，需要传递 targetId 和 targetType
+  const requestData = {
+    postId: data.postId,
+    commentId: data.commentId,
+    targetId: data.targetId,
+    targetType: data.targetType,
+  }
+  return request.post('/likes', requestData)
 }

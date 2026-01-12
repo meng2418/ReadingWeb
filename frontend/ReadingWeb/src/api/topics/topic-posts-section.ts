@@ -1,5 +1,6 @@
 // src/api/topics/topic-posts-section.ts - 话题帖子列表相关API
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 import type { AxiosResponse } from 'axios'
 import type { Post } from '@/types/post'
 
@@ -44,7 +45,7 @@ const mapPost = (raw: RawTopicPost): Post => ({
         bookId: raw.postId, // 使用postId作为bookId
         title: raw.mentionedFirstBook.bookTitle,
         author: raw.mentionedFirstBook.authorName,
-        cover: raw.mentionedFirstBook.cover,
+        cover: processCoverPath(raw.mentionedFirstBook.cover),
       }
     : null,
 })

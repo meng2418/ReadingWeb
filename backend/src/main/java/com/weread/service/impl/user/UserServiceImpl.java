@@ -60,6 +60,9 @@ public class UserServiceImpl implements UserService {
         // 构建UserProfileVO
         UserProfileVO profileVO = new UserProfileVO();
     
+        // 设置用户ID
+        profileVO.setUserId(user.getUserId());
+    
         // 确保所有String字段不为null
         profileVO.setAvatar(user.getAvatar() != null ? user.getAvatar() : "");
         profileVO.setUsername(user.getUsername() != null ? user.getUsername() : "");

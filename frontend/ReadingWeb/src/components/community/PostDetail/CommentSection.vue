@@ -21,7 +21,9 @@
         v-for="comment in formattedComments"
         :key="comment.id"
         :comment="comment"
+        :post-id="postId"
         @add-reply="handleAddReply"
+        @like="handleCommentLike"
       />
     </div>
   </section>
@@ -54,12 +56,15 @@ const formattedComments = computed(() => {
     },
     content: item.content,
     timestamp: item.commentTime, // <--- 必须确认 api/post.ts 里叫 commentTime
-    likes: item.likeCount,
+    likes: item.likeCount || 0,
+    isLiked: item.isLiked || false, // 添加点赞状态
     replies: (item.replies || []).map((r: any) => ({
       id: r.id,
       author: { name: r.username, avatar: r.avatar || DefaultAvatar },
       content: r.content,
       timestamp: r.commentTime,
+      likes: r.likeCount || 0,
+      isLiked: r.isLiked || false, // 子评论也添加点赞状态
     })),
   }))
 })
@@ -95,6 +100,26 @@ defineExpose({
 const handleAddReply = (payload: { parentId: number; content: string }) => {
   // 直接通知父组件，让父组件去调接口并更新 comments 数组
   emit('add-reply', payload)
+}
+
+// 6. 处理评论点赞
+const handleCommentLike = (payload: { commentId: number; isLiked: boolean; likeCount: number }) => {
+  // 更新本地评论数据
+  const comment = props.initialComments.find((c: any) => (c.id || c.commentId) === payload.commentId)
+  if (comment) {
+    comment.likeCount = payload.likeCount
+    comment.isLiked = payload.isLiked
+  }
+  // 同时检查子评论
+  props.initialComments.forEach((c: any) => {
+    if (c.replies) {
+      const reply = c.replies.find((r: any) => (r.id || r.commentId) === payload.commentId)
+      if (reply) {
+        reply.likeCount = payload.likeCount
+        reply.isLiked = payload.isLiked
+      }
+    }
+  })
 }
 </script>
 

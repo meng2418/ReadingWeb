@@ -1,6 +1,6 @@
 <template>
   <div :class="['comment-item', isReply ? 'reply-item' : '']">
-    <img :src="comment.author.avatar" :alt="comment.author.name" class="commenter-avatar" />
+    <img :src="avatarUrl" :alt="comment.author.name" class="commenter-avatar" @error="handleAvatarError" />
     <div class="comment-content">
       <div class="comment-card">
         <div class="comment-header">
@@ -80,7 +80,9 @@
             :key="reply.id"
             :comment="reply"
             :is-reply="true"
+            :post-id="postId"
             @add-reply="forwardAddReply"
+            @like="forwardLike"
           />
           <button @click="setShowReplies(false)" class="toggle-replies-button hide-replies">
             <svg
@@ -107,9 +109,10 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'CommentItem' })
-import { ref, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { Comment, Share } from '@element-plus/icons-vue'
 import { Heart } from 'lucide-vue-next'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
 const emit = defineEmits(['add-reply', 'like'])
 const props = defineProps<{
@@ -122,13 +125,26 @@ const props = defineProps<{
     content: string
     timestamp: string
     likes?: number
+    isLiked?: boolean // 添加点赞状态
     replies?: any[]
   }
   isReply?: boolean
+  postId?: string | number // 添加 postId 用于点赞 API
 }>()
 
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.comment?.author?.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
+
 // 本地状态
-const isLiked = ref(false)
+const isLiked = ref(props.comment.isLiked ?? false)
 const likeCount = ref(props.comment.likes ?? 0)
 const showReplies = ref(false)
 const showReplyBox = ref(false)
@@ -146,10 +162,43 @@ const setShowReplies = (value: boolean) => {
   }
 }
 
-const toggleLike = () => {
+// 导入 API 和消息提示
+import { toggleLikeApi } from '@/api/community'
+import { ElMessage } from 'element-plus'
+
+const toggleLike = async () => {
+  if (!props.postId) {
+    console.error('缺少 postId，无法点赞评论')
+    return
+  }
+
+  // 记录旧状态以便请求失败时回滚
+  const oldIsLiked = isLiked.value
+  const oldLikeCount = likeCount.value
+
+  // 乐观更新：立即改变 UI 状态
   isLiked.value = !isLiked.value
   likeCount.value = Math.max(0, isLiked.value ? likeCount.value + 1 : likeCount.value - 1)
-  emit('like', { commentId: props.comment.id, isLiked: isLiked.value })
+
+  try {
+    // 调用 API
+    await toggleLikeApi({
+      postId: Number(props.postId),
+      commentId: props.comment.id,
+      targetId: props.comment.id, // 点赞评论时，targetId 就是 commentId
+      targetType: 'comment', // 目标类型为 comment
+    })
+
+    // 通知父组件
+    emit('like', { commentId: props.comment.id, isLiked: isLiked.value, likeCount: likeCount.value })
+  } catch (error: any) {
+    // 如果请求失败，回滚到之前的状态
+    isLiked.value = oldIsLiked
+    likeCount.value = oldLikeCount
+
+    console.error('点赞评论失败:', error)
+    ElMessage.error(error?.response?.data?.message || '点赞失败，请稍后再试')
+  }
 }
 
 const toggleReplyBox = () => {
@@ -192,6 +241,11 @@ const submitReply = () => {
 // 子项发来的 add-reply 事件，原样向上转发
 const forwardAddReply = (payload: any) => {
   emit('add-reply', payload)
+}
+
+// 子项发来的 like 事件，原样向上转发
+const forwardLike = (payload: any) => {
+  emit('like', payload)
 }
 </script>
 

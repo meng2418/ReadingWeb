@@ -1,7 +1,7 @@
 <template>
   <div class="like-container">
     <!-- 左侧头像 -->
-    <img :src="like.user.avatar" alt="用户头像" class="like-avatar" />
+    <img :src="avatarUrl" alt="用户头像" class="like-avatar" @error="handleAvatarError" />
 
     <!-- 中间评论主体 -->
     <div class="like-main">
@@ -22,6 +22,9 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
+
 const props = defineProps({
   like: {
     type: Object,
@@ -36,6 +39,17 @@ const props = defineProps({
     }),
   },
 })
+
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.like?.user?.avatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event) => {
+  const img = event.target
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
 </script>
 
 <style scoped>

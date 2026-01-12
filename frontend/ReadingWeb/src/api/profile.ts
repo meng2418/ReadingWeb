@@ -14,6 +14,7 @@ export const getProfileHome = async (): Promise<UserHomeData> => {
   const rs = raw.readingStats ?? {}
 
   return {
+    userId: raw.userId ?? undefined, // 添加用户ID
     avatar: raw.avatar ?? '',
     username: raw.username ?? '',
     bio: raw.bio ?? '',
@@ -65,6 +66,7 @@ export const updateProfile = async (params: UpdateProfileParams): Promise<UserHo
   const rs = raw.readingStats ?? {}
 
   return {
+    userId: raw.userId ?? undefined, // 添加用户ID
     avatar: raw.avatar ?? '',
     username: raw.username ?? '',
     bio: raw.bio ?? '',

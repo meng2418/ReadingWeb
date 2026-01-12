@@ -157,9 +157,6 @@ public class BookshelfServiceImpl implements BookshelfService {
         if (dto.getProgress() == null || dto.getProgress() < 0 || dto.getProgress() > 1) {
             throw new RuntimeException("进度值必须在 0-1 之间");
         }
-        if (dto.getCurrentPage() == null || dto.getCurrentPage() < 1) {
-            throw new RuntimeException("页码必须为正整数");
-        }
 
         // 3. 更新进度表
         LocalDateTime now = LocalDateTime.now();
@@ -167,7 +164,6 @@ public class BookshelfServiceImpl implements BookshelfService {
                 userId,
                 dto.getBookId(),
                 dto.getChapterId(),
-                dto.getCurrentPage(),
                 dto.getProgress(),
                 now);
 
@@ -182,7 +178,6 @@ public class BookshelfServiceImpl implements BookshelfService {
         ReadingProgressVO vo = new ReadingProgressVO();
         vo.setBookId(dto.getBookId());
         vo.setChapterId(dto.getChapterId());
-        vo.setCurrentPage(dto.getCurrentPage());
         vo.setProgress(dto.getProgress());
         vo.setLastReadTime(now);
         vo.setMessage("阅读进度已更新");

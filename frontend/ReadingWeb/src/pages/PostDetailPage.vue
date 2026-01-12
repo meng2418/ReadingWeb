@@ -6,6 +6,7 @@
       <div class="left-column">
         <PostDetail
           :post="post"
+          :current-user-id="currentUserId"
           @update-like="handleLikeUpdate"
           @update-follow="handleFollowUpdate"
         />
@@ -83,6 +84,7 @@ import {
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import type { PostDetailResponse } from '@/api/post'
+import { getProfileHome } from '@/api/profile'
 
 const route = useRoute()
 const postId = route.params.id as string
@@ -92,6 +94,7 @@ const post = ref<PostDetailResponse | null>(null)
 const loaded = ref(false)
 const isCommentTabActive = ref(true)
 const commentSectionRef = ref()
+const currentUserId = ref<number | null>(null)
 
 // 响应式数据
 const comments = ref<any[]>([])
@@ -224,20 +227,61 @@ const refreshComments = async () => {
 
 const fetchAllData = async () => {
   try {
-    const [postRes, commentRes, likeRes] = await Promise.all([
+    // 先获取当前用户信息（用于判断是否是自己的帖子）
+    try {
+      const userData = await getProfileHome()
+      if (userData.userId) {
+        currentUserId.value = userData.userId
+      }
+    } catch (error) {
+      console.warn('获取当前用户信息失败，将无法判断是否是自己的帖子:', error)
+    }
+
+    // 先获取帖子详情和评论（必需数据）
+    const [postRes, commentRes] = await Promise.all([
       getPostDetail(postId),
       getPostComments(postId),
-      getPostLikes(postId),
     ])
 
     // API 返回完整的数据结构
     post.value = postRes
     comments.value = commentRes
-    likedData.value = likeRes
+
+    // 尝试获取点赞列表（可选数据，失败不影响帖子详情显示）
+    // 注意：只有作者可以查看点赞详情，非作者访问会返回403
+    try {
+      const likeRes = await getPostLikes(postId)
+      likedData.value = likeRes
+    } catch (likeError: any) {
+      console.warn('获取点赞列表失败（可能是非作者访问）:', likeError)
+      // 非作者访问时，设置默认值，不显示错误提示
+      if (likeError?.response?.status !== 403) {
+        // 只有非403错误才显示提示
+        console.error('获取点赞列表失败:', likeError)
+      }
+      // 设置默认值
+      likedData.value = {
+        totalLikes: postRes.likeCount || 0,
+        likedUsers: [],
+      }
+    }
 
     loaded.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error('加载失败', error)
+    // 显示错误信息
+    if (error?.response?.status === 404) {
+      ElMessage.error('帖子不存在')
+    } else if (error?.response?.status === 403) {
+      ElMessage.error('无权限访问此帖子')
+    } else if (error?.response?.status === 500) {
+      ElMessage.error('服务器错误，请稍后再试')
+      console.error('服务器错误详情:', error?.response?.data)
+    } else if (error?.message) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error(error?.response?.data?.message || '加载帖子详情失败，请稍后再试')
+    }
     // 即使失败也设为 true 以显示界面（或显示错误页）
     loaded.value = true
   }

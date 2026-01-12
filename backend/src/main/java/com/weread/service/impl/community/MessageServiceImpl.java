@@ -39,6 +39,12 @@ public class MessageServiceImpl implements MessageService {
 @Transactional(readOnly = true)
 public Map<String, Object> getMyPostsComments(Integer userId, Integer cursor, Integer limit) {
     
+    // 参数验证
+    if (userId == null) {
+        log.warn("用户ID为空，返回空结果");
+        return buildEmptyResult();
+    }
+    
     // 1. 获取当前用户发布的所有帖子ID
     List<Integer> myPostIds = postRepository.findPostIdsByUserId(userId);
     
@@ -94,6 +100,16 @@ private Map<String, Object> buildEmptyResult() {
     @Transactional(readOnly = true)
     public Map<String, Object> getMyLikes(Integer userId, Integer cursor, Integer limit) {
         log.info("获取用户 {} 的点赞列表，cursor: {}, limit: {}", userId, cursor, limit);
+        
+        // 参数验证
+        if (userId == null) {
+            log.warn("用户ID为空，返回空结果");
+            Map<String, Object> emptyResult = new HashMap<>();
+            emptyResult.put("likes", Collections.emptyList());
+            emptyResult.put("hasMore", false);
+            emptyResult.put("nextCursor", null);
+            return emptyResult;
+        }
         
         // 1. 构建分页
         Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());

@@ -5,9 +5,10 @@
       <div class="author-header">
         <div class="author-info">
           <img
-            :src="post.author.authorAvatar || defaultAvatar"
+            :src="avatarUrl"
             :alt="post.author.authorName"
             class="author-avatar"
+            @error="handleAvatarError"
           />
           <div class="author-name-container">
             <h3 class="author-name">{{ post.author.authorName }}</h3>
@@ -50,6 +51,7 @@
           </div>
         </div>
         <button
+          v-if="!isOwnPost"
           @click="handleFollow"
           :class="post.isFollowingAuthor ? 'following-button' : 'follow-button'"
         >
@@ -89,17 +91,27 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import DefaultAvatar from '@/img/avatar.jpg'
 import { Heart } from 'lucide-vue-next'
 import { useTitle } from '@/stores/useTitle'
 import type { PostDetailResponse } from '@/api/post'
 import { toggleLikeApi } from '@/api/community'
+import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
 const props = defineProps<{
   post: PostDetailResponse
+  currentUserId?: number | null
 }>()
 
-const defaultAvatar = DefaultAvatar
+// 计算头像URL，使用默认头像
+const avatarUrl = computed(() => getAvatarUrl(props.post?.author?.authorAvatar))
+
+// 头像加载失败时使用默认头像
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  if (img.src !== DEFAULT_AVATAR) {
+    img.src = DEFAULT_AVATAR
+  }
+}
 // 格式化时间
 const formatTime = (timeStr: string) => {
   const date = new Date(timeStr)
@@ -129,6 +141,16 @@ const emit = defineEmits(['update-like', 'update-follow'])
 
 // 处理关注/取消关注
 import { ElMessage } from 'element-plus'
+import { getProfileHome } from '@/api/profile'
+import { ref, computed, onMounted } from 'vue'
+
+// 判断是否是自己的帖子
+const isOwnPost = computed(() => {
+  if (!props.currentUserId || !props.post?.author?.authorId) {
+    return false
+  }
+  return props.currentUserId === props.post.author.authorId
+})
 
 const handleFollow = async () => {
   const authorId = props.post.author.authorId
@@ -152,6 +174,8 @@ const handleLike = async () => {
     await toggleLikeApi({
       commentId: 0,
       postId: props.post.postId,
+      targetId: props.post.postId, // 点赞帖子时，targetId 就是 postId
+      targetType: 'post', // 目标类型为 post
     })
 
     // 2. 不要直接修改 props.post！

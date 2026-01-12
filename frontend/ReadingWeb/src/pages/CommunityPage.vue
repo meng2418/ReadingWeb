@@ -20,6 +20,7 @@ import { getHotTopics, type HotTopic } from '@/api/topics/hot-topics'
 
 // 当前用户信息
 const currentUser = reactive({
+  userId: null as number | null, // 添加用户ID
   username: '加载中...',
   bio: '',
   avatar: '', // 初始使用本地默认图
@@ -27,6 +28,9 @@ const currentUser = reactive({
   fansCount: 0,
   postCount: 0,
 })
+
+// 当前用户ID（用于判断是否是自己的帖子）
+const currentUserId = computed(() => currentUser.userId)
 
 // 热门话题 - 使用更明确的结构
 const hotTopics = ref<HotTopic[]>([])
@@ -92,37 +96,69 @@ const loadHotTopics = async () => {
   }
 }
 
+// 加载帖子数据
+const loadPosts = async (type: 'square' | 'following' = 'square') => {
+  try {
+    const postsData = await fetchCommunityPosts(type)
+    posts.value = postsData
+    console.log(`加载${type === 'square' ? '广场' : '关注'}帖子成功:`, postsData.length)
+  } catch (error) {
+    console.error(`加载${type === 'square' ? '广场' : '关注'}帖子失败:`, error)
+  }
+}
+
 // 帖子数据
 onMounted(async () => {
   console.log('CommunityPage mounted, 开始加载数据...')
 
   try {
-    // 并发请求所有数据
-    const [postsData, commentsData, likesData, profileData] = await Promise.all([
-      fetchCommunityPosts(),
-      fetchMyComments(),
-      fetchMyLikes(),
-      getProfileHome(),
+    // 并发请求所有数据，使用Promise.allSettled避免一个失败影响其他
+    const [commentsResult, likesResult, profileResult] = await Promise.allSettled([
+      fetchMyComments().catch(err => {
+        console.warn('获取评论失败:', err)
+        return { comments: [], hasMore: false, nextCursor: null }
+      }),
+      fetchMyLikes().catch(err => {
+        console.warn('获取点赞失败:', err)
+        return { likes: [], hasMore: false, nextCursor: null }
+      }),
+      getProfileHome().catch(err => {
+        console.warn('获取用户信息失败:', err)
+        return null
+      }),
     ])
 
-    posts.value = postsData
-    commentList.value = commentsData.comments
-    likeList.value = likesData.likes
+    // 处理评论数据
+    if (commentsResult.status === 'fulfilled') {
+      commentList.value = commentsResult.value.comments
+    }
 
-    // 更新用户信息
-    Object.assign(currentUser, {
-      username: profileData.username,
-      bio: profileData.bio,
-      avatar: profileData.avatar,
-      followCount: profileData.followingCount || 0,
-      fansCount: profileData.followerCount || 0,
-      postCount: profileData.postCount || 0,
-    })
+    // 处理点赞数据
+    if (likesResult.status === 'fulfilled') {
+      likeList.value = likesResult.value.likes
+    }
 
-    console.log('用户信息加载完成:', currentUser)
+    // 处理用户信息
+    if (profileResult.status === 'fulfilled' && profileResult.value) {
+      Object.assign(currentUser, {
+        userId: profileResult.value.userId || null, // 添加用户ID
+        username: profileResult.value.username || '用户',
+        bio: profileResult.value.bio || '',
+        avatar: profileResult.value.avatar || '',
+        followCount: profileResult.value.followingCount || 0,
+        fansCount: profileResult.value.followerCount || 0,
+        postCount: profileResult.value.postCount || 0,
+      })
+      console.log('用户信息加载完成:', currentUser)
+    } else {
+      console.warn('用户信息加载失败，使用默认值')
+    }
   } catch (error) {
     console.error('加载主要数据失败:', error)
   }
+
+  // 加载初始帖子数据（广场）
+  await loadPosts('square')
 
   // 加载话题相关数据
   console.log('开始加载话题相关数据...')
@@ -140,6 +176,11 @@ const currentTab = ref<'square' | 'following' | 'topics' | 'mine'>('square')
 const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => {
   console.log('切换标签:', tab)
   currentTab.value = tab
+
+  // 切换到广场或关注页时，加载对应的帖子数据
+  if (tab === 'square' || tab === 'following') {
+    loadPosts(tab)
+  }
 
   // 切换到话题页时，如果没有数据则加载
   if (tab === 'topics' && topicsList.value.length === 0 && !topicsLoading.value) {
@@ -177,11 +218,10 @@ useTitle(title)
 
 const filteredPosts = computed<Post[]>(() => {
   switch (currentTab.value) {
-    case 'following':
-      return posts.value.filter((p) => p.isFollowing)
     case 'mine':
       return posts.value.filter((p) => p.username === currentUser.username)
     default:
+      // square 和 following 的数据已经通过 API 过滤，直接返回
       return posts.value
   }
 })
@@ -303,6 +343,7 @@ const handleShare = (postId: number): void => {
             :is-following="post.isFollowing"
             :is-liked="post.isLiked"
             :book="post.book"
+            :show-follow-button="post.authorId !== currentUserId"
             @follow-change="(isFollowing: boolean) => handleFollowChange(post.id, isFollowing)"
             @like="(likeCount: number, isLiked: boolean) => handleLike(post.id, likeCount, isLiked)"
             @comment="() => handleComment(post.id)"

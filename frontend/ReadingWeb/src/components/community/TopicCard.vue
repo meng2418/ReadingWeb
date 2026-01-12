@@ -1,7 +1,7 @@
 <template>
   <div class="topic-card" @click="goToTopicDetail">
     <div class="topic-cover-container">
-      <img :src="cover" alt="topic cover" class="topic-cover" />
+      <img :src="coverUrl" alt="topic cover" class="topic-cover" />
     </div>
     <div class="topic-info">
       <h3 class="topic-title">{{ title }}</h3>
@@ -11,7 +11,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { getTopicCoverUrl } from '@/utils/defaultImages'
+
 const router = useRouter()
 
 const props = defineProps({
@@ -32,6 +35,9 @@ const props = defineProps({
     default: 200,
   },
 })
+
+// 计算话题封面URL，使用默认图片
+const coverUrl = computed(() => getTopicCoverUrl(props.cover))
 
 const goToTopicDetail = () => {
   // 使用 router.resolve 获取路由的完整路径
