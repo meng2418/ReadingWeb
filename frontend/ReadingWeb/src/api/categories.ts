@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 import type { SimpleBookRaw } from '@/types/home'
 import type { CategoryTab, RankedBook } from '@/types/category'
 
@@ -11,7 +12,7 @@ const mapCategory = (raw: any, index: number): CategoryTab => ({
 
 const mapBook = (raw: SimpleBookRaw, index: number): RankedBook => ({
   id: (raw as any).bookId ?? (raw as any).id ?? `${raw.bookTitle}-${index}`,
-  cover: raw.cover,
+  cover: processCoverPath(raw.cover),
   title: raw.bookTitle,
   author: raw.author,
   recommend: raw.rating ? `${Number(raw.rating).toFixed(1)} 分` : '-',

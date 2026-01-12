@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 
 // api/bookshelf.ts
 
@@ -39,7 +40,7 @@ export const getBookshelfAll = async (): Promise<ShelfBook[]> => {
   return res.data.data.map((item: BackendBook) => ({
     id: item.bookId, // <--- 使用后端真实 ID，不要用 index + 1
     title: item.bookTitle,
-    cover: item.cover,
+    cover: processCoverPath(item.cover),
     author: item.author,
     rating: item.rating,
     readCount: item.readCount,
@@ -56,7 +57,7 @@ export const getBookshelfByStatus = async (
   return res.data.data.map((item: BackendBook) => ({
     id: item.bookId, // <--- 同样保持一致
     title: item.bookTitle,
-    cover: item.cover,
+    cover: processCoverPath(item.cover),
     status: statusMap[status],
   }))
 }
