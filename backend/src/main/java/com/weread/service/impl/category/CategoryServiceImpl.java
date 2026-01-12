@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -92,7 +91,8 @@ public class CategoryServiceImpl implements CategoryService {
         dto.setBookTitle(book.getTitle());
 
         // 处理作者信息
-        dto.setAuthor(getAuthorName(book));
+        dto.setAuthorName(getAuthorName(book));
+        dto.setAuthorId(getAuthorId(book));  // 新增：设置authorId
 
         dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
         dto.setReadingStatus("unread"); // 默认未读
@@ -107,6 +107,20 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         return dto;
+    }
+
+    /**
+     * 获取作者ID（处理空值）
+     */
+    private Integer getAuthorId(BookEntity book) {
+        if (book.getAuthor() != null && book.getAuthor().getAuthorId() != null) {
+            return book.getAuthor().getAuthorId();
+        }
+        // 如果BookEntity直接存储了author_id
+        if (book.getAuthorId() != null) {
+            return book.getAuthorId();
+        }
+        return 0;  // 返回默认值0而不是null
     }
 
     /**

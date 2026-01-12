@@ -24,7 +24,7 @@ import java.util.List;
  * 书籍管理控制器
  */
 @RestController
-@RequestMapping("/api/v1/books")
+@RequestMapping("/v1/books")
 @RequiredArgsConstructor
 @Tag(name = "书籍管理", description = "书籍信息维护、检索、状态管理")
 public class BookController {

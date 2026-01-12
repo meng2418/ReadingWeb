@@ -81,7 +81,7 @@ public class SearchServiceImpl implements SearchService {
         dto.setCover(ImagePathUtils.processCoverPath(book.getCover()));
 
         // 现在 author 已经通过 JOIN FETCH 加载，可以直接访问
-        dto.setAuthor(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
+        dto.setAuthorName(book.getAuthor() != null ? book.getAuthor().getAuthorName() : "未知作者");
 
         dto.setRating(book.getRating());
         dto.setReadCount(book.getReadCount());

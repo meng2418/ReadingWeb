@@ -27,7 +27,7 @@ public class RecentBookServiceImpl implements RecentBookService {
     private BookRepository bookRepository;
 
     @Override
-    public List<RecentBookDTO> getRecentBooks(Long userId, int limit) {
+    public List<RecentBookDTO> getRecentBooks(Integer userId, int limit) {
         // 使用原生SQL或修改返回值处理
         List<Object[]> results = recentBookRepository.findRecentBookIdsWithMaxDate(userId);
 

@@ -5,12 +5,12 @@ import lombok.Data;
 @Data
 public class SimpleBookDTO {
     private Integer bookId;
-    private String bookTitle; // 对应文档字段
-    private String author;
-    private String cover; // 对应文档字段
-    private String readingStatus; // 对应文档字段
-    private String description; // 作品简介
-
-    private float rating; // 评分
-    private Integer readCount; // 阅读数
+    private String bookTitle;
+    private String authorName;  // 修改：author -> authorName
+    private Integer authorId;   // 新增字段
+    private String cover;
+    private String readingStatus;
+    private String description;
+    private Float rating;       // 建议使用 Float 而不是 float
+    private Integer readCount;
 }

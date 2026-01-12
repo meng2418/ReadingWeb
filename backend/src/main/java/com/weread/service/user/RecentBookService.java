@@ -11,5 +11,5 @@ public interface RecentBookService {
      * @param limit  限制数量
      * @return 最近阅读的书籍列表
      */
-    List<RecentBookDTO> getRecentBooks(Long userId, int limit);
+    List<RecentBookDTO> getRecentBooks(Integer userId, int limit);
 }

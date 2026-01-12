@@ -47,7 +47,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public BookAddVO addBookToShelf(BookAddDTO dto, Long userId) {
+    public BookAddVO addBookToShelf(BookAddDTO dto, Integer userId) {
         Integer UserId = userId.intValue();
         // 1. 校验是否已加入书架（先检查书架，避免不必要的图书查询）
         Integer bookId = dto.getBookId();
@@ -95,7 +95,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public String removeBookFromShelf(Integer bookId, Long userId) {
+    public String removeBookFromShelf(Integer bookId, Integer userId) {
         Integer UserId = userId.intValue();
         // 1. 校验图书是否在书架中
         BookshelfEntity shelfEntity = bookshelfRepository.findByUserIdAndBookId(userId, bookId)
@@ -113,7 +113,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     @Override
     @Transactional
-    public BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Long userId) {
+    public BookStatusVO updateBookStatus(BookStatusUpdateDTO dto, Integer userId) {
         Integer UserId = userId.intValue();
         // 1. 校验图书是否在书架中
         bookshelfRepository.findByUserIdAndBookId(userId, dto.getBookId())
@@ -148,7 +148,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     public ReadingProgressVO updateReadingProgress(ReadingProgressDTO dto, Integer userId) {
         // 1. 校验图书是否在书架中
-        Long UserId = userId.longValue();
+        Integer UserId = userId.intValue();
         if (bookshelfRepository.findByUserIdAndBookId(UserId, dto.getBookId()).isEmpty()) {
             throw new RuntimeException("图书不在书架中，无法更新进度");
         }
@@ -190,7 +190,7 @@ public class BookshelfServiceImpl implements BookshelfService {
     }
 
     @Override
-    public List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Long userId) {
+    public List<BookShelfVO> getUserBooks(BookshelfQueryDTO dto, Integer userId) {
         Integer UserId = userId.intValue();
         // 1. 查询书架记录，可按状态过滤
         List<BookshelfEntity> shelfEntities;
@@ -242,7 +242,7 @@ public class BookshelfServiceImpl implements BookshelfService {
     @Override
     @Transactional
     public MarkFinishedVO markBookFinished(Integer bookId, Integer userId) {
-        Long UserId = userId.longValue();
+        Integer UserId = userId.intValue();
         // 1. 校验图书是否存在（先检查图书，如果不存在返回404）
         BookEntity book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "图书不存在"));
@@ -313,7 +313,7 @@ public class BookshelfServiceImpl implements BookshelfService {
 
     // 实现：查询书架书籍（全部/按状态）
     @Override
-    public List<?> getUserBooksByStatus(String status, Long userId, boolean isSimple) {
+    public List<?> getUserBooksByStatus(String status, Integer userId, boolean isSimple) {
         List<BookshelfEntity> shelfList;
         // 1. 查全部 or 按状态查
         if (status == null || status.isEmpty()) {
@@ -344,7 +344,7 @@ public class BookshelfServiceImpl implements BookshelfService {
     // 实现：批量移除书籍
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public String batchRemoveBooksFromShelf(BatchRemoveDTO dto, Long userId) {
+    public String batchRemoveBooksFromShelf(BatchRemoveDTO dto, Integer userId) {
         List<Integer> bookIds = dto.getBookIds();
         if (bookIds == null || bookIds.isEmpty()) {
             return "请选择要移除的书籍";

@@ -24,7 +24,7 @@ import java.util.List;
  * All interface return results are encapsulated with Result<T>.
  */
 @RestController
-@RequestMapping("bookshelf")
+@RequestMapping("/bookshelf")
 @RequiredArgsConstructor
 @Tag(name = "Bookshelf", description = "Interfaces for bookshelf management")
 @SecurityRequirement(name = "bearerAuth") // Require JWT authentication
@@ -41,7 +41,7 @@ public class BookshelfController {
     public Result<List<SimpleBookDTO>> getBookshelf( // 注意返回类型！
             @RequestParam(required = false, defaultValue = "all") String status) {
 
-        Long userId = getCurrentUserId();
+        Integer userId = getCurrentUserId();
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
 
         if (!"all".equals(status)) {
@@ -60,7 +60,7 @@ public class BookshelfController {
 
     @GetMapping("/{status}")
     public Result<List<SimpleBookDTO>> getBookshelfByStatus(@PathVariable String status) {
-        Long userId = getCurrentUserId();
+        Integer userId = getCurrentUserId();
         BookshelfQueryDTO dto = new BookshelfQueryDTO();
         dto.setStatus(status);
 
@@ -77,7 +77,7 @@ public class BookshelfController {
     @Operation(summary = "Add to Bookshelf", description = "Add a specified book to the user's bookshelf (default status: unread)")
     public Result<Void> addToBookshelf(@RequestBody BookAddDTO dto) {
 
-        Long userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+        Integer userId = getCurrentUserId(); // 从SecurityContext获取用户ID
         bookshelfService.addBookToShelf(dto, userId);
 
         return Result.success();
@@ -90,7 +90,7 @@ public class BookshelfController {
     @Operation(summary = "Remove from Bookshelf", description = "Delete the specified book from the user's bookshelf")
     public Result<Void> removeFromBookshelf(@PathVariable Integer bookId) {
 
-        Long userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+        Integer userId = getCurrentUserId(); // 从SecurityContext获取用户ID
         bookshelfService.removeBookFromShelf(bookId, userId);
 
         return Result.success();
@@ -105,7 +105,7 @@ public class BookshelfController {
             @PathVariable Integer bookId,
             @RequestBody BookStatusUpdateDTO dto) {
 
-        Long userId = getCurrentUserId(); // 从SecurityContext获取用户ID
+        Integer userId = getCurrentUserId(); // 从SecurityContext获取用户ID
 
         BookStatusUpdateDTO statusDTO = new BookStatusUpdateDTO();
         statusDTO.setBookId(bookId);
@@ -123,7 +123,7 @@ public class BookshelfController {
     @Operation(summary = "Batch remove books from bookshelf", description = "批量从书架移除书籍")
     public Result<Void> batchRemove(@RequestBody BatchRemoveDTO dto) {
         // 1. 获取当前用户ID（从SecurityContext）
-        Long userId = getCurrentUserId();
+        Integer userId = getCurrentUserId();
         if (userId == null) {
             return Result.fail("用户ID不能为空");
         }
@@ -152,46 +152,47 @@ public class BookshelfController {
      * 从SecurityContext获取当前登录用户ID
      * 需要根据你的UserEntity类调整类型转换
      */
-    private Long getCurrentUserId() {
+    private Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new RuntimeException("用户未认证");
-        }
+        }   
 
-        // 根据你的实际UserEntity类调整
-        // 如果Principal是UserDetails，需要转换为你的实体类
         Object principal = authentication.getPrincipal();
-
-        // 处理 Integer 类型的 principal（JwtAuthenticationFilter 设置的）
+    
+        // 首先处理 Integer 类型（这是你的filter实际设置的）
         if (principal instanceof Integer) {
-            return ((Integer) principal).longValue();
+            return (Integer) principal;
         }
-
+    
+        // 然后处理 UserEntity 类型
         if (principal instanceof com.weread.entity.user.UserEntity) {
-            // 如果是UserEntity类型，直接获取用户ID
             UserEntity user = (UserEntity) principal;
-
-            // 处理可能的类型转换问题
             Object userIdObj = user.getUserId();
 
-            // 根据实际情况进行类型转换
-            Long userId;
             if (userIdObj instanceof Integer) {
-                userId = ((Integer) userIdObj).longValue(); // Integer转Long
+                return (Integer) userIdObj;
             } else if (userIdObj instanceof Long) {
-                userId = (Long) userIdObj; // 直接转换
+                return ((Long) userIdObj).intValue(); // Long转Integer
             } else {
                 throw new RuntimeException("用户ID类型不支持：" + userIdObj.getClass().getName());
             }
-
-            return userId;
-
-        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-            // 如果是UserDetails，可能需要从用户名查询用户ID
-            throw new RuntimeException("无法从UserDetails获取用户ID，请检查认证配置");
-        } else {
-            throw new RuntimeException("未知的Principal类型：" + principal.getClass().getName());
         }
+    
+        // 处理其他类型
+        if (principal instanceof Long) {
+            return ((Long) principal).intValue();
+        }
+    
+        if (principal instanceof String) {
+            try {
+                return Integer.parseInt((String) principal);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("用户ID格式错误：" + principal);
+            }
+        }
+    
+        throw new RuntimeException("未知的Principal类型：" + principal.getClass().getName());
     }
 }

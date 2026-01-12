@@ -388,7 +388,7 @@ public class BookServiceImpl implements BookService {
         vo.setUpdatedAt(book.getUpdatedAt());
 
         // 用户相关状态（如果提供了userId）
-        Long UserId = userId != null ? userId.longValue() : null;
+        Integer UserId = userId != null ? userId.intValue() : null;
         if (userId != null) {
             // 检查是否在书架中
             Optional<BookshelfEntity> bookshelf = bookshelfRepository.findByUserIdAndBookId(UserId, book.getBookId());

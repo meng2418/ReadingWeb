@@ -21,10 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/home")
@@ -45,7 +42,7 @@ public class HomeController {
     @GetMapping("/reading-stats")
     public ApiResponse<ReadingStatsDTO> getReadingStats() {
         try {
-            Long userId = getCurrentUserId();
+            Integer userId = getCurrentUserId();
             ReadingStatsDTO stats = readingStatsService.getReadingStats(userId);
             return ApiResponse.ok(stats);
         } catch (RuntimeException e) {
@@ -61,7 +58,7 @@ public class HomeController {
     @GetMapping("/recent-books")
     public ApiResponse<List<RecentBookDTO>> getRecentBooks() {
         try {
-            Long userId = getCurrentUserId();
+            Integer userId = getCurrentUserId();
             List<RecentBookDTO> recentBooks = recentBookService.getRecentBooks(userId, 4);
             return ApiResponse.ok(recentBooks);
         } catch (RuntimeException e) {
@@ -110,7 +107,7 @@ public class HomeController {
      * 从SecurityContext获取当前登录用户ID
      * 与书架控制器保持一致
      */
-    private Long getCurrentUserId() {
+    private Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -118,28 +115,24 @@ public class HomeController {
         }
 
         Object principal = authentication.getPrincipal();
-
-        // 处理 Integer 类型的 principal（JwtAuthenticationFilter 设置的）
+    
+        // 直接从 Integer 类型的 Principal 获取用户ID
         if (principal instanceof Integer) {
-            return ((Integer) principal).longValue();
+            return (Integer) principal;
         }
-
+    
+        // 如果 Principal 是 UserEntity，则从中获取用户ID
         if (principal instanceof UserEntity) {
             UserEntity user = (UserEntity) principal;
-            Object userIdObj = user.getUserId();
-
-            // 转换为Long类型
-            if (userIdObj instanceof Integer) {
-                return ((Integer) userIdObj).longValue();
-            } else if (userIdObj instanceof Long) {
-                return (Long) userIdObj;
-            } else {
-                throw new RuntimeException("用户ID类型不支持：" + userIdObj.getClass().getName());
+            Object userId = user.getUserId();
+        
+            if (userId instanceof Integer) {
+                return (Integer) userId;
+            } else if (userId instanceof Long) {
+                return ((Long) userId).intValue();
             }
-        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-            throw new RuntimeException("无法从UserDetails获取用户ID，请检查认证配置");
-        } else {
-            throw new RuntimeException("未知的Principal类型：" + principal.getClass().getName());
         }
+    
+        throw new RuntimeException("未知的Principal类型：" + principal.getClass().getName());
     }
 }
