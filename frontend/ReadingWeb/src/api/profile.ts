@@ -1,5 +1,6 @@
 // src/api/profile.ts
 import request from '@/utils/request'
+import { processCoverPath } from '@/utils/imagePath'
 import type { UserHomeData } from '@/types/user'
 
 const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
@@ -188,7 +189,7 @@ export const getRecentBookReviews = async (): Promise<RecentReview[]> => {
   return items.map((it, idx) => ({
     id: idx + 1,
     bookName: it.bookTitle ?? '',
-    cover: it.cover ?? '',
+    cover: processCoverPath(it.cover ?? ''),
     rating: normalizeRating(it.rating),
     date: it.reviewDate ?? '',
     likes: it.helpfulCount ?? 0,

@@ -99,9 +99,36 @@ const shouldShowButton = computed(() => {
 
 // 显示的评论列表
 const displayedReviews = computed(() => {
-  const totalReviews = [...props.reviews, ...localReviews.value];
+  // 只显示API返回的书评，不显示本地存储的书评（避免重复和编辑按钮问题）
+  // 去重：对于同一用户和同一本书，只保留reviewId最大的（最新的）
+  const reviewMap = new Map<string, Review>();
+  
+  // 只处理API返回的书评
+  props.reviews.forEach(review => {
+    const key = `user_${String(review.userId || '')}_book_${String(review.bookId || '')}`;
+    if (key) {
+      const existing = reviewMap.get(key);
+      if (!existing) {
+        reviewMap.set(key, review);
+      } else {
+        // 如果已存在，比较reviewId，保留更大的（更新的）
+        const existingReviewId = existing.reviewId ? Number(existing.reviewId) : 0;
+        const currentReviewId = review.reviewId ? Number(review.reviewId) : 0;
+        if (currentReviewId > existingReviewId) {
+          reviewMap.set(key, review);
+        }
+      }
+    }
+  });
 
-  const sortedReviews = totalReviews.sort((a, b) => {
+  // 转换为数组并排序
+  const sortedReviews = Array.from(reviewMap.values()).sort((a, b) => {
+    // 优先按reviewId排序（如果存在），否则按时间排序
+    const reviewIdA = a.reviewId ? Number(a.reviewId) : 0;
+    const reviewIdB = b.reviewId ? Number(b.reviewId) : 0;
+    if (reviewIdA !== reviewIdB) {
+      return reviewIdB - reviewIdA; // reviewId大的在前
+    }
     const dateA = a.lastEditDate || a.date;
     const dateB = b.lastEditDate || b.date;
     return new Date(dateB).getTime() - new Date(dateA).getTime();

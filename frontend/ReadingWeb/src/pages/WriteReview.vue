@@ -100,7 +100,8 @@ import {
   getUserReview,
 } from '@/composables/useReviews'
 import type { Review } from '@/types/review'
-import { submitBookReview } from '@/api/bookreview'
+import { submitBookReview, deleteUserReview } from '@/api/bookreview'
+import { getBookReviews } from '@/api/book-detail/user-reviews'
 
 const route = useRoute()
 const router = useRouter()
@@ -112,6 +113,7 @@ const selectedRating = ref('recommend') // 默认选择推荐
 const reviewText = ref('')
 const isPublic = ref(true)
 const isEditMode = ref(false) // 是否是编辑模式
+const existingReviewId = ref<number | null>(null) // 现有书评ID（用于编辑时删除）
 
 // 计算属性：是否可以提交
 const canSubmit = computed(() => {
@@ -120,11 +122,13 @@ const canSubmit = computed(() => {
 })
 
 // 加载用户已有的点评（如果是编辑模式）
-const loadUserReview = () => {
+const loadUserReview = async () => {
   if (!bookId.value) return
 
   try {
     const currentUserId = ensureCurrentUserId()
+    
+    // 先从本地存储加载
     const existingReview = getUserReview(bookId.value, currentUserId)
     if (existingReview) {
       selectedRating.value = existingReview.rating || selectedRating.value
@@ -132,13 +136,37 @@ const loadUserReview = () => {
       isPublic.value = existingReview.isPublic ?? true
       isEditMode.value = true
     }
+
+    // 尝试从API获取当前用户的书评ID（用于编辑时删除）
+    // 注意：getBookReviews可能只返回公开的书评，如果用户的书评不是公开的，可能找不到
+    try {
+      const reviews = await getBookReviews(bookId.value)
+      // 查找当前用户的书评（通过userId或username匹配）
+      const currentUserReview = reviews.find(review => {
+        // 如果API返回了userId，直接匹配
+        if (review.userId?.toString() === currentUserId) {
+          return true
+        }
+        // 如果API返回了username，尝试匹配（但这种方式不太可靠）
+        // 暂时不通过username匹配，因为username可能不是唯一的
+        return false
+      })
+      if (currentUserReview?.reviewId) {
+        existingReviewId.value = currentUserReview.reviewId
+        console.log('找到现有书评ID:', existingReviewId.value)
+      } else {
+        console.warn('未找到当前用户的书评ID，编辑时将尝试创建新书评')
+      }
+    } catch (error) {
+      console.warn('从API获取书评ID失败，编辑时将尝试创建新书评:', error)
+    }
   } catch (error) {
     console.error('加载用户点评失败:', error)
   }
 }
 
 // 组件挂载时，如果有路由参数，设置对应的评分
-onMounted(() => {
+onMounted(async () => {
   const rating = route.query.rating as string
   if (rating && ['recommend', 'average', 'poor'].includes(rating)) {
     selectedRating.value = rating
@@ -150,8 +178,8 @@ onMounted(() => {
     isEditMode.value = true
   }
 
-  // 加载用户已有的点评
-  loadUserReview()
+  // 加载用户已有的点评（异步）
+  await loadUserReview()
 })
 
 // 返回上一页
@@ -166,41 +194,80 @@ const handleSubmit = async () => {
   const currentUserId = ensureCurrentUserId()
   const formattedDate = formatDate(Date.now())
 
-  const review: Review = {
-    id: Date.now(),
-    bookId: bookId.value,
-    bookTitle: bookTitle.value,
-    userId: currentUserId,
-    userName: '当前用户',
-    rating: selectedRating.value,
-    content: reviewText.value,
-    isPublic: isPublic.value,
-    date: formattedDate,
-    lastEditDate: formattedDate,
-  }
-
   try {
-    // 调用API提交书评
+    // 如果是编辑模式，先删除旧书评（包括本地存储）
+    if (isEditMode.value) {
+      // 先删除本地存储中的旧书评
+      removeUserReview(bookId.value, currentUserId)
+      removePublicReview(bookId.value, currentUserId)
+      
+      // 如果有API返回的reviewId，尝试从API删除
+      if (existingReviewId.value) {
+        try {
+          await deleteUserReview(existingReviewId.value)
+          console.log('删除旧书评成功:', existingReviewId.value)
+        } catch (error) {
+          console.warn('删除旧书评失败，继续创建新书评:', error)
+          // 如果删除失败，仍然尝试创建新书评（可能是旧书评不存在）
+        }
+      }
+    }
+
+    // 调用API提交书评（创建新书评）
     const apiResponse = await submitBookReview(bookId.value, selectedRating.value, reviewText.value, isPublic.value)
     console.log('API提交书评成功:', apiResponse)
 
-    // 如果API调用成功，也更新本地存储以保持一致性
+    // 更新本地存储
+    const review: Review = {
+      id: apiResponse.review?.reviewId || Date.now(),
+      reviewId: apiResponse.review?.reviewId, // 添加reviewId字段
+      bookId: bookId.value,
+      bookTitle: bookTitle.value,
+      userId: currentUserId,
+      userName: apiResponse.review?.username || '当前用户', // 使用API返回的用户名
+      rating: selectedRating.value,
+      content: reviewText.value,
+      isPublic: isPublic.value,
+      date: formattedDate,
+      lastEditDate: formattedDate,
+      avatar: apiResponse.review?.avatar || '', // 使用API返回的头像
+    }
+
+    // 更新本地存储（会覆盖旧的书评）
     upsertUserReview(review)
     if (isPublic.value) {
       upsertPublicReview(bookId.value, review)
     } else {
+      // 如果不公开，删除公开存储中的旧书评
       removePublicReview(bookId.value, currentUserId)
+    }
+    
+    // 如果是编辑模式，确保清理所有可能的旧数据
+    // 通过重新设置来确保只保留最新的
+    if (isEditMode.value) {
+      // 再次确保删除旧数据（防止有遗漏）
+      removeUserReview(bookId.value, currentUserId)
+      removePublicReview(bookId.value, currentUserId)
+      // 然后重新添加最新的
+      upsertUserReview(review)
+      if (isPublic.value) {
+        upsertPublicReview(bookId.value, review)
+      }
     }
 
     alert(isEditMode.value ? '点评更新成功！' : '点评发表成功！')
 
-    // 通过路由传递数据返回到书籍详情页
+    // 等待一小段时间，确保后端数据已更新
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // 通过路由传递数据返回到书籍详情页，强制刷新数据
     router.push({
       path: '/bookdetail',
       query: {
         bookId: bookId.value,
         bookTitle: bookTitle.value,
-        refresh: 'true' // 标记需要刷新数据
+        refresh: 'true', // 标记需要刷新数据
+        timestamp: Date.now().toString() // 添加时间戳，强制刷新
       }
     })
   } catch (error) {

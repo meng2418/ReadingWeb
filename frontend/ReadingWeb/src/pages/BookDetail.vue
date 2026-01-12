@@ -295,18 +295,40 @@ const computedRatingStats = computed(() => {
 })
 
 // 修改：计算总点评数
-// 将BookReview转换为Review格式
+// 将BookReview转换为Review格式，并进行去重（同一用户对同一本书只保留最新的一条）
 const convertedReviews = computed(() => {
-  return reviewsData.value.map((review, index) => ({
-    id: index + 1,
+  // 先转换为Review格式
+  const reviews = reviewsData.value.map((review, index) => ({
+    id: review.reviewId || index + 1,
+    reviewId: review.reviewId, // 确保reviewId被正确传递
     bookId: bookId.value?.toString() || '',
-    userName: review.username,
+    userId: review.userId?.toString(), // 确保userId是字符串格式
+    userName: review.username || '用户',
     content: review.content,
     date: review.reviewTime,
     rating: review.rating,
     isPublic: true,
     avatar: review.avatar, // 添加avatar字段
   }))
+  
+  // 去重：对于同一用户和同一本书，只保留reviewId最大的（最新的）
+  const reviewMap = new Map<string, typeof reviews[0]>()
+  reviews.forEach(review => {
+    const key = `user_${review.userId}_book_${review.bookId}`
+    const existing = reviewMap.get(key)
+    if (!existing) {
+      reviewMap.set(key, review)
+    } else {
+      // 如果已存在，比较reviewId，保留更大的（更新的）
+      const existingReviewId = existing.reviewId ? Number(existing.reviewId) : 0
+      const currentReviewId = review.reviewId ? Number(review.reviewId) : 0
+      if (currentReviewId > existingReviewId) {
+        reviewMap.set(key, review)
+      }
+    }
+  })
+  
+  return Array.from(reviewMap.values())
 })
 
 // 将AuthorWork转换为组件期望的格式
@@ -331,20 +353,30 @@ const convertedRelatedBooks = computed(() => {
 
 const computedReviewCount = computed(() => {
   if (!bookId.value) return 0
-  if (!bookDetail.value?.ratingCount) {
-    return countPublicReviews(bookId.value, convertedReviews.value.length)
-  }
-  return countPublicReviews(bookId.value, bookDetail.value.ratingCount)
+  // 直接使用API返回的ratingCount，不叠加本地存储的数据
+  // 因为API返回的数据已经包含了所有公开的书评
+  return bookDetail.value?.ratingCount || convertedReviews.value.length
 })
 
 // 监听路由变化，刷新数据（保留原有逻辑）
 watch(
   () => route.query,
-  (newQuery) => {
+  async (newQuery, oldQuery) => {
     if (newQuery.refresh === 'true') {
-      // 重新计算数据
+      // 重新获取数据，确保统计数据是最新的
       console.log('刷新页面数据')
-      fetchBookData(bookId.value)
+      await fetchBookData(bookId.value)
+      // 清除refresh参数，避免重复刷新
+      if (oldQuery?.refresh !== 'true') {
+        router.replace({
+          path: route.path,
+          query: {
+            ...Object.fromEntries(
+              Object.entries(route.query).filter(([key]) => key !== 'refresh' && key !== 'timestamp')
+            )
+          }
+        })
+      }
     }
   },
 )

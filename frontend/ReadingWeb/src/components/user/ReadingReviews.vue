@@ -18,7 +18,7 @@
         <!-- 右侧：评论信息 -->
         <div class="review-content">
           <div class="review-header">
-            <span class="book-title">{{ review.bookName }}</span>
+            <span class="book-title" :title="review.bookName">{{ review.bookName }}</span>
             <!-- 评级标签 -->
             <span class="rating-tag" :class="ratingConfig[review.rating].className">
               {{ ratingConfig[review.rating].label }}
@@ -163,12 +163,14 @@ const props = defineProps<{
   object-fit: cover;
 }
 
-/* 右侧内容 */
+/* 右侧内容容器 */
 .review-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  /* 关键：必须设置 overflow: hidden 或者 min-width: 0 
+     否则子元素的 text-overflow: ellipsis 不会生效，反而会撑开父容器 */
+  overflow: hidden; 
 }
 
 .review-header {
@@ -176,26 +178,33 @@ const props = defineProps<{
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  /* 关键：确保头部宽度不超过父级 */
+  width: 100%; 
 }
 
 .book-title {
   font-size: 15px;
   font-weight: bold;
   color: var(--text-main, #333);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-right: 8px;
+  
+  /* --- 核心修复代码 --- */
+  flex: 1;                  /* 自动占据剩余空间 */
+  width: 0;                 /* 这里的 width: 0 是配合 flex: 1 的强力 hack，强制浏览器忽略内容原本宽度 */
+  white-space: nowrap;      /* 不换行 */
+  overflow: hidden;         /* 超出隐藏 */
+  text-overflow: ellipsis;  /* 显示省略号 */
+  margin-right: 8px;        /* 保持间距 */
+  /* --- 结束 --- */
 }
 
-/* --- 评级标签样式 --- */
+/* 评级标签（保持不变，但为了防止被压缩，加上这个） */
 .rating-tag {
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
   font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex-shrink: 0; /* 关键：禁止标签被挤压，永远保持完整宽度 */
 }
 
 /* 推荐：绿色 */
@@ -221,10 +230,18 @@ const props = defineProps<{
   font-size: 13px;
   color: #555;
   line-height: 1.6;
+  
+  /* --- 修改开始 --- */
+  /* 多行省略号设置 */
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 2;        /* 限制显示 2 行 */
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  
+  word-break: break-all;        /* 核心修复：防止长单词/URL撑破布局 */
+  /* --- 修改结束 --- */
+  
   flex: 1;
 }
 

@@ -5,6 +5,8 @@ import type { AxiosResponse } from 'axios'
 const unwrap = (res: AxiosResponse) => res?.data?.data ?? res?.data ?? {}
 
 export interface BookReview {
+  reviewId?: number
+  userId?: number
   avatar: string
   username: string
   rating: 'recommend' | 'average' | 'not_recommend'
