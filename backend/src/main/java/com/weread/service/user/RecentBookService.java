@@ -12,4 +12,6 @@ public interface RecentBookService {
      * @return 最近阅读的书籍列表
      */
     List<RecentBookDTO> getRecentBooks(Integer userId, int limit);
+
+    void recordReading(Integer userId, Integer bookId);
 }
