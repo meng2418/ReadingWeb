@@ -434,6 +434,14 @@ public class UserServiceImpl implements UserService {
     public Map<String, Object> getUserPosts(Integer userId, Integer cursor, Integer limit) {
         log.info("获取用户 {} 的帖子列表，cursor: {}, limit: {}", userId, cursor, limit);
         
+        // 参数验证和默认值
+        if (limit == null || limit < 1) {
+            limit = 20;
+        }
+        if (limit > 50) {
+            limit = 50;
+        }
+        
         // 1. 获取帖子列表（基于游标分页）
         Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());
         
@@ -454,7 +462,7 @@ public class UserServiceImpl implements UserService {
         
         // 3. 转换为响应格式
         List<Map<String, Object>> postList = posts.stream()
-            .map(this::convertPostToMap)
+            .map(post -> convertPostToMap(post, userId))
             .collect(Collectors.toList());
         
         // 4. 构建结果
@@ -470,23 +478,90 @@ public class UserServiceImpl implements UserService {
         return result;
     }
     
-    private Map<String, Object> convertPostToMap(PostEntity post) {
+    private Map<String, Object> convertPostToMap(PostEntity post, Integer currentUserId) {
         Map<String, Object> map = new HashMap<>();
         map.put("postId", post.getPostId());
-        map.put("title", post.getTitle());
-        map.put("content", post.getContent());
-        map.put("createdAt", post.getCreatedAt());
-        map.put("updatedAt", post.getUpdatedAt());
+        map.put("postTitle", post.getTitle() != null ? post.getTitle() : "");
+        map.put("content", post.getContent() != null ? post.getContent() : "");
+        map.put("publishTime", post.getCreatedAt());
+        
+        // 获取作者信息
+        try {
+            Optional<UserEntity> authorOpt = userRepository.findById(post.getAuthorId());
+            if (authorOpt.isPresent()) {
+                UserEntity author = authorOpt.get();
+                map.put("authorName", author.getUsername() != null ? author.getUsername() : "");
+                map.put("authorAvatar", author.getAvatar() != null ? author.getAvatar() : "");
+                
+                // 检查当前用户是否关注作者（自己关注自己为false）
+                boolean isFollowing = false;
+                if (currentUserId != null && !currentUserId.equals(post.getAuthorId())) {
+                    isFollowing = followRepository.findByFollowerIdAndFollowingId(currentUserId, post.getAuthorId())
+                            .isPresent();
+                }
+                map.put("isFollowingAuthor", isFollowing);
+            } else {
+                map.put("authorName", "");
+                map.put("authorAvatar", "");
+                map.put("isFollowingAuthor", false);
+            }
+        } catch (Exception e) {
+            log.warn("获取作者信息失败: authorId={}", post.getAuthorId(), e);
+            map.put("authorName", "");
+            map.put("authorAvatar", "");
+            map.put("isFollowingAuthor", false);
+        }
         
         // 获取统计信息
-        Integer commentCount = commentRepository.countByPostId(post.getPostId());
-        Integer likeCount = likeRepository.countByPostId(post.getPostId());
+        try {
+            Integer commentCount = commentRepository.countByPostId(post.getPostId());
+            Integer likeCount = likeRepository.countByPostId(post.getPostId());
+            map.put("commentCount", commentCount != null ? commentCount : 0);
+            map.put("likeCount", likeCount != null ? likeCount : 0);
+        } catch (Exception e) {
+            log.warn("获取统计信息失败: postId={}", post.getPostId(), e);
+            map.put("commentCount", 0);
+            map.put("likeCount", 0);
+        }
         
-        map.put("commentCount", commentCount);
-        map.put("likeCount", likeCount);
+        // 检查是否点赞
+        boolean isLiked = false;
+        if (currentUserId != null) {
+            try {
+                isLiked = likeRepository.findByPostIdAndUserId(post.getPostId(), currentUserId).isPresent();
+            } catch (Exception e) {
+                log.warn("检查点赞状态失败: postId={}, userId={}", post.getPostId(), currentUserId, e);
+            }
+        }
+        map.put("isLiked", isLiked);
         
-        // 用户信息（可选）
-        map.put("authorId", post.getAuthorId());
+        // 获取提到的书籍
+        try {
+            List<com.weread.entity.book.BookEntity> relatedBooks = post.getRelatedBooks();
+            if (relatedBooks != null && !relatedBooks.isEmpty()) {
+                List<Map<String, Object>> mentionedBooks = relatedBooks.stream()
+                    .map(book -> {
+                        Map<String, Object> bookMap = new HashMap<>();
+                        bookMap.put("bookId", book.getBookId());
+                        bookMap.put("bookTitle", book.getTitle() != null ? book.getTitle() : "");
+                        bookMap.put("cover", book.getCover() != null ? book.getCover() : "");
+                        if (book.getAuthor() != null) {
+                            bookMap.put("authorName", book.getAuthor().getAuthorName() != null ? 
+                                book.getAuthor().getAuthorName() : "");
+                        } else {
+                            bookMap.put("authorName", "");
+                        }
+                        return bookMap;
+                    })
+                    .collect(Collectors.toList());
+                map.put("mentionedBooks", mentionedBooks);
+            } else {
+                map.put("mentionedBooks", java.util.Collections.emptyList());
+            }
+        } catch (Exception e) {
+            log.warn("获取相关书籍失败: postId={}", post.getPostId(), e);
+            map.put("mentionedBooks", java.util.Collections.emptyList());
+        }
         
         return map;
     }

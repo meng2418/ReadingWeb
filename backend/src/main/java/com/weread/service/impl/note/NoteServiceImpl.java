@@ -144,24 +144,35 @@ public class NoteServiceImpl implements NoteService {
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "书籍不存在"));
 
-        // 验证lineType
+        // 验证lineType（只有划线类型才需要验证）
         if (lineType != null && !lineType.matches("marker|wavy|underline")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "划线类型无效，必须是 marker、wavy 或 underline");
         }
 
+        // 判断是想法还是划线：
+        // - 如果有 thought 内容且 lineType 为 null，则是想法
+        // - 如果有 lineType，则是划线
+        boolean isThought = (thought != null && !thought.trim().isEmpty()) && lineType == null;
+        
         // 创建笔记实体
         NoteEntity note = new NoteEntity();
         note.setUserId(userId);
         note.setBookId(bookId);
         note.setChapterId(chapterId);
         note.setContent(quote); // 将quote存储在content字段中
-        note.setType("highlight"); // 默认类型
+        note.setType(isThought ? "thought" : "highlight"); // 根据是否有thought设置类型
+        // 只要有 thought 内容就保存，不管是不是想法类型（虽然通常只有想法类型才有 thought）
+        note.setThought((thought != null && !thought.trim().isEmpty()) ? thought : null);
         note.setIsPublic(false); // 默认不公开
         note.setCreatedAt(LocalDateTime.now());
 
-        // 将lineType映射到color字段（或者可以扩展实体添加lineType字段）
+        // 将lineType映射到color字段（想法类型时color应该为null或空）
         // 这里暂时使用color字段存储lineType信息
-        note.setColor(lineType != null ? lineType : "marker");
+        if (isThought) {
+            note.setColor(null); // 想法类型不设置color
+        } else {
+            note.setColor(lineType != null ? lineType : "marker");
+        }
 
         note = noteRepository.save(note);
 
@@ -169,8 +180,10 @@ public class NoteServiceImpl implements NoteService {
         NoteResponseDTO response = new NoteResponseDTO();
         response.setNoteId(note.getNoteId());
         response.setQuote(quote);
-        response.setLineType(lineType != null ? lineType : "marker");
-        response.setNoteContent(thought != null ? thought : ""); // thought暂时返回，如果数据库不支持可以后续扩展
+        // 想法类型时 lineType 应该为 null，划线类型时返回实际的 lineType
+        response.setLineType(isThought ? null : (lineType != null ? lineType : "marker"));
+        // 从数据库读取 thought 字段（确保返回最新保存的值）
+        response.setNoteContent(note.getThought() != null ? note.getThought() : "");
         response.setCreatedAt(note.getCreatedAt());
 
         return response;
@@ -196,8 +209,13 @@ public class NoteServiceImpl implements NoteService {
         dto.setQuote(entity.getContent()); // content字段存储quote
         dto.setStartIndex(0); // 数据库中没有此字段，使用默认值0
         dto.setEndIndex(entity.getContent() != null ? entity.getContent().length() : 0); // 使用内容长度作为endIndex
-        // lineType从color字段解析，如果是数组格式则解析，否则转换为数组
-        if (entity.getColor() != null) {
+        
+        // lineType从color字段解析
+        // 如果是想法类型（type="thought"），lineType应该为空数组
+        // 如果是划线类型（type="highlight"），从color字段解析
+        if ("thought".equals(entity.getType())) {
+            dto.setLineType(new ArrayList<>()); // 想法类型返回空数组
+        } else if (entity.getColor() != null) {
             // 如果color字段包含多个值（用逗号分隔），则分割；否则作为单个元素
             if (entity.getColor().contains(",")) {
                 dto.setLineType(Arrays.asList(entity.getColor().split(",")));
@@ -207,7 +225,7 @@ public class NoteServiceImpl implements NoteService {
         } else {
             dto.setLineType(Arrays.asList("marker")); // 默认值
         }
-        dto.setThought(""); // 数据库中没有thought字段，使用空字符串
+        dto.setThought(entity.getThought() != null ? entity.getThought() : ""); // 从数据库读取thought字段
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setPageNumber(entity.getPage() != null ? entity.getPage() : 0); // page字段映射到pageNumber
         return dto;
@@ -263,9 +281,8 @@ public class NoteServiceImpl implements NoteService {
         // lineType从color字段获取
         dto.setLineType(entity.getColor() != null ? entity.getColor() : "marker");
 
-        // thought字段：数据库中没有单独存储，暂时使用空字符串
-        // 如果后续需要支持，可以在NoteEntity中添加thought字段
-        dto.setThought("");
+        // thought字段：从数据库读取
+        dto.setThought(entity.getThought() != null ? entity.getThought() : "");
 
         dto.setNoteCreatedAt(entity.getCreatedAt());
 
@@ -372,9 +389,8 @@ public class NoteServiceImpl implements NoteService {
         }
         dto.setLineTypes(lineTypes);
 
-        // noteContent：数据库中没有单独存储，暂时使用空字符串
-        // 如果type是"thought"，可以考虑从content中提取，或者后续扩展数据库字段
-        dto.setNoteContent("");
+        // noteContent：从数据库的thought字段读取想法内容
+        dto.setNoteContent(entity.getThought() != null ? entity.getThought() : "");
 
         dto.setNoteCreatedAt(entity.getCreatedAt());
 
@@ -392,12 +408,19 @@ public class NoteServiceImpl implements NoteService {
     @Override
     @Transactional(readOnly = true)
     public List<BookNoteDTO> getUserRecentNotes6(Integer userId) {
-        // 查询最新的6条笔记
-        PageRequest pageable = PageRequest.of(0, 6);
-        List<NoteEntity> notes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
+        // 查询最新的笔记（只查询想法类型，type = "thought"）
+        // 由于需要过滤类型，我们需要查询更多条，然后过滤并取前6条
+        PageRequest pageable = PageRequest.of(0, 20); // 查询更多以确保有足够的想法
+        List<NoteEntity> allNotes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
+        
+        // 过滤出想法类型的笔记，并限制为6条
+        List<NoteEntity> thoughtNotes = allNotes.stream()
+                .filter(note -> "thought".equals(note.getType()))
+                .limit(6)
+                .collect(Collectors.toList());
 
         // 转换为BookNoteDTO
-        return notes.stream()
+        return thoughtNotes.stream()
                 .map(this::convertToBookNoteDTO)
                 .collect(Collectors.toList());
     }
@@ -419,9 +442,8 @@ public class NoteServiceImpl implements NoteService {
         // quote：从content字段获取
         dto.setQuote(entity.getContent() != null ? entity.getContent() : "");
 
-        // noteContent：目前数据库中没有单独存储想法内容，暂时使用空字符串
-        // 如果type是"thought"，可以考虑将content作为noteContent，但根据现有逻辑，content存储的是quote
-        dto.setNoteContent("");
+        // noteContent：从数据库的thought字段读取想法内容
+        dto.setNoteContent(entity.getThought() != null ? entity.getThought() : "");
 
         // noteDate：从createdAt格式化为字符串（格式：YYYY-MM-DD）
         if (entity.getCreatedAt() != null) {
@@ -439,13 +461,14 @@ public class NoteServiceImpl implements NoteService {
     @Override
     @Transactional(readOnly = true)
     public List<HighlightVO> getUserRecentHighlights3(Integer userId) {
-        // 查询最新的3条划线（type="highlight"且color为marker、wavy或underline）
-        PageRequest pageable = PageRequest.of(0, 3);
-        List<NoteEntity> notes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
+        // 查询更多的笔记，然后过滤出划线类型，确保能获取到3条划线
+        // 由于需要过滤类型，我们需要查询更多条，然后过滤并取前3条
+        PageRequest pageable = PageRequest.of(0, 20); // 查询更多以确保有足够的划线
+        List<NoteEntity> allNotes = noteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, pageable);
 
         // 过滤出划线类型（type="highlight"且color为marker、wavy或underline）
         // 转换为HighlightVO
-        return notes.stream()
+        return allNotes.stream()
                 .filter(note -> "highlight".equals(note.getType()))
                 .filter(note -> {
                     String color = note.getColor();

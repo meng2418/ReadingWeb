@@ -143,12 +143,13 @@ export type RecentThought = {
 
 export const getRecentNotes6 = async (): Promise<RecentThought[]> => {
   const raw = unwrap(await request.get('/user/notes/recent6'))
-  const items = safeArray<any>(raw?.items ?? raw).slice(0, 6)
+  // 后端返回的 data 直接是数组，不是 items
+  const items = safeArray<any>(raw).slice(0, 6)
 
   return items.map((it, idx) => ({
     id: idx + 1,
     bookName: it.bookTitle ?? '',
-    date: it.noteDate ?? '',
+    date: it.noteDate ?? '', // 后端返回的是 noteDate
     thought: it.noteContent ?? '',
     quote: it.quote ?? '',
   }))

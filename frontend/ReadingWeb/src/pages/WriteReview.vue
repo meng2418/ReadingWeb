@@ -286,7 +286,7 @@ const handleSubmit = async () => {
       }
     })
   } catch (error) {
-    console.error('❌ API提交点评失败:', error)
+    console.error('API提交点评失败:', error)
     alert('网络连接失败，请检查网络后重试')
 
     // 不再回退到本地存储，直接提示用户重试
@@ -323,7 +323,7 @@ const handleDelete = async () => {
       }
     })
   } catch (error) {
-    console.error('❌ 删除点评失败:', error)
+    console.error('删除点评失败:', error)
     alert('删除失败，请重试')
   }
 }

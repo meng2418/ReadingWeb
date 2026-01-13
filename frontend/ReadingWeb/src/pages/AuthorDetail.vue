@@ -9,7 +9,7 @@
 
     <!-- 错误状态 -->
     <div v-else-if="error" class="error-container">
-      <div class="error-icon">❌</div>
+      <div class="error-icon"></div>
       <div class="error-text">{{ error }}</div>
       <button @click="retryLoading" class="retry-button">重试</button>
     </div>
@@ -48,7 +48,7 @@
 
       <!-- 没有作品的提示 -->
       <div v-if="allWorks.length === 0 && !isLoading" class="empty-works">
-        <div class="empty-icon">📚</div>
+        <div class="empty-icon"></div>
         <div class="empty-text">该作者暂无作品</div>
       </div>
     </div>
@@ -69,7 +69,7 @@ const route = useRoute()
 const { openBookDetail } = useBookNavigation()
 
 // 获取作者ID（从路由参数中）
-const authorId = ref(Number(route.params.id) || 1)
+const authorId = ref(Number(route.params.id))
 
 // 作者数据
 const authorData = ref<AuthorDetail | null>(null)
@@ -86,7 +86,6 @@ const error = ref<string | null>(null)
 // 获取作者详情数据
 const fetchAuthorData = async () => {
   try {
-    isLoading.value = true
     error.value = null
 
     console.log('获取作者详情，ID:', authorId.value)
@@ -99,15 +98,8 @@ const fetchAuthorData = async () => {
 
   } catch (err: any) {
     console.error('获取作者详情失败:', err)
-    error.value = err.response?.data?.message || '获取作者信息失败，请稍后重试'
-
-    // 设置默认数据作为fallback（仅用于开发测试）
-    authorData.value = {
-      id: authorId.value,
-      name: '扬·马特尔',
-      description: '扬·马特尔（Yann Martel，1963年6月25日－）是一位加拿大作家。他出生于西班牙萨拉曼卡，父母是加拿大人。幼时曾旅居哥斯达黎加、法国、墨西哥、加拿大，成年后做客伊朗、土耳其及印度。毕业于加拿大特伦特大学哲学系，其后从事过各种稀奇古怪的行业，包括植树工、洗碗工、保安等。以《少年Pi的奇幻漂流》获得2002年的布克奖及亚洲/太平洋美洲文学奖。马特尔现在住在萨斯卡通（Saskatoon）。',
-      worksCount: 3,
-    }
+    error.value = err.response?.data?.message || err.message || '获取作者信息失败，请稍后重试'
+    authorData.value = null
   }
 }
 
@@ -122,38 +114,8 @@ const fetchWorks = async () => {
 
   } catch (err: any) {
     console.error('获取作者作品失败:', err)
-    error.value = err.response?.data?.message || '获取作品列表失败，请稍后重试'
-
-    // 设置默认数据作为fallback（仅用于开发测试）
-    allWorks.value = [
-      {
-        id: 1,
-        title: '少年Pi的奇幻漂流',
-        summary: '一名印度男孩Pi在太平洋上与一只孟加拉虎同船而行的冒险故事',
-        cover: 'https://picsum.photos/200/280?random=25',
-        readersCount: 183000,
-        recommendationRate: 90.5,
-        authorName: '扬·马特尔'
-      },
-      {
-        id: 2,
-        title: '标本师的魔幻剧本',
-        summary: '关于大屠杀记忆与文学创作的深刻探讨',
-        cover: 'https://picsum.photos/200/280?random=26',
-        readersCount: 45200,
-        recommendationRate: 85.2,
-        authorName: '扬·马特尔'
-      },
-      {
-        id: 3,
-        title: '赫尔曼',
-        summary: '关于友谊、艺术与人生选择的温暖故事',
-        cover: 'https://picsum.photos/200/280?random=27',
-        readersCount: 32100,
-        recommendationRate: 88.7,
-        authorName: '扬·马特尔'
-      },
-    ]
+    error.value = err.response?.data?.message || err.message || '获取作品列表失败，请稍后重试'
+    allWorks.value = []
   }
 }
 
@@ -175,6 +137,13 @@ const retryLoading = async () => {
 
 // 组件挂载时获取数据
 onMounted(async () => {
+  // 验证作者ID是否有效
+  if (!authorId.value || isNaN(authorId.value)) {
+    error.value = '无效的作者ID'
+    isLoading.value = false
+    return
+  }
+
   try {
     // 并行获取作者详情和作品数据
     await Promise.all([fetchAuthorData(), fetchWorks()])

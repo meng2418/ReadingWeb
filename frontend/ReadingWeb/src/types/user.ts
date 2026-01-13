@@ -53,6 +53,7 @@ export interface ReadingStatsData {
 }
 
 export interface UserHomeData {
+  userId?: number
   avatar: string
   username: string
   bio: string

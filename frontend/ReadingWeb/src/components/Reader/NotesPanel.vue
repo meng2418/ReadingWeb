@@ -59,7 +59,15 @@ defineProps<{
 
 const emit = defineEmits<(e: 'close') => void>()
 
-const isHighlight = (note: Note) => note.note.startsWith('[Highlight:')
+// 判断是否是划线：如果 note 字段以 [Highlight: 开头，或者是空字符串但有 quote，则是划线
+const isHighlight = (note: Note) => {
+  // 如果 note 为空或 undefined，但有 quote，则可能是划线
+  if (!note.note || note.note.trim() === '') {
+    return !!note.quote // 有 quote 但没有 note 内容，通常是划线
+  }
+  // 如果 note 以 [Highlight: 开头，则是划线
+  return note.note.startsWith('[Highlight:')
+}
 </script>
 
 <style scoped>

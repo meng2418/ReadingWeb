@@ -11,7 +11,7 @@
       </div>
       <div class="comment-content">{{ comment.content }}</div>
       <div class="comment-meta">
-        <span class="comment-time">{{ comment.time }}</span>
+        <span class="comment-time">{{ formattedTime }}</span>
         <button class="comment-btn">回复</button>
         <button class="comment-btn">点赞</button>
       </div>
@@ -54,6 +54,32 @@ const handleAvatarError = (event) => {
     img.src = DEFAULT_AVATAR
   }
 }
+
+// 格式化时间
+const formattedTime = computed(() => {
+  const timeStr = props.comment?.time || ''
+  if (!timeStr) return '未知时间'
+  
+  try {
+    const date = new Date(timeStr)
+    if (isNaN(date.getTime())) return timeStr
+    
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+
+    if (minutes < 1) return '刚刚'
+    if (minutes < 60) return `${minutes}分钟前`
+    if (hours < 24) return `${hours}小时前`
+    if (days < 7) return `${days}天前`
+    return date.toLocaleDateString('zh-CN')
+  } catch (e) {
+    console.error('Error formatting date:', e)
+    return timeStr
+  }
+})
 </script>
 
 <style scoped>

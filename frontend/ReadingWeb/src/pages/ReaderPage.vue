@@ -433,8 +433,170 @@ const loadChapterNotes = async (chapterId: string) => {
   try {
     const data = await getChapterNotes(bookId.value, chapterId)
     chapterNotes.value = data
+    
+    // 将笔记转换为标注
+    updateAnnotationsFromNotes(data)
   } catch (error) {
     console.error('加载章节笔记失败:', error)
+  }
+}
+
+/**
+ * 根据笔记数据更新标注
+ * 使用 API 返回的 startIndex 和 endIndex 来精确定位
+ */
+const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
+  if (!currentChapterData.value || !displayedPageData.value) return
+  
+  const chapterIdStr = String(currentChapterId.value)
+  const content = displayedPageData.value.content
+  
+  // 移除当前章节的旧标注（保留其他章节的）
+  annotations.value = annotations.value.filter(ann => ann.chapterId !== chapterIdStr)
+  
+  // 构建完整的章节文本（用于计算字符索引）
+  const fullText = currentChapterData.value.content
+  
+  // 为每个笔记创建标注
+  for (const note of notes) {
+    // 判断是想法还是划线：
+    // - 如果有 thought 内容，则是想法
+    // - 如果没有 thought 但有 lineType，则是划线
+    const isThought = note.thought && note.thought.trim().length > 0
+    
+    // 使用 startIndex 和 endIndex 来定位
+    // 需要计算这些索引对应哪个段落（pIndex）以及在段落中的位置
+    let pIndex = 0
+    let startInParagraph = 0
+    let endInParagraph = 0
+    
+    // 优先使用文本匹配来定位（因为后端返回的 startIndex/endIndex 可能不准确）
+    // 只有在文本匹配失败时，才尝试使用索引
+    let foundByText = false
+    
+    // 首先尝试文本匹配（更可靠）
+    for (let i = 0; i < content.length; i++) {
+      const paragraph = content[i]
+      const quoteIndex = paragraph.indexOf(note.quote)
+      
+      if (quoteIndex !== -1) {
+        pIndex = i
+        startInParagraph = quoteIndex
+        endInParagraph = quoteIndex + note.quote.length
+        foundByText = true
+        break
+      }
+    }
+    
+    // 如果文本匹配失败，且 startIndex/endIndex 有效，尝试使用索引定位
+    if (!foundByText && note.startIndex !== undefined && note.endIndex !== undefined && note.startIndex >= 0) {
+      // 重新构建完整文本以匹配索引
+      const fullText = content.join('\n')
+      
+      // 如果索引超出范围，使用文本匹配
+      if (note.startIndex < fullText.length && note.endIndex <= fullText.length) {
+        // 计算字符索引对应的段落
+        let charCount = 0
+        let foundStart = false
+        let foundEnd = false
+        
+        for (let i = 0; i < content.length; i++) {
+          const paragraph = content[i]
+          const paragraphLength = paragraph.length
+          const nextCharCount = charCount + paragraphLength
+          
+          // 检查 startIndex 是否在当前段落
+          if (!foundStart && note.startIndex >= charCount && note.startIndex < nextCharCount) {
+            pIndex = i
+            startInParagraph = note.startIndex - charCount
+            foundStart = true
+          }
+          
+          // 检查 endIndex 是否在当前段落
+          if (!foundEnd && note.endIndex > charCount && note.endIndex <= nextCharCount) {
+            endInParagraph = note.endIndex - charCount
+            foundEnd = true
+            // 如果 start 和 end 都在同一段落，可以提前退出
+            if (foundStart) break
+          }
+          
+          charCount = nextCharCount
+          // 段落之间可能有换行符，需要加上
+          if (i < content.length - 1) {
+            charCount += 1 // 换行符
+          }
+          
+          // 如果都找到了，提前退出
+          if (foundStart && foundEnd) break
+        }
+        
+        // 如果索引定位失败，使用文本匹配作为后备方案
+        if (!foundStart || !foundEnd) {
+          for (let i = 0; i < content.length; i++) {
+            const paragraph = content[i]
+            const quoteIndex = paragraph.indexOf(note.quote)
+            
+            if (quoteIndex !== -1) {
+              pIndex = i
+              startInParagraph = quoteIndex
+              endInParagraph = quoteIndex + note.quote.length
+              foundByText = true
+              break
+            }
+          }
+        }
+      } else {
+        // 索引超出范围，使用文本匹配
+        for (let i = 0; i < content.length; i++) {
+          const paragraph = content[i]
+          const quoteIndex = paragraph.indexOf(note.quote)
+          
+          if (quoteIndex !== -1) {
+            pIndex = i
+            startInParagraph = quoteIndex
+            endInParagraph = quoteIndex + note.quote.length
+            foundByText = true
+            break
+          }
+        }
+      }
+    }
+    
+    // 如果文本匹配和索引匹配都失败，至少确保有默认值
+    if (!foundByText && (pIndex === 0 && startInParagraph === 0 && endInParagraph === 0)) {
+      // 最后尝试：在整个文本中搜索
+      const fullText = content.join('\n')
+      const globalIndex = fullText.indexOf(note.quote)
+      if (globalIndex !== -1) {
+        // 计算对应的段落
+        let charCount = 0
+        for (let i = 0; i < content.length; i++) {
+          const paragraph = content[i]
+          const nextCharCount = charCount + paragraph.length
+          if (globalIndex >= charCount && globalIndex < nextCharCount) {
+            pIndex = i
+            startInParagraph = globalIndex - charCount
+            endInParagraph = startInParagraph + note.quote.length
+            break
+          }
+          charCount = nextCharCount + 1 // 加上换行符
+        }
+      }
+    }
+    
+    // 创建标注
+    const annotation: Annotation = {
+      id: `ann-${note.id}`,
+      chapterId: chapterIdStr,
+      pIndex,
+      start: startInParagraph,
+      end: endInParagraph,
+      type: isThought 
+        ? 'thought' 
+        : (note.lineType && note.lineType.length > 0 ? note.lineType[0] as any : 'marker'),
+      noteId: isThought ? note.id : undefined, // 只有想法才需要 noteId
+    }
+    annotations.value.push(annotation)
   }
 }
 
@@ -454,14 +616,23 @@ const isDarkMode = ref(false)
 const activePanel = ref<'none' | 'toc' | 'typography' | 'notes'>('none')
 const showThoughts = ref(true)
 // 将API的章节笔记转换为组件所需的格式
+// 阅读器中的笔记 = 划线 + 想法（两者都显示）
 const notes = computed<Note[]>(() => {
-  return chapterNotes.value.map(note => ({
-    id: note.id,
-    chapterId: String(currentChapterId.value),
-    quote: note.quote,
-    note: note.thought,
-    date: new Date(note.createdAt).toLocaleDateString(),
-  }))
+  return chapterNotes.value.map(note => {
+    // 判断是想法还是划线：
+    // - 如果有 thought 内容，则是想法
+    // - 如果没有 thought 但有 lineType，则是划线
+    const isThought = note.thought && note.thought.trim().length > 0
+    const isHighlight = !isThought && note.lineType && note.lineType.length > 0
+    
+    return {
+      id: note.id,
+      chapterId: String(currentChapterId.value),
+      quote: note.quote,
+      note: isThought ? note.thought : (isHighlight ? `[Highlight:${note.lineType[0]}]` : ''),
+      date: new Date(note.createdAt).toLocaleDateString(),
+    }
+  })
 })
 const annotations = ref<Annotation[]>(initialAnnotations)
 const aiPanelOpen = ref(false)
@@ -544,17 +715,28 @@ const handleDeleteAnnotation = async (annotationId: string) => {
     if (index !== -1) {
       const annotation = annotations.value[index]
 
-      // 如果是想法标注，调用API删除笔记
-      if (annotation && annotation.type === 'thought' && annotation.noteId) {
-        await deleteChapterNote(bookId.value, currentChapterId.value, annotation.noteId)
+      // 提取笔记 ID（标注 ID 格式为 "ann-{noteId}" 或直接是 noteId）
+      let noteId: string | undefined = annotation.noteId
+      if (!noteId && annotationId.startsWith('ann-')) {
+        noteId = annotationId.replace('ann-', '')
       }
 
-      // 从本地状态中移除
+      // 如果有笔记 ID，调用 API 删除笔记（包括想法和划线）
+      if (noteId) {
+        try {
+          await deleteChapterNote(bookId.value, currentChapterId.value, noteId)
+        } catch (error) {
+          console.error('删除笔记 API 调用失败:', error)
+          // 即使 API 失败，也继续删除本地标注
+        }
+      }
+
+      // 从本地状态中移除标注
       annotations.value.splice(index, 1)
 
       // 删除对应的笔记
-      if (annotation && annotation.noteId) {
-        const noteIndex = notes.value.findIndex(note => note.id === annotation.noteId)
+      if (noteId) {
+        const noteIndex = notes.value.findIndex(note => note.id === noteId)
         if (noteIndex !== -1) {
           notes.value.splice(noteIndex, 1)
         }
@@ -568,26 +750,77 @@ const handleDeleteAnnotation = async (annotationId: string) => {
   }
 }
 
-const handleAddAnnotation = (newAnn: Omit<Annotation, 'id'>) => {
-  const id = Date.now().toString()
-  // 确保标注使用当前章节ID
-  const annotation = {
-    ...newAnn,
-    id,
-    chapterId: String(currentChapterId.value) // 确保使用当前章节ID
-  }
-  annotations.value.push(annotation)
-
+const handleAddAnnotation = async (newAnn: Omit<Annotation, 'id'>) => {
+  // 如果是划线类型（marker、wave、line），需要调用 API 创建
   if (['marker', 'wave', 'line'].includes(newAnn.type)) {
-    const newNote: Note = {
-      id: `note-${id}`,
-      chapterId: String(currentChapterId.value), // 确保笔记也关联到当前章节
-      quote:
-        displayedPageData.value?.content[newAnn.pIndex]?.substring(newAnn.start, newAnn.end) || '',
-      note: `[Highlight: ${newAnn.type}]`,
-      date: new Date().toLocaleDateString(),
+    try {
+      const quoteText = displayedPageData.value?.content[newAnn.pIndex]?.substring(newAnn.start, newAnn.end) || ''
+      
+      // 计算全局的 startIndex 和 endIndex（考虑前面所有段落的长度）
+      let globalStartIndex = 0
+      for (let i = 0; i < newAnn.pIndex; i++) {
+        globalStartIndex += displayedPageData.value?.content[i]?.length || 0
+        globalStartIndex += 1 // 换行符
+      }
+      globalStartIndex += newAnn.start
+      const globalEndIndex = globalStartIndex + quoteText.length
+      
+      // 调用 API 创建划线
+      const noteData = {
+        quote: quoteText,
+        startIndex: globalStartIndex, // 使用全局索引
+        endIndex: globalEndIndex,     // 使用全局索引
+        lineType: [newAnn.type], // 传递前端类型，API 层会映射为后端类型
+        thought: '', // 划线不需要想法内容
+        pageNumber: newAnn.pIndex + 1, // 页码从1开始
+      }
+
+      const createdNote = await createChapterNote(bookId.value, currentChapterId.value, noteData)
+
+      // 创建标注
+      const annotation: Annotation = {
+        id: `ann-${createdNote.id}`,
+        chapterId: String(currentChapterId.value),
+        pIndex: newAnn.pIndex,
+        start: newAnn.start,
+        end: newAnn.end,
+        type: newAnn.type,
+      }
+      annotations.value.push(annotation)
+
+      // 创建笔记记录（用于笔记面板显示）
+      // 划线类型：note 字段使用 [Highlight:类型] 格式
+      const newNote: Note = {
+        id: createdNote.id,
+        chapterId: String(currentChapterId.value),
+        quote: createdNote.quote,
+        note: `[Highlight:${newAnn.type}]`, // 划线使用特殊格式标识
+        date: new Date(createdNote.createdAt).toLocaleDateString(),
+      }
+      notes.value.unshift(newNote)
+
+      // 重新加载章节笔记以保持同步
+      await loadChapterNotes(currentChapterId.value.toString())
+    } catch (error) {
+      console.error('创建划线失败:', error)
+      // 即使 API 失败，也在本地添加标注（降级处理）
+      const id = Date.now().toString()
+      const annotation = {
+        ...newAnn,
+        id,
+        chapterId: String(currentChapterId.value)
+      }
+      annotations.value.push(annotation)
     }
-    notes.value.unshift(newNote)
+  } else {
+    // 其他类型的标注（如 thought），直接添加
+    const id = Date.now().toString()
+    const annotation = {
+      ...newAnn,
+      id,
+      chapterId: String(currentChapterId.value)
+    }
+    annotations.value.push(annotation)
   }
 }
 
@@ -601,7 +834,7 @@ const handleTextAction = (
   }
 }
 
-const handleThoughtsBubbleAction = (action: string) => {
+const handleThoughtsBubbleAction = async (action: string) => {
   if (!activeContext.value) return
 
   if (action === 'copy') {
@@ -610,38 +843,55 @@ const handleThoughtsBubbleAction = (action: string) => {
   }
 
   if (['marker', 'wave', 'line'].includes(action) && activeContext.value.range) {
-    handleAddAnnotation({
+    await handleAddAnnotation({
       chapterId: String(currentChapterId.value), // 确保使用当前章节ID
       pIndex: activeContext.value.range.pIndex,
       start: activeContext.value.range.start,
       end: activeContext.value.range.end,
       type: action as any,
     })
+    activeContext.value = null // 创建划线后关闭气泡
   }
 }
 
 const submitNote = async (noteContent: string) => {
   if (activeContext.value && activeContext.value.range) {
     try {
-      // 调用API创建笔记
+      console.log('开始创建想法，内容:', noteContent)
+      
+      // 调用API创建笔记（想法类型的笔记）
+      // 想法不应该有 lineType，应该传递 null
+      
+      // 计算全局的 startIndex 和 endIndex（考虑前面所有段落的长度）
+      let globalStartIndex = 0
+      for (let i = 0; i < activeContext.value.range.pIndex; i++) {
+        globalStartIndex += displayedPageData.value?.content[i]?.length || 0
+        globalStartIndex += 1 // 换行符
+      }
+      globalStartIndex += activeContext.value.range.start
+      const globalEndIndex = globalStartIndex + activeContext.value.text.length
+      
       const noteData = {
-        chapterId: currentChapterId.value,
         quote: activeContext.value.text,
-        startIndex: activeContext.value.range.start,
-        endIndex: activeContext.value.range.end,
-        lineType: ['marker'], // 默认线条类型
-        thought: noteContent,
+        startIndex: globalStartIndex, // 使用全局索引
+        endIndex: globalEndIndex,     // 使用全局索引
+        lineType: null, // 想法类型不传递 lineType
+        thought: noteContent.trim(), // 去除首尾空格
         pageNumber: activeContext.value.range.pIndex + 1, // 页码从1开始
       }
 
+      console.log('创建想法的请求数据:', noteData)
+
       const createdNote = await createChapterNote(bookId.value, currentChapterId.value, noteData)
+
+      console.log('创建想法成功，返回数据:', createdNote)
 
       // 更新本地状态
       const newNote: Note = {
         id: createdNote.id,
         chapterId: String(currentChapterId.value),
         quote: createdNote.quote,
-        note: createdNote.thought,
+        note: createdNote.thought || noteContent, // 使用返回的 thought 或原始内容
         date: new Date(createdNote.createdAt).toLocaleDateString(),
       }
       notes.value.unshift(newNote)
@@ -661,8 +911,13 @@ const submitNote = async (noteContent: string) => {
 
       // 重新加载章节笔记以保持同步
       await loadChapterNotes(currentChapterId.value.toString())
-    } catch (error) {
-      console.error('创建笔记失败:', error)
+      
+      console.log('想法创建完成，已更新本地状态')
+    } catch (error: any) {
+      console.error('创建想法失败:', error)
+      console.error('错误详情:', error?.response?.data || error?.message)
+      // 可以在这里添加用户提示
+      alert('创建想法失败: ' + (error?.response?.data?.message || error?.message || '未知错误'))
     }
   }
   activeContext.value = null

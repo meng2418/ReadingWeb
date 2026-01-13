@@ -268,4 +268,52 @@ public class UserController {
         
         return ResponseEntity.ok(result);
     }
+
+    @Operation(summary = "获取登录用户的帖子瀑布流", 
+               description = "获取登录用户发布的帖子列表，支持游标分页")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/posts")
+    public ResponseEntity<Map<String, Object>> getUserPosts(
+            @Parameter(description = "游标，第一次请求不传，后续传上次返回的nextCursor")
+            @RequestParam(required = false) Integer cursor,
+            @Parameter(description = "每页数量，默认20，最大50")
+            @RequestParam(required = false) Integer limit,
+            @Parameter(description = "用户ID", hidden = true)
+            @AuthenticationPrincipal Integer userId) {
+        
+        try {
+            // 检查用户是否已登录
+            if (userId == null) {
+                Map<String, Object> errorResult = new HashMap<>();
+                errorResult.put("code", 401);
+                errorResult.put("message", "未登录");
+                return ResponseEntity.status(401).body(errorResult);
+            }
+            
+            // 参数验证和默认值
+            if (limit == null || limit < 1) {
+                limit = 20;
+            }
+            if (limit > 50) {
+                limit = 50;
+            }
+            
+            // 调用Service获取帖子列表
+            Map<String, Object> response = userService.getUserPosts(userId, cursor, limit);
+            
+            // 构建响应
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "success");
+            result.put("data", response);
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("code", 500);
+            errorResult.put("message", "获取帖子列表失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResult);
+        }
+    }
 }

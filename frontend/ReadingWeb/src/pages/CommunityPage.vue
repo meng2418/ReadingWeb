@@ -173,6 +173,34 @@ const commentList = ref<any[]>([])
 const likeList = ref<any[]>([])
 const currentTab = ref<'square' | 'following' | 'topics' | 'mine'>('square')
 
+// 加载我的评论和点赞数据
+const loadMyData = async () => {
+  try {
+    const [commentsResult, likesResult] = await Promise.allSettled([
+      fetchMyComments().catch(err => {
+        console.warn('获取评论失败:', err)
+        return { comments: [], hasMore: false, nextCursor: null }
+      }),
+      fetchMyLikes().catch(err => {
+        console.warn('获取点赞失败:', err)
+        return { likes: [], hasMore: false, nextCursor: null }
+      }),
+    ])
+
+    // 处理评论数据
+    if (commentsResult.status === 'fulfilled') {
+      commentList.value = commentsResult.value.comments
+    }
+
+    // 处理点赞数据
+    if (likesResult.status === 'fulfilled') {
+      likeList.value = likesResult.value.likes
+    }
+  } catch (error) {
+    console.error('加载我的数据失败:', error)
+  }
+}
+
 const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => {
   console.log('切换标签:', tab)
   currentTab.value = tab
@@ -185,6 +213,11 @@ const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => {
   // 切换到话题页时，如果没有数据则加载
   if (tab === 'topics' && topicsList.value.length === 0 && !topicsLoading.value) {
     loadTopicsList()
+  }
+
+  // 切换到我的tab时，重新加载数据
+  if (tab === 'mine') {
+    loadMyData()
   }
 }
 
@@ -319,11 +352,13 @@ const handleShare = (postId: number): void => {
           <!-- 评论 -->
           <div v-if="mineTab === 'comment'">
             <CommentItem v-for="(item, index) in commentList" :key="index" :comment="item" />
+            <div v-if="commentList.length === 0" class="empty">暂无评论</div>
           </div>
 
           <!-- 赞 -->
           <div v-else>
             <LikeItem v-for="(item, index) in likeList" :key="index" :like="item" />
+            <div v-if="likeList.length === 0" class="empty">暂无点赞</div>
           </div>
         </div>
         <!-- 帖子列表 -->

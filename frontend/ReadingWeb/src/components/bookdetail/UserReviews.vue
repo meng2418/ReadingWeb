@@ -44,7 +44,7 @@
     </div>
 
     <div class="no-reviews" v-else>
-      <div class="no-reviews-icon">📝</div>
+      <div class="no-reviews-icon"></div>
       <p class="no-reviews-text">暂无公开点评</p>
       <p class="no-reviews-subtext">成为第一个发表点评的人吧！</p>
     </div>

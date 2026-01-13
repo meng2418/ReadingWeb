@@ -20,7 +20,7 @@
             <span class="stat-label">帖子</span>
           </div>
           <div class="stat-item">
-            <span class="stat-number">{{ topic.followerCount }}</span>
+            <span class="stat-number">{{ topic.followerCount ?? 0 }}</span>
             <span class="stat-label">关注者</span>
           </div>
           <div class="stat-item">
@@ -68,7 +68,7 @@
 
           <!-- 空状态 -->
           <div v-else-if="sortedPosts.length === 0" class="empty-state">
-            <div class="empty-icon">📝</div>
+            <div class="empty-icon"></div>
             <p>这个话题下还没有帖子</p>
             <p class="empty-hint">成为第一个分享的人吧！</p>
           </div>
@@ -85,7 +85,7 @@
           <div class="topic-meta">
             <div class="meta-item">
               <span class="meta-label">创建时间:</span>
-              <span class="meta-value">{{ topic.createTime }}</span>
+              <span class="meta-value">{{ formattedCreateTime }}</span>
             </div>
             <div class="meta-item">
               <span class="meta-label">管理员:</span>
@@ -128,7 +128,7 @@ import PostCard from '@/components/community/PostCard.vue'
 import FloatingAddButton from '@/components/community/FloatingAddButton.vue'
 import BackToTop from '@/components/layout/BackToTop.vue'
 import { usePostInteractions } from '@/composables/usePostInteractions'
-import { getTopicDetail, type TopicDetail } from '@/api/topics/topic-detail-header'
+import { getTopicDetail, followTopic, unfollowTopic, type TopicDetail } from '@/api/topics/topic-detail-header'
 import { getTopicPosts } from '@/api/topics/topic-posts-section'
 import { useTitle } from '@/stores/useTitle'
 import type { Post } from '@/types/post'
@@ -160,6 +160,23 @@ const isLoading = ref(true)
 const topicCoverUrl = computed(() => getTopicCoverUrl(topic.value.cover))
 const error = ref<string | null>(null)
 
+// 格式化创建时间
+const formattedCreateTime = computed(() => {
+  if (!topic.value.createTime) return '未知'
+  try {
+    const date = new Date(topic.value.createTime)
+    if (Number.isNaN(date.getTime())) return topic.value.createTime
+    // 格式化为：YYYY年MM月DD日
+    const year = date.getFullYear()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    return `${year}年${month}月${day}日`
+  } catch (e) {
+    console.error('格式化日期失败:', e)
+    return topic.value.createTime
+  }
+})
+
 // 动态页面标题
 const title = computed(() =>
   topic.value.title && topic.value.title !== '' ? `${topic.value.title} - 话题详情` : '话题详情'
@@ -184,8 +201,12 @@ const fetchTopicData = async (id: string) => {
 
   try {
     // 获取话题详情
-    const topicDetailData = await getTopicDetail(id)
+    const topicDetailData = await getTopicDetail(Number(id))
     topic.value = topicDetailData
+    // 从API返回的数据中获取关注状态
+    if ('isFollowing' in topicDetailData) {
+      isFollowing.value = topicDetailData.isFollowing ?? false
+    }
   } catch (err) {
     console.error('获取话题详情失败:', err)
     error.value = '获取话题详情失败'
@@ -193,8 +214,9 @@ const fetchTopicData = async (id: string) => {
 
   try {
     // 获取所有话题帖子（一次性获取足够多的数据用于排序）
-    const postsData = await getTopicPosts(id, 'latest', 1, 100) // 获取100个帖子用于排序
+    const postsData = await getTopicPosts(Number(id), 'latest', 1, 100) // 获取100个帖子用于排序
     posts.value = postsData
+    console.log('获取到的帖子数据:', postsData)
   } catch (err) {
     console.error('获取话题帖子失败:', err)
     error.value = '获取帖子失败'
@@ -205,11 +227,16 @@ const fetchTopicData = async (id: string) => {
 
   // 更新相关话题数据，直接使用API返回的数据
   allRelatedTopicsRef.value = allRelatedTopics.map((t) => ({
-    id: t.id,
+    id: String(t.id), // 确保id是字符串类型
     cover: t.cover || '',
-    title: t.title,
+    title: t.title || '', // 确保title有值
     postCount: t.postCount,
   }))
+  
+  console.log('相关话题数据:', {
+    raw: topic.value.relatedTopics,
+    mapped: allRelatedTopicsRef.value
+  })
 
   // 重置相关话题批次索引
   relatedTopicsBatchIndex.value = 0
@@ -292,12 +319,31 @@ const loadMore = () => {
 const sortedPosts = displayedPosts
 
 // 方法
-const toggleFollow = () => {
-  isFollowing.value = !isFollowing.value
-  if (isFollowing.value) {
-    topic.value.followerCount++
-  } else {
-    topic.value.followerCount--
+const toggleFollow = async () => {
+  try {
+    const id = Number(topicId)
+    if (isFollowing.value) {
+      // 取消关注
+      await unfollowTopic(id)
+      isFollowing.value = false
+      topic.value.followerCount = Math.max(0, topic.value.followerCount - 1)
+    } else {
+      // 关注
+      await followTopic(id)
+      isFollowing.value = true
+      topic.value.followerCount++
+    }
+  } catch (error: any) {
+    console.error('关注/取消关注话题失败:', error)
+    // 如果API调用失败，恢复原状态
+    isFollowing.value = !isFollowing.value
+    if (isFollowing.value) {
+      topic.value.followerCount--
+    } else {
+      topic.value.followerCount++
+    }
+    // 显示错误提示
+    alert(error?.response?.data?.message || '操作失败，请稍后重试')
   }
 }
 

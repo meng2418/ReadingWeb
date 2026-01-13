@@ -61,7 +61,7 @@ const statLabel = computed(() => {
 })
 
 const emptyIcon = computed(() => {
-  return props.type === 'following' ? '👤' : '👥'
+  return ''
 })
 
 const emptyTitle = computed(() => {

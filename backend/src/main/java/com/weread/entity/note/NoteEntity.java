@@ -33,6 +33,9 @@ public class NoteEntity {
     @Column(nullable = false)
     private String type = "highlight";
 
+    @Column(columnDefinition = "TEXT")
+    private String thought; // 想法/批注内容，仅当 type = "thought" 时使用
+
     private String color;
     private Integer page;
 

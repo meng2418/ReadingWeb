@@ -101,9 +101,10 @@ const isLoading = ref(true)
 const fetchNotes = async () => {
   try {
     isLoading.value = true
-    const notes = await getUserNotes()
+    const response = await getUserNotes()
 
-    // 调试用：console.log(notes) 看看数据有没有出来
+    // getUserNotes 返回的是 UserNotesResponse 对象，包含 notes 数组
+    const notes = response?.notes || []
 
     allHighlights.value = notes
       .filter((n) => n.noteType === 'highlight') // 只取划线
@@ -116,6 +117,7 @@ const fetchNotes = async () => {
       }))
   } catch (err) {
     console.error('加载划线失败:', err)
+    allHighlights.value = [] // 出错时设置为空数组
   } finally {
     isLoading.value = false
   }

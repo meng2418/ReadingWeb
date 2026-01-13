@@ -319,6 +319,7 @@ onMounted(fetchAllData)
 .right-column {
   flex: 1;
   min-width: 220px;
+  margin-top: 80px;
 }
 /* 侧边栏粘性容器 */
 .sidebar-sticky-wrapper {

@@ -102,7 +102,7 @@
             <!-- 空状态 -->
             <div v-if="userPosts.length === 0" class="empty-state">
               <div class="empty-illustration">
-                <div class="empty-icon">✍️</div>
+                <div class="empty-icon"></div>
               </div>
               <h3>还没有发布过任何帖子</h3>
               <p class="empty-hint">分享你的阅读心得，开始你的创作之旅吧！</p>
@@ -156,7 +156,7 @@
 
             <div v-if="thoughts.length === 0" class="empty-state">
               <div class="empty-illustration">
-                <div class="empty-icon">💭</div>
+                <div class="empty-icon"></div>
               </div>
               <h3>还没有任何想法</h3>
               <p class="empty-hint">记录你的阅读感悟，分享你的思考</p>
@@ -192,7 +192,7 @@
 
             <div v-if="reviews.length === 0" class="empty-state">
               <div class="empty-illustration">
-                <div class="empty-icon">📚</div>
+                <div class="empty-icon"></div>
               </div>
               <h3>还没有任何书评</h3>
               <p class="empty-hint">写下你的读书感悟，分享你的见解</p>
@@ -385,11 +385,9 @@ const handleDeletePost = async (postId: number) => {
       type: 'warning',
     })
 
-    // 注意：没有拦截器，Axios 返回的是 AxiosResponse<BackendResponse>
-    // 这里我们解构出 data，重命名为 resData，方便后续使用
-    const { data: resData } = (await deleteUserPost(postId)) as {
-      data: BackendResponse<{ remainingPostCount: number }>
-    }
+    // request 返回的是 AxiosResponse，需要访问 response.data 获取响应体
+    const response = await deleteUserPost(postId)
+    const resData = response.data as BackendResponse<{ remainingPostCount: number }>
 
     // 使用 resData.code 判断业务状态
     if (resData.code === 200) {
@@ -400,8 +398,12 @@ const handleDeletePost = async (postId: number) => {
     } else {
       ElMessage.error(resData.message || '删除失败')
     }
-  } catch (err) {
-    if (err !== 'cancel') console.error('删除帖子出错:', err)
+  } catch (err: any) {
+    if (err !== 'cancel') {
+      console.error('删除帖子出错:', err)
+      const errorMessage = err?.response?.data?.message || err?.message || '删除失败，请稍后重试'
+      ElMessage.error(errorMessage)
+    }
   }
 }
 
@@ -416,7 +418,8 @@ const handleDeleteThought = async (thoughtId: number) => {
       type: 'warning',
     })
 
-    const { data: resData } = (await deleteUserNote(thoughtId)) as { data: BackendResponse }
+    const response = await deleteUserNote(thoughtId)
+    const resData = response.data as BackendResponse<{ remainingNoteCount?: number }>
 
     if (resData.code === 200) {
       thoughts.value = thoughts.value.filter((thought) => thought.id !== thoughtId)
@@ -424,8 +427,12 @@ const handleDeleteThought = async (thoughtId: number) => {
     } else {
       ElMessage.error(resData.message || '删除失败')
     }
-  } catch (err) {
-    if (err !== 'cancel') console.error('删除想法出错:', err)
+  } catch (err: any) {
+    if (err !== 'cancel') {
+      console.error('删除想法出错:', err)
+      const errorMessage = err?.response?.data?.message || err?.message || '删除失败，请稍后重试'
+      ElMessage.error(errorMessage)
+    }
   }
 }
 
@@ -440,9 +447,8 @@ const handleDeleteReview = async (id: string | number) => {
       type: 'warning',
     })
 
-    const { data: resData } = (await deleteUserReview(id)) as {
-      data: BackendResponse<{ remainingReviewCount: number }>
-    }
+    const response = await deleteUserReview(id)
+    const resData = response.data as BackendResponse<{ remainingReviewCount: number }>
 
     if (resData.code === 200) {
       reviews.value = reviews.value.filter((review) => review.id !== id)
@@ -453,8 +459,12 @@ const handleDeleteReview = async (id: string | number) => {
     } else {
       ElMessage.error(resData.message || '删除失败')
     }
-  } catch (err) {
-    if (err !== 'cancel') console.error('删除书评出错:', err)
+  } catch (err: any) {
+    if (err !== 'cancel') {
+      console.error('删除书评出错:', err)
+      const errorMessage = err?.response?.data?.message || err?.message || '删除失败，请稍后重试'
+      ElMessage.error(errorMessage)
+    }
   }
 }
 

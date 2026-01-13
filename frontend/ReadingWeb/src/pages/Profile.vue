@@ -181,7 +181,7 @@ const initialTab = computed(() => (typeof route.query.tab === 'string' ? route.q
   align-items: start; /* 防止侧边栏被拉伸 */
 }
 .right-dashboard {
-  /* 🔥 关键代码：防止 grid 子元素被内部宽内容撑开 */
+  /* 关键代码：防止 grid 子元素被内部宽内容撑开 */
   min-width: 0;
   /* 或者使用 overflow: hidden; 但 min-width: 0 更推荐 */
 }

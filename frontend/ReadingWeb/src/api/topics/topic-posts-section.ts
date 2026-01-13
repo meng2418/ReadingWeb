@@ -4,7 +4,23 @@ import { processCoverPath } from '@/utils/imagePath'
 import type { AxiosResponse } from 'axios'
 import type { Post } from '@/types/post'
 
-const unwrap = (res: AxiosResponse): RawTopicPost[] => res?.data?.data ?? res?.data ?? []
+const unwrap = (res: AxiosResponse): RawTopicPost[] => {
+  const data = res?.data?.data ?? res?.data
+  // 确保返回的是数组
+  if (Array.isArray(data)) {
+    return data
+  }
+  // 如果data是对象且包含posts字段，尝试提取posts
+  if (data && typeof data === 'object' && 'posts' in data && Array.isArray(data.posts)) {
+    return data.posts
+  }
+  // 如果data是对象且包含list字段，尝试提取list
+  if (data && typeof data === 'object' && 'list' in data && Array.isArray(data.list)) {
+    return data.list
+  }
+  // 默认返回空数组
+  return []
+}
 
 /** 后端帖子结构 */
 interface RawTopicPost {

@@ -117,7 +117,7 @@ export const submitBookReview = async (bookId: string | number, rating: string, 
     isPublic
   }
 
-  console.log('🚀 提交书评 - 请求信息:', {
+  console.log('提交书评 - 请求信息:', {
     originalBookId: bookId,
     convertedBookId: numericBookId,
     originalRating: rating,
@@ -133,11 +133,11 @@ export const submitBookReview = async (bookId: string | number, rating: string, 
     const res = await request.post<SubmitReviewResponse>(`/book-reviews`, reviewData)
     const result = unwrap(res)
 
-    console.log('✅ 提交书评 - 成功响应:', result)
+    console.log('提交书评 - 成功响应:', result)
 
     return result
   } catch (error) {
-    console.error('❌ 提交书评 - 请求失败:', {
+    console.error('提交书评 - 请求失败:', {
       reviewData,
       fullUrl: `https://m1.apifoxmock.com/m1/7605134-7343879-default/book-reviews`,
       error: error.response?.data || error.message,
@@ -154,7 +154,7 @@ export const submitBookReview = async (bookId: string | number, rating: string, 
  * Path: /book-reviews/{reviewId}
  */
 export const deleteUserReview = async (reviewId: number | string) => {
-  console.log('🗑️ 删除书评 - 请求信息:', {
+  console.log('删除书评 - 请求信息:', {
     reviewId,
     url: `/book-reviews/${reviewId}`,
     method: 'DELETE'
@@ -166,11 +166,11 @@ export const deleteUserReview = async (reviewId: number | string) => {
       method: 'delete',
     })
 
-    console.log('✅ 删除书评 - 成功响应:', res)
+    console.log('删除书评 - 成功响应:', res)
 
     return res
   } catch (error) {
-    console.error('❌ 删除书评 - 请求失败:', {
+    console.error('删除书评 - 请求失败:', {
       reviewId,
       error: error,
       url: `/book-reviews/${reviewId}`

@@ -8,7 +8,7 @@
 
       <div class="user-info">
         <div class="username">{{ username }}</div>
-        <div class="post-time">{{ postTime }}</div>
+        <div class="post-time">{{ formattedTime }}</div>
       </div>
 
       <!-- 条件渲染关注按钮 -->
@@ -76,6 +76,7 @@ interface Props extends Post {
   postId?: number // 补充postId类型定义，修复跳转TS警告
   showFollowButton?: boolean // 新增：控制是否显示关注按钮
   book?: PostBookSummary | null
+  postTime?: string // 添加 postTime prop
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,6 +85,7 @@ const props = withDefaults(defineProps<Props>(), {
   book: null,
   postId: undefined,
   showFollowButton: true, // 默认显示关注按钮
+  postTime: '',
 })
 
 const emit = defineEmits<PostCardEmits>()
@@ -106,6 +108,32 @@ const handleAvatarError = (event: Event) => {
     img.src = DEFAULT_AVATAR
   }
 }
+
+// 格式化时间
+const formattedTime = computed(() => {
+  const timeStr = props.postTime || ''
+  if (!timeStr) return '未知时间'
+  
+  try {
+    const date = new Date(timeStr)
+    if (isNaN(date.getTime())) return timeStr
+    
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+
+    if (minutes < 1) return '刚刚'
+    if (minutes < 60) return `${minutes}分钟前`
+    if (hours < 24) return `${hours}小时前`
+    if (days < 7) return `${days}天前`
+    return date.toLocaleDateString('zh-CN')
+  } catch (e) {
+    console.error('Error formatting date:', e)
+    return timeStr
+  }
+})
 
 // 内容截断计算
 const isTruncated = computed((): boolean => {

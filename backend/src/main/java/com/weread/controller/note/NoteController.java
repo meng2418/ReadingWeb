@@ -38,7 +38,7 @@ public class NoteController {
                 dto.getBookId(),
                 dto.getChapterId(),
                 dto.getQuote(),
-                dto.getLineType() != null ? dto.getLineType() : "marker",
+                dto.getLineType(), // 保持 null 值，不要默认设置为 "marker"
                 dto.getThought()
         );
         

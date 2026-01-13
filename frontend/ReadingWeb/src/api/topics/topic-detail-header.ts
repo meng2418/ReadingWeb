@@ -19,7 +19,7 @@ export interface RawTopic {
   adminName: string
   relatedTopics: Array<{
     image: string
-    name: string
+    topicName: string  // 后端返回的是topicName，不是name
     postCount: number
     topicId: number
   }>
@@ -62,14 +62,39 @@ const mapTopicDetail = (raw: RawTopic, topicId: number): TopicDetail => ({
   relatedTopics: raw.relatedTopics.map((topic) => ({
     id: topic.topicId,
     cover: topic.image,
-    title: topic.name,
+    title: topic.topicName,  // 使用topicName而不是name
     postCount: topic.postCount,
   })),
 })
 
-/** 获取话题详情 */
-export const getTopicDetail = async (topicId: number): Promise<TopicDetail> => {
+/** 获取话题详情（包含关注状态） */
+export const getTopicDetail = async (topicId: number): Promise<TopicDetail & { isFollowing?: boolean }> => {
   const res = await request.get<RawTopic>(`/topics/${topicId}`)
   const rawData = unwrap(res)
-  return mapTopicDetail(rawData, topicId)
+  const detail = mapTopicDetail(rawData, topicId)
+  // 添加关注状态
+  return {
+    ...detail,
+    isFollowing: rawData.isFollowing ?? false
+  }
+}
+
+/**
+ * 关注话题
+ * @param topicId 话题ID
+ */
+export const followTopic = async (topicId: number): Promise<{ isFollowing: boolean }> => {
+  const res = await request.post<{ isFollowing: boolean }>(`/topics/${topicId}/follow`)
+  const data = unwrap(res)
+  return data
+}
+
+/**
+ * 取消关注话题
+ * @param topicId 话题ID
+ */
+export const unfollowTopic = async (topicId: number): Promise<{ isFollowing: boolean }> => {
+  const res = await request.delete<{ isFollowing: boolean }>(`/topics/${topicId}/follow`)
+  const data = unwrap(res)
+  return data
 }

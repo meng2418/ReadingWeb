@@ -119,7 +119,11 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
               };
        }
 
-       Integer countByAuthorId(Integer authorId);
+       /**
+        * 统计用户的帖子总数（只统计未删除的帖子）
+        */
+       @Query("SELECT COUNT(p) FROM PostEntity p WHERE p.authorId = :authorId AND (p.status = 1 OR p.status IS NULL)")
+       Integer countByAuthorId(@Param("authorId") Integer authorId);
 
        Page<PostEntity> findByAuthorIdInAndStatus(List<Integer> followingIds, int i, Pageable pageable);
 
@@ -207,17 +211,17 @@ public interface PostRepository extends JpaRepository<PostEntity, Integer>, JpaS
        Integer sumLikesByUserId(@Param("userId") Integer userId);
 
        /**
-        * 统计用户帖子
+        * 统计用户帖子（只返回未删除的帖子ID）
         */
-       @Query("SELECT p.postId FROM PostEntity p WHERE p.authorId = :userId")
+       @Query("SELECT p.postId FROM PostEntity p WHERE p.authorId = :userId AND (p.status = 1 OR p.status IS NULL)")
        List<Integer> findPostIdsByUserId(@Param("userId") Integer userId);
 
-       // 我的帖子瀑布流
-       @Query("SELECT p FROM PostEntity p WHERE p.authorId = :userId ORDER BY p.createdAt DESC")
+       // 我的帖子瀑布流（只返回未删除的帖子）
+       @Query("SELECT p FROM PostEntity p WHERE p.authorId = :userId AND (p.status = 1 OR p.status IS NULL) ORDER BY p.createdAt DESC")
        List<PostEntity> findUserPosts(@Param("userId") Integer userId, Pageable pageable);
 
-       // 我的帖子瀑布流
-       @Query("SELECT p FROM PostEntity p WHERE p.authorId = :userId AND p.postId < :cursorId ORDER BY p.createdAt DESC")
+       // 我的帖子瀑布流（只返回未删除的帖子）
+       @Query("SELECT p FROM PostEntity p WHERE p.authorId = :userId AND p.postId < :cursorId AND (p.status = 1 OR p.status IS NULL) ORDER BY p.createdAt DESC")
        List<PostEntity> findUserPostsAfterCursor(
                      @Param("userId") Integer userId,
                      @Param("cursorId") Integer cursorId,

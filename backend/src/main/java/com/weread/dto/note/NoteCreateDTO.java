@@ -20,7 +20,7 @@ public class NoteCreateDTO {
     @NotBlank(message = "引用内容不能为空")
     private String quote;
 
-    private String lineType = "marker"; // marker, wavy, underline
+    private String lineType; // marker, wavy, underline，想法类型时为 null
 
     private String thought; // 想法/笔记内容
 }

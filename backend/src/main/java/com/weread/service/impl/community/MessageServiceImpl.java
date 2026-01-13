@@ -140,8 +140,19 @@ private Map<String, Object> buildEmptyResult() {
         Map<String, Object> result = new HashMap<>();
         result.put("likes", likeList);
         result.put("hasMore", likeList.size() >= limit);
-        result.put("nextCursor", likeList.isEmpty() ? null : 
-            String.valueOf(likeList.get(likeList.size() - 1).get("likeId")));
+        
+        // 设置nextCursor
+        Integer nextCursor = null;
+        if (!likeList.isEmpty() && likeList.size() >= limit) {
+            Map<String, Object> lastLike = likeList.get(likeList.size() - 1);
+            Object likeIdObj = lastLike.get("likeId");
+            if (likeIdObj instanceof Integer) {
+                nextCursor = (Integer) likeIdObj;
+            } else if (likeIdObj instanceof Long) {
+                nextCursor = ((Long) likeIdObj).intValue();
+            }
+        }
+        result.put("nextCursor", nextCursor);
         
         return result;
     }
@@ -150,32 +161,52 @@ private Map<String, Object> buildEmptyResult() {
         Map<String, Object> map = new HashMap<>();
         map.put("commentId", comment.getCommentId());
         map.put("postId", comment.getPostId());
-        map.put("commentContent", comment.getContent());
+        map.put("commentContent", comment.getContent() != null ? comment.getContent() : "");
         map.put("commentTime", comment.getCreatedAt());
         
         // 获取帖子信息
-        Optional<PostEntity> postOpt = postRepository.findById(comment.getPostId());
-        postOpt.ifPresent(post -> {
-            map.put("postTitle", post.getTitle());
-        });
+        try {
+            Optional<PostEntity> postOpt = postRepository.findById(comment.getPostId());
+            postOpt.ifPresent(post -> {
+                map.put("postTitle", post.getTitle() != null ? post.getTitle() : "");
+            });
+            if (!postOpt.isPresent()) {
+                map.put("postTitle", "");
+            }
+        } catch (Exception e) {
+            log.warn("获取帖子信息失败: postId={}", comment.getPostId(), e);
+            map.put("postTitle", "");
+        }
         
         // 获取评论者信息
-        Optional<UserEntity> commenterOpt = userRepository.findById(comment.getUserId());
-        commenterOpt.ifPresent(user -> {
+        try {
+            Optional<UserEntity> commenterOpt = userRepository.findById(comment.getUserId());
+            commenterOpt.ifPresent(user -> {
+                Map<String, Object> commenter = new HashMap<>();
+                commenter.put("userId", user.getUserId());
+                commenter.put("username", user.getUsername() != null ? user.getUsername() : "");
+                commenter.put("avatar", user.getAvatar() != null ? user.getAvatar() : "");
+                map.put("commenter", commenter);
+            });
+            if (!commenterOpt.isPresent()) {
+                Map<String, Object> commenter = new HashMap<>();
+                commenter.put("userId", 0);
+                commenter.put("username", "");
+                commenter.put("avatar", "");
+                map.put("commenter", commenter);
+            }
+        } catch (Exception e) {
+            log.warn("获取评论者信息失败: userId={}", comment.getUserId(), e);
             Map<String, Object> commenter = new HashMap<>();
-            commenter.put("userId", user.getUserId());
-            commenter.put("username", user.getUsername());
-            commenter.put("avatar", user.getAvatar());
+            commenter.put("userId", 0);
+            commenter.put("username", "");
+            commenter.put("avatar", "");
             map.put("commenter", commenter);
-        });
+        }
         
         // 父评论信息
         if (comment.getParentCommentId() != null) {
             map.put("parentCommentId", comment.getParentCommentId());
-            Optional<CommentEntity> parentComment = commentRepository.findById(comment.getParentCommentId());
-            parentComment.ifPresent(parent -> {
-                map.put("parentCommentContent", parent.getContent());
-            });
         }
         
         return map;
@@ -184,43 +215,96 @@ private Map<String, Object> buildEmptyResult() {
     private Map<String, Object> convertLikeToMap(LikeEntity like) {
         Map<String, Object> map = new HashMap<>();
         map.put("likeId", like.getLikeId());
-        map.put("targetType", like.getTargetType()); // "post" 或 "comment"
+        map.put("targetType", like.getTargetType() != null ? like.getTargetType() : "post");
         map.put("likeTime", like.getCreatedAt());
         
         // 获取点赞者信息
-        Optional<UserEntity> likerOpt = userRepository.findById(like.getUserId());
-        likerOpt.ifPresent(user -> {
+        try {
+            Optional<UserEntity> likerOpt = userRepository.findById(like.getUserId());
+            likerOpt.ifPresent(user -> {
+                Map<String, Object> liker = new HashMap<>();
+                liker.put("userId", user.getUserId());
+                liker.put("username", user.getUsername() != null ? user.getUsername() : "");
+                liker.put("avatar", user.getAvatar() != null ? user.getAvatar() : "");
+                map.put("liker", liker);
+            });
+            if (!likerOpt.isPresent()) {
+                Map<String, Object> liker = new HashMap<>();
+                liker.put("userId", 0);
+                liker.put("username", "");
+                liker.put("avatar", "");
+                map.put("liker", liker);
+            }
+        } catch (Exception e) {
+            log.warn("获取点赞者信息失败: userId={}", like.getUserId(), e);
             Map<String, Object> liker = new HashMap<>();
-            liker.put("userId", user.getUserId());
-            liker.put("username", user.getUsername());
-            liker.put("avatar", user.getAvatar());
+            liker.put("userId", 0);
+            liker.put("username", "");
+            liker.put("avatar", "");
             map.put("liker", liker);
-        });
+        }
         
         // 根据点赞类型处理不同的ID字段
-    if ("post".equals(like.getTargetType())) {
-        Integer postId = like.getPostId();
-        map.put("targetId", postId);  // 对应接口文档的 targetId
-        
-        Optional<PostEntity> postOpt = postRepository.findById(postId);
-        postOpt.ifPresent(post -> {
-            map.put("postTitle", post.getTitle());
-        });
-        
-    } else if ("comment".equals(like.getTargetType())) {
-        Integer commentId = like.getCommentId();
-        map.put("targetId", commentId);  // 对应接口文档的 targetId
-        
-        Optional<CommentEntity> commentOpt = commentRepository.findById(commentId);
-        commentOpt.ifPresent(comment -> {
-            map.put("commentContent", comment.getContent());
-            // 同时获取相关帖子标题
-            Optional<PostEntity> postOpt = postRepository.findById(comment.getPostId());
-            postOpt.ifPresent(post -> {
-                map.put("postTitle", post.getTitle());
-            });
-        });
-    }
+        if ("post".equals(like.getTargetType())) {
+            Integer postId = like.getPostId();
+            map.put("targetId", postId != null ? postId : 0);
+            
+            try {
+                if (postId != null) {
+                    Optional<PostEntity> postOpt = postRepository.findById(postId);
+                    postOpt.ifPresent(post -> {
+                        map.put("postTitle", post.getTitle() != null ? post.getTitle() : "");
+                    });
+                    if (!postOpt.isPresent()) {
+                        map.put("postTitle", "");
+                    }
+                } else {
+                    map.put("postTitle", "");
+                }
+            } catch (Exception e) {
+                log.warn("获取帖子信息失败: postId={}", postId, e);
+                map.put("postTitle", "");
+            }
+            
+        } else if ("comment".equals(like.getTargetType())) {
+            Integer commentId = like.getCommentId();
+            map.put("targetId", commentId != null ? commentId : 0);
+            
+            try {
+                if (commentId != null) {
+                    Optional<CommentEntity> commentOpt = commentRepository.findById(commentId);
+                    commentOpt.ifPresent(comment -> {
+                        map.put("commentContent", comment.getContent() != null ? comment.getContent() : "");
+                        // 同时获取相关帖子标题
+                        if (comment.getPostId() != null) {
+                            Optional<PostEntity> postOpt = postRepository.findById(comment.getPostId());
+                            postOpt.ifPresent(post -> {
+                                map.put("postTitle", post.getTitle() != null ? post.getTitle() : "");
+                            });
+                            if (!postOpt.isPresent()) {
+                                map.put("postTitle", "");
+                            }
+                        } else {
+                            map.put("postTitle", "");
+                        }
+                    });
+                    if (!commentOpt.isPresent()) {
+                        map.put("commentContent", "");
+                        map.put("postTitle", "");
+                    }
+                } else {
+                    map.put("commentContent", "");
+                    map.put("postTitle", "");
+                }
+            } catch (Exception e) {
+                log.warn("获取评论信息失败: commentId={}", commentId, e);
+                map.put("commentContent", "");
+                map.put("postTitle", "");
+            }
+        } else {
+            map.put("targetId", 0);
+            map.put("postTitle", "");
+        }
         
         return map;
     }
