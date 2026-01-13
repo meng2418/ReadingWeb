@@ -200,9 +200,11 @@ const openRechargeDialog = () => {
   rechargeDialogRef.value.open(props.user.payCoin)
 }
 
-const handleRechargeSuccess = (option: any) => {
+const handleRechargeSuccess = async (option: any) => {
   console.log('充值成功:', option)
-  // 使用 coinAmount 和 bonusCoins，如果没有则使用 amount 和 bonus
+  // 通知父组件刷新用户数据，从服务器获取最新的余额
+  emit('profile-updated')
+  // 同时更新本地状态（乐观更新）
   const coinAmount = option.coinAmount || option.amount || 0
   const bonusCoins = option.bonusCoins || option.bonus || 0
   props.user.payCoin += coinAmount + bonusCoins

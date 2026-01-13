@@ -17,6 +17,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +44,8 @@ public class RechargeServiceImpl implements RechargeService {
         vo.setBonusCoins(packageEntity.getBonusCoins());
         vo.setPayAmount(BigDecimal.valueOf(packageEntity.getCnyAmount()));
         vo.setTotalCoins(packageEntity.getCoinAmount() + packageEntity.getBonusCoins());
+        // 设置支持的支付方式
+        vo.setPaymentMethods(Arrays.asList("wechat", "alipay", "unionpay"));
         
         return vo;
     }
@@ -69,16 +73,33 @@ public class RechargeServiceImpl implements RechargeService {
         order.setPayAmount(BigDecimal.valueOf(packageEntity.getCnyAmount()));
         order.setPaymentMethod(RechargeOrderEntity.PaymentMethod.fromCode(request.getPaymentMethod()));
         
-        // 4. 保存订单
+        // 4. 保存订单（订单号会在@PrePersist中自动生成）
         order = rechargeOrderRepository.save(order);
         
+        // 5. 模拟支付成功：立即给用户充值币（因为这是模拟充值，没有真正的第三方支付）
+        // 如果是真实支付，应该在支付回调中处理
+        int totalCoins = order.getCoinAmount() + order.getBonusCoins();
+        int updated = userRepository.addCoins(userId, totalCoins);
         
-        // 6. 构建响应
+        if (updated > 0) {
+            // 6. 标记订单为已支付
+            String transactionNo = "MOCK_" + System.currentTimeMillis();
+            rechargeOrderRepository.markAsPaid(
+                order.getOrderNo(),
+                transactionNo,
+                LocalDateTime.now(),
+                RechargeOrderEntity.OrderStatus.PAID,
+                RechargeOrderEntity.OrderStatus.PENDING
+            );
+        } else {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "充值失败：无法更新用户币数");
+        }
+        
+        // 7. 构建响应
         RechargeResponseVO response = new RechargeResponseVO();
         response.setOrderId(order.getOrderNo());
         response.setCoinAmount(order.getCoinAmount());
         response.setBonusCoins(order.getBonusCoins());
-        
         
         return response;
     }

@@ -79,6 +79,10 @@ onMounted(async () => {
   userStore.fetchUserHome()
   const res = await getTodayReadingTime()
   todayRead.value = res.data.data.readingTime ?? 0
+  
+  // 加载已领取的任务（从后端获取今日已领取的任务列表）
+  // 注意：由于后端暂时没有提供获取已领取任务列表的接口，这里先使用本地逻辑
+  // 如果任务已达成但未领取，会在点击时由后端验证
 })
 const streak = computed(() => userStore.consecutiveReadingDays)
 // 3. 工具方法
@@ -94,11 +98,11 @@ const getDailyProgress = (task) => {
 }
 
 // 4. 领取奖励的核心逻辑
-// 根据接口文档，每次领取都是2天体验卡，不需要传type和value参数
+// 根据接口文档，每次领取都是2天体验卡，需要传递任务时长
 const claimReward = async (task) => {
   try {
-    // 调用API领取奖励（不需要参数）
-    await postReadingReward()
+    // 调用API领取奖励，传递任务时长
+    await postReadingReward(task.minutes)
 
     // 标记已领取
     task.claimed = true

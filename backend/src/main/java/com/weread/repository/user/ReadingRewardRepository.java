@@ -12,4 +12,6 @@ public interface ReadingRewardRepository extends JpaRepository<ReadingRewardEnti
     boolean existsByUserIdAndRewardDateAndRewardType(Integer userId, LocalDate rewardDate, String rewardType);
     
     List<ReadingRewardEntity> findByUserIdOrderByRewardDateDesc(Integer userId);
+    
+    List<ReadingRewardEntity> findByUserIdAndRewardDate(Integer userId, LocalDate rewardDate);
 }

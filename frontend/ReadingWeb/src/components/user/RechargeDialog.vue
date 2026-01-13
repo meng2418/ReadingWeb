@@ -263,6 +263,14 @@ const selectAmount = (id: number) => {
   selectedAmount.value = id
 }
 
+const handlePaymentMethodClick = (methodId: string) => {
+  // 如果支付方式被禁用，不允许选择
+  if (availablePaymentMethods.value.length > 0 && !availablePaymentMethods.value.includes(methodId)) {
+    return
+  }
+  selectedMethod.value = methodId
+}
+
 const goToPaymentStep = async () => {
   if (!selectedAmount.value) {
     ElMessage.warning('请选择充值金额')

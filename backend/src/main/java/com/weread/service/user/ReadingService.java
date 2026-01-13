@@ -22,8 +22,11 @@ public interface ReadingService {
     
     /**
      * 领取阅读激励
+     * @param userId 用户ID
+     * @param minutes 阅读时长要求（分钟）
+     * @return 是否领取成功
      */
-    boolean claimReadingReward(Integer userId);
+    boolean claimReadingReward(Integer userId, Integer minutes);
     
     /**
      * 添加阅读记录

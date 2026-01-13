@@ -118,30 +118,39 @@ public class ReadingServiceImpl implements ReadingService {
 
     @Override
     @Transactional
-    public boolean claimReadingReward(Integer userId) {
+    public boolean claimReadingReward(Integer userId, Integer minutes) {
         LocalDate today = LocalDate.now();
-
-        // 检查今日是否已领取
-        boolean hasClaimed = readingRewardRepository.existsByUserIdAndRewardDateAndRewardType(
-                userId, today, "daily");
-
-        if (hasClaimed) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "今日已领取过奖励");
+        
+        // 如果未指定分钟数，默认30分钟
+        if (minutes == null) {
+            minutes = 30;
         }
 
-        // 检查今日阅读时长是否达标（30分钟）
+        // 使用rewardType来区分不同的任务（格式：daily_5, daily_30, daily_60等）
+        String rewardType = "daily_" + minutes;
+
+        // 检查今日是否已领取该时长的任务
+        boolean hasClaimed = readingRewardRepository.existsByUserIdAndRewardDateAndRewardType(
+                userId, today, rewardType);
+
+        if (hasClaimed) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "该任务今日已领取过");
+        }
+
+        // 检查今日阅读时长是否达标
         Integer todayReadingTime = readingRecordRepository.sumReadingTimeByUserIdAndDate(userId, today);
-        if (todayReadingTime == null || todayReadingTime < 30) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "今日阅读时长未达标（需30分钟）");
+        if (todayReadingTime == null || todayReadingTime < minutes) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                String.format("今日阅读时长未达标（需%d分钟）", minutes));
         }
 
         // 创建奖励记录
         ReadingRewardEntity reward = new ReadingRewardEntity();
         reward.setUserId(userId);
         reward.setRewardDate(today);
-        reward.setRewardType("daily");
+        reward.setRewardType(rewardType);
         reward.setRewardValue(2); // 2天体验卡
-        reward.setDescription("每日阅读激励奖励");
+        reward.setDescription(String.format("每日阅读激励奖励（%d分钟）", minutes));
         reward.setIsClaimed(true);
         reward.setClaimedAt(LocalDateTime.now());
         readingRewardRepository.save(reward);

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -102,15 +103,26 @@ class RewardController {
     @PostMapping("/reading")
     public ResponseEntity<Map<String, Object>> claimReadingReward(
             @Parameter(description = "用户ID", hidden = true)
-            @AuthenticationPrincipal Integer userId) {
+            @AuthenticationPrincipal Integer userId,
+            @Parameter(description = "阅读时长要求（分钟）", example = "30")
+            @RequestParam(required = false, defaultValue = "30") Integer minutes) {
         
-        boolean success = readingService.claimReadingReward(userId);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("code", 200);
-        response.put("message", success ? "领取成功" : "领取失败");
-        response.put("data", null);
-        
-        return ResponseEntity.ok(response);
+        try {
+            boolean success = readingService.claimReadingReward(userId, minutes);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 200);
+            response.put("message", success ? "领取成功" : "领取失败");
+            response.put("data", null);
+            
+            return ResponseEntity.ok(response);
+        } catch (ResponseStatusException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", e.getStatusCode().value());
+            response.put("message", e.getReason());
+            response.put("data", null);
+            
+            return ResponseEntity.status(e.getStatusCode()).body(response);
+        }
     }
 }
