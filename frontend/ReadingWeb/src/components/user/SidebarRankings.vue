@@ -53,6 +53,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
 import { ElMessage } from 'element-plus' // 假设用Element Plus的提示组件（可选）
 import { postReadingReward, getTodayReadingTime } from '@/api/rewards'
+import { getProfileHome } from '@/api/profile'
+
+// 定义emit事件，用于通知父组件更新用户信息
+const emit = defineEmits(['user-data-updated'])
 
 // 1. 响应式数据定义
 const todayRead = ref(0) // 用户今日阅读分钟数
@@ -90,25 +94,32 @@ const getDailyProgress = (task) => {
 }
 
 // 4. 领取奖励的核心逻辑
-const claimReward = async (task, type) => {
+// 根据接口文档，每次领取都是2天体验卡，不需要传type和value参数
+const claimReward = async (task) => {
   try {
-    const value = type === 'daily' ? task.minutes : task.days
-    await postReadingReward(type, value)
+    // 调用API领取奖励（不需要参数）
+    await postReadingReward()
 
     // 标记已领取
     task.claimed = true
 
-    // 刷新用户信息
+    // 刷新用户信息：更新store和通知父组件
     await userStore.fetchUserHome()
+    
+    // 获取最新的用户主页数据，包括体验卡天数、充值币、会员信息等
+    const homeData = await getProfileHome()
+    
+    // 触发事件，通知父组件更新用户数据
+    emit('user-data-updated', homeData)
 
-    ElMessage.success('领取成功')
+    ElMessage.success('领取成功！获得2天体验卡')
   } catch (e) {
     ElMessage.error(e.message || '领取失败')
   }
 }
 
-const claimDaily = (task) => claimReward(task, 'daily')
-const claimStreak = (task) => claimReward(task, 'streak')
+const claimDaily = (task) => claimReward(task)
+const claimStreak = (task) => claimReward(task)
 </script>
 
 <style scoped>

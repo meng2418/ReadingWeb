@@ -11,6 +11,7 @@ import com.weread.repository.community.PostRepository;
 import com.weread.repository.user.FollowRepository;
 import com.weread.repository.ReadingProgressRepository;
 import com.weread.repository.note.NoteRepository;
+import com.weread.repository.asset.MemberCardRepository;
 import com.weread.service.user.UserService;
 import com.weread.vo.user.FollowListVO;
 import com.weread.vo.user.FollowUserVO;
@@ -49,6 +50,7 @@ public class UserServiceImpl implements UserService {
     private final LikeRepository likeRepository;
     private final NoteRepository noteRepository;
     private final ReadingProgressRepository readingProgressRepository;
+    private final MemberCardRepository memberCardRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -164,8 +166,17 @@ public class UserServiceImpl implements UserService {
     }
     
     private Integer getMemberCardCount(Integer userId) {
-        // 这里需要调用会员卡相关的Repository
-        return 0; // 示例
+        // 统计用户未使用的有效体验卡数量（按天数计算）
+        LocalDateTime now = LocalDateTime.now();
+        List<com.weread.entity.asset.MemberCardEntity> unusedCards = 
+            memberCardRepository.findUnusedValidCardsByUserId(userId, now);
+        
+        // 计算总天数：将所有未使用的有效体验卡的天数相加
+        int totalDays = unusedCards.stream()
+            .mapToInt(card -> card.getDurationDays() != null ? card.getDurationDays() : 0)
+            .sum();
+        
+        return totalDays;
     }
     
     private UserProfileVO.ReadingStatsVO getReadingStats(Integer userId) {

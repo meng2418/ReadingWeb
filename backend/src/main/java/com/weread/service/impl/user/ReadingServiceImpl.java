@@ -140,17 +140,17 @@ public class ReadingServiceImpl implements ReadingService {
         reward.setUserId(userId);
         reward.setRewardDate(today);
         reward.setRewardType("daily");
-        reward.setRewardValue(1); // 1天体验卡
+        reward.setRewardValue(2); // 2天体验卡
         reward.setDescription("每日阅读激励奖励");
         reward.setIsClaimed(true);
         reward.setClaimedAt(LocalDateTime.now());
         readingRewardRepository.save(reward);
 
-        // 创建会员卡（1天体验卡）
+        // 创建会员卡（2天体验卡）
         MemberCardEntity card = new MemberCardEntity();
         card.setUserId(userId);
         card.setCardName("阅读激励体验卡");
-        card.setDurationDays(1);
+        card.setDurationDays(2);
         card.setSourceType("reward");
         card.setSourceOrderNo("REWARD_" + System.currentTimeMillis());
         card.setStatus(MemberCardEntity.Status.VALID.getCode());

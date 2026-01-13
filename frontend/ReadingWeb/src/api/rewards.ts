@@ -19,10 +19,12 @@ interface ApiResponse<T = any> {
 
 /**
  * 领取阅读奖励
+ * 根据接口文档，该接口不需要参数，从JWT获取userId
+ * 每次领取都是2天体验卡
  */
-export const postReadingReward = async (type: 'daily' | 'streak', value: number): Promise<void> => {
+export const postReadingReward = async (): Promise<void> => {
   // 告知 axios 返回值的类型是 ApiResponse
-  const res = await request.post<ApiResponse>('/rewards/reading', { type, value })
+  const res = await request.post<ApiResponse>('/rewards/reading')
 
   // 现在 TS 知道 res.data 里面有 code 和 message 了
   if (res.data.code !== 200) {

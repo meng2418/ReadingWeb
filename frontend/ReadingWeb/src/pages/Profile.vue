@@ -13,7 +13,7 @@
 
     <section class="main-section">
       <aside class="left-sidebar">
-        <SidebarRankings />
+        <SidebarRankings @user-data-updated="handleUserDataUpdated" />
       </aside>
 
       <main class="right-dashboard">
@@ -141,6 +141,22 @@ const loadUserData = async () => {
 const handleProfileUpdated = async () => {
   // 重新加载用户数据
   await loadUserData()
+}
+
+// 处理用户数据更新事件（来自阅读激励领取）
+const handleUserDataUpdated = (homeData: any) => {
+  // 更新用户信息，包括体验卡天数、充值币、会员信息等
+  user.value.nickname = homeData.username
+  user.value.signature = homeData.bio
+  user.value.avatar = homeData.avatar
+  user.value.isVip = homeData.isMember
+  user.value.payCoin = homeData.coinCount
+  user.value.giftVIP = homeData.experienceCardCount ?? 0
+  user.value.vipDays = homeData.memberExpireDays ?? 0
+  user.value.stats.following = homeData.followingCount ?? 0
+  user.value.stats.followers = homeData.followerCount ?? 0
+  user.value.stats.posts = homeData.postCount ?? 0
+  readingStats.value = homeData.readingStats
 }
 
 onMounted(async () => {
