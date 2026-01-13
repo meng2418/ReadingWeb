@@ -43,7 +43,12 @@
         placeholder="写下你的阅读感受..."
         rows="10"
       ></textarea>
-      <div class="character-count">{{ reviewText.length }}/2000</div>
+      <div class="character-count" :class="{ 'error': reviewText.length > 0 && reviewText.length < 10 }">
+        {{ reviewText.length }}/2000
+        <span v-if="reviewText.length > 0 && reviewText.length < 10" class="min-length-hint">
+          （至少需要10个字符）
+        </span>
+      </div>
     </div>
 
     <!-- 公开选项 -->
@@ -127,7 +132,7 @@ const existingReviewId = ref<number | null>(null) // 现有书评ID（用于编�
 // 计算属性：是否可以提交
 const canSubmit = computed(() => {
   const text = reviewText.value.trim()
-  return text.length > 0 && text.length <= 2000
+  return text.length >= 10 && text.length <= 2000
 })
 
 // 加载用户已有的点评（如果是编辑模式）
@@ -285,11 +290,44 @@ const handleSubmit = async () => {
         timestamp: Date.now().toString() // 添加时间戳，强制刷新
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('API提交点评失败:', error)
-    alert('网络连接失败，请检查网络后重试')
-
-    // 不再回退到本地存储，直接提示用户重试
+    
+    // 提取错误信息
+    let errorMessage = '网络连接失败，请检查网络后重试'
+    
+    // 检查是否是验证错误（400状态码）
+    if (error?.response?.status === 400) {
+      // 尝试从响应中提取错误信息
+      const responseData = error?.response?.data
+      
+      // 如果是字符串，直接使用
+      if (typeof responseData === 'string') {
+        errorMessage = responseData
+      } 
+      // 如果是对象，尝试提取message字段
+      else if (responseData?.message) {
+        errorMessage = responseData.message
+      }
+      // 检查是否是内容长度验证失败
+      else if (reviewText.value.trim().length < 10) {
+        errorMessage = '评论内容至少需要10个字符'
+      } else if (reviewText.value.trim().length > 2000) {
+        errorMessage = '评论内容不能超过2000个字符'
+      } else {
+        errorMessage = '提交失败，请检查输入内容'
+      }
+    } 
+    // 检查网络错误
+    else if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+      errorMessage = '请求超时，请检查网络连接后重试'
+    }
+    // 检查其他错误
+    else if (error?.message) {
+      errorMessage = error.message
+    }
+    
+    alert(errorMessage)
     return
   }
 }
@@ -457,6 +495,15 @@ const handleDelete = async () => {
   color: #999;
   margin-top: 5px;
   flex-shrink: 0;
+}
+
+.character-count.error {
+  color: #f5222d;
+}
+
+.min-length-hint {
+  color: #f5222d;
+  margin-left: 5px;
 }
 
 /* 公开选项 */

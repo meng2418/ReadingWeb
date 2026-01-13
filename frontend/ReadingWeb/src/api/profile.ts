@@ -320,7 +320,7 @@ export const getTopBooks = async (
     
     return {
       bookId: item.bookId ?? 0, // 如果确实没有，设为0，跳转时会检查
-      cover: item.cover ?? '',
+      cover: processCoverPath(item.cover ?? ''),
       title: item.bookTitle ?? '',
       readingTime: item.readingTime ?? 0,
     }

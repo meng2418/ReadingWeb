@@ -41,9 +41,9 @@ public class GlobalExceptionHandler {
             return true;
         }
         
-        // /book-reviews 接口返回空 body
+        // /book-reviews 接口返回 JSON 格式（包含错误信息）
         if (requestPath != null && requestPath.startsWith("/book-reviews")) {
-            return false;
+            return true;
         }
         
         // /notes 接口返回空 body（400和401响应不应该有Body）
@@ -110,9 +110,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException e) {
         boolean shouldReturnJson = shouldReturnJsonError();
+        
         if (shouldReturnJson) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new java.util.HashMap<>());
+            // 提取验证错误信息
+            String errorMessage = "请求参数验证失败";
+            if (e.getBindingResult() != null && e.getBindingResult().hasFieldErrors()) {
+                var fieldError = e.getBindingResult().getFieldError();
+                if (fieldError != null && fieldError.getDefaultMessage() != null) {
+                    errorMessage = fieldError.getDefaultMessage();
+                }
+            }
+            
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("message", errorMessage);
+            errorResponse.put("code", 400);
+            
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
