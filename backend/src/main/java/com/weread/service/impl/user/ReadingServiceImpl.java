@@ -119,6 +119,11 @@ public class ReadingServiceImpl implements ReadingService {
     @Override
     @Transactional
     public boolean claimReadingReward(Integer userId, Integer minutes) {
+        // 检查用户ID是否有效
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户未登录");
+        }
+        
         LocalDate today = LocalDate.now();
         
         // 如果未指定分钟数，默认30分钟
@@ -167,6 +172,19 @@ public class ReadingServiceImpl implements ReadingService {
         memberCardRepository.save(card);
 
         return true;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getTodayClaimedRewardTypes(Integer userId) {
+        LocalDate today = LocalDate.now();
+        List<ReadingRewardEntity> rewards = readingRewardRepository.findByUserIdAndRewardDate(userId, today);
+        
+        // 提取奖励类型列表
+        return rewards.stream()
+                .map(ReadingRewardEntity::getRewardType)
+                .filter(rewardType -> rewardType != null && rewardType.startsWith("daily_"))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -690,15 +708,17 @@ public class ReadingServiceImpl implements ReadingService {
 
     // 新增这几个方法
     private List<Map<String, Object>> getWeekTimelineData(Integer userId) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(6);
+        LocalDate today = LocalDate.now();
+        // 获取本周的开始（周一）和结束（周日）
+        LocalDate startOfWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate endOfWeek = today.with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
 
         List<Map<String, Object>> list = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        // 查询最近7天的阅读数据
+        // 查询本周的阅读数据
         List<Object[]> dailyData = readingRecordRepository.findDailyStatsByUserIdAndDateRange(
-                userId, startDate, endDate);
+                userId, startOfWeek, endOfWeek);
 
         // 转换为Map便于查找
         Map<LocalDate, Integer> dailyStats = new HashMap<>();
@@ -708,26 +728,29 @@ public class ReadingServiceImpl implements ReadingService {
             dailyStats.put(date, readingTime);
         }
 
-        // 构建7天数据
-        for (int i = 6; i >= 0; i--) {
-            LocalDate date = endDate.minusDays(i);
+        // 构建本周7天数据（周一到周日）
+        LocalDate currentDate = startOfWeek;
+        while (!currentDate.isAfter(endOfWeek)) {
             Map<String, Object> item = new HashMap<>();
-            item.put("date", date.format(formatter));
-            item.put("readingTime", dailyStats.getOrDefault(date, 0));
+            item.put("date", currentDate.format(formatter));
+            item.put("readingTime", dailyStats.getOrDefault(currentDate, 0));
             list.add(item);
+            currentDate = currentDate.plusDays(1);
         }
         return list;
     }
 
     private List<Map<String, Object>> getMonthTimelineData(Integer userId) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(29);
+        LocalDate today = LocalDate.now();
+        // 获取本月的开始和结束
+        LocalDate startOfMonth = today.with(java.time.temporal.TemporalAdjusters.firstDayOfMonth());
+        LocalDate endOfMonth = today.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
 
         List<Map<String, Object>> list = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         List<Object[]> dailyData = readingRecordRepository.findDailyStatsByUserIdAndDateRange(
-                userId, startDate, endDate);
+                userId, startOfMonth, endOfMonth);
 
         Map<LocalDate, Integer> dailyStats = new HashMap<>();
         for (Object[] data : dailyData) {
@@ -736,13 +759,14 @@ public class ReadingServiceImpl implements ReadingService {
             dailyStats.put(date, readingTime);
         }
 
-        // 构建30天数据
-        for (int i = 29; i >= 0; i--) {
-            LocalDate date = endDate.minusDays(i);
+        // 构建本月所有天的数据
+        LocalDate currentDate = startOfMonth;
+        while (!currentDate.isAfter(endOfMonth)) {
             Map<String, Object> item = new HashMap<>();
-            item.put("date", date.format(formatter));
-            item.put("readingTime", dailyStats.getOrDefault(date, 0));
+            item.put("date", currentDate.format(formatter));
+            item.put("readingTime", dailyStats.getOrDefault(currentDate, 0));
             list.add(item);
+            currentDate = currentDate.plusDays(1);
         }
 
         return list;
@@ -750,13 +774,16 @@ public class ReadingServiceImpl implements ReadingService {
 
     private List<Map<String, Object>> getYearTimelineData(Integer userId) {
         LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusMonths(11).withDayOfMonth(1);
+        // 确保结束日期是当前月份的第一天，避免包含未来月份
+        YearMonth currentMonth = YearMonth.from(endDate);
+        LocalDate endDateForQuery = currentMonth.atEndOfMonth();
+        LocalDate startDate = currentMonth.minusMonths(11).atDay(1);
 
         List<Map<String, Object>> list = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
 
         List<Object[]> monthlyData = readingRecordRepository.findMonthlyStatsByUserIdAndDateRange(
-                userId, startDate, endDate);
+                userId, startDate, endDateForQuery);
 
         Map<String, Integer> monthlyStats = new HashMap<>();
         for (Object[] data : monthlyData) {
@@ -765,9 +792,9 @@ public class ReadingServiceImpl implements ReadingService {
             monthlyStats.put(month, readingTime);
         }
 
-        // 构建12个月数据
+        // 构建12个月数据，只包含当前月份及之前的月份
         for (int i = 11; i >= 0; i--) {
-            YearMonth month = YearMonth.from(endDate.minusMonths(i));
+            YearMonth month = currentMonth.minusMonths(i);
             Map<String, Object> item = new HashMap<>();
             item.put("date", month.format(formatter));
             item.put("readingTime", monthlyStats.getOrDefault(month.format(formatter), 0));
@@ -779,7 +806,6 @@ public class ReadingServiceImpl implements ReadingService {
 
     private List<Map<String, Object>> getTotalTimelineData(Integer userId) {
         List<Map<String, Object>> list = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         // 获取所有年份的数据
         List<Object[]> yearlyData = readingRecordRepository.findYearlyStatsByUserId(userId);
@@ -789,10 +815,18 @@ public class ReadingServiceImpl implements ReadingService {
             Integer readingTime = ((Number) data[1]).intValue();
 
             Map<String, Object> item = new HashMap<>();
-            item.put("date", year + "-01-01"); // 用年初日期表示年份
+            // 直接使用年份作为日期，前端会处理显示
+            item.put("date", String.valueOf(year));
             item.put("readingTime", readingTime);
             list.add(item);
         }
+
+        // 按年份升序排序（从早到晚）
+        list.sort((a, b) -> {
+            String dateA = (String) a.get("date");
+            String dateB = (String) b.get("date");
+            return dateA.compareTo(dateB);
+        });
 
         return list;
     }

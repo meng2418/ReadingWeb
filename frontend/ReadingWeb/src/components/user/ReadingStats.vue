@@ -1,15 +1,6 @@
-<!-- 时间选择器 -->
+<!-- 统计卡片 -->
 <template>
   <div class="stats-container">
-    <!-- 时间选择器（仅周/月/年显示） -->
-    <div v-if="showDateSelector" class="date-selector">
-      {{ dateText }}
-      <span class="arrows">
-        <i class="arrow left" @click="prev">&lt;</i>
-        <i class="arrow right" @click="next">&gt;</i>
-      </span>
-    </div>
-
     <!-- 统计卡片区域 -->
     <div class="stats-grid">
       <div class="card" v-for="(v, k) in stats" :key="k">
@@ -67,38 +58,6 @@ const units = {
   booksFinished: ' 本',
   notes: ' 条',
 }
-
-// -----------------------------
-// 时间区间逻辑
-// -----------------------------
-const currentIndex = ref(0)
-const weekRanges = ['9月22日 - 9月28日', '9月15日 - 9月21日']
-const monthRanges = ['2025年9月', '2025年8月']
-const yearRanges = ['2025年', '2024年']
-
-const dateText = computed(() => {
-  if (props.period === 'week') return weekRanges[currentIndex.value]
-  if (props.period === 'month') return monthRanges[currentIndex.value]
-  if (props.period === 'year') return yearRanges[currentIndex.value]
-  return ''
-})
-
-const showDateSelector = computed(() => props.period !== 'total')
-
-const prev = () => {
-  currentIndex.value = (currentIndex.value + 1) % getRange().length
-}
-
-const next = () => {
-  currentIndex.value = (currentIndex.value - 1 + getRange().length) % getRange().length
-}
-
-function getRange() {
-  if (props.period === 'week') return weekRanges
-  if (props.period === 'month') return monthRanges
-  if (props.period === 'year') return yearRanges
-  return []
-}
 </script>
 
 <style scoped>
@@ -107,34 +66,6 @@ function getRange() {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.date-selector {
-  font-size: 14px;
-  color: var(--text-light); /* 保持变量使用 */
-  display: flex;
-  align-items: center;
-}
-
-.arrows .arrow {
-  cursor: pointer;
-  background: var(--bg-gray, #eaeaea);
-  color: var(--text-main, #333);
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-style: normal;
-  font-size: 12px;
-  margin-left: 6px;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.arrows .arrow:hover {
-  background: var(--primary-green, #007c27);
-  color: #fff;
 }
 
 .stats-grid {

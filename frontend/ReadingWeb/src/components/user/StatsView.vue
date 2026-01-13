@@ -58,6 +58,15 @@ const formatLabel = (dateStr: string, period: string): string => {
       const parts = dateStr.split('-')
       return parts[1] ? parseInt(parts[1]) + '月' : ''
     }
+    if (period === 'total') {
+      // 如果是年份格式（如 "2025"），直接返回
+      if (/^\d{4}$/.test(dateStr)) {
+        return dateStr
+      }
+      // 如果是日期格式（如 "2025-01-01"），提取年份
+      const year = dateStr.split('-')[0]
+      return year || dateStr
+    }
   } catch (e) {
     return dateStr
   }

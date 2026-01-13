@@ -181,11 +181,23 @@ public class UserServiceImpl implements UserService {
     
     private UserProfileVO.ReadingStatsVO getReadingStats(Integer userId) {
         LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate();
         
-        // 计算时间范围
-        LocalDateTime weekStart = now.minusDays(7);    // 最近7天
-        LocalDateTime monthStart = now.minusDays(30);  // 最近30天
-        LocalDateTime yearStart = now.minusDays(365);  // 最近365天
+        // 计算时间范围：本周、本月、今年
+        LocalDate startOfWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate endOfWeek = today.with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+        LocalDateTime weekStart = startOfWeek.atStartOfDay();
+        LocalDateTime weekEnd = endOfWeek.atTime(23, 59, 59);
+        
+        LocalDate startOfMonth = today.with(java.time.temporal.TemporalAdjusters.firstDayOfMonth());
+        LocalDate endOfMonth = today.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+        LocalDateTime monthStart = startOfMonth.atStartOfDay();
+        LocalDateTime monthEnd = endOfMonth.atTime(23, 59, 59);
+        
+        LocalDate startOfYear = today.with(java.time.temporal.TemporalAdjusters.firstDayOfYear());
+        LocalDate endOfYear = today.with(java.time.temporal.TemporalAdjusters.lastDayOfYear());
+        LocalDateTime yearStart = startOfYear.atStartOfDay();
+        LocalDateTime yearEnd = endOfYear.atTime(23, 59, 59);
         
         UserProfileVO.ReadingStatsVO stats = new UserProfileVO.ReadingStatsVO();
         
@@ -198,13 +210,13 @@ public class UserServiceImpl implements UserService {
         if (totalBooksRead > 0) {
             Integer avgTimePerBook = totalReadingTime / totalBooksRead;
             
-            Integer weeklyBooks = getBooksReadByPeriod(userId, weekStart, now);
+            Integer weeklyBooks = getBooksReadByPeriod(userId, weekStart, weekEnd);
             stats.setWeeklyReadingTime(weeklyBooks * avgTimePerBook);
             
-            Integer monthlyBooks = getBooksReadByPeriod(userId, monthStart, now);
+            Integer monthlyBooks = getBooksReadByPeriod(userId, monthStart, monthEnd);
             stats.setMonthlyReadingTime(monthlyBooks * avgTimePerBook);
             
-            Integer yearlyBooks = getBooksReadByPeriod(userId, yearStart, now);
+            Integer yearlyBooks = getBooksReadByPeriod(userId, yearStart, yearEnd);
             stats.setYearlyReadingTime(yearlyBooks * avgTimePerBook);
         } else {
             stats.setWeeklyReadingTime(0);
@@ -214,21 +226,21 @@ public class UserServiceImpl implements UserService {
         stats.setTotalReadingTime(totalReadingTime);
         
         // 2. 阅读书籍统计
-        stats.setWeeklyBooksRead(getBooksReadByPeriod(userId, weekStart, now));
-        stats.setMonthlyBooksRead(getBooksReadByPeriod(userId, monthStart, now));
-        stats.setYearlyBooksRead(getBooksReadByPeriod(userId, yearStart, now));
+        stats.setWeeklyBooksRead(getBooksReadByPeriod(userId, weekStart, weekEnd));
+        stats.setMonthlyBooksRead(getBooksReadByPeriod(userId, monthStart, monthEnd));
+        stats.setYearlyBooksRead(getBooksReadByPeriod(userId, yearStart, yearEnd));
         stats.setTotalBooksRead(totalBooksRead);
         
         // 3. 读完书籍统计
-        stats.setWeeklyBooksFinished(getBooksFinishedByPeriod(userId, weekStart, now));
-        stats.setMonthlyBooksFinished(getBooksFinishedByPeriod(userId, monthStart, now));
-        stats.setYearlyBooksFinished(getBooksFinishedByPeriod(userId, yearStart, now));
+        stats.setWeeklyBooksFinished(getBooksFinishedByPeriod(userId, weekStart, weekEnd));
+        stats.setMonthlyBooksFinished(getBooksFinishedByPeriod(userId, monthStart, monthEnd));
+        stats.setYearlyBooksFinished(getBooksFinishedByPeriod(userId, yearStart, yearEnd));
         stats.setTotalBooksFinished(getTotalBooksFinished(userId));
         
         // 4. 笔记统计
-        stats.setWeeklyNoteCount(countNotesByPeriod(userId, weekStart, now));
-        stats.setMonthlyNoteCount(countNotesByPeriod(userId, monthStart, now));
-        stats.setYearlyNoteCount(countNotesByPeriod(userId, yearStart, now));
+        stats.setWeeklyNoteCount(countNotesByPeriod(userId, weekStart, weekEnd));
+        stats.setMonthlyNoteCount(countNotesByPeriod(userId, monthStart, monthEnd));
+        stats.setYearlyNoteCount(countNotesByPeriod(userId, yearStart, yearEnd));
         stats.setTotalNoteCount(countTotalNotes(userId));
         
         return stats;

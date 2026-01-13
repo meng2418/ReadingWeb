@@ -18,6 +18,7 @@
 
       <button
         class="reward-btn"
+        :class="{ 'reward-btn-claimed': task.claimed }"
         :disabled="todayRead < task.minutes || task.claimed"
         @click="claimDaily(task)"
       >
@@ -37,6 +38,7 @@
 
       <button
         class="reward-btn"
+        :class="{ 'reward-btn-claimed': task.claimed }"
         :disabled="streak < task.days || task.claimed"
         @click="claimStreak(task)"
       >
@@ -52,7 +54,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user' // 引入Pinia状态管理store
 import { ElMessage } from 'element-plus' // 假设用Element Plus的提示组件（可选）
-import { postReadingReward, getTodayReadingTime } from '@/api/rewards'
+import { postReadingReward, getTodayReadingTime, getTodayClaimedRewards } from '@/api/rewards'
 import { getProfileHome } from '@/api/profile'
 
 // 定义emit事件，用于通知父组件更新用户信息
@@ -75,14 +77,35 @@ const streakTasks = ref([
 
 // 2. Pinia store（用于组件间共享giftVIP数据）
 const userStore = useUserStore()
+
+// 加载已领取的任务状态
+const loadClaimedRewards = async () => {
+  try {
+    const claimedTypes = await getTodayClaimedRewards()
+    
+    // 更新每日任务的已领取状态
+    dailyTasks.value.forEach(task => {
+      const rewardType = `daily_${task.minutes}`
+      task.claimed = claimedTypes.includes(rewardType)
+    })
+    
+    // 连续阅读任务的已领取状态（暂时不处理，因为后端还没有实现连续阅读奖励）
+    // streakTasks.value.forEach(task => {
+    //   const rewardType = `streak_${task.days}`
+    //   task.claimed = claimedTypes.includes(rewardType)
+    // })
+  } catch (error) {
+    console.error('加载已领取奖励失败:', error)
+  }
+}
+
 onMounted(async () => {
   userStore.fetchUserHome()
   const res = await getTodayReadingTime()
   todayRead.value = res.data.data.readingTime ?? 0
   
   // 加载已领取的任务（从后端获取今日已领取的任务列表）
-  // 注意：由于后端暂时没有提供获取已领取任务列表的接口，这里先使用本地逻辑
-  // 如果任务已达成但未领取，会在点击时由后端验证
+  await loadClaimedRewards()
 })
 const streak = computed(() => userStore.consecutiveReadingDays)
 // 3. 工具方法
@@ -118,7 +141,13 @@ const claimReward = async (task) => {
 
     ElMessage.success('领取成功！获得2天体验卡')
   } catch (e) {
-    ElMessage.error(e.message || '领取失败')
+    const errorMessage = e.message || '领取失败'
+    ElMessage.error(errorMessage)
+    
+    // 如果错误信息包含"已领取过"，更新UI状态
+    if (errorMessage.includes('已领取过')) {
+      task.claimed = true
+    }
   }
 }
 
@@ -202,6 +231,12 @@ const claimStreak = (task) => claimReward(task)
 
 .reward-btn:disabled {
   background: #ccc;
+  cursor: not-allowed;
+}
+
+.reward-btn-claimed {
+  background: #ccc !important;
+  color: #999 !important;
   cursor: not-allowed;
 }
 </style>

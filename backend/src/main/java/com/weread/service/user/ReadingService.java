@@ -29,6 +29,13 @@ public interface ReadingService {
     boolean claimReadingReward(Integer userId, Integer minutes);
     
     /**
+     * 获取今日已领取的奖励类型列表
+     * @param userId 用户ID
+     * @return 已领取的奖励类型列表（如：["daily_5", "daily_30"]）
+     */
+    List<String> getTodayClaimedRewardTypes(Integer userId);
+    
+    /**
      * 添加阅读记录
      */
     void addReadingRecord(Integer userId, Integer bookId, String bookTitle, 
