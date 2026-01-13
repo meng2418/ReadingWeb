@@ -2,19 +2,22 @@ package com.weread.service.impl.user;
 
 import com.weread.dto.reading.RecentBookDTO;
 import com.weread.entity.book.BookEntity;
+import com.weread.entity.user.UserReadingRecordEntity;
 import com.weread.repository.book.BookRepository;
-import com.weread.repository.user.UserReadingRecordRepository;
 import com.weread.repository.user.UserReadingRecordRepository;
 import com.weread.service.user.RecentBookService;
 import com.weread.util.ImagePathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +28,7 @@ public class RecentBookServiceImpl implements RecentBookService {
 
     @Autowired
     private BookRepository bookRepository;
+
 
     @Override
     public List<RecentBookDTO> getRecentBooks(Integer userId, int limit) {
@@ -67,6 +71,31 @@ public class RecentBookServiceImpl implements RecentBookService {
         }
 
         return result;
+    }
+
+    @Override
+    @Transactional
+    public void recordReading(Integer userId, Integer bookId) {
+        LocalDate today = LocalDate.now();
+    
+        Optional<UserReadingRecordEntity> existing = recentBookRepository
+            .findByUserIdAndBookIdAndReadDate(userId, bookId, today);
+    
+        if (existing.isPresent()) {
+            // 有记录：只更新时间戳
+            UserReadingRecordEntity record = existing.get();
+            // updatedAt会被@PreUpdate自动更新
+        } else {
+            // 没记录：创建新记录（阅读时长随便填个1）
+            UserReadingRecordEntity record = new UserReadingRecordEntity();
+            record.setUserId(userId);
+            record.setBookId(bookId);
+            record.setReadDate(today);
+            record.setReadingTime(1); // 随便填
+            record.setRecordType(1);
+        
+            recentBookRepository.save(record);
+        }
     }
 
     private String getDefaultCover() {

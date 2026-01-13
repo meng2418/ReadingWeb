@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserReadingRecordRepository extends JpaRepository<UserReadingRecordEntity, Long> {
@@ -164,4 +165,7 @@ public interface UserReadingRecordRepository extends JpaRepository<UserReadingRe
        List<UserReadingRecordEntity> findByUserIdAndRecordTypeOrderByReadDateDesc(Integer userId,
                      Integer recordType,
                      Pageable pageable);
+
+       Optional<UserReadingRecordEntity> findByUserIdAndBookIdAndReadDate(Integer userId, Integer bookId,
+                     LocalDate today);
 }

@@ -1,19 +1,22 @@
 package com.weread.controller.reader;
 
+import com.weread.common.ApiResponse;
 import com.weread.dto.Result;
 import com.weread.dto.book.ChapterDTO;
 import com.weread.dto.note.BookNoteResponseDTO;
-import com.weread.entity.user.UserEntity;
 import com.weread.service.book.BookChapterService;
 import com.weread.service.note.NoteService;
+import com.weread.service.user.RecentBookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 阅读器目录控制器
@@ -28,6 +31,7 @@ public class ReaderTOCController {
 
     private final BookChapterService chapterService;
     private final NoteService noteService;
+    private final RecentBookService recentBookService;
 
     /**
      * 获取书籍目录
@@ -83,6 +87,18 @@ public class ReaderTOCController {
             throw new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.BAD_REQUEST, 
                     paramName + "必须是有效的整数");
+        }
+    }
+
+    @PostMapping("/record")
+    public ApiResponse<String> recordReading(@RequestParam Integer bookId,@AuthenticationPrincipal Integer userId) {
+        try {
+            recentBookService.recordReading(userId, bookId);
+            return ApiResponse.ok("阅读记录已更新");
+        } catch (RuntimeException e) {
+            return ApiResponse.error(401, "用户未登录");
+        } catch (Exception e) {
+            return ApiResponse.error(500, "记录失败");
         }
     }
 }
