@@ -126,7 +126,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'addAnnotation', annotation: Omit<Annotation, 'id'>): void
+  (
+    e: 'addAnnotation',
+    annotation: Omit<Annotation, 'id'> & { rangeStart: number; rangeEnd: number },
+  ): void
   (e: 'deleteAnnotation', annotationId: string): void
   (e: 'activeThought', noteId: string, text: string): void
   (e: 'aiQuery', text: string): void
@@ -136,9 +139,9 @@ const emit = defineEmits<{
     e: 'textAction',
     text: string,
     action: string,
-    range?: { pIndex: number; start: number; end: number },
+    range?: { pIndex: number; start: number; end: number; rangeStart?: number; rangeEnd?: number },
   ): void
-  (e: 'markComplete', data: { bookId: string | number, completeTime: string }): void
+  (e: 'markComplete', data: { bookId: string | number; completeTime: string }): void
   (e: 'viewReviews'): void
   (e: 'rateBook', rating: string): void
 }>()
@@ -152,10 +155,10 @@ const defaultBookEndData = {
   ratingStats: {
     recommend: 70,
     average: 20,
-    poor: 10
+    poor: 10,
   },
   initialCompleted: false,
-  initialCompleteTime: null
+  initialCompleteTime: null,
 }
 
 const selection = ref<{
@@ -195,9 +198,9 @@ const checkOverlappingAnnotations = (pIndex: number, start: number, end: number)
     // 计算重叠情况
     const isOverlapping =
       (start >= annotation.start && start <= annotation.end) || // 选中开始在标注内
-      (end >= annotation.start && end <= annotation.end) ||     // 选中结束在标注内
-      (start <= annotation.start && end >= annotation.end) ||   // 选中包含整个标注
-      (start >= annotation.start && end <= annotation.end)      // 标注包含整个选中
+      (end >= annotation.start && end <= annotation.end) || // 选中结束在标注内
+      (start <= annotation.start && end >= annotation.end) || // 选中包含整个标注
+      (start >= annotation.start && end <= annotation.end) // 标注包含整个选中
 
     if (isOverlapping) {
       overlapping.push(annotation)
@@ -208,12 +211,15 @@ const checkOverlappingAnnotations = (pIndex: number, start: number, end: number)
 }
 
 // 处理标注点击（点击已划线的句子）
-const handleAnnotationClick = (e: MouseEvent, segmentInfo: {
-  text: string
-  pIndex: number
-  start: number
-  end: number
-}) => {
+const handleAnnotationClick = (
+  e: MouseEvent,
+  segmentInfo: {
+    text: string
+    pIndex: number
+    start: number
+    end: number
+  },
+) => {
   e.stopPropagation()
 
   const target = e.target as HTMLElement
@@ -223,7 +229,7 @@ const handleAnnotationClick = (e: MouseEvent, segmentInfo: {
   const overlappingAnnotations = checkOverlappingAnnotations(
     segmentInfo.pIndex,
     segmentInfo.start,
-    segmentInfo.end
+    segmentInfo.end,
   )
 
   // 设置选中状态
@@ -231,18 +237,18 @@ const handleAnnotationClick = (e: MouseEvent, segmentInfo: {
     text: segmentInfo.text,
     position: {
       top: rect.top + rect.height / 2,
-      left: rect.left + rect.width / 2
+      left: rect.left + rect.width / 2,
     },
     pIndex: segmentInfo.pIndex,
     startOffset: segmentInfo.start,
     endOffset: segmentInfo.end,
-    overlappingAnnotations
+    overlappingAnnotations,
   }
 
   // 如果是想法标注，不触发菜单，直接显示想法
-  const hasThought = overlappingAnnotations.some(ann => ann.type === 'thought')
+  const hasThought = overlappingAnnotations.some((ann) => ann.type === 'thought')
   if (hasThought) {
-    const thoughtAnnotation = overlappingAnnotations.find(ann => ann.type === 'thought')
+    const thoughtAnnotation = overlappingAnnotations.find((ann) => ann.type === 'thought')
     if (thoughtAnnotation && thoughtAnnotation.noteId) {
       emit('activeThought', thoughtAnnotation.noteId, segmentInfo.text)
     }
@@ -310,7 +316,7 @@ const handleMouseUp = () => {
       pIndex,
       startOffset,
       endOffset,
-      overlappingAnnotations // 保存重叠的标注
+      overlappingAnnotations, // 保存重叠的标注
     }
   } catch (e) {
     console.error('Selection calculation failed', e)
@@ -335,6 +341,34 @@ const handleMenuAction = (action: string) => {
     selection.value = null
     return
   }
+
+  // 计算范围索引 - 在整个章节内容中的字符位置
+  let rangeStart = 0
+  let rangeEnd = 0
+
+  // 计算选中文本在整个章节中的范围
+  if (articleRef.value) {
+    const chapterContent = articleRef.value.innerText
+    // 在当前段落中的偏移量
+    const pElement = articleRef.value.querySelector(`p[data-index="${selection.value.pIndex}"]`)
+    if (pElement) {
+      // 计算这一段之前的所有文本长度
+      let beforeParagraphLength = 0
+      const pIndex = selection.value.pIndex
+
+      for (let i = 0; i < pIndex; i++) {
+        const p = articleRef.value.querySelector(`p[data-index="${i}"]`)
+        if (p) {
+          // 段落文本 + 换行符
+          beforeParagraphLength += (p.innerText?.length || 0) + 1
+        }
+      }
+
+      rangeStart = beforeParagraphLength + selection.value.startOffset
+      rangeEnd = beforeParagraphLength + selection.value.endOffset
+    }
+  }
+
   if (['marker', 'wave', 'line'].includes(action)) {
     emit('addAnnotation', {
       chapterId: props.pageData.chapter,
@@ -342,6 +376,8 @@ const handleMenuAction = (action: string) => {
       start: selection.value.startOffset,
       end: selection.value.endOffset,
       type: action as any,
+      rangeStart,
+      rangeEnd,
     })
     selection.value = null
   } else if (action === 'thought') {
@@ -349,6 +385,8 @@ const handleMenuAction = (action: string) => {
       pIndex: selection.value.pIndex,
       start: selection.value.startOffset,
       end: selection.value.endOffset,
+      rangeStart,
+      rangeEnd,
     })
     selection.value = null
   } else if (action === 'ai') {
@@ -407,7 +445,7 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
         hasAction: false,
         pIndex,
         start: 0,
-        end: text.length
+        end: text.length,
       },
     ]
 
@@ -475,7 +513,7 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
       }
 
       // 如果有标注（马克笔、波浪线、直线），添加点击样式
-      if (activeAnns.some(a => ['marker', 'wave', 'line'].includes(a.type))) {
+      if (activeAnns.some((a) => ['marker', 'wave', 'line'].includes(a.type))) {
         classes.push('clickable-annotation')
       }
     }
@@ -489,7 +527,7 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
       hasAction,
       pIndex,
       start,
-      end
+      end,
     })
   }
   return segments
@@ -497,10 +535,8 @@ const getParagraphSegments = (text: string, pIndex: number): TextSegment[] => {
 
 const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
   // 如果有标注（马克笔、波浪线、直线），则触发标注点击
-  const hasHighlight = seg.classes.some(c =>
-    c === 'highlight-marker' ||
-    c === 'highlight-wave' ||
-    c === 'highlight-line'
+  const hasHighlight = seg.classes.some(
+    (c) => c === 'highlight-marker' || c === 'highlight-wave' || c === 'highlight-line',
   )
 
   if (hasHighlight) {
@@ -508,7 +544,7 @@ const handleSegmentClick = (e: MouseEvent, seg: TextSegment) => {
       text: seg.text,
       pIndex: seg.pIndex,
       start: seg.start,
-      end: seg.end
+      end: seg.end,
     })
     return
   }

@@ -30,6 +30,12 @@ public class NoteEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Column(name = "range_start", nullable = false)
+    private Integer rangeStart = 0; // 笔记在当前章节原文中的起始字符索引
+
+    @Column(name = "range_end", nullable = false)
+    private Integer rangeEnd = 0; // 笔记在当前章节原文中的结束字符索引
+
     @Column(nullable = false)
     private String type = "highlight";
 

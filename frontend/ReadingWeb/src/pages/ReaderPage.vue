@@ -1,10 +1,10 @@
 <!-- ReaderPage.vue -->
 <template>
   <div class="app-container" :class="{ 'dark-mode': isDarkMode }">
-    <TopNavigation 
-      :title="bookTitle" 
-      :isVisible="true" 
-      :isDarkMode="isDarkMode" 
+    <TopNavigation
+      :title="bookTitle"
+      :isVisible="true"
+      :isDarkMode="isDarkMode"
       :book-id="bookId"
       :initial-bookshelf-status="isInBookshelf"
     />
@@ -31,7 +31,11 @@
         :pageData="displayedPageData"
         :isDarkMode="isDarkMode"
         :typography="typography"
-        :annotations="showThoughts ? currentChapterAnnotations : currentChapterAnnotations.filter((a) => a.type !== 'thought')"
+        :annotations="
+          showThoughts
+            ? currentChapterAnnotations
+            : currentChapterAnnotations.filter((a) => a.type !== 'thought')
+        "
         :hasPrevChapter="currentChapterIndex > 0"
         :hasNextChapter="currentChapterIndex >= 0 && currentChapterIndex < chapters.length - 1"
         :isLastChapter="isLastChapter"
@@ -42,7 +46,7 @@
           reviewCount: bookData.reviewCount,
           ratingStats: bookData.ratingStats,
           initialCompleted: readingProgress.completed,
-          initialCompleteTime: readingProgress.completeTime
+          initialCompleteTime: readingProgress.completeTime,
         }"
         @addAnnotation="handleAddAnnotation"
         @deleteAnnotation="handleDeleteAnnotation"
@@ -105,27 +109,21 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // API导入
-import {
-  getChapterContent,
-  type ChapterContent
-} from '@/api/reader/chapter-content'
+import { getChapterContent, type ChapterContent } from '@/api/reader/chapter-content'
 import {
   getChapterNotes,
   createChapterNote,
   updateChapterNote,
   deleteChapterNote,
-  type ChapterNote
+  type ChapterNote,
 } from '@/api/reader/chapter-notes'
-import {
-  getBookTOC,
-  type BookTOCItem
-} from '@/api/reader/book-toc'
+import { getBookTOC, type BookTOCItem } from '@/api/reader/book-toc'
 import {
   getBookNotes,
   createBookNote,
   updateBookNote,
   deleteBookNote,
-  type BookNote
+  type BookNote,
 } from '@/api/reader/book-notes'
 import { getBookDetail } from '@/api/book-detail/book-detail-header'
 import type { BookDetail } from '@/api/book-detail/book-detail-header'
@@ -153,10 +151,10 @@ const route = useRoute()
 const router = useRouter()
 
 // 从路由参数获取书籍ID和章节ID
-const bookId = ref(route.params.bookId as string || '1')
+const bookId = ref((route.params.bookId as string) || '1')
 // 注意：章节ID将在加载目录后确定，这里先使用路由参数或默认值
 const currentChapterId = ref<number>(
-  route.params.chapterId ? Number(route.params.chapterId as string) : 0
+  route.params.chapterId ? Number(route.params.chapterId as string) : 0,
 )
 
 // API数据状态
@@ -191,7 +189,7 @@ const chapterContents = {
       '或许，福楼拜与路易丝从未真正分开。文字让他们在不同的城市、不同的时间里持续相遇；文学让他们的灵魂在纸上永恒停驻。正如路易丝在分手后写下的那句话："当我翻开你的信，就像再次推开那扇通往夏日花园的门，那里有我未竟的青春，也有我们共同的梦。"',
       '对读者而言，这些书信不仅是八年爱情的见证，也是理解福楼拜创作心路的钥匙。每一封信都是他思想的练习场，情感的宣泄口，也是文学形式的实验。正因如此，《福楼拜与科莱书信集》才会在出版后引起广泛关注，成为研究福楼拜乃至整个十九世纪法国文学的重要文献。',
       '今天，当我们在数字屏幕上重读这些文字时，仍能感受到其中的温度与重量。它提醒我们：真正的阅读不仅是信息的获取，更是与作者、与过去、与自我进行的持续对话。微信读书的存在，正是让这种对话在新时代继续发生的桥梁。',
-    ]
+    ],
   },
   '2': {
     title: '第一章：初遇',
@@ -202,7 +200,7 @@ const chapterContents = {
       '当他们的目光第一次相遇时，时间仿佛静止了。福楼拜后来在信中回忆道："那一刻，我仿佛看到了另一个自己，一个在文字中寻找真理，在情感中寻找真实的灵魂。"而路易丝则被这个年轻作家的热情与才华所吸引，她感受到了某种共鸣，某种在文学与艺术中才能找到的理解。',
       '他们的初次对话并不长，但每一句话都充满了深意。福楼拜谈到了他对文学的理想，对"客观冷静的凝视"的追求；路易丝则分享了她对诗歌的理解，对情感与形式的平衡。他们发现彼此在艺术理念上有着惊人的相似之处，都相信文字应该超越个人情感，成为探索人性与世界的工具。',
       '然而，这次相遇也暴露了他们之间的差异。福楼拜更倾向于隐居式的创作，他需要宁静的环境来打磨每一个句子；而路易丝则活跃于社交圈，她需要外界的刺激来激发灵感。这种差异，在未来的岁月中，将成为他们关系中的主要矛盾。',
-    ]
+    ],
   },
   '3': {
     title: '第二章：书信的火焰',
@@ -212,7 +210,7 @@ const chapterContents = {
       '对于福楼拜而言，路易丝不仅是恋人，更是他文学创作的灵感缪斯与倾诉对象。他在信中讨论如何在小说中保持"客观冷静的凝视"，又抱怨身体的病痛使他陷入虚弱。他甚至把写作比作"一场缓慢而壮丽的溺水"，既是享受也是折磨。',
       '路易丝的回信同样充满激情与智慧。她分享自己在巴黎的见闻，谈论文学与艺术，也表达对福楼拜的思念。她写道："如果我离开，便不再是我自己；若我留下，又怕失去你。"这种摇摆让他们的信件中充满了质问与自责。',
       '福楼拜的回答往往冷静而坚定："我爱你，但我更爱真理与艺术。若写作是我的命运，你便是其中不可或缺的见证。"这种把情感与创作捆绑的态度，使他们的爱情呈现出一种近乎宗教的虔诚。',
-    ]
+    ],
   },
   '4': {
     title: '第三章：矛盾与和解',
@@ -221,7 +219,7 @@ const chapterContents = {
       '路易丝愤怒地指责他逃避现实，质疑他的爱是否只是为了文学服务。福楼拜则坚持，真正的爱应该让彼此成为更完整的人，而不是彼此的枷锁。他们的争吵在信件中愈演愈烈，但每一次风暴过后，又会出现温柔的和解。',
       '福楼拜会寄去他最新完成的手稿片段，路易丝则回赠她的诗稿。互相批评、互相欣赏，构成了他们关系的基石。福楼拜常说："你是我最苛刻的读者，也是我最忠诚的读者。"而路易丝则回道："只有你能理解我在词句间藏下的颤抖。"',
       '这种双向的深度阅读，使他们的情感超越了简单的恋爱，转化为彼此的创作伙伴关系。他们在文字中找到了理解，也在理解中找到了继续前行的力量。',
-    ]
+    ],
   },
   '5': {
     title: '第四章：别离与永恒',
@@ -231,16 +229,16 @@ const chapterContents = {
       '路易丝继续在巴黎发表诗作，福楼拜则完成了《包法利夫人》。当这部小说问世时，她写信祝贺，并坦言在爱玛身上看到了自己与无数女性的影子。福楼拜回应道："若没有你，我写不出她；若没有你，我也不会理解什么是真实的痛苦。"',
       '回望这段关系，我们看到的不只是两个人的爱情史，更是十九世纪文学与现实交织的样本。他们在信件中不断探索艺术与生活的边界，既渴望彼此，又守护各自的独立。这种张力让他们的文字充满力量，也让后人得以窥见一个时代的情感密度。',
       '或许，福楼拜与路易丝从未真正分开。文字让他们在不同的城市、不同的时间里持续相遇；文学让他们的灵魂在纸上永恒停驻。正如路易丝在分手后写下的那句话："当我翻开你的信，就像再次推开那扇通往夏日花园的门，那里有我未竟的青春，也有我们共同的梦。"',
-    ]
-  }
+    ],
+  },
 }
 
 // 将TOC数据转换为章节格式
 const chapters = computed<Chapter[]>(() => {
-  return bookTOC.value.map(item => ({
+  return bookTOC.value.map((item) => ({
     id: item.chapterId, // 使用 chapterId 作为章节ID
     title: item.chapterName,
-    page: item.startPage + 1 // 将从0开始的索引转换为从1开始的页码
+    page: item.startPage + 1, // 将从0开始的索引转换为从1开始的页码
   }))
 })
 
@@ -259,7 +257,7 @@ const displayedPageData = computed<BookPage>(() => {
 })
 
 const currentChapterIndex = computed(() => {
-  return chapters.value.findIndex(chapter => chapter.id === currentChapterId.value)
+  return chapters.value.findIndex((chapter) => chapter.id === currentChapterId.value)
 })
 
 // 计算是否是最后一章
@@ -269,7 +267,7 @@ const isLastChapter = computed(() => {
 
 // 计算当前章节的标注
 const currentChapterAnnotations = computed(() => {
-  return annotations.value.filter(ann => ann.chapterId === String(currentChapterId.value))
+  return annotations.value.filter((ann) => ann.chapterId === String(currentChapterId.value))
 })
 
 const goToPrevChapter = () => {
@@ -292,12 +290,12 @@ const goToNextChapter = () => {
   if (currentChapterIndex.value < 0 || currentChapterIndex.value >= chapters.value.length - 1) {
     return
   }
-  
+
   const nextIndex = currentChapterIndex.value + 1
-    const nextChapter = chapters.value[nextIndex]
-  
-    if (nextChapter) {
-      handleChapterSelect(nextChapter.id)
+  const nextChapter = chapters.value[nextIndex]
+
+  if (nextChapter) {
+    handleChapterSelect(nextChapter.id)
     // 滚动到顶部
     const article = document.querySelector('.reader-article')
     if (article) {
@@ -372,12 +370,12 @@ const loadChapterContent = async (chapterId: number) => {
     loading.value = true
     console.log(`正在加载章节内容: bookId=${bookId.value}, chapterId=${chapterId}`)
     const data = await getChapterContent(bookId.value, chapterId)
-    
+
     if (!data || !data.content) {
       console.error('章节内容为空或无效')
       throw new Error('章节内容为空或无效')
     }
-    
+
     currentChapterData.value = data
     currentChapterId.value = chapterId
     console.log('章节内容加载成功:', data.title)
@@ -422,7 +420,7 @@ const loadBookTOC = async () => {
     } else {
       console.error('加载目录时发生未知错误')
     }
-    
+
     // 不再使用备用数据，保持空数组
     bookTOC.value = []
     throw error // 重新抛出错误，让调用者知道失败了
@@ -433,7 +431,7 @@ const loadChapterNotes = async (chapterId: string) => {
   try {
     const data = await getChapterNotes(bookId.value, chapterId)
     chapterNotes.value = data
-    
+
     // 将笔记转换为标注
     updateAnnotationsFromNotes(data)
   } catch (error) {
@@ -447,38 +445,38 @@ const loadChapterNotes = async (chapterId: string) => {
  */
 const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
   if (!currentChapterData.value || !displayedPageData.value) return
-  
+
   const chapterIdStr = String(currentChapterId.value)
   const content = displayedPageData.value.content
-  
+
   // 移除当前章节的旧标注（保留其他章节的）
-  annotations.value = annotations.value.filter(ann => ann.chapterId !== chapterIdStr)
-  
+  annotations.value = annotations.value.filter((ann) => ann.chapterId !== chapterIdStr)
+
   // 构建完整的章节文本（用于计算字符索引）
   const fullText = currentChapterData.value.content
-  
+
   // 为每个笔记创建标注
   for (const note of notes) {
     // 判断是想法还是划线：
     // - 如果有 thought 内容，则是想法
     // - 如果没有 thought 但有 lineType，则是划线
     const isThought = note.thought && note.thought.trim().length > 0
-    
+
     // 使用 startIndex 和 endIndex 来定位
     // 需要计算这些索引对应哪个段落（pIndex）以及在段落中的位置
     let pIndex = 0
     let startInParagraph = 0
     let endInParagraph = 0
-    
+
     // 优先使用文本匹配来定位（因为后端返回的 startIndex/endIndex 可能不准确）
     // 只有在文本匹配失败时，才尝试使用索引
     let foundByText = false
-    
+
     // 首先尝试文本匹配（更可靠）
     for (let i = 0; i < content.length; i++) {
       const paragraph = content[i]
       const quoteIndex = paragraph.indexOf(note.quote)
-      
+
       if (quoteIndex !== -1) {
         pIndex = i
         startInParagraph = quoteIndex
@@ -487,31 +485,36 @@ const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
         break
       }
     }
-    
+
     // 如果文本匹配失败，且 startIndex/endIndex 有效，尝试使用索引定位
-    if (!foundByText && note.startIndex !== undefined && note.endIndex !== undefined && note.startIndex >= 0) {
+    if (
+      !foundByText &&
+      note.startIndex !== undefined &&
+      note.endIndex !== undefined &&
+      note.startIndex >= 0
+    ) {
       // 重新构建完整文本以匹配索引
       const fullText = content.join('\n')
-      
+
       // 如果索引超出范围，使用文本匹配
       if (note.startIndex < fullText.length && note.endIndex <= fullText.length) {
         // 计算字符索引对应的段落
         let charCount = 0
         let foundStart = false
         let foundEnd = false
-        
+
         for (let i = 0; i < content.length; i++) {
           const paragraph = content[i]
           const paragraphLength = paragraph.length
           const nextCharCount = charCount + paragraphLength
-          
+
           // 检查 startIndex 是否在当前段落
           if (!foundStart && note.startIndex >= charCount && note.startIndex < nextCharCount) {
             pIndex = i
             startInParagraph = note.startIndex - charCount
             foundStart = true
           }
-          
+
           // 检查 endIndex 是否在当前段落
           if (!foundEnd && note.endIndex > charCount && note.endIndex <= nextCharCount) {
             endInParagraph = note.endIndex - charCount
@@ -519,23 +522,23 @@ const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
             // 如果 start 和 end 都在同一段落，可以提前退出
             if (foundStart) break
           }
-          
+
           charCount = nextCharCount
           // 段落之间可能有换行符，需要加上
           if (i < content.length - 1) {
             charCount += 1 // 换行符
           }
-          
+
           // 如果都找到了，提前退出
           if (foundStart && foundEnd) break
         }
-        
+
         // 如果索引定位失败，使用文本匹配作为后备方案
         if (!foundStart || !foundEnd) {
           for (let i = 0; i < content.length; i++) {
             const paragraph = content[i]
             const quoteIndex = paragraph.indexOf(note.quote)
-            
+
             if (quoteIndex !== -1) {
               pIndex = i
               startInParagraph = quoteIndex
@@ -550,7 +553,7 @@ const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
         for (let i = 0; i < content.length; i++) {
           const paragraph = content[i]
           const quoteIndex = paragraph.indexOf(note.quote)
-          
+
           if (quoteIndex !== -1) {
             pIndex = i
             startInParagraph = quoteIndex
@@ -561,9 +564,9 @@ const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
         }
       }
     }
-    
+
     // 如果文本匹配和索引匹配都失败，至少确保有默认值
-    if (!foundByText && (pIndex === 0 && startInParagraph === 0 && endInParagraph === 0)) {
+    if (!foundByText && pIndex === 0 && startInParagraph === 0 && endInParagraph === 0) {
       // 最后尝试：在整个文本中搜索
       const fullText = content.join('\n')
       const globalIndex = fullText.indexOf(note.quote)
@@ -583,7 +586,7 @@ const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
         }
       }
     }
-    
+
     // 创建标注
     const annotation: Annotation = {
       id: `ann-${note.id}`,
@@ -591,9 +594,11 @@ const updateAnnotationsFromNotes = (notes: typeof chapterNotes.value) => {
       pIndex,
       start: startInParagraph,
       end: endInParagraph,
-      type: isThought 
-        ? 'thought' 
-        : (note.lineType && note.lineType.length > 0 ? note.lineType[0] as any : 'marker'),
+      type: isThought
+        ? 'thought'
+        : note.lineType && note.lineType.length > 0
+          ? (note.lineType[0] as any)
+          : 'marker',
       noteId: isThought ? note.id : undefined, // 只有想法才需要 noteId
     }
     annotations.value.push(annotation)
@@ -618,18 +623,18 @@ const showThoughts = ref(true)
 // 将API的章节笔记转换为组件所需的格式
 // 阅读器中的笔记 = 划线 + 想法（两者都显示）
 const notes = computed<Note[]>(() => {
-  return chapterNotes.value.map(note => {
+  return chapterNotes.value.map((note) => {
     // 判断是想法还是划线：
     // - 如果有 thought 内容，则是想法
     // - 如果没有 thought 但有 lineType，则是划线
     const isThought = note.thought && note.thought.trim().length > 0
     const isHighlight = !isThought && note.lineType && note.lineType.length > 0
-    
+
     return {
       id: note.id,
       chapterId: String(currentChapterId.value),
       quote: note.quote,
-      note: isThought ? note.thought : (isHighlight ? `[Highlight:${note.lineType[0]}]` : ''),
+      note: isThought ? note.thought : isHighlight ? `[Highlight:${note.lineType[0]}]` : '',
       date: new Date(note.createdAt).toLocaleDateString(),
     }
   })
@@ -648,8 +653,8 @@ const bookData = ref({
   ratingStats: {
     recommend: 70,
     average: 20,
-    poor: 10
-  }
+    poor: 10,
+  },
 })
 
 // 计算书籍标题和书架状态
@@ -664,7 +669,7 @@ const isInBookshelf = computed(() => {
 // 添加阅读进度
 const readingProgress = ref({
   completed: false,
-  completeTime: null as string | null
+  completeTime: null as string | null,
 })
 
 interface ActiveContext {
@@ -697,10 +702,7 @@ const handleChapterSelect = async (id: number) => {
   closePanels()
 
   // 加载新章节的内容和笔记
-  await Promise.all([
-    loadChapterContent(id),
-    loadChapterNotes(id.toString()),
-  ])
+  await Promise.all([loadChapterContent(id), loadChapterNotes(id.toString())])
 }
 
 const handleActiveThought = (noteId: string, text: string) => {
@@ -711,7 +713,7 @@ const handleActiveThought = (noteId: string, text: string) => {
 const handleDeleteAnnotation = async (annotationId: string) => {
   try {
     // 从 annotations 中移除指定ID的标注
-    const index = annotations.value.findIndex(ann => ann.id === annotationId)
+    const index = annotations.value.findIndex((ann) => ann.id === annotationId)
     if (index !== -1) {
       const annotation = annotations.value[index]
 
@@ -736,7 +738,7 @@ const handleDeleteAnnotation = async (annotationId: string) => {
 
       // 删除对应的笔记
       if (noteId) {
-        const noteIndex = notes.value.findIndex(note => note.id === noteId)
+        const noteIndex = notes.value.findIndex((note) => note.id === noteId)
         if (noteIndex !== -1) {
           notes.value.splice(noteIndex, 1)
         }
@@ -750,26 +752,37 @@ const handleDeleteAnnotation = async (annotationId: string) => {
   }
 }
 
-const handleAddAnnotation = async (newAnn: Omit<Annotation, 'id'>) => {
+const handleAddAnnotation = async (
+  newAnn: Omit<Annotation, 'id'> & { rangeStart?: number; rangeEnd?: number },
+) => {
   // 如果是划线类型（marker、wave、line），需要调用 API 创建
   if (['marker', 'wave', 'line'].includes(newAnn.type)) {
     try {
-      const quoteText = displayedPageData.value?.content[newAnn.pIndex]?.substring(newAnn.start, newAnn.end) || ''
-      
-      // 计算全局的 startIndex 和 endIndex（考虑前面所有段落的长度）
-      let globalStartIndex = 0
-      for (let i = 0; i < newAnn.pIndex; i++) {
-        globalStartIndex += displayedPageData.value?.content[i]?.length || 0
-        globalStartIndex += 1 // 换行符
+      const quoteText =
+        displayedPageData.value?.content[newAnn.pIndex]?.substring(newAnn.start, newAnn.end) || ''
+
+      // 使用传递的 rangeStart/rangeEnd，如果没有则计算
+      let globalStartIndex = newAnn.rangeStart ?? 0
+      let globalEndIndex = newAnn.rangeEnd ?? 0
+
+      if (!newAnn.rangeStart || !newAnn.rangeEnd) {
+        // 计算全局的 startIndex 和 endIndex（考虑前面所有段落的长度）
+        globalStartIndex = 0
+        for (let i = 0; i < newAnn.pIndex; i++) {
+          globalStartIndex += displayedPageData.value?.content[i]?.length || 0
+          globalStartIndex += 1 // 换行符
+        }
+        globalStartIndex += newAnn.start
+        globalEndIndex = globalStartIndex + quoteText.length
       }
-      globalStartIndex += newAnn.start
-      const globalEndIndex = globalStartIndex + quoteText.length
-      
+
       // 调用 API 创建划线
       const noteData = {
         quote: quoteText,
         startIndex: globalStartIndex, // 使用全局索引
-        endIndex: globalEndIndex,     // 使用全局索引
+        endIndex: globalEndIndex, // 使用全局索引
+        rangeStart: newAnn.rangeStart ?? globalStartIndex,
+        rangeEnd: newAnn.rangeEnd ?? globalEndIndex,
         lineType: [newAnn.type], // 传递前端类型，API 层会映射为后端类型
         thought: '', // 划线不需要想法内容
         pageNumber: newAnn.pIndex + 1, // 页码从1开始
@@ -808,7 +821,7 @@ const handleAddAnnotation = async (newAnn: Omit<Annotation, 'id'>) => {
       const annotation = {
         ...newAnn,
         id,
-        chapterId: String(currentChapterId.value)
+        chapterId: String(currentChapterId.value),
       }
       annotations.value.push(annotation)
     }
@@ -818,7 +831,7 @@ const handleAddAnnotation = async (newAnn: Omit<Annotation, 'id'>) => {
     const annotation = {
       ...newAnn,
       id,
-      chapterId: String(currentChapterId.value)
+      chapterId: String(currentChapterId.value),
     }
     annotations.value.push(annotation)
   }
@@ -827,7 +840,7 @@ const handleAddAnnotation = async (newAnn: Omit<Annotation, 'id'>) => {
 const handleTextAction = (
   text: string,
   action: string,
-  range?: { pIndex: number; start: number; end: number },
+  range?: { pIndex: number; start: number; end: number; rangeStart?: number; rangeEnd?: number },
 ) => {
   if (action === 'thought' && range) {
     activeContext.value = { type: 'create', range, text }
@@ -849,6 +862,8 @@ const handleThoughtsBubbleAction = async (action: string) => {
       start: activeContext.value.range.start,
       end: activeContext.value.range.end,
       type: action as any,
+      rangeStart: activeContext.value.range.rangeStart,
+      rangeEnd: activeContext.value.range.rangeEnd,
     })
     activeContext.value = null // 创建划线后关闭气泡
   }
@@ -858,23 +873,30 @@ const submitNote = async (noteContent: string) => {
   if (activeContext.value && activeContext.value.range) {
     try {
       console.log('开始创建想法，内容:', noteContent)
-      
+
       // 调用API创建笔记（想法类型的笔记）
       // 想法不应该有 lineType，应该传递 null
-      
+
       // 计算全局的 startIndex 和 endIndex（考虑前面所有段落的长度）
-      let globalStartIndex = 0
-      for (let i = 0; i < activeContext.value.range.pIndex; i++) {
-        globalStartIndex += displayedPageData.value?.content[i]?.length || 0
-        globalStartIndex += 1 // 换行符
+      let globalStartIndex = activeContext.value.range.rangeStart ?? 0
+      let globalEndIndex = activeContext.value.range.rangeEnd ?? 0
+
+      if (!activeContext.value.range.rangeStart || !activeContext.value.range.rangeEnd) {
+        globalStartIndex = 0
+        for (let i = 0; i < activeContext.value.range.pIndex; i++) {
+          globalStartIndex += displayedPageData.value?.content[i]?.length || 0
+          globalStartIndex += 1 // 换行符
+        }
+        globalStartIndex += activeContext.value.range.start
+        globalEndIndex = globalStartIndex + activeContext.value.text.length
       }
-      globalStartIndex += activeContext.value.range.start
-      const globalEndIndex = globalStartIndex + activeContext.value.text.length
-      
+
       const noteData = {
         quote: activeContext.value.text,
         startIndex: globalStartIndex, // 使用全局索引
-        endIndex: globalEndIndex,     // 使用全局索引
+        endIndex: globalEndIndex, // 使用全局索引
+        rangeStart: activeContext.value.range.rangeStart ?? globalStartIndex,
+        rangeEnd: activeContext.value.range.rangeEnd ?? globalEndIndex,
         lineType: null, // 想法类型不传递 lineType
         thought: noteContent.trim(), // 去除首尾空格
         pageNumber: activeContext.value.range.pIndex + 1, // 页码从1开始
@@ -911,7 +933,7 @@ const submitNote = async (noteContent: string) => {
 
       // 重新加载章节笔记以保持同步
       await loadChapterNotes(currentChapterId.value.toString())
-      
+
       console.log('想法创建完成，已更新本地状态')
     } catch (error: any) {
       console.error('创建想法失败:', error)
@@ -924,17 +946,20 @@ const submitNote = async (noteContent: string) => {
 }
 
 // 添加标记完成的方法
-const handleMarkComplete = async (data: { bookId: string | number, completeTime: string }) => {
+const handleMarkComplete = async (data: { bookId: string | number; completeTime: string }) => {
   try {
     // 这里可以调用API
     readingProgress.value.completed = true
     readingProgress.value.completeTime = data.completeTime
 
     // 保存到本地存储
-    localStorage.setItem(`book_${bookData.value.id}_completed`, JSON.stringify({
-      completed: true,
-      completeTime: readingProgress.value.completeTime
-    }))
+    localStorage.setItem(
+      `book_${bookData.value.id}_completed`,
+      JSON.stringify({
+        completed: true,
+        completeTime: readingProgress.value.completeTime,
+      }),
+    )
 
     console.log('标记为已读完', data)
   } catch (error) {
@@ -964,7 +989,7 @@ watch(
       // 书籍ID改变时，先加载目录，再加载章节数据
       try {
         await loadBookTOC()
-        
+
         // 如果目录加载成功且有章节，才加载章节内容
         if (chapters.value.length > 0) {
           const targetChapterId = newChapterId || chapters.value[0].id
@@ -984,10 +1009,10 @@ watch(
         if (bookTOC.value.length === 0) {
           await loadBookTOC()
         }
-        
+
         // 检查章节是否在目录中
         if (chapters.value.length > 0) {
-          const foundChapter = chapters.value.find(ch => ch.id === newChapterId)
+          const foundChapter = chapters.value.find((ch) => ch.id === newChapterId)
           if (foundChapter) {
             await Promise.all([
               loadChapterContent(newChapterId),
@@ -1003,7 +1028,7 @@ watch(
       }
     }
   },
-  { immediate: false } // 已经在onMounted中处理了初始加载
+  { immediate: false }, // 已经在onMounted中处理了初始加载
 )
 
 // 加载书籍详情
@@ -1025,11 +1050,8 @@ const loadBookDetail = async () => {
 onMounted(async () => {
   try {
     // 先加载书籍详情和目录
-    await Promise.all([
-      loadBookDetail(),
-      loadBookTOC()
-    ])
-    
+    await Promise.all([loadBookDetail(), loadBookTOC()])
+
     // 确保 currentChapterId 与目录中的章节ID匹配
     if (chapters.value.length > 0) {
       // 如果路由中没有 chapterId，或者当前章节ID不在目录中，使用第一个章节
@@ -1038,40 +1060,40 @@ onMounted(async () => {
         // 没有传递 chapterId，使用目录中的第一个章节
         currentChapterId.value = chapters.value[0].id
         console.log(`未指定章节ID，使用第一个章节: ${currentChapterId.value}`)
-        
+
         // 更新路由，添加章节ID
         if (route.params.chapterId !== String(currentChapterId.value)) {
           router.replace({
             name: 'ReaderPage',
             params: {
               bookId: bookId.value,
-              chapterId: currentChapterId.value
-            }
+              chapterId: currentChapterId.value,
+            },
           })
         }
       } else {
         // 有传递 chapterId，检查是否在目录中
         const routeChapterIdNum = Number(routeChapterId)
-        const foundChapter = chapters.value.find(ch => ch.id === routeChapterIdNum)
+        const foundChapter = chapters.value.find((ch) => ch.id === routeChapterIdNum)
         if (!foundChapter) {
           // 如果不在目录中，使用第一个章节
           console.warn(`章节ID ${routeChapterId} 不在目录中，使用第一个章节`)
           currentChapterId.value = chapters.value[0].id
-          
+
           // 更新路由
           router.replace({
             name: 'ReaderPage',
             params: {
               bookId: bookId.value,
-              chapterId: currentChapterId.value
-            }
+              chapterId: currentChapterId.value,
+            },
           })
         } else {
           // 在目录中，使用传递的章节ID
           currentChapterId.value = routeChapterIdNum
         }
       }
-      
+
       // 确保章节ID有效后再加载内容
       if (currentChapterId.value > 0) {
         // 然后并行加载当前章节内容和笔记
@@ -1095,7 +1117,7 @@ onMounted(async () => {
     console.error('初始化阅读器失败:', error)
     const statusCode = error?.response?.status
     const errorMessage = error?.response?.data?.message || error?.message || '初始化失败'
-    
+
     if (statusCode === 404) {
       console.error(`书籍 ${bookId.value} 不存在`)
     } else if (statusCode === 400) {

@@ -140,6 +140,12 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     public NoteResponseDTO createNoteFromDTO(Integer userId, Integer bookId, Integer chapterId,
             String quote, String lineType, String thought) {
+        return createNoteFromDTO(userId, bookId, chapterId, quote, lineType, thought, -1, -1);
+    }
+
+    @Transactional
+    public NoteResponseDTO createNoteFromDTO(Integer userId, Integer bookId, Integer chapterId,
+            String quote, String lineType, String thought, Integer rangeStart, Integer rangeEnd) {
         // 验证书籍是否存在
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "书籍不存在"));
@@ -174,6 +180,10 @@ public class NoteServiceImpl implements NoteService {
             note.setColor(lineType != null ? lineType : "marker");
         }
 
+        // 设置范围索引
+        note.setRangeStart(rangeStart != null && rangeStart >= 0 ? rangeStart : 0);
+        note.setRangeEnd(rangeEnd != null && rangeEnd >= 0 ? rangeEnd : 0);
+
         note = noteRepository.save(note);
 
         // 构建响应DTO
@@ -185,6 +195,8 @@ public class NoteServiceImpl implements NoteService {
         // 从数据库读取 thought 字段（确保返回最新保存的值）
         response.setNoteContent(note.getThought() != null ? note.getThought() : "");
         response.setCreatedAt(note.getCreatedAt());
+        response.setRangeStart(note.getRangeStart());
+        response.setRangeEnd(note.getRangeEnd());
 
         return response;
     }
@@ -207,8 +219,19 @@ public class NoteServiceImpl implements NoteService {
         ChapterNoteResponseDTO dto = new ChapterNoteResponseDTO();
         dto.setNoteId(entity.getNoteId());
         dto.setQuote(entity.getContent()); // content字段存储quote
-        dto.setStartIndex(0); // 数据库中没有此字段，使用默认值0
-        dto.setEndIndex(entity.getContent() != null ? entity.getContent().length() : 0); // 使用内容长度作为endIndex
+        
+        // 优先使用数据库中的 rangeStart 和 rangeEnd
+        if (entity.getRangeStart() != null && entity.getRangeStart() >= 0) {
+            dto.setStartIndex(entity.getRangeStart());
+        } else {
+            dto.setStartIndex(0);
+        }
+        
+        if (entity.getRangeEnd() != null && entity.getRangeEnd() >= 0) {
+            dto.setEndIndex(entity.getRangeEnd());
+        } else {
+            dto.setEndIndex(entity.getContent() != null ? entity.getContent().length() : 0);
+        }
         
         // lineType从color字段解析
         // 如果是想法类型（type="thought"），lineType应该为空数组

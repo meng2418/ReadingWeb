@@ -33,14 +33,31 @@ public class NoteController {
             @RequestAttribute("userId") Integer userId,
             @Valid @RequestBody NoteCreateDTO dto) {
         
-        NoteResponseDTO noteResponse = noteService.createNoteFromDTO(
-                userId,
-                dto.getBookId(),
-                dto.getChapterId(),
-                dto.getQuote(),
-                dto.getLineType(), // 保持 null 值，不要默认设置为 "marker"
-                dto.getThought()
-        );
+        // 获取 Service 实现类以调用重载方法
+        NoteResponseDTO noteResponse = null;
+        if (dto.getRangeStart() != null || dto.getRangeEnd() != null) {
+            // 使用重载的 createNoteFromDTO 方法传递 rangeStart 和 rangeEnd
+            noteResponse = ((com.weread.service.impl.note.NoteServiceImpl) noteService).createNoteFromDTO(
+                    userId,
+                    dto.getBookId(),
+                    dto.getChapterId(),
+                    dto.getQuote(),
+                    dto.getLineType(),
+                    dto.getThought(),
+                    dto.getRangeStart() != null ? dto.getRangeStart() : -1,
+                    dto.getRangeEnd() != null ? dto.getRangeEnd() : -1
+            );
+        } else {
+            // 不传递范围索引，使用默认值
+            noteResponse = noteService.createNoteFromDTO(
+                    userId,
+                    dto.getBookId(),
+                    dto.getChapterId(),
+                    dto.getQuote(),
+                    dto.getLineType(),
+                    dto.getThought()
+            );
+        }
         
         // 使用专门的响应DTO，确保data字段是object类型
         NoteCreateResponseDTO response = new NoteCreateResponseDTO();

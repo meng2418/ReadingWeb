@@ -23,5 +23,11 @@ public class NoteCreateDTO {
     private String lineType; // marker, wavy, underline，想法类型时为 null
 
     private String thought; // 想法/笔记内容
+
+    @Min(value = 0, message = "rangeStart 必须大于等于0")
+    private Integer rangeStart = 0; // 笔记在当前章节原文中的起始索引
+
+    @Min(value = 0, message = "rangeEnd 必须大于等于0")
+    private Integer rangeEnd = 0; // 笔记在当前章节原文中的结束索引
 }
 

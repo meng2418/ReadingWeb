@@ -3,19 +3,19 @@ import request from '@/utils/request'
 import type { AxiosResponse } from 'axios'
 
 const unwrap = (res: AxiosResponse): ChapterNoteResponse[] => {
-  return res?.data?.data ?? res?.data ?? [];
+  return res?.data?.data ?? res?.data ?? []
 }
 
 const unwrapSingle = (res: AxiosResponse): ChapterNoteResponse => {
-  return res?.data?.data ?? res?.data ?? {};
+  return res?.data?.data ?? res?.data ?? {}
 }
 
 const unwrapCreateNote = (res: AxiosResponse): CreateNoteResponse['data']['note'] => {
-  return res?.data?.data?.note ?? res?.data?.note ?? res?.data ?? {};
+  return res?.data?.data?.note ?? res?.data?.note ?? res?.data ?? {}
 }
 
 const unwrapDelete = (res: AxiosResponse): boolean => {
-  return res?.data?.data ?? res?.data ?? true;
+  return res?.data?.data ?? res?.data ?? true
 }
 
 /**
@@ -25,9 +25,9 @@ const unwrapDelete = (res: AxiosResponse): boolean => {
  */
 const mapToBackendType = (frontendType: string): string => {
   const mapping: Record<string, string> = {
-    'marker': 'marker',
-    'wave': 'wavy',
-    'line': 'underline'
+    marker: 'marker',
+    wave: 'wavy',
+    line: 'underline',
   }
   return mapping[frontendType] || 'marker'
 }
@@ -39,9 +39,9 @@ const mapToBackendType = (frontendType: string): string => {
  */
 const mapToFrontendType = (backendType: string): string => {
   const mapping: Record<string, string> = {
-    'marker': 'marker',
-    'wavy': 'wave',
-    'underline': 'line'
+    marker: 'marker',
+    wavy: 'wave',
+    underline: 'line',
   }
   return mapping[backendType] || 'marker'
 }
@@ -94,9 +94,7 @@ const mapChapterNote = (raw: ChapterNoteResponse): ChapterNote => ({
   endIndex: raw.endIndex,
   // 将后端返回的类型数组映射为前端类型
   // 如果 lineType 为空或 null，说明是想法类型，返回空数组
-  lineType: raw.lineType && raw.lineType.length > 0 
-    ? raw.lineType.map(mapToFrontendType)
-    : [],
+  lineType: raw.lineType && raw.lineType.length > 0 ? raw.lineType.map(mapToFrontendType) : [],
   thought: raw.thought || '',
   createdAt: raw.createdAt,
   pageNumber: raw.pageNumber,
@@ -105,13 +103,20 @@ const mapChapterNote = (raw: ChapterNoteResponse): ChapterNote => ({
 /**
  * 获取章节笔记列表
  */
-export const getChapterNotes = async (bookId: string | number, chapterId: string | number): Promise<ChapterNote[]> => {
+export const getChapterNotes = async (
+  bookId: string | number,
+  chapterId: string | number,
+): Promise<ChapterNote[]> => {
   try {
-    const res = await request.get<ChapterNoteResponse[]>(`/books/${bookId}/chapters/${chapterId}/notes`)
+    const res = await request.get<ChapterNoteResponse[]>(
+      `/books/${bookId}/chapters/${chapterId}/notes`,
+    )
     const rawData: ChapterNoteResponse[] = unwrap(res)
     return rawData.map(mapChapterNote)
   } catch (error) {
-    console.warn(`Chapter notes API not available for book ${bookId} chapter ${chapterId}, returning empty array`)
+    console.warn(
+      `Chapter notes API not available for book ${bookId} chapter ${chapterId}, returning empty array`,
+    )
     return []
   }
 }
@@ -126,40 +131,47 @@ export const createChapterNote = async (
     quote: string
     startIndex: number
     endIndex: number
+    rangeStart?: number
+    rangeEnd?: number
     lineType?: string[] | null // 可选，想法类型时可以为 null
     thought: string
     pageNumber: number
-  }
+  },
 ): Promise<ChapterNote> => {
   try {
     // 判断是想法还是划线：
     // - 如果有 thought 内容且 lineType 为空/null，则是想法
     // - 如果有 lineType，则是划线
-    const isThought = noteData.thought && noteData.thought.trim() && (!noteData.lineType || noteData.lineType.length === 0)
-    
-    console.log('createChapterNote - 判断结果:', { 
-      isThought, 
-      hasThought: !!noteData.thought, 
+    const isThought =
+      noteData.thought &&
+      noteData.thought.trim() &&
+      (!noteData.lineType || noteData.lineType.length === 0)
+
+    console.log('createChapterNote - 判断结果:', {
+      isThought,
+      hasThought: !!noteData.thought,
       thoughtContent: noteData.thought,
-      lineType: noteData.lineType 
+      lineType: noteData.lineType,
     })
-    
+
     // 将前端的 lineType 数组转换为后端期望的单个字符串
     // 如果是想法，lineType 应该为 null
-    const backendLineType = isThought 
-      ? null 
-      : (noteData.lineType && noteData.lineType.length > 0
-          ? mapToBackendType(noteData.lineType[0])
-          : 'marker')
+    const backendLineType = isThought
+      ? null
+      : noteData.lineType && noteData.lineType.length > 0
+        ? mapToBackendType(noteData.lineType[0])
+        : 'marker'
 
     // 构建请求体，使用后端期望的格式
-    // 注意：后端 NoteCreateDTO 只包含 bookId, chapterId, quote, lineType, thought
+    // 注意：后端 NoteCreateDTO 包含 bookId, chapterId, quote, lineType, thought, rangeStart, rangeEnd
     const requestBody = {
       bookId: Number(bookId),
       chapterId: Number(chapterId),
       quote: noteData.quote,
       lineType: backendLineType, // 想法时为 null，划线时为字符串
       thought: noteData.thought || '',
+      rangeStart: noteData.rangeStart ?? noteData.startIndex,
+      rangeEnd: noteData.rangeEnd ?? noteData.endIndex,
     }
 
     console.log('createChapterNote - 请求体:', requestBody)
@@ -175,14 +187,12 @@ export const createChapterNote = async (
       quote: rawData.quote,
       thought: rawData.noteContent || '',
       startIndex: noteData.startIndex, // 从请求参数获取
-      endIndex: noteData.endIndex,     // 从请求参数获取
+      endIndex: noteData.endIndex, // 从请求参数获取
       // 如果 lineType 为 null，说明是想法类型，返回空数组；否则转换为前端格式
-      lineType: rawData.lineType 
-        ? [mapToFrontendType(rawData.lineType)]
-        : [],
+      lineType: rawData.lineType ? [mapToFrontendType(rawData.lineType)] : [],
       pageNumber: noteData.pageNumber, // 从请求参数获取
       createdAt: rawData.createdAt,
-      updatedAt: rawData.createdAt
+      updatedAt: rawData.createdAt,
     }
 
     return chapterNote
@@ -198,7 +208,7 @@ export const createChapterNote = async (
       lineType: noteData.lineType,
       pageNumber: noteData.pageNumber,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     }
   }
 }
@@ -217,10 +227,13 @@ export const updateChapterNote = async (
     lineType?: string[]
     thought?: string
     pageNumber?: number
-  }
+  },
 ): Promise<ChapterNote> => {
   try {
-    const res = await request.put(`/books/${bookId}/chapters/${chapterId}/notes/${noteId}`, noteData)
+    const res = await request.put(
+      `/books/${bookId}/chapters/${chapterId}/notes/${noteId}`,
+      noteData,
+    )
     const rawData = unwrapSingle(res)
     return mapChapterNote(rawData)
   } catch (error) {
@@ -235,7 +248,7 @@ export const updateChapterNote = async (
 export const deleteChapterNote = async (
   bookId: string | number,
   chapterId: string | number,
-  noteId: string | number
+  noteId: string | number,
 ): Promise<boolean> => {
   try {
     const res = await request.delete(`/books/${bookId}/chapters/${chapterId}/notes/${noteId}`)
