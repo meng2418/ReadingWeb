@@ -609,6 +609,7 @@ const loadAllBookNotes = async () => {
   try {
     const data = await getBookNotes(bookId.value)
     allBookNotes.value = data
+    console.log(`全书笔记加载完成: bookId=${bookId.value}, count=${data.length}`)
   } catch (error) {
     console.error('加载全书笔记失败，使用空数据:', (error as any)?.message)
     // API失败时使用空数组
@@ -620,22 +621,19 @@ const loadAllBookNotes = async () => {
 const isDarkMode = ref(false)
 const activePanel = ref<'none' | 'toc' | 'typography' | 'notes'>('none')
 const showThoughts = ref(true)
-// 将API的章节笔记转换为组件所需的格式
-// 阅读器中的笔记 = 划线 + 想法（两者都显示）
+// 将API的全书笔记转换为组件所需的格式
+// 阅读器侧边栏的笔记 = 划线 + 想法（两者都显示）
 const notes = computed<Note[]>(() => {
-  return chapterNotes.value.map((note) => {
-    // 判断是想法还是划线：
-    // - 如果有 thought 内容，则是想法
-    // - 如果没有 thought 但有 lineType，则是划线
-    const isThought = note.thought && note.thought.trim().length > 0
-    const isHighlight = !isThought && note.lineType && note.lineType.length > 0
+  return allBookNotes.value.map((bookNote) => {
+    const isThought = bookNote.thought && bookNote.thought.trim().length > 0
+    const isHighlight = !isThought && bookNote.lineType && bookNote.lineType.trim().length > 0
 
     return {
-      id: note.id,
-      chapterId: String(currentChapterId.value),
-      quote: note.quote,
-      note: isThought ? note.thought : isHighlight ? `[Highlight:${note.lineType[0]}]` : '',
-      date: new Date(note.createdAt).toLocaleDateString(),
+      id: bookNote.id,
+      chapterId: String(bookNote.chapterId),
+      quote: bookNote.quote,
+      note: isThought ? bookNote.thought : isHighlight ? `[Highlight:${bookNote.lineType}]` : '',
+      date: bookNote.createdAt ? new Date(bookNote.createdAt).toLocaleDateString() : '',
     }
   })
 })
@@ -702,7 +700,9 @@ const handleChapterSelect = async (id: number) => {
   closePanels()
 
   // 加载新章节的内容和笔记
-  await Promise.all([loadChapterContent(id), loadChapterNotes(id.toString())])
+  // 顺序加载，避免 loadChapterNotes 先返回导致标注未写入
+  await loadChapterContent(id)
+  await loadChapterNotes(id.toString())
 }
 
 const handleActiveThought = (noteId: string, text: string) => {
@@ -736,16 +736,9 @@ const handleDeleteAnnotation = async (annotationId: string) => {
       // 从本地状态中移除标注
       annotations.value.splice(index, 1)
 
-      // 删除对应的笔记
-      if (noteId) {
-        const noteIndex = notes.value.findIndex((note) => note.id === noteId)
-        if (noteIndex !== -1) {
-          notes.value.splice(noteIndex, 1)
-        }
-      }
-
       // 重新加载章节笔记以保持同步
       await loadChapterNotes(currentChapterId.value.toString())
+      await loadAllBookNotes()
     }
   } catch (error) {
     console.error('删除标注失败:', error)
@@ -801,19 +794,9 @@ const handleAddAnnotation = async (
       }
       annotations.value.push(annotation)
 
-      // 创建笔记记录（用于笔记面板显示）
-      // 划线类型：note 字段使用 [Highlight:类型] 格式
-      const newNote: Note = {
-        id: createdNote.id,
-        chapterId: String(currentChapterId.value),
-        quote: createdNote.quote,
-        note: `[Highlight:${newAnn.type}]`, // 划线使用特殊格式标识
-        date: new Date(createdNote.createdAt).toLocaleDateString(),
-      }
-      notes.value.unshift(newNote)
-
       // 重新加载章节笔记以保持同步
       await loadChapterNotes(currentChapterId.value.toString())
+      await loadAllBookNotes()
     } catch (error) {
       console.error('创建划线失败:', error)
       // 即使 API 失败，也在本地添加标注（降级处理）
@@ -908,16 +891,6 @@ const submitNote = async (noteContent: string) => {
 
       console.log('创建想法成功，返回数据:', createdNote)
 
-      // 更新本地状态
-      const newNote: Note = {
-        id: createdNote.id,
-        chapterId: String(currentChapterId.value),
-        quote: createdNote.quote,
-        note: createdNote.thought || noteContent, // 使用返回的 thought 或原始内容
-        date: new Date(createdNote.createdAt).toLocaleDateString(),
-      }
-      notes.value.unshift(newNote)
-
       const newAnn: Annotation = {
         id: `ann-${createdNote.id}`,
         chapterId: String(currentChapterId.value),
@@ -933,6 +906,7 @@ const submitNote = async (noteContent: string) => {
 
       // 重新加载章节笔记以保持同步
       await loadChapterNotes(currentChapterId.value.toString())
+      await loadAllBookNotes()
 
       console.log('想法创建完成，已更新本地状态')
     } catch (error: any) {
@@ -993,11 +967,10 @@ watch(
         // 如果目录加载成功且有章节，才加载章节内容
         if (chapters.value.length > 0) {
           const targetChapterId = newChapterId || chapters.value[0].id
-          await Promise.all([
-            loadChapterContent(targetChapterId),
-            loadChapterNotes(targetChapterId.toString()),
-            loadAllBookNotes(),
-          ])
+          // 顺序加载：正文先就绪，再加载笔记写入标注
+          await loadChapterContent(targetChapterId)
+          await loadChapterNotes(targetChapterId.toString())
+          await loadAllBookNotes()
           currentChapterId.value = targetChapterId
         }
       } catch (error) {
@@ -1014,10 +987,9 @@ watch(
         if (chapters.value.length > 0) {
           const foundChapter = chapters.value.find((ch) => ch.id === newChapterId)
           if (foundChapter) {
-            await Promise.all([
-              loadChapterContent(newChapterId),
-              loadChapterNotes(newChapterId.toString()),
-            ])
+            // 顺序加载，避免标注竞态
+            await loadChapterContent(newChapterId)
+            await loadChapterNotes(newChapterId.toString())
             currentChapterId.value = newChapterId
           } else {
             console.warn(`章节ID ${newChapterId} 不在目录中`)
@@ -1096,12 +1068,10 @@ onMounted(async () => {
 
       // 确保章节ID有效后再加载内容
       if (currentChapterId.value > 0) {
-        // 然后并行加载当前章节内容和笔记
-        await Promise.all([
-          loadChapterContent(currentChapterId.value),
-          loadChapterNotes(currentChapterId.value.toString()),
-          loadAllBookNotes(),
-        ])
+        // 顺序加载：正文先就绪，再加载笔记写入标注
+        await loadChapterContent(currentChapterId.value)
+        await loadChapterNotes(currentChapterId.value.toString())
+        await loadAllBookNotes()
       } else {
         console.error('无效的章节ID，无法加载内容')
       }
