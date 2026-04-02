@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -88,4 +89,90 @@ public class ReadingController {
         return ResponseEntity.ok(response);
     }
 
+}
+@RestController
+@RequestMapping("/rewards")
+@RequiredArgsConstructor
+@Tag(name = "奖励", description = "用户奖励相关接口")
+class RewardController {
+    
+    private final ReadingService readingService;
+    
+    @Operation(summary = "获取今日已领取的奖励列表")
+    @GetMapping("/reading/claimed")
+    public ResponseEntity<Map<String, Object>> getTodayClaimedRewards(
+            @Parameter(description = "用户ID", hidden = true)
+            @AuthenticationPrincipal Integer userId) {
+        
+        // 检查用户是否已登录
+        if (userId == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 401);
+            response.put("message", "用户未登录或token无效");
+            response.put("data", null);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response);
+        }
+        
+        try {
+            java.util.List<String> claimedTypes = readingService.getTodayClaimedRewardTypes(userId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 200);
+            response.put("message", "success");
+            response.put("data", claimedTypes);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 400);
+            response.put("message", e.getMessage() != null ? e.getMessage() : "获取失败");
+            response.put("data", null);
+            
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    
+    @Operation(summary = "领取阅读激励")
+    @PostMapping("/reading")
+    public ResponseEntity<Map<String, Object>> claimReadingReward(
+            @Parameter(description = "用户ID", hidden = true)
+            @AuthenticationPrincipal Integer userId,
+            @Parameter(description = "阅读时长要求（分钟）", example = "30")
+            @RequestParam(required = false, defaultValue = "30") Integer minutes) {
+        
+        // 检查用户是否已登录
+        if (userId == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 401);
+            response.put("message", "用户未登录或token无效");
+            response.put("data", null);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response);
+        }
+        
+        try {
+            boolean success = readingService.claimReadingReward(userId, minutes);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 200);
+            response.put("message", success ? "领取成功" : "领取失败");
+            response.put("data", null);
+            
+            return ResponseEntity.ok(response);
+        } catch (ResponseStatusException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", e.getStatusCode().value());
+            response.put("message", e.getReason());
+            response.put("data", null);
+            
+            return ResponseEntity.status(e.getStatusCode()).body(response);
+        } catch (Exception e) {
+            // 捕获其他异常，避免返回500错误
+            Map<String, Object> response = new HashMap<>();
+            response.put("code", 400);
+            response.put("message", e.getMessage() != null ? e.getMessage() : "领取失败，请稍后重试");
+            response.put("data", null);
+            
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
 }
