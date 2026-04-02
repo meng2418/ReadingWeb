@@ -2,9 +2,8 @@
 import request from '@/utils/request'
 import type { AxiosResponse } from 'axios'
 
-const unwrapList = (res: AxiosResponse): BookNoteResponse[] => {
-  const raw = res?.data?.data ?? res?.data ?? []
-  return Array.isArray(raw) ? raw : []
+const unwrap = (res: AxiosResponse): BookNoteResponse[] => {
+  return res?.data?.data ?? res?.data ?? []
 }
 
 /** 全书笔记响应接口 */
@@ -63,9 +62,15 @@ const mapBookNote = (raw: BookNoteResponse): BookNote => ({
  * 获取全书笔记列表
  */
 export const getBookNotes = async (bookId: string | number): Promise<BookNote[]> => {
+  // 在开发环境下，直接返回空数组，避免404错误
+  if (import.meta.env.DEV) {
+    console.log(`DEV: Using empty book notes for book ${bookId}`)
+    return []
+  }
+
   try {
-    const res = await request.get<BookNoteResponse[]>(`/reader/${bookId}/notes`)
-    const rawData: BookNoteResponse[] = unwrapList(res)
+    const res = await request.get<BookNoteResponse[]>(`/books/${bookId}/notes`)
+    const rawData: BookNoteResponse[] = unwrap(res)
     return rawData.map(mapBookNote)
   } catch (error) {
     // 如果API不存在，返回空数组
@@ -92,8 +97,7 @@ export const createBookNote = async (
 ): Promise<BookNote> => {
   try {
     const res = await request.post(`/books/${bookId}/notes`, noteData)
-    const raw = res?.data?.data ?? res?.data ?? res
-    const rawData = raw as BookNoteResponse
+    const rawData = unwrap(res)
     return mapBookNote(rawData)
   } catch (error) {
     console.error(`Create book note API failed for book ${bookId}:`, error)
@@ -135,8 +139,8 @@ export const updateBookNote = async (
 ): Promise<BookNote> => {
   try {
     const res = await request.put(`/books/${bookId}/notes/${noteId}`, noteData)
-    const raw = res?.data?.data ?? res?.data ?? res
-    return mapBookNote(raw as BookNoteResponse)
+    const rawData = unwrap(res)
+    return mapBookNote(rawData)
   } catch (error) {
     console.error(`Update book note API failed for note ${noteId}:`, error)
     throw error
@@ -152,8 +156,7 @@ export const deleteBookNote = async (
 ): Promise<boolean> => {
   try {
     const res = await request.delete(`/books/${bookId}/notes/${noteId}`)
-    const raw = res?.data?.data ?? res?.data ?? true
-    return raw as boolean
+    return unwrap(res)
   } catch (error) {
     console.error(`Delete book note API failed for note ${noteId}:`, error)
     return true

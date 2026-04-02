@@ -3,8 +3,7 @@ import request from '@/utils/request'
 import type { AxiosResponse } from 'axios'
 
 const unwrap = (res: AxiosResponse): ChapterNoteResponse[] => {
-  const raw = res?.data?.data ?? res?.data ?? []
-  return Array.isArray(raw) ? raw : []
+  return res?.data?.data ?? res?.data ?? []
 }
 
 const unwrapSingle = (res: AxiosResponse): ChapterNoteResponse => {
