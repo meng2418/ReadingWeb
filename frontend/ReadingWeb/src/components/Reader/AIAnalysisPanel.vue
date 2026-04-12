@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { Sparkles, X, Bot } from 'lucide-vue-next'
+import { ref, watch, computed } from 'vue'
+import { Sparkles, X, Bot, Send } from 'lucide-vue-next'
+
+interface ChatMessage {
+  role: 'assistant' | 'user'
+  content: string
+}
 
 const props = defineProps<{
   isOpen: boolean
@@ -13,19 +18,75 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
-const analysis = ref<string | null>(null)
+const inputValue = ref('')
+const messages = ref<ChatMessage[]>([])
 
-watch([() => props.isOpen, () => props.selectedText], ([newOpen]) => {
-  if (newOpen && props.selectedText) {
-    loading.value = true
-    analysis.value = null
-    // Simulate API call
-    setTimeout(() => {
-      loading.value = false
-      analysis.value = `Based on the selected text "${props.selectedText.substring(0, 20)}...", the author seems to be exploring themes of longing...`
-    }, 1500)
-  }
+// 计算选中文本：如果没有选中则返回空，用于判断是否渲染展示框
+const selectedTextPreview = computed(() => {
+  return props.selectedText
+    ? props.selectedText.length > 80
+      ? `${props.selectedText.slice(0, 80)}...`
+      : props.selectedText
+    : ''
 })
+
+const startAnalysis = () => {
+  loading.value = true
+  messages.value = []
+
+  setTimeout(() => {
+    loading.value = false
+    // 逻辑调整：分有划线和无划线两种场景的初始开场白
+    if (props.selectedText) {
+      messages.value = [
+        {
+          role: 'assistant',
+          content: `AI 已根据你选中的内容进行分析："${selectedTextPreview.value}"。这段文字传达了情感深度与人物内心冲突，你可以针对作者意图或情节走向继续提问。`,
+        },
+      ]
+    } else {
+      messages.value = [
+        {
+          role: 'assistant',
+          content:
+            '你好！我是你的 AI 阅读助手。你可以就当前阅读的内容向我提问，也可以在书中划线选中某段文字让我帮你进行详细分析。',
+        },
+      ]
+    }
+  }, 1000)
+}
+
+watch(
+  () => [props.isOpen, props.selectedText],
+  ([isOpen]) => {
+    if (isOpen) {
+      startAnalysis()
+    }
+  },
+)
+
+const sendMessage = () => {
+  const text = inputValue.value.trim()
+  if (!text) return
+  messages.value.push({ role: 'user', content: text })
+  inputValue.value = ''
+
+  setTimeout(() => {
+    messages.value.push({
+      role: 'assistant',
+      content: props.selectedText
+        ? `针对你选中的段落和问题：“${text}”，我的分析是：作者在这里主要强调了深层的情感张力。`
+        : `已收到你的问题：“${text}”。基于本书的上下文脉络，我的解答是：这反映了核心的主题思想。`,
+    })
+  }, 800)
+}
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    sendMessage()
+  }
+}
 </script>
 
 <template>
@@ -35,33 +96,66 @@ watch([() => props.isOpen, () => props.selectedText], ([newOpen]) => {
     <div class="ai-panel" :class="{ 'dark-mode': isDarkMode }">
       <div class="panel-header">
         <div class="header-title">
-          <Sparkles :size="16" class="sparkle-icon" />
-          AI Analysis
+          <Sparkles :size="18" class="sparkle-icon" />
+          AI 助手
         </div>
         <button @click="$emit('close')" class="close-btn">
-          <X :size="16" />
+          <X :size="18" />
         </button>
+      </div>
+
+      <!-- 如果没有选中文本，则不显示这一块，保持极简 -->
+      <div v-if="selectedTextPreview" class="panel-meta">
+        <div class="meta-label">选中文本</div>
+        <div class="meta-content">{{ selectedTextPreview }}</div>
       </div>
 
       <div class="panel-body">
         <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
-          <p class="loading-text">Analyzing context...</p>
+          <p class="loading-text">正在思考中...</p>
         </div>
 
-        <div v-else class="content fade-in">
-          <div class="analysis-row">
-            <div class="bot-icon-wrapper">
-              <Bot :size="16" class="bot-icon" />
+        <div v-else class="chat-container">
+          <div class="message-list">
+            <div
+              v-for="(message, index) in messages"
+              :key="index"
+              :class="[
+                'message-row',
+                message.role === 'user' ? 'user-message-row' : 'assistant-message-row',
+              ]"
+            >
+              <div v-if="message.role === 'assistant'" class="avatar-wrapper">
+                <div class="avatar-icon">
+                  <Bot :size="16" />
+                </div>
+              </div>
+              <div
+                :class="[
+                  'message-bubble',
+                  message.role === 'user' ? 'user-bubble' : 'assistant-bubble',
+                ]"
+              >
+                <p>{{ message.content }}</p>
+              </div>
             </div>
-            <div class="analysis-bubble">
-              {{ analysis }}
-            </div>
-          </div>
-          <div class="actions-row">
-            <button class="follow-up-btn">Ask follow-up question</button>
           </div>
         </div>
+      </div>
+
+      <div class="panel-footer">
+        <textarea
+          v-model="inputValue"
+          :placeholder="loading ? '正在加载中...' : '输入你的问题...'"
+          :disabled="loading"
+          class="chat-input"
+          rows="1"
+          @keydown="handleKeydown"
+        />
+        <button class="send-btn" @click="sendMessage" :disabled="loading || !inputValue.trim()">
+          <Send :size="16" />
+        </button>
       </div>
     </div>
   </div>
@@ -71,51 +165,41 @@ watch([() => props.isOpen, () => props.selectedText], ([newOpen]) => {
 .backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.24);
   z-index: 50;
 }
 
 .ai-panel {
   position: fixed;
-  bottom: 0;
-  left: 0;
+  top: 0;
   right: 0;
-  background-color: white;
-  border-top: 1px solid #f3f4f6;
-  color: #1f2937;
-  z-index: 50;
-  box-shadow: 0 -10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-top-left-radius: 1rem;
-  border-top-right-radius: 1rem;
-  transition: all 0.3s ease-out;
-}
-
-@media (min-width: 768px) {
-  .ai-panel {
-    left: auto;
-    right: 2rem;
-    bottom: 2rem;
-    width: 24rem;
-    border-radius: 1rem;
-    border: 1px solid #f3f4f6;
-  }
+  height: 100%;
+  width: min(420px, 100%);
+  max-width: 420px;
+  background-color: #ffffff;
+  color: #111827;
+  z-index: 60;
+  box-shadow: -16px 0 40px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease-out;
 }
 
 .ai-panel.dark-mode {
-  background-color: #18181b;
-  border-color: #3f3f46;
+  background-color: #111827;
   color: #e5e7eb;
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.4);
 }
 
 .panel-header {
-  padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 1.25rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
 }
-.dark-mode .panel-header {
+
+.ai-panel.dark-mode .panel-header {
   border-color: #27272a;
 }
 
@@ -123,32 +207,73 @@ watch([() => props.isOpen, () => props.selectedText], ([newOpen]) => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .sparkle-icon {
-  color: #a855f7;
+  color: #111827;
+}
+.ai-panel.dark-mode .sparkle-icon {
+  color: #f3f4f6;
 }
 
 .close-btn {
-  padding: 0.25rem;
-  border-radius: 9999px;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
   background: transparent;
   border: none;
-  cursor: pointer;
   color: inherit;
+  cursor: pointer;
 }
+
 .close-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(17, 24, 39, 0.06);
 }
-.dark-mode .close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+
+.ai-panel.dark-mode .close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.panel-meta {
+  padding: 0.85rem 1.25rem 0;
+}
+
+.meta-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+
+.ai-panel.dark-mode .meta-label {
+  color: #9ca3af;
+}
+
+.meta-content {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: inherit;
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 0.65rem 0.8rem; /* 同步收紧选中文本框的内间距 */
+  border: 1px solid #e2e8f0;
+}
+
+.ai-panel.dark-mode .meta-content {
+  background: #1f2937;
+  border-color: #374151;
 }
 
 .panel-body {
-  padding: 1.5rem;
-  min-height: 200px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.25rem 0;
+  overflow: hidden;
 }
 
 .loading-state {
@@ -156,18 +281,33 @@ watch([() => props.isOpen, () => props.selectedText], ([newOpen]) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  padding: 2rem 0;
+  flex: 1;
   gap: 1rem;
+  padding: 1rem;
 }
 
 .spinner {
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 50%;
-  border: 2px solid #a855f7;
+  border: 2px solid #111827;
   border-top-color: transparent;
   animation: spin 1s linear infinite;
+}
+
+.ai-panel.dark-mode .spinner {
+  border-color: #f3f4f6;
+  border-top-color: transparent;
+}
+
+.loading-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.ai-panel.dark-mode .loading-text {
+  color: #9ca3af;
 }
 
 @keyframes spin {
@@ -179,89 +319,170 @@ watch([() => props.isOpen, () => props.selectedText], ([newOpen]) => {
   }
 }
 
-.loading-text {
-  font-size: 0.75rem;
-  opacity: 0.5;
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.chat-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0.2;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.analysis-row {
+.message-list {
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
-.bot-icon-wrapper {
+.message-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.assistant-message-row {
+  align-items: flex-start;
+}
+
+.user-message-row {
+  justify-content: flex-end;
+}
+
+.avatar-wrapper {
   width: 2rem;
   height: 2rem;
-  border-radius: 50%;
-  background-color: #f3e8ff; /* purple-100 */
+  min-width: 2rem;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  place-items: center;
+}
+
+.ai-panel.dark-mode .avatar-wrapper {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.avatar-icon {
+  color: #111827;
+}
+
+.ai-panel.dark-mode .avatar-icon {
+  color: #f3f4f6;
+}
+
+.message-bubble {
+  max-width: 90%;
+  padding: 0.5rem 0.75rem; /* 大幅缩小气泡内部 padding */
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1.5; /* 稍微收紧行高，显得更专业 */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 清除 <p> 标签的默认 margin，这是导致气泡空隙过大的元凶 */
+.message-bubble p {
+  margin: 0;
+}
+
+.assistant-bubble {
+  background: #f8fafc;
+  color: #111827;
+  border: 1px solid #e2e8f0;
+  border-top-left-radius: 2px;
+}
+
+.ai-panel.dark-mode .assistant-bubble {
+  background: #1f2937;
+  color: #e5e7eb;
+  border-color: #374151;
+}
+
+.user-bubble {
+  background: #111827;
+  color: #ffffff;
+  border-top-right-radius: 2px;
+}
+
+.ai-panel.dark-mode .user-bubble {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.panel-footer {
+  padding: 0.85rem 1rem 1rem;
+  border-top: 1px solid #e5e7eb;
   display: flex;
+  gap: 0.6rem;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.dark-mode .bot-icon-wrapper {
-  background-color: rgba(107, 33, 168, 0.3);
 }
 
-.bot-icon {
-  color: #9333ea;
-}
-.dark-mode .bot-icon {
-  color: #c084fc;
+.ai-panel.dark-mode .panel-footer {
+  border-color: #27272a;
 }
 
-.analysis-bubble {
-  padding: 0.75rem;
-  border-radius: 1rem;
-  border-top-left-radius: 0;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  background-color: #f9fafb;
-}
-.dark-mode .analysis-bubble {
-  background-color: #27272a;
-}
-
-.actions-row {
-  padding-left: 2.75rem;
+.chat-input {
+  width: 100%;
+  min-height: 40px;
+  resize: none;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 0.75rem; /* 与气泡内部间距保持统一的视觉呼吸感 */
+  font-size: 0.9rem;
+  color: inherit;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.2s;
 }
 
-.follow-up-btn {
-  font-size: 0.75rem;
-  color: #a855f7;
-  font-weight: 500;
-  background: none;
+.ai-panel.dark-mode .chat-input {
+  background: #111827;
+  border-color: #4b5563;
+}
+
+.chat-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.08);
+}
+
+.ai-panel.dark-mode .chat-input:focus {
+  border-color: #f3f4f6;
+  box-shadow: 0 0 0 2px rgba(243, 244, 246, 0.08);
+}
+
+.send-btn {
+  width: 2.4rem;
+  height: 2.4rem; /* 配合输入框稍微调小按钮 */
+  border-radius: 6px;
   border: none;
+  background-color: #111827;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
   cursor: pointer;
-  padding: 0;
+  transition: opacity 0.2s;
 }
-.follow-up-btn:hover {
-  color: #9333ea;
+
+.ai-panel.dark-mode .send-btn {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.send-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .ai-panel {
+    width: 100%;
+  }
+
+  .panel-body {
+    padding: 0.8rem 1rem 0;
+  }
+
+  .panel-footer {
+    padding: 0.8rem 1rem 1rem;
+  }
 }
 </style>

@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: 'toggleTypography'): void
   (e: 'toggleAnnotation'): void
   (e: 'toggleThoughts'): void
+  (e: 'toggleAI'): void
 }>()
 </script>
 
@@ -40,7 +41,12 @@ const emit = defineEmits<{
       <span class="tooltip">目录 (Directory)</span>
     </button>
 
-    <button class="menu-btn" :class="{ dark: isDarkMode }" title="AI 解读">
+    <button
+      @click="$emit('toggleAI')"
+      class="menu-btn"
+      :class="{ dark: isDarkMode }"
+      title="AI 解读"
+    >
       <Sparkles :size="20" />
       <span class="tooltip">AI 解读 (AI Analysis)</span>
     </button>

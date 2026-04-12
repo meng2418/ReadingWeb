@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import UserProfileCard from '@/components/community/UserProfileCard.vue'
@@ -20,19 +20,18 @@ import { getHotTopics, type HotTopic } from '@/api/topics/hot-topics'
 
 // 当前用户信息
 const currentUser = reactive({
-  userId: null as number | null, // 添加用户ID
+  userId: null as number | null,
   username: '加载中...',
   bio: '',
-  avatar: '', // 初始使用本地默认图
+  avatar: '',
   followCount: 0,
   fansCount: 0,
   postCount: 0,
 })
 
-// 当前用户ID（用于判断是否是自己的帖子）
 const currentUserId = computed(() => currentUser.userId)
 
-// 热门话题 - 使用更明确的结构
+// 热门话题
 const hotTopics = ref<HotTopic[]>([])
 const topicsList = ref<{ id: number; cover: string; title: string; number: number }[]>([])
 
@@ -40,14 +39,17 @@ const topicsList = ref<{ id: number; cover: string; title: string; number: numbe
 const topicsHasMore = ref(true)
 const topicsNextCursor = ref<number | undefined>(undefined)
 const topicsLoading = ref(false)
+const loadMoreTrigger = ref<HTMLElement | null>(null) // 底部无感加载触发器
+let observer: IntersectionObserver | null = null
 
 // 加载话题列表
 const loadTopicsList = async () => {
-  if (topicsLoading.value) return
+  if (topicsLoading.value || !topicsHasMore.value) return
 
   topicsLoading.value = true
   try {
-    const result = await getTopicsList(topicsNextCursor.value, 9)
+    // 优化：单次请求20条，确保能填满屏幕高度，否则无法触发滚动
+    const result = await getTopicsList(topicsNextCursor.value, 20)
     topicsList.value = [
       ...topicsList.value,
       ...result.items.map((item) => ({
@@ -66,32 +68,39 @@ const loadTopicsList = async () => {
   }
 }
 
+// 初始化 IntersectionObserver (用于无感加载更多话题)
+const setupObserver = () => {
+  if (observer) observer.disconnect()
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      // 当触发器进入视口且有更多数据时加载
+      if (entries[0].isIntersecting && currentTab.value === 'topics' && topicsHasMore.value) {
+        loadTopicsList()
+      }
+    },
+    { rootMargin: '100px' }, // 提前 100px 触发，体验更丝滑
+  )
+
+  if (loadMoreTrigger.value) {
+    observer.observe(loadMoreTrigger.value)
+  }
+}
+
 // 加载热门话题
 const loadHotTopics = async () => {
   try {
-    console.log('开始加载热门话题...')
-
-    // 调用API获取热门话题
     const topics = await getHotTopics()
-    console.log('API返回的热门话题数据:', topics)
-
     if (topics && topics.length > 0) {
-      // 确保只取前9个（如果需要的话）
       hotTopics.value = topics.slice(0, 9).map((topic) => ({
         id: topic.id,
         name: topic.name,
       }))
-      console.log('设置后的热门话题数据:', hotTopics.value)
     } else {
-      // 如果接口返回空或失败，使用默认数据
-      console.warn('热门话题接口返回空，使用默认数据')
       hotTopics.value = []
     }
-
-    console.log('热门话题加载完成，数量:', hotTopics.value.length)
   } catch (error) {
     console.error('加载热门话题失败:', error)
-    // 如果接口失败，使用默认数据
     hotTopics.value = []
   }
 }
@@ -101,47 +110,25 @@ const loadPosts = async (type: 'square' | 'following' = 'square') => {
   try {
     const postsData = await fetchCommunityPosts(type)
     posts.value = postsData
-    console.log(`加载${type === 'square' ? '广场' : '关注'}帖子成功:`, postsData.length)
   } catch (error) {
     console.error(`加载${type === 'square' ? '广场' : '关注'}帖子失败:`, error)
   }
 }
 
-// 帖子数据
 onMounted(async () => {
-  console.log('CommunityPage mounted, 开始加载数据...')
-
   try {
-    // 并发请求所有数据，使用Promise.allSettled避免一个失败影响其他
     const [commentsResult, likesResult, profileResult] = await Promise.allSettled([
-      fetchMyComments().catch(err => {
-        console.warn('获取评论失败:', err)
-        return { comments: [], hasMore: false, nextCursor: null }
-      }),
-      fetchMyLikes().catch(err => {
-        console.warn('获取点赞失败:', err)
-        return { likes: [], hasMore: false, nextCursor: null }
-      }),
-      getProfileHome().catch(err => {
-        console.warn('获取用户信息失败:', err)
-        return null
-      }),
+      fetchMyComments().catch(() => ({ comments: [], hasMore: false, nextCursor: null })),
+      fetchMyLikes().catch(() => ({ likes: [], hasMore: false, nextCursor: null })),
+      getProfileHome().catch(() => null),
     ])
 
-    // 处理评论数据
-    if (commentsResult.status === 'fulfilled') {
-      commentList.value = commentsResult.value.comments
-    }
+    if (commentsResult.status === 'fulfilled') commentList.value = commentsResult.value.comments
+    if (likesResult.status === 'fulfilled') likeList.value = likesResult.value.likes
 
-    // 处理点赞数据
-    if (likesResult.status === 'fulfilled') {
-      likeList.value = likesResult.value.likes
-    }
-
-    // 处理用户信息
     if (profileResult.status === 'fulfilled' && profileResult.value) {
       Object.assign(currentUser, {
-        userId: profileResult.value.userId || null, // 添加用户ID
+        userId: profileResult.value.userId || null,
         username: profileResult.value.username || '用户',
         bio: profileResult.value.bio || '',
         avatar: profileResult.value.avatar || '',
@@ -149,85 +136,60 @@ onMounted(async () => {
         fansCount: profileResult.value.followerCount || 0,
         postCount: profileResult.value.postCount || 0,
       })
-      console.log('用户信息加载完成:', currentUser)
-    } else {
-      console.warn('用户信息加载失败，使用默认值')
     }
   } catch (error) {
     console.error('加载主要数据失败:', error)
   }
 
-  // 加载初始帖子数据（广场）
-  await loadPosts('square')
+  // 首屏仅加载广场和热门话题，不强制加载话题列表，节省资源
+  await Promise.all([loadPosts('square'), loadHotTopics()])
 
-  // 加载话题相关数据
-  console.log('开始加载话题相关数据...')
-  await Promise.all([loadTopicsList(), loadHotTopics()])
+  // 绑定滚动监听器
+  setupObserver()
+})
 
-  console.log('所有数据加载完成')
-  console.log('热门话题数据:', hotTopics.value)
+onUnmounted(() => {
+  if (observer) observer.disconnect()
 })
 
 const posts = ref<Post[]>([])
 const commentList = ref<any[]>([])
 const likeList = ref<any[]>([])
 const currentTab = ref<'square' | 'following' | 'topics' | 'mine'>('square')
+const mineTab = ref<'like' | 'comment'>('comment')
 
-// 加载我的评论和点赞数据
 const loadMyData = async () => {
   try {
     const [commentsResult, likesResult] = await Promise.allSettled([
-      fetchMyComments().catch(err => {
-        console.warn('获取评论失败:', err)
-        return { comments: [], hasMore: false, nextCursor: null }
-      }),
-      fetchMyLikes().catch(err => {
-        console.warn('获取点赞失败:', err)
-        return { likes: [], hasMore: false, nextCursor: null }
-      }),
+      fetchMyComments().catch(() => ({ comments: [], hasMore: false, nextCursor: null })),
+      fetchMyLikes().catch(() => ({ likes: [], hasMore: false, nextCursor: null })),
     ])
-
-    // 处理评论数据
-    if (commentsResult.status === 'fulfilled') {
-      commentList.value = commentsResult.value.comments
-    }
-
-    // 处理点赞数据
-    if (likesResult.status === 'fulfilled') {
-      likeList.value = likesResult.value.likes
-    }
+    if (commentsResult.status === 'fulfilled') commentList.value = commentsResult.value.comments
+    if (likesResult.status === 'fulfilled') likeList.value = likesResult.value.likes
   } catch (error) {
     console.error('加载我的数据失败:', error)
   }
 }
 
-const changeTab = (tab: 'square' | 'following' | 'topics' | 'mine') => {
-  console.log('切换标签:', tab)
+const changeTab = async (tab: 'square' | 'following' | 'topics' | 'mine') => {
   currentTab.value = tab
 
-  // 切换到广场或关注页时，加载对应的帖子数据
   if (tab === 'square' || tab === 'following') {
     loadPosts(tab)
   }
 
-  // 切换到话题页时，如果没有数据则加载
+  // 懒加载：仅当切换到话题且没有数据时才去加载
   if (tab === 'topics' && topicsList.value.length === 0 && !topicsLoading.value) {
-    loadTopicsList()
+    await loadTopicsList()
   }
 
-  // 切换到我的tab时，重新加载数据
   if (tab === 'mine') {
     loadMyData()
   }
 }
 
-// "我的"内部的二级 Tab
-const mineTab = ref<'like' | 'comment'>('comment')
-
-// 动态页面标题
 const title = computed(() => {
   let tabName = ''
-
   switch (currentTab.value) {
     case 'square':
       tabName = '广场'
@@ -244,7 +206,6 @@ const title = computed(() => {
     default:
       tabName = '首页'
   }
-
   return `微信读书社区 - ${tabName}`
 })
 useTitle(title)
@@ -254,32 +215,14 @@ const filteredPosts = computed<Post[]>(() => {
     case 'mine':
       return posts.value.filter((p) => p.username === currentUser.username)
     default:
-      // square 和 following 的数据已经通过 API 过滤，直接返回
       return posts.value
   }
 })
 
 const handleTopicClick = (topic: HotTopic) => {
   console.log('点击热门话题:', topic.name)
-  // 这里可以添加跳转到话题详情页的逻辑
-  // window.open(`/topicdetail/${topic.id}`, '_blank')
 }
 
-// 滚动加载更多话题
-const handleTopicsScroll = (event: Event) => {
-  const target = event.target as HTMLElement
-  const { scrollTop, scrollHeight, clientHeight } = target
-
-  if (
-    scrollTop + clientHeight >= scrollHeight - 100 &&
-    topicsHasMore.value &&
-    !topicsLoading.value
-  ) {
-    loadTopicsList()
-  }
-}
-
-// 统一：帖子交互逻辑（关注 / 点赞）
 const { updateFollow, updateLike } = usePostInteractions(posts)
 
 const handleFollowChange = (postId: number, isFollowing: boolean): void => {
@@ -290,16 +233,12 @@ const handleLike = (postId: number, likeCount: number, isLiked: boolean): void =
   updateLike(postId, likeCount, isLiked)
 }
 
-// 评论事件
 const handleComment = (postId: number): void => {
   console.log('评论帖子:', postId)
-  // TODO: 实现评论功能
 }
 
-// 转发事件
 const handleShare = (postId: number): void => {
   console.log('转发帖子:', postId)
-  // TODO: 实现转发功能
 }
 </script>
 
@@ -324,7 +263,8 @@ const handleShare = (postId: number): void => {
 
       <!-- main-content部分 -->
       <div class="main-content">
-        <div v-if="currentTab === 'topics'" class="topics-grid" @scroll="handleTopicsScroll">
+        <!-- 话题列表 (优化：改成 v-show 保持DOM，不再局部嵌套滚动) -->
+        <div v-show="currentTab === 'topics'" class="topics-grid">
           <Topic
             v-for="topic in topicsList"
             :id="topic.id"
@@ -333,15 +273,21 @@ const handleShare = (postId: number): void => {
             :title="topic.title"
             :number="topic.number"
           />
-          <!-- 加载更多提示 -->
-          <div v-if="topicsLoading" class="loading-more">加载中...</div>
-          <div v-else-if="!topicsHasMore && topicsList.length > 0" class="no-more">
-            没有更多话题了
+
+          <!-- 加载状态与触发器 -->
+          <div class="topics-footer">
+            <div v-if="topicsLoading" class="loading-more">加载中...</div>
+            <div v-else-if="!topicsHasMore && topicsList.length > 0" class="no-more">
+              没有更多话题了
+            </div>
+            <div v-else-if="topicsList.length === 0 && !topicsLoading" class="empty">暂无话题</div>
+            <!-- 这个隐形div用于触发IntersectionObserver -->
+            <div ref="loadMoreTrigger" class="scroll-trigger"></div>
           </div>
-          <div v-else-if="topicsList.length === 0 && !topicsLoading" class="empty">暂无话题</div>
         </div>
-        <!--我的-->
-        <div v-else-if="currentTab === 'mine'" class="mine-grid">
+
+        <!-- 我的 -->
+        <div v-show="currentTab === 'mine'" class="mine-grid">
           <div class="mine-tabs">
             <button :class="{ active: mineTab === 'comment' }" @click="mineTab = 'comment'">
               评论
@@ -349,20 +295,19 @@ const handleShare = (postId: number): void => {
             <button :class="{ active: mineTab === 'like' }" @click="mineTab = 'like'">赞</button>
           </div>
 
-          <!-- 评论 -->
           <div v-if="mineTab === 'comment'">
             <CommentItem v-for="(item, index) in commentList" :key="index" :comment="item" />
             <div v-if="commentList.length === 0" class="empty">暂无评论</div>
           </div>
 
-          <!-- 赞 -->
           <div v-else>
             <LikeItem v-for="(item, index) in likeList" :key="index" :like="item" />
             <div v-if="likeList.length === 0" class="empty">暂无点赞</div>
           </div>
         </div>
+
         <!-- 帖子列表 -->
-        <div v-else class="posts-list">
+        <div v-show="currentTab === 'square' || currentTab === 'following'" class="posts-list">
           <PostCard
             v-for="post in filteredPosts"
             :key="post.id"
@@ -390,7 +335,6 @@ const handleShare = (postId: number): void => {
 
       <div class="sidebar">
         <UserProfileCard :user="currentUser" />
-        <!-- 传递热门话题数据 -->
         <HotTopics :topics="hotTopics" @topic-click="handleTopicClick" />
       </div>
     </div>
@@ -415,7 +359,7 @@ const handleShare = (postId: number): void => {
   margin: 0 auto;
   align-items: flex-start;
 }
-/* tabs */
+
 .tabs {
   grid-column: 1 / -1;
   display: flex;
@@ -477,23 +421,27 @@ const handleShare = (postId: number): void => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: sticky; /* 让侧边栏跟随页面滚动悬浮，体验更好 */
+  top: 80px;
 }
 
-.sidebar-section {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #f0f0f0;
-}
-
+/* 彻底移除 max-height 和 overflow-y，拥抱全局滚动 */
 .topics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 20px;
   justify-items: center;
-  max-height: 600px;
-  overflow-y: auto;
-  padding: 10px;
+  padding: 10px 0;
+}
+
+.topics-footer {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.scroll-trigger {
+  height: 1px;
+  width: 100%;
 }
 
 .empty {
@@ -504,8 +452,7 @@ const handleShare = (postId: number): void => {
 
 .loading-more,
 .no-more {
-  grid-column: 1 / -1;
-  padding: 16px;
+  padding: 20px 0;
   text-align: center;
   color: #888;
   font-size: 14px;
