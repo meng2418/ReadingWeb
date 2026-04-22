@@ -3,14 +3,12 @@
  * 用于处理笔记的创建、保存等逻辑，与 Pinia store 集成
  */
 
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { createNote, type CreateNoteParams, type NoteResponse } from '@/api/notes'
 import { useReaderStore } from '@/stores/reader'
 import {
   calculateTextRangeIndex,
-  getSelectedTextWithRange,
   extractTextByRange,
-  type TextRange,
 } from './useTextRangeIndex'
 
 export interface NoteData {
@@ -42,7 +40,7 @@ export function useNoteManager() {
     lineType: string | undefined,
     thought: string | undefined,
     chapterContent: string,
-    contentElement?: HTMLElement,
+    _contentElement?: HTMLElement,
   ): Promise<NoteResponse | null> {
     if (!selectedText && !thought) {
       errorMessage.value = '请选择文本或输入想法内容'

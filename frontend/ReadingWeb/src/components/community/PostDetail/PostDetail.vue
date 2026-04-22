@@ -90,12 +90,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { Heart } from 'lucide-vue-next'
 import { useTitle } from '@/stores/useTitle'
 import type { PostDetailResponse } from '@/api/post'
 import { toggleLikeApi } from '@/api/community'
 import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
+import { followUserApi, unfollowUserApi } from '@/api/userRelations'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps<{
   post: PostDetailResponse
@@ -132,17 +134,7 @@ const formatTime = (timeStr: string) => {
 const pagetitle = computed(() => `${props.post.postTitle} - 帖子详情`)
 useTitle(pagetitle)
 
-// 处理关注
-// 1. 引入 API
-import { followUserApi, unfollowUserApi } from '@/api/userRelations'
-
-// 2. 增加 update-follow 到 emits 中
 const emit = defineEmits(['update-like', 'update-follow'])
-
-// 处理关注/取消关注
-import { ElMessage } from 'element-plus'
-import { getProfileHome } from '@/api/profile'
-import { ref, computed, onMounted } from 'vue'
 
 // 判断是否是自己的帖子
 const isOwnPost = computed(() => {
@@ -163,7 +155,7 @@ const handleFollow = async () => {
       ElMessage.success('关注成功')
     }
     emit('update-follow', !props.post.isFollowingAuthor)
-  } catch (error) {
+  } catch {
     ElMessage.error('操作失败，请重试')
   }
 }
@@ -192,9 +184,6 @@ const handleLike = async () => {
     console.error('点赞失败', error)
   }
 }
-
-// 响应式状态
-const isFollowing = ref(false)
 </script>
 
 <style scoped>

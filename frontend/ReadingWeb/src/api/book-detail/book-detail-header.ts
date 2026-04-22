@@ -114,7 +114,7 @@ export const startReading = async (bookId: string | number): Promise<{ readingSt
   try {
     const res = await request.post(`/books/${bookId}/reading`)
     return unwrap(res)
-  } catch (error) {
+  } catch {
     // 如果API不存在，模拟成功响应
     console.warn(`Start reading API not available for book ${bookId}, simulating success`)
     return { readingStatus: 'reading' }
@@ -160,9 +160,8 @@ export const removeFromBookshelf = async (bookId: string | number): Promise<bool
   try {
     const res = await request.delete(`/bookshelf/${bookId}`)
     return unwrap(res)
-  } catch (error) {
+  } catch {
     console.warn(`Remove from bookshelf API not available for book ${bookId}, simulating success`)
     return true
   }
 }
-

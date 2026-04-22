@@ -393,11 +393,9 @@ watch(
       if (oldQuery?.refresh !== 'true') {
         router.replace({
           path: route.path,
-          query: {
-            ...Object.fromEntries(
+          query: Object.fromEntries(
               Object.entries(route.query).filter(([key]) => key !== 'refresh' && key !== 'timestamp')
             )
-          }
         })
       }
     }

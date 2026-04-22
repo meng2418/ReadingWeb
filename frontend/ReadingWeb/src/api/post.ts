@@ -2,16 +2,6 @@
 import request from '@/utils/request'
 import { processCoverPath } from '@/utils/imagePath'
 
-// 定义接口返回的类型（可选，方便排查）
-interface RawComment {
-  id: number
-  username: string
-  avatar: string
-  content: string
-  commentTime: string
-  likeCount: number
-  replies?: RawComment[]
-}
 /** 帖子详情API响应结构 */
 export interface PostDetailResponse {
   postId: number

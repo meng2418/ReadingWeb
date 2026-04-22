@@ -1,7 +1,6 @@
 // src/api/topics/topic-detail-header.ts - 话题详情页头部相关API
 import request from '@/utils/request'
 import type { AxiosResponse } from 'axios'
-import type { Post } from '@/types/post'
 
 const unwrap = (res: AxiosResponse): RawTopic => res?.data?.data ?? res?.data ?? {}
 

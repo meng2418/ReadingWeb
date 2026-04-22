@@ -56,7 +56,7 @@
 
         <!-- Emoji -->
         <div v-if="showEmojiPicker" class="select-emoji" @click.self="showEmojiPicker = false">
-          <emoji-picker-element />
+          <emoji-picker-element @emoji-click="handleEmojiClick" />
         </div>
 
         <!-- 话题选择 -->
@@ -233,11 +233,10 @@ const closeEditor = () => (showEditor.value = false)
 
 const addEmoji = () => {
   showEmojiPicker.value = !showEmojiPicker.value
-  nextTick(() => {
-    document.querySelector('emoji-picker-element')?.addEventListener('emoji-click', (e: any) => {
-      postContent.value += e.detail.unicode
-    })
-  })
+}
+
+const handleEmojiClick = (e: any) => {
+  postContent.value += e.detail.unicode
 }
 
 const openTopicPanel = () => {

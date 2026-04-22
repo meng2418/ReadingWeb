@@ -72,7 +72,7 @@ export const getBookNotes = async (bookId: string | number): Promise<BookNote[]>
     const res = await request.get<BookNoteResponse[]>(`/books/${bookId}/notes`)
     const rawData: BookNoteResponse[] = unwrap(res)
     return rawData.map(mapBookNote)
-  } catch (error) {
+  } catch {
     // 如果API不存在，返回空数组
     console.warn(`Book notes API not available for book ${bookId}, returning empty array`)
     return []

@@ -493,7 +493,7 @@ const compressImage = (
         }
 
         // 从初始质量开始，逐步降低
-        let quality = initialQuality
+        const quality = initialQuality
         let result: string | null = null
         const qualitySteps = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
 
