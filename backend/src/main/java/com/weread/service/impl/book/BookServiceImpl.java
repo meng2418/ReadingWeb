@@ -88,9 +88,9 @@ public class BookServiceImpl implements BookService {
         book.setPublisher(dto.getPublisher());
         book.setIsbn(dto.getIsbn());
         book.setPrice(dto.getPrice() != null ? dto.getPrice() : 0);
-        book.setIsbn(dto.getIsbn() != null ? dto.getIsbn() : false);
+        book.setIsFree(dto.getIsFree() != null ? dto.getIsFree() : false);
         book.setIsMemberOnly(dto.getIsMemberOnly() != null ? dto.getIsMemberOnly() : false);
-        book.setTopics(dto.getTopics());
+        book.setTags(dto.getTopics());
         book.setIsPublished(true); // 默认上架
 
         book = bookRepository.save(book);
@@ -142,7 +142,7 @@ public class BookServiceImpl implements BookService {
             book.setIsMemberOnly(dto.getIsMemberOnly());
         }
         if (dto.getTopics() != null) {
-            book.setTopics(dto.getTopics());
+            book.setTags(dto.getTopics());
         }
 
         book = bookRepository.save(book);

@@ -131,23 +131,4 @@ public class BookEntity {
         return "未知作者";
     }
 
-    public void setPrice(Object price2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setPrice'");
-    }
-
-    public void setIsbn(Object isbn2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setIsbn'");
-    }
-
-    public void setIsMemberOnly(Object isMemberOnly2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setIsMemberOnly'");
-    }
-
-    public void setTopics(Object topics) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setTopics'");
-    }
 }

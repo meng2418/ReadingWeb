@@ -9,7 +9,7 @@ spring:
     url: jdbc:mysql://localhost:3306/wechatreading_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 299792
+    password: 123456
     hikari:
       connection-timeout: 30000
       maximum-pool-size: 10
@@ -98,3 +98,20 @@ payment:
 app:
   geoip:
     database-path: classpath:geolite2/GeoLite2-City.mmdb
+  ai:
+    # Supported: openai-compatible
+    provider: openai-compatible
+    # 智谱 AI（OpenAI 兼容）：见 https://docs.bigmodel.cn/cn/guide/develop/openai/introduction
+    # 端点：https://open.bigmodel.cn/api/paas/v4/chat/completions
+    base-url: https://open.bigmodel.cn/api/paas/v4
+    # 控制台创建 API Key，勿提交到 Git；可用环境变量覆盖：APP_AI_API_KEY
+    api-key: ${APP_AI_API_KEY:APP_AI_API_KEY}
+    # 免费模型 GLM-4-Flash-250414，见 https://docs.bigmodel.cn/cn/guide/models/free/glm-4-flash-250414
+    model: glm-4-flash-250414
+    chat:
+      # 智谱路径为 /chat/completions，不是 /v1/chat/completions
+      completions-path: /chat/completions
+      # How many recent messages to send as context
+      context-limit: 20
+      # System prompt for AI chat
+      system-prompt: 你是一个阅读助手，请围绕用户当前正在阅读的书籍回答问题；如果无法从上下文确定答案，请说明不确定并给出合理推测。
