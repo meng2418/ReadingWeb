@@ -3,10 +3,10 @@
 <template>
   <div class="highlights-card">
     <div class="card-header">
-      <h3 class="card-title">我的划线</h3>
-      <span class="view-all" @click="goToAllHighlights"
-        >查看全部 <ArrowRight class="icon-inline"
-      /></span>
+      <h3 class="card-title">{{ titleText }}</h3>
+      <span v-if="showViewAll" class="view-all" @click="goToAllHighlights">
+        查看全部 <ArrowRight class="icon-inline" />
+      </span>
     </div>
 
     <div class="highlights-list">
@@ -51,7 +51,12 @@ const props = defineProps<{
     text: string
     chapter: string
   }>
+  ownerLabel?: string // 默认“我”
+  showViewAll?: boolean // 默认 true（他人主页可关掉）
 }>()
+
+const titleText = computed(() => `${props.ownerLabel ?? '我'}的划线`)
+const showViewAll = computed(() => props.showViewAll !== false)
 
 // 计算属性：排序 + 截取前3条
 const recentHighlights = computed(() => {

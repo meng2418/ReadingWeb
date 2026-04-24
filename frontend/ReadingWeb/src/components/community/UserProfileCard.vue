@@ -71,12 +71,12 @@ const emit = defineEmits<{
   statClick: [type: 'follow' | 'fans' | 'post']
 }>()
 
-// 统计项点击处理 - 在新标签页打开
+// 统计项点击处理（新标签页打开）
 const handleStatClick = (type: 'follow' | 'fans' | 'post') => {
   console.log(`点击了${type}统计`)
   emit('statClick', type)
 
-  // 跳转到个人发布页面，并传递tab参数 - 在新标签页打开
+  // 跳转到个人发布页面，并传递tab参数
   let url = '/userposts'
 
   switch (type) {

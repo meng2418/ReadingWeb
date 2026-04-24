@@ -1,6 +1,12 @@
 <!-- UserCard.vue -->
 <template>
-  <div class="user-card" :class="{ 'user-card-hover': hover }" @mouseenter="hover = true" @mouseleave="hover = false">
+  <div
+    class="user-card"
+    :class="{ 'user-card-hover': hover }"
+    @mouseenter="hover = true"
+    @mouseleave="hover = false"
+    @click="goToUserHome"
+  >
     <!-- 左侧头像 -->
     <div class="user-avatar-container">
       <img :src="avatarUrl" alt="用户头像" class="user-avatar" @error="handleAvatarError">
@@ -14,7 +20,7 @@
       <button
         class="follow-btn"
         :class="{ following: isFollowing }"
-        @click="handleFollowClick"
+        @click.stop="handleFollowClick"
       >
         {{ getButtonText }}
       </button>
@@ -24,6 +30,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
 
@@ -48,6 +55,7 @@ const emit = defineEmits<{
   follow: [id: number]
 }>()
 
+const router = useRouter()
 const hover = ref(false)
 const isFollowing = ref(props.user.isFollowing || false)
 
@@ -103,6 +111,11 @@ const handleUnfollow = () => {
   }).catch(() => {
     console.log('取消操作')
   })
+}
+
+const goToUserHome = () => {
+  const route = router.resolve({ name: 'PublicProfile', params: { id: props.user.id } })
+  window.open(route.href, '_blank')
 }
 </script>
 

@@ -156,12 +156,9 @@ import { ref, computed } from 'vue'
 import RechargeDialog from '@/components/user/RechargeDialog.vue'
 import VipDialog from '@/components/user/VipDialog.vue'
 import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
 import { useTheme, themes } from '@/composables/useTheme'
 import { updateProfile } from '@/api/profile'
 import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
-// 添加路由实例
-const router = useRouter()
 
 const props = defineProps<{
   user: any
@@ -187,9 +184,8 @@ const handleAvatarError = (event: Event) => {
   }
 }
 
-// 跳转到UserPosts页面的对应标签页 - 在新标签页打开
+// 跳转到UserPosts页面的对应标签页（新标签页）
 const goToUserPosts = (tab: string) => {
-  // 在新标签页打开UserPosts页面，并传递tab参数
   window.open(`/userposts?tab=${tab}`, '_blank')
 }
 
@@ -493,9 +489,10 @@ const compressImage = (
         }
 
         // 从初始质量开始，逐步降低
-        const quality = initialQuality
         let result: string | null = null
-        const qualitySteps = [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+        const qualitySteps = Array.from(
+          new Set([initialQuality, 0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]),
+        )
 
         for (const q of qualitySteps) {
           result = tryCompress(q)
