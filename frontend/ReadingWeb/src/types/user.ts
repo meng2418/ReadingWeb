@@ -68,6 +68,72 @@ export interface UserHomeData {
   consecutiveReadingDays: number
 }
 
+export type PublicProfileVisibility = {
+  // 对齐后端 visibility
+  bookshelf?: boolean
+  readingStats?: boolean
+  highlights?: boolean
+  thoughts?: boolean
+  bookReviews?: boolean
+  followers?: boolean
+  following?: boolean
+
+  // 兼容旧字段：他人主页里“最近在读”用这个开关
+  recentBooks?: boolean
+}
+
+export type PublicRecentBook = {
+  bookId: number
+  title: string
+  cover: string
+}
+
+export type PublicHighlight = {
+  id: number | string
+  bookName: string
+  date: string
+  text: string
+  chapter: string
+}
+
+export type PublicThought = {
+  id: number | string
+  bookName: string
+  date: string
+  thought: string
+  quote?: string
+}
+
+export type PublicBookReview = {
+  id: number | string
+  bookName: string
+  cover?: string
+  rating: 'recommend' | 'average' | 'bad'
+  date: string
+  likes: number
+  content: string
+}
+
+export interface PublicUserHomeData {
+  avatar: string
+  username: string
+  bio: string
+  followingCount: number
+  followerCount: number
+  postCount: number
+  isMember: boolean
+  readingStats: ReadingStatsData
+  consecutiveReadingDays: number
+  visibility: PublicProfileVisibility
+  recentBooks: PublicRecentBook[]
+  highlights: PublicHighlight[]
+  thoughts: PublicThought[]
+  bookReviews: PublicBookReview[]
+  isFollowing: boolean
+  isFollower: boolean
+  isSelf: boolean
+}
+
 export interface TopBook {
   bookId: number
   cover: string

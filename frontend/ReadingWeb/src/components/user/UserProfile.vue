@@ -187,9 +187,8 @@ const handleAvatarError = (event: Event) => {
   }
 }
 
-// 跳转到UserPosts页面的对应标签页 - 在新标签页打开
+// 跳转到UserPosts页面的对应标签页（新标签页）
 const goToUserPosts = (tab: string) => {
-  // 在新标签页打开UserPosts页面，并传递tab参数
   window.open(`/userposts?tab=${tab}`, '_blank')
 }
 

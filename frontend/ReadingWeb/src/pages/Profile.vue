@@ -24,6 +24,13 @@
           :timelineData="timelineData"
           :topBooks="topBooks"
         />
+        <BookshelfPreview
+          mode="self"
+          header-title="我的书架"
+          :show-toggle="true"
+          storage-key="profile.bookshelfPreview.visible"
+          view-all-href="/bookshelf"
+        />
         <ReadingHighlights :highlights="highlights" />
         <ReadingThoughts :thoughts="thoughts" />
         <ReadingReviews :reviews="reviews" />
@@ -46,6 +53,7 @@ import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
 import ReadingHighlights from '@/components/user/ReadingHighlights.vue'
 import ReadingThoughts from '@/components/user/ReadingThoughts.vue'
 import ReadingReviews from '@/components/user/ReadingReviews.vue'
+import BookshelfPreview from '@/components/user/BookshelfPreview.vue'
 import Footer from '@/components/layout/Footer.vue'
 import {
   getProfileHome,

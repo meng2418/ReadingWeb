@@ -2,8 +2,8 @@
 <template>
   <div class="reviews-section">
     <div class="card-header">
-      <h3 class="card-title">我的书评</h3>
-      <span class="view-all" @click="goToAllReviews">
+      <h3 class="card-title">{{ titleText }}</h3>
+      <span v-if="showViewAll" class="view-all" @click="goToAllReviews">
         查看全部 <ArrowRight class="icon-inline" />
       </span>
     </div>
@@ -38,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 
@@ -68,7 +69,12 @@ const props = defineProps<{
     likes: number
     content: string
   }>
+  ownerLabel?: string
+  showViewAll?: boolean
 }>()
+
+const titleText = computed(() => `${props.ownerLabel ?? '我'}的书评`)
+const showViewAll = computed(() => props.showViewAll !== false)
 </script>
 
 <style scoped>

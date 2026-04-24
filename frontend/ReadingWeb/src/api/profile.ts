@@ -1,7 +1,7 @@
 // src/api/profile.ts
 import request from '@/utils/request'
 import { processCoverPath } from '@/utils/imagePath'
-import type { UserHomeData } from '@/types/user'
+import type { PublicUserHomeData, UserHomeData } from '@/types/user'
 
 const unwrap = (res: any) => res?.data?.data ?? res?.data ?? {}
 const safeArray = <T>(v: unknown): T[] => (Array.isArray(v) ? v : [])
@@ -49,6 +49,107 @@ export const getProfileHome = async (): Promise<UserHomeData> => {
     },
 
     consecutiveReadingDays: raw.consecutiveReadingDays ?? 0,
+  }
+}
+
+// =========================
+// 他人主页（公开信息聚合）
+// =========================
+const normalizeReviewRating = (r: unknown): 'recommend' | 'average' | 'bad' => {
+  if (r === 'recommend' || r === 'average' || r === 'bad') return r
+  if (r === 'not_recommend') return 'bad'
+  return 'recommend'
+}
+
+export const getPublicUserHome = async (userId: string | number): Promise<PublicUserHomeData> => {
+  // Apifox mock / 实际后端：他人主页接口
+  // 示例：https://m1.apifoxmock.com/.../user/profile/1
+  const raw = unwrap(await request.get(`/user/profile/${userId}`))
+  const rs = raw.readingStats ?? {}
+  const vis = raw.visibility ?? {}
+
+  const recentBooks = safeArray<any>(raw.recentBooks).map((it) => ({
+    bookId: Number(it.bookId ?? it.id ?? 0),
+    title: String(it.title ?? it.bookTitle ?? ''),
+    cover: processCoverPath(String(it.cover ?? '')),
+  }))
+
+  const highlights = safeArray<any>(raw.highlights).map((it, idx) => ({
+    id: it.id ?? it.noteId ?? it.highlightId ?? idx + 1,
+    bookName: String(it.bookName ?? it.bookTitle ?? ''),
+    date: String(it.date ?? it.createdAt ?? it.highlightDate ?? ''),
+    text: String(it.text ?? it.quote ?? it.content ?? ''),
+    chapter: String(it.chapter ?? it.chapterName ?? ''),
+  }))
+
+  const thoughts = safeArray<any>(raw.thoughts).map((it, idx) => ({
+    id: it.id ?? it.noteId ?? it.markId ?? idx + 1,
+    bookName: String(it.bookName ?? it.bookTitle ?? ''),
+    date: String(it.date ?? it.createdAt ?? it.noteDate ?? it.noteCreatedAt ?? ''),
+    thought: String(it.thought ?? it.noteContent ?? ''),
+    quote: it.quote ? String(it.quote) : '',
+  }))
+
+  const bookReviews = safeArray<any>(raw.bookReviews).map((it, idx) => ({
+    id: it.id ?? it.reviewId ?? idx + 1,
+    bookName: String(it.bookName ?? it.bookTitle ?? ''),
+    cover: processCoverPath(String(it.cover ?? '')),
+    rating: normalizeReviewRating(it.rating),
+    date: String(it.date ?? it.createdAt ?? it.reviewDate ?? ''),
+    likes: Number(it.likes ?? it.helpfulCount ?? 0),
+    content: String(it.content ?? it.reviewContent ?? ''),
+  }))
+
+  return {
+    avatar: raw.avatar ?? '',
+    username: raw.username ?? '',
+    bio: raw.bio ?? '',
+    followingCount: raw.followingCount ?? 0,
+    followerCount: raw.followerCount ?? 0,
+    postCount: raw.postCount ?? 0,
+    isMember: raw.isMember ?? false,
+    readingStats: {
+      weeklyReadingTime: rs.weeklyReadingTime ?? 0,
+      monthlyReadingTime: rs.monthlyReadingTime ?? 0,
+      yearlyReadingTime: rs.yearlyReadingTime ?? 0,
+      totalReadingTime: rs.totalReadingTime ?? 0,
+
+      weeklyBooksRead: rs.weeklyBooksRead ?? 0,
+      monthlyBooksRead: rs.monthlyBooksRead ?? 0,
+      yearlyBooksRead: rs.yearlyBooksRead ?? 0,
+      totalBooksRead: rs.totalBooksRead ?? 0,
+
+      weeklyBooksFinished: rs.weeklyBooksFinished ?? 0,
+      monthlyBooksFinished: rs.monthlyBooksFinished ?? 0,
+      yearlyBooksFinished: rs.yearlyBooksFinished ?? 0,
+      totalBooksFinished: rs.totalBooksFinishedCount ?? rs.totalBooksFinished ?? 0,
+
+      weeklyNoteCount: rs.weeklyNoteCount ?? 0,
+      monthlyNoteCount: rs.monthlyNoteCount ?? 0,
+      yearlyNoteCount: rs.yearlyNoteCount ?? 0,
+      totalNoteCount: rs.totalNoteCount ?? 0,
+    },
+    consecutiveReadingDays: raw.consecutiveReadingDays ?? 0,
+    visibility: {
+      // 后端开关
+      bookshelf: vis.bookshelf ?? true,
+      readingStats: vis.readingStats ?? true,
+      highlights: vis.highlights ?? true,
+      thoughts: vis.thoughts ?? true,
+      bookReviews: vis.bookReviews ?? true,
+      followers: vis.followers ?? true,
+      following: vis.following ?? true,
+
+      // 兼容旧字段：页面里“最近在读”优先看 recentBooks，否则回退到 bookshelf
+      recentBooks: vis.recentBooks ?? vis.bookshelf ?? true,
+    },
+    recentBooks,
+    highlights,
+    thoughts,
+    bookReviews,
+    isFollowing: raw.isFollowing ?? false,
+    isFollower: raw.isFollower ?? false,
+    isSelf: raw.isSelf ?? false,
   }
 }
 
