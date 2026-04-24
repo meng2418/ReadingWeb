@@ -77,15 +77,21 @@ export type PublicProfileVisibility = {
   bookReviews?: boolean
   followers?: boolean
   following?: boolean
-
-  // 兼容旧字段：他人主页里“最近在读”用这个开关
-  recentBooks?: boolean
 }
 
-export type PublicRecentBook = {
+export type PublicBookshelfBook = {
   bookId: number
   title: string
   cover: string
+  readingStatus?: string
+}
+
+export type PublicBookshelf = {
+  hasMore: boolean
+  items: PublicBookshelfBook[]
+  limit: number
+  page: number
+  total: number
 }
 
 export type PublicHighlight = {
@@ -125,7 +131,7 @@ export interface PublicUserHomeData {
   readingStats: ReadingStatsData
   consecutiveReadingDays: number
   visibility: PublicProfileVisibility
-  recentBooks: PublicRecentBook[]
+  bookshelf: PublicBookshelf
   highlights: PublicHighlight[]
   thoughts: PublicThought[]
   bookReviews: PublicBookReview[]

@@ -100,6 +100,7 @@ const router = createRouter({
       name: 'UserPosts',
       component: UserPosts,
       props: true,
+      meta: { requiresAuth: true, title: '我的发布' },
     },
     {
       path: '/reader/:bookId/:chapterId?',

@@ -13,10 +13,10 @@
 
     <section v-if="home" class="content-section">
       <BookshelfPreview
-        v-if="home.visibility?.bookshelf !== false && home.visibility?.recentBooks !== false"
+        v-if="home.visibility?.bookshelf !== false"
         mode="public"
         header-title="TA的书架"
-        :public-books="home.recentBooks"
+        :public-books="home.bookshelf.items"
       />
 
       <!-- 阅读统计（对齐 visibility.readingStats） -->

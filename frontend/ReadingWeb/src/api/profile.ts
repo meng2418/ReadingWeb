@@ -68,11 +68,14 @@ export const getPublicUserHome = async (userId: string | number): Promise<Public
   const rs = raw.readingStats ?? {}
   const vis = raw.visibility ?? {}
 
-  const recentBooks = safeArray<any>(raw.recentBooks).map((it) => ({
+  const rawBookshelf = raw.bookshelf ?? {}
+  const rawBookshelfItems = safeArray<any>(rawBookshelf.items).map((it) => ({
     bookId: Number(it.bookId ?? it.id ?? 0),
     title: String(it.title ?? it.bookTitle ?? ''),
     cover: processCoverPath(String(it.cover ?? '')),
+    readingStatus: String(it.readingStatus ?? ''),
   }))
+  const bookshelfItems = rawBookshelfItems.slice(0, 10)
 
   const highlights = safeArray<any>(raw.highlights).map((it, idx) => ({
     id: it.id ?? it.noteId ?? it.highlightId ?? idx + 1,
@@ -139,11 +142,14 @@ export const getPublicUserHome = async (userId: string | number): Promise<Public
       bookReviews: vis.bookReviews ?? true,
       followers: vis.followers ?? true,
       following: vis.following ?? true,
-
-      // 兼容旧字段：页面里“最近在读”优先看 recentBooks，否则回退到 bookshelf
-      recentBooks: vis.recentBooks ?? vis.bookshelf ?? true,
     },
-    recentBooks,
+    bookshelf: {
+      hasMore: rawBookshelf.hasMore ?? false,
+      items: bookshelfItems,
+      limit: rawBookshelf.limit ?? 10,
+      page: rawBookshelf.page ?? 1,
+      total: rawBookshelf.total ?? bookshelfItems.length,
+    },
     highlights,
     thoughts,
     bookReviews,
