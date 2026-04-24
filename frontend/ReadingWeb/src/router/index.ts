@@ -179,7 +179,7 @@ router.beforeEach(async (to, from, next) => {
         path: '/login',
         query: { redirect: to.fullPath }, // 保存原本想去的路径
       })
-    } catch (error) {
+    } catch {
       // 用户点击“取消” -> 中断跳转或回首页
       console.warn('登录提示对话框被取消')
 

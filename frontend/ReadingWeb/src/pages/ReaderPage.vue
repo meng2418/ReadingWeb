@@ -73,6 +73,7 @@
       @toggleTypography="togglePanel('typography')"
       @toggleAnnotation="togglePanel('notes')"
       @toggleThoughts="showThoughts = !showThoughts"
+      @toggleAI="aiPanelOpen = true"
       :activePanel="activePanel"
       :isAnnotationMode="activePanel === 'notes'"
       :showThoughts="showThoughts"

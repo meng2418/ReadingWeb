@@ -24,7 +24,7 @@ export const getUserBookRating = async (bookId: string | number): Promise<BookRa
   try {
     const res = await request.get<BookRating>(`/books/${bookId}/user-rating`)
     return unwrap(res)
-  } catch (error) {
+  } catch {
     // 如果用户未评分，返回null
     return null
   }

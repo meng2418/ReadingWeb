@@ -113,7 +113,7 @@ export const getChapterNotes = async (
     )
     const rawData: ChapterNoteResponse[] = unwrap(res)
     return rawData.map(mapChapterNote)
-  } catch (error) {
+  } catch {
     console.warn(
       `Chapter notes API not available for book ${bookId} chapter ${chapterId}, returning empty array`,
     )
