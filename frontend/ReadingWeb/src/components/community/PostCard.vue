@@ -2,13 +2,21 @@
   <div class="post-card">
     <!-- 用户信息 -->
     <div class="post-header">
-      <div class="avatar-container">
-        <img :src="avatarUrl" class="avatar-img" :alt="`${username}的头像`" @error="handleAvatarError" />
-      </div>
+      <div class="author-entry" @click="goToUserProfile">
+        <div class="avatar-container">
+          <img
+            :src="avatarUrl"
+            class="avatar-img"
+            :alt="`${username}的头像`"
+            @error="handleAvatarError"
+            @click.stop="goToUserProfile"
+          />
+        </div>
 
-      <div class="user-info">
-        <div class="username">{{ username }}</div>
-        <div class="post-time">{{ formattedTime }}</div>
+        <div class="user-info">
+          <div class="username" @click.stop="goToUserProfile">{{ username }}</div>
+          <div class="post-time">{{ formattedTime }}</div>
+        </div>
       </div>
 
       <!-- 条件渲染关注按钮 -->
@@ -64,13 +72,14 @@
 </template>
 
 <script setup lang="ts">
-import router from '@/router'
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Comment } from '@element-plus/icons-vue'
 import LinkBookCard from './LinkBookCard.vue'
 import { Heart } from 'lucide-vue-next'
 import type { Post, PostBookSummary, PostCardEmits } from '@/types/post'
 import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/defaultImages'
+import { getPostDetail } from '@/api/post'
 
 interface Props extends Post {
   postId?: number // 补充postId类型定义，修复跳转TS警告
@@ -87,8 +96,10 @@ const props = withDefaults(defineProps<Props>(), {
   showFollowButton: true, // 默认显示关注按钮
   postTime: '',
 })
+const router = useRouter()
 
 const emit = defineEmits<PostCardEmits>()
+const resolvingAuthorId = ref(false)
 
 const showFull = ref<boolean>(false)
 const maxChars = 120 // 控制显示多少字
@@ -173,6 +184,40 @@ const toggleExpand = (): void => {
   showFull.value = !showFull.value
 }
 
+const goToUserProfile = async (): Promise<void> => {
+  let targetUserId = Number(props.authorId)
+  if (Number.isFinite(targetUserId) && targetUserId > 0) {
+    window.open(`/u/${targetUserId}`, '_blank')
+    return
+  }
+
+  // 兜底：列表接口作者ID无效时，按帖子ID取详情再跳转
+  const targetPostId = Number(props.id || props.postId)
+  if (!Number.isFinite(targetPostId) || targetPostId <= 0) {
+    console.warn('无法跳转用户主页：authorId与postId均无效', {
+      authorId: props.authorId,
+      postId: props.id || props.postId,
+    })
+    return
+  }
+
+  if (resolvingAuthorId.value) return
+  resolvingAuthorId.value = true
+  try {
+    const detail = await getPostDetail(targetPostId)
+    targetUserId = Number(detail?.author?.authorId ?? 0)
+    if (!Number.isFinite(targetUserId) || targetUserId <= 0) {
+      console.warn('帖子详情返回的authorId仍无效', detail?.author)
+      return
+    }
+    window.open(`/u/${targetUserId}`, '_blank')
+  } catch (error) {
+    console.error('通过帖子详情解析authorId失败', error)
+  } finally {
+    resolvingAuthorId.value = false
+  }
+}
+
 // 点击卡片跳转：修复postId判断逻辑
 const handleCardClick = () => {
   const targetId = props.id || props.postId
@@ -216,7 +261,16 @@ const handleCardClick = () => {
 .post-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.author-entry {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
 }
 
 .avatar-container {

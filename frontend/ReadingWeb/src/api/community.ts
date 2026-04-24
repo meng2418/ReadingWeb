@@ -6,10 +6,18 @@ import type { Post } from '@/types/post'
 interface RawPost {
   postId: number
   author: {
-    authorId: number
-    authorName: string
-    authorAvatar: string
+    id?: number | string
+    authorId?: number | string
+    userId?: number | string
+    authorName?: string
+    username?: string
+    authorAvatar?: string
+    avatar?: string
   }
+  authorId?: number | string
+  userId?: number | string
+  username?: string
+  avatar?: string
   publishTime: string
   publishLocation?: string
   isFollowingAuthor: boolean
@@ -37,11 +45,17 @@ export const fetchCommunityPosts = async (type: 'square' | 'following' = 'square
   })
   const list: RawPost[] = res.data.data ?? []
 
-  return list.map((item) => ({
+  return list.map((item) => {
+    // 兼容后端不同字段命名，确保作者ID可用
+    const rawAuthorId =
+      item.author?.authorId ?? item.author?.userId ?? item.author?.id ?? item.authorId ?? item.userId
+    const parsedAuthorId = Number(rawAuthorId)
+
+    return {
+      authorId: Number.isFinite(parsedAuthorId) && parsedAuthorId > 0 ? parsedAuthorId : undefined,
     id: item.postId,
-    username: item.author?.authorName || '未知用户',
-    avatar: item.author?.authorAvatar || '',
-    authorId: item.author?.authorId || 0, // 添加 authorId，如果缺失则设为0
+    username: item.author?.authorName || item.author?.username || item.username || '未知用户',
+    avatar: item.author?.authorAvatar || item.author?.avatar || item.avatar || '',
     postTime: item.publishTime,
     title: item.postTitle,
     content: item.content,
@@ -57,7 +71,8 @@ export const fetchCommunityPosts = async (type: 'square' | 'following' = 'square
           cover: processCoverPath(item.mentionedFirstBook.cover),
         }
       : null,
-  }))
+    }
+  })
 }
 
 /** 获取我收到的评论瀑布流 **/

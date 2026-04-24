@@ -8,6 +8,7 @@
         :profile="home"
         :theme="theme"
         @follow-change="handleFollowChange"
+        @start-message="handleStartMessage"
       />
     </section>
 
@@ -68,7 +69,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 import NavBar from '@/components/layout/NavBar.vue'
@@ -86,6 +87,7 @@ import { useTitle } from '@/stores/useTitle'
 import { useTheme } from '@/composables/useTheme'
 
 const route = useRoute()
+const router = useRouter()
 const theme = useTheme()
 const cssVars = theme.cssVars
 
@@ -146,6 +148,19 @@ const handleFollowChange = (isFollowing: boolean) => {
   if (!home.value) return
   home.value.isFollowing = isFollowing
   home.value.followerCount = Math.max(0, home.value.followerCount + (isFollowing ? 1 : -1))
+}
+
+const handleStartMessage = () => {
+  if (!home.value || !userId.value) return
+  router.push({
+    path: '/community',
+    query: {
+      tab: 'messages',
+      receiverId: String(userId.value),
+      receiverName: home.value.username || '',
+      receiverAvatar: home.value.avatar || '',
+    },
+  })
 }
 
 onMounted(load)
