@@ -37,7 +37,6 @@
       </main>
     </section>
   </div>
-  <Footer />
 </template>
 
 <script setup lang="ts">
@@ -180,7 +179,7 @@ const initialTab = computed(() => (typeof route.query.tab === 'string' ? route.q
 </script>
 
 <style scoped>
-/* 定义页面级 CSS 变量 
+/* 定义页面级 CSS 变量
   如果你的项目中已有全局样式文件(如 global.css)，可以将 :root 部分移过去
 */
 

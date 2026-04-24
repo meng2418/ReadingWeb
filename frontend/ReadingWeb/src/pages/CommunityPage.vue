@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/layout/NavBar.vue'
 import PostCard from '@/components/community/PostCard.vue'
 import UserProfileCard from '@/components/community/UserProfileCard.vue'
@@ -42,6 +43,8 @@ const currentUser = reactive({
 })
 
 const currentUserId = computed(() => currentUser.userId)
+const route = useRoute()
+const router = useRouter()
 
 // 热门话题
 const hotTopics = ref<HotTopic[]>([])
@@ -159,6 +162,7 @@ onMounted(async () => {
 
   // 绑定滚动监听器
   setupObserver()
+  openConversationFromRoute()
 })
 
 onUnmounted(() => {
@@ -186,6 +190,19 @@ type ChatMessage = {
   from: 'self' | 'other'
   content: string
   time: string
+}
+
+type PrivateMessageRequest = {
+  receiverId: number
+  content: string
+  messageType: string
+  bookInfo: {
+    authorName: string
+    bookId: number
+    bookTitle: string
+    cover: string
+    description: string
+  }
 }
 
 const conversations = ref<Conversation[]>([])
@@ -341,6 +358,29 @@ const sendMessage = () => {
     content = content ? `${content}\n分享书籍：${booksText}` : `分享书籍：${booksText}`
   }
 
+  const requestPayload: PrivateMessageRequest = {
+    receiverId: Number(id),
+    content,
+    messageType: selectedBooks.value.length > 0 ? 'BOOK_SHARE' : 'TEXT',
+    bookInfo:
+      selectedBooks.value.length > 0
+        ? {
+            authorName: selectedBooks.value[0].author || '',
+            bookId: selectedBooks.value[0].id,
+            bookTitle: selectedBooks.value[0].title,
+            cover: '',
+            description: '',
+          }
+        : {
+            authorName: '',
+            bookId: 0,
+            bookTitle: '',
+            cover: '',
+            description: '',
+          },
+  }
+  console.log('私信请求参数:', requestPayload)
+
   const now = new Date()
   const msg: ChatMessage = {
     id: `${id}-${now.getTime()}`,
@@ -365,6 +405,40 @@ const handleAvatarError = (event: Event) => {
   if (img.src !== DEFAULT_AVATAR) {
     img.src = DEFAULT_AVATAR
   }
+}
+
+const openConversationFromRoute = () => {
+  const tab = String(route.query.tab || '')
+  const receiverId = Number(route.query.receiverId)
+  if (tab !== 'messages' || !Number.isFinite(receiverId) || receiverId <= 0) return
+
+  currentTab.value = 'messages'
+  const id = String(receiverId)
+  const receiverName = String(route.query.receiverName || `用户${id}`)
+  const receiverAvatar = String(route.query.receiverAvatar || '')
+  const exists = conversations.value.find((c) => c.id === id)
+
+  if (!exists) {
+    conversations.value = [
+      {
+        id,
+        userId: receiverId,
+        username: receiverName,
+        avatar: receiverAvatar,
+        lastMessage: '',
+        lastTime: '',
+      },
+      ...conversations.value,
+    ]
+  }
+  activeConversationId.value = id
+
+  const nextQuery = { ...route.query }
+  delete nextQuery.tab
+  delete nextQuery.receiverId
+  delete nextQuery.receiverName
+  delete nextQuery.receiverAvatar
+  router.replace({ query: nextQuery })
 }
 
 const loadMyData = async () => {
@@ -402,6 +476,13 @@ const changeTab = async (tab: 'square' | 'following' | 'topics' | 'mine' | 'mess
     }
   }
 }
+
+watch(
+  () => route.query,
+  () => {
+    openConversationFromRoute()
+  },
+)
 
 const title = computed(() => {
   let tabName = ''
@@ -668,7 +749,7 @@ const handleShare = (postId: number): void => {
             :is-following="post.isFollowing"
             :is-liked="post.isLiked"
             :book="post.book"
-            :show-follow-button="post.authorId !== currentUserId"
+            :show-follow-button="!!post.authorId && post.authorId !== currentUserId"
             @follow-change="(isFollowing: boolean) => handleFollowChange(post.id, isFollowing)"
             @like="(likeCount: number, isLiked: boolean) => handleLike(post.id, likeCount, isLiked)"
             @comment="() => handleComment(post.id)"

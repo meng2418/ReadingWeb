@@ -18,13 +18,18 @@
 
       <div class="right-actions">
         <button
-          v-if="!profile.isSelf"
           class="follow-btn"
           :class="{ following: localIsFollowing }"
           :disabled="loading"
           @click="toggleFollow"
         >
           {{ localIsFollowing ? '已关注' : '+ 关注' }}
+        </button>
+        <button
+          class="message-btn"
+          @click="startMessage"
+        >
+          私信
         </button>
       </div>
     </div>
@@ -77,6 +82,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'follow-change', isFollowing: boolean): void
+  (e: 'start-message'): void
 }>()
 
 const theme = props.theme || useTheme()
@@ -97,6 +103,10 @@ watch(
 )
 
 const loading = ref(false)
+const startMessage = () => {
+  emit('start-message')
+}
+
 const toggleFollow = async () => {
   if (loading.value) return
   loading.value = true
@@ -207,7 +217,27 @@ const toggleFollow = async () => {
 }
 
 .right-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
+}
+
+.message-btn {
+  border: 1px solid #dcdfe6;
+  background: #fff;
+  color: var(--text-main, #333);
+  padding: 8px 14px;
+  min-width: 92px;
+  height: 38px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.message-btn:hover {
+  background: #f5f7fa;
 }
 
 .follow-btn {
@@ -215,6 +245,8 @@ const toggleFollow = async () => {
   background: #fff;
   color: var(--primary-green, #42b983);
   padding: 8px 14px;
+  min-width: 92px;
+  height: 38px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
