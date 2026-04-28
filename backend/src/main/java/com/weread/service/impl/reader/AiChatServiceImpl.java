@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.format.DateTimeFormatter;
@@ -141,14 +142,18 @@ public class AiChatServiceImpl implements AiChatService {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException("LLM api key is not configured: set app.ai.api-key");
         }
+        String effectiveApiKey = apiKey;
 
         String url = baseUrl.replaceAll("/$", "") + chatCompletionsPath;
+        log.info("Calling AI provider={}, model={}, url={}", provider, model, url);
 
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt + "\nCurrent book: " + book.getTitle()));
 
         PageRequest pageable = PageRequest.of(0, Math.max(contextLimit, 1), Sort.by(Sort.Direction.DESC, "messageId"));
-        List<AiChatMessageEntity> recent = messageRepository.findByUserIdAndBookId(userId, book.getBookId(), pageable).getContent();
+        List<AiChatMessageEntity> recent = new ArrayList<>(
+                messageRepository.findByUserIdAndBookId(userId, book.getBookId(), pageable).getContent()
+        );
         Collections.reverse(recent);
         for (AiChatMessageEntity m : recent) {
             if ("user".equals(m.getRole()) || "assistant".equals(m.getRole())) {
@@ -164,7 +169,7 @@ public class AiChatServiceImpl implements AiChatService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+        headers.setBearerAuth(effectiveApiKey);
 
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
@@ -197,9 +202,16 @@ public class AiChatServiceImpl implements AiChatService {
             }
 
             throw new IllegalStateException("unexpected cloud LLM response format");
+        } catch (HttpStatusCodeException e) {
+            log.error("Cloud LLM HTTP call failed. status={}, response={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new IllegalStateException("Cloud LLM call failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
         } catch (Exception e) {
-            log.warn("Cloud LLM call failed: {}", e.getMessage());
-            throw new IllegalStateException("Cloud LLM call failed: " + e.getMessage());
+            log.error("Cloud LLM call failed. message={}", e.getMessage(), e);
+            String message = e.getMessage();
+            if (message == null || message.isBlank()) {
+                message = e.getClass().getSimpleName();
+            }
+            throw new IllegalStateException("Cloud LLM call failed: " + message);
         }
     }
 }

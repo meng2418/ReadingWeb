@@ -8,12 +8,15 @@ import com.weread.vo.reader.AiChatSendMessageResponseVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/ai/chat")
@@ -40,14 +43,11 @@ public class AiChatController {
     @Operation(summary = "Send message", description = "Send a message and get AI response")
     public ResponseEntity<Result<AiChatSendMessageResponseVO>> sendMessage(
             @PathVariable Integer bookId,
-            @RequestBody AiChatSendMessageRequestDTO body,
+            @Valid @RequestBody AiChatSendMessageRequestDTO body,
             @AuthenticationPrincipal Integer userId
     ) {
-        if (body == null || body.getMessage() == null || body.getMessage().isBlank()) {
-            return ResponseEntity.badRequest().body(Result.fail("message is required"));
-        }
         Integer uid = (userId != null) ? userId : getCurrentUserId();
-        AiChatSendMessageResponseVO data = aiChatService.sendMessage(uid, bookId, body.getMessage());
+        AiChatSendMessageResponseVO data = aiChatService.sendMessage(uid, bookId, body.getMessage().trim());
 
         Result<AiChatSendMessageResponseVO> result = new Result<>();
         result.setCode(201);
@@ -59,7 +59,7 @@ public class AiChatController {
     private Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("unauthenticated");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unauthenticated");
         }
         Object principal = authentication.getPrincipal();
         if (principal instanceof Integer) {
@@ -80,6 +80,6 @@ public class AiChatController {
         if (principal instanceof String) {
             return Integer.parseInt((String) principal);
         }
-        throw new RuntimeException("unknown principal type: " + principal.getClass().getName());
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unknown principal type");
     }
 }

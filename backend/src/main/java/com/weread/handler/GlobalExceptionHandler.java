@@ -11,25 +11,38 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Global Exception Handler (Centralized exception handling using @ControllerAdvice).
  * Unifies the response format and handles exceptions thrown by Controllers.
  */
 @RestControllerAdvice // Applies to all @RestController annotated classes
+@Slf4j
 public class GlobalExceptionHandler {
+
+    private boolean isAiChatRequest(String requestPath) {
+        return requestPath != null && requestPath.startsWith("/ai/chat");
+    }
+
+    private String getCurrentRequestPath() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return null;
+        }
+        HttpServletRequest request = attributes.getRequest();
+        return request.getRequestURI();
+    }
 
     /**
      * 根据请求路径判断是否应该返回 JSON 格式的错误响应
      * @return true 表示应该返回 JSON 格式，false 表示返回空 body
      */
     private boolean shouldReturnJsonError() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes == null) {
+        String requestPath = getCurrentRequestPath();
+        if (requestPath == null) {
             return false;
         }
-        HttpServletRequest request = attributes.getRequest();
-        String requestPath = request.getRequestURI();
         
         // /books/{bookId}/mark-finished 接口需要返回 JSON 格式
         if (requestPath != null && requestPath.matches("/books/\\d+/mark-finished")) {
@@ -65,6 +78,10 @@ public class GlobalExceptionHandler {
         HttpStatus status = HttpStatus.resolve(e.getStatusCode().value());
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        String requestPath = getCurrentRequestPath();
+        if (isAiChatRequest(requestPath)) {
+            return ResponseEntity.status(status).body(Result.fail(e.getReason() != null ? e.getReason() : e.getMessage()));
         }
         
         boolean shouldReturnJson = shouldReturnJsonError();
@@ -109,6 +126,18 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException e) {
+        String requestPath = getCurrentRequestPath();
+        if (isAiChatRequest(requestPath)) {
+            String errorMessage = "请求参数验证失败";
+            if (e.getBindingResult() != null && e.getBindingResult().hasFieldErrors()) {
+                var fieldError = e.getBindingResult().getFieldError();
+                if (fieldError != null && fieldError.getDefaultMessage() != null) {
+                    errorMessage = fieldError.getDefaultMessage();
+                }
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.fail(errorMessage));
+        }
+
         boolean shouldReturnJson = shouldReturnJsonError();
         
         if (shouldReturnJson) {
@@ -138,6 +167,16 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleBusinessException(RuntimeException e) {
+        String requestPath = getCurrentRequestPath();
+        if (isAiChatRequest(requestPath)) {
+            log.error("AI chat request failed. path={}, message={}", requestPath, e.getMessage(), e);
+            String message = e.getMessage();
+            if (message == null || message.isBlank()) {
+                message = "AI chat request failed";
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.fail(message));
+        }
+
         boolean shouldReturnJson = shouldReturnJsonError();
         if (shouldReturnJson) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
