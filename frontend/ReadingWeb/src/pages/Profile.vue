@@ -24,13 +24,19 @@
           :timelineData="timelineData"
           :topBooks="topBooks"
         />
+        <BookshelfPreview
+          mode="self"
+          header-title="我的书架"
+          :show-toggle="true"
+          storage-key="profile.bookshelfPreview.visible"
+          view-all-href="/bookshelf"
+        />
         <ReadingHighlights :highlights="highlights" />
         <ReadingThoughts :thoughts="thoughts" />
         <ReadingReviews :reviews="reviews" />
       </main>
     </section>
   </div>
-  <Footer />
 </template>
 
 <script setup lang="ts">
@@ -46,6 +52,7 @@ import ReadingDashboard from '@/components/user/ReadingDashboard.vue'
 import ReadingHighlights from '@/components/user/ReadingHighlights.vue'
 import ReadingThoughts from '@/components/user/ReadingThoughts.vue'
 import ReadingReviews from '@/components/user/ReadingReviews.vue'
+import BookshelfPreview from '@/components/user/BookshelfPreview.vue'
 import Footer from '@/components/layout/Footer.vue'
 import {
   getProfileHome,
@@ -172,7 +179,7 @@ const initialTab = computed(() => (typeof route.query.tab === 'string' ? route.q
 </script>
 
 <style scoped>
-/* 定义页面级 CSS 变量 
+/* 定义页面级 CSS 变量
   如果你的项目中已有全局样式文件(如 global.css)，可以将 :root 部分移过去
 */
 

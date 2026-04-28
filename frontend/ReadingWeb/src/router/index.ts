@@ -11,6 +11,7 @@ import BookDetail from '@/pages/BookDetail.vue'
 import CategoryPage from '@/pages/CategoryPage.vue'
 import PostDetailPage from '@/pages/PostDetailPage.vue'
 import Profile from '@/pages/Profile.vue'
+import PublicProfile from '@/pages/PublicProfile.vue'
 import TopicDetail from '@/pages/TopicDetail.vue'
 import UserPosts from '@/pages/UserPosts.vue'
 import ReaderPage from '@/pages/ReaderPage.vue'
@@ -81,6 +82,13 @@ const router = createRouter({
       meta: { requiresAuth: true }, // 需要登录
     },
     {
+      path: '/u/:id',
+      name: 'PublicProfile',
+      component: PublicProfile,
+      meta: { requiresAuth: true, title: '个人主页' },
+      props: true,
+    },
+    {
       path: '/topicdetail/:id?',
       name: 'TopicDetail',
       component: TopicDetail,
@@ -92,6 +100,7 @@ const router = createRouter({
       name: 'UserPosts',
       component: UserPosts,
       props: true,
+      meta: { requiresAuth: true, title: '我的发布' },
     },
     {
       path: '/reader/:bookId/:chapterId?',

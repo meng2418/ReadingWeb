@@ -2,8 +2,8 @@
 <template>
   <div class="thoughts-section">
     <div class="card-header">
-      <h3 class="card-title">我的想法</h3>
-      <span class="view-all" @click="goToAllThoughts">
+      <h3 class="card-title">{{ titleText }}</h3>
+      <span v-if="showViewAll" class="view-all" @click="goToAllThoughts">
         查看全部 <ArrowRight class="icon-inline" />
       </span>
     </div>
@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, Quote } from 'lucide-vue-next'
 
@@ -57,7 +57,12 @@ const props = defineProps<{
     thought: string
     quote?: string
   }>
+  ownerLabel?: string
+  showViewAll?: boolean
 }>()
+
+const titleText = computed(() => `${props.ownerLabel ?? '我'}的想法`)
+const showViewAll = computed(() => props.showViewAll !== false)
 </script>
 
 <style scoped>
