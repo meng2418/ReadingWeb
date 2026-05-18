@@ -4,8 +4,10 @@ import com.weread.common.ApiResponse;
 import com.weread.dto.Result;
 import com.weread.dto.book.ChapterDTO;
 import com.weread.dto.note.BookNoteResponseDTO;
+import com.weread.dto.reading.ReadingProgressResponse;
 import com.weread.service.book.BookChapterService;
 import com.weread.service.note.NoteService;
+import com.weread.service.reader.ReadingProgressService;
 import com.weread.service.user.RecentBookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -32,6 +34,7 @@ public class ReaderTOCController {
     private final BookChapterService chapterService;
     private final NoteService noteService;
     private final RecentBookService recentBookService;
+    private final ReadingProgressService readingProgressService;
 
     /**
      * 获取书籍目录
@@ -51,9 +54,27 @@ public class ReaderTOCController {
     }
 
     /**
+     * 获取阅读进度
+     * 接口路径：GET /reader/{bookId}/progress
+     */
+    @GetMapping("/{bookId}/progress")
+    @Operation(summary = "获取阅读进度", description = "获取当前用户对指定书籍的阅读进度，包含上次阅读章节信息")
+    public Result<ReadingProgressResponse> getReadingProgress(
+            @PathVariable String bookId,
+            @AuthenticationPrincipal Integer userId) {
+        if (userId == null) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "未认证");
+        }
+
+        Integer bookIdInt = parseInteger(bookId, "bookId");
+        ReadingProgressResponse progress = readingProgressService.getReadingProgress(bookIdInt, userId);
+        return Result.success(progress);
+    }
+
+    /**
      * 获取全书笔记列表
      * 接口路径：GET /reader/{bookId}/notes
-     * 匹配JSON接口定义
      */
     @GetMapping("/{bookId}/notes")
     @Operation(summary = "获取全书笔记列表", description = "获取指定书籍的所有笔记列表，仅返回当前用户的笔记")
