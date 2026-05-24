@@ -7,9 +7,13 @@ interface ChatMessage {
   content: string
 }
 
+import { onMounted } from 'vue'
+import { getChatHistory, interpretSelectedText, sendChatMessage, isAiConfigured } from '@/api/ai'
+
 const props = defineProps<{
   isOpen: boolean
   selectedText: string
+  bookId?: number
   isDarkMode: boolean
 }>()
 
@@ -30,30 +34,50 @@ const selectedTextPreview = computed(() => {
     : ''
 })
 
-const startAnalysis = () => {
+const startAnalysis = async () => {
   loading.value = true
   messages.value = []
 
-  setTimeout(() => {
+  const configured = await isAiConfigured()
+  if (!configured) {
     loading.value = false
-    // 逻辑调整：分有划线和无划线两种场景的初始开场白
-    if (props.selectedText) {
-      messages.value = [
-        {
-          role: 'assistant',
-          content: `AI 已根据你选中的内容进行分析："${selectedTextPreview.value}"。这段文字传达了情感深度与人物内心冲突，你可以针对作者意图或情节走向继续提问。`,
-        },
-      ]
+    messages.value = [
+      { role: 'assistant', content: 'AI 服务尚未配置或无法访问，稍后重试或联系管理员。' },
+    ]
+    return
+  }
+
+  try {
+    if (props.selectedText && props.selectedText.trim()) {
+      // 调用后端端侧/云解读接口
+      const res = await interpretSelectedText(props.selectedText, undefined, undefined, undefined)
+      const text = res?.data?.data?.text || res?.data?.text || res?.data || '（未生成内容）'
+      messages.value = [{ role: 'assistant', content: String(text) }]
+    } else if (props.bookId) {
+      // 加载历史对话
+      const res = await getChatHistory(props.bookId, { limit: 50 })
+      const data = res?.data?.data || res?.data
+      const msgs: ChatMessage[] = []
+      if (data && Array.isArray(data.messages)) {
+        for (const m of data.messages) {
+          msgs.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })
+        }
+      }
+      if (msgs.length === 0) {
+        msgs.push({ role: 'assistant', content: '还没有对话，试着提一个问题开始吧。' })
+      }
+      messages.value = msgs
     } else {
       messages.value = [
-        {
-          role: 'assistant',
-          content:
-            '你好！我是你的 AI 阅读助手。你可以就当前阅读的内容向我提问，也可以在书中划线选中某段文字让我帮你进行详细分析。',
-        },
+        { role: 'assistant', content: '请选择书籍或选中文本以开始与 AI 对话。' },
       ]
     }
-  }, 1000)
+  } catch (e: any) {
+    console.error('AI 调用失败', e)
+    messages.value = [{ role: 'assistant', content: 'AI 服务调用失败：' + (e?.message || e?.response?.statusText || '') }]
+  } finally {
+    loading.value = false
+  }
 }
 
 watch(
@@ -65,20 +89,38 @@ watch(
   },
 )
 
-const sendMessage = () => {
+const sendMessage = async () => {
   const text = inputValue.value.trim()
-  if (!text) return
+  if (!text || loading.value) return
   messages.value.push({ role: 'user', content: text })
   inputValue.value = ''
+  loading.value = true
 
-  setTimeout(() => {
-    messages.value.push({
-      role: 'assistant',
-      content: props.selectedText
-        ? `针对你选中的段落和问题：“${text}”，我的分析是：作者在这里主要强调了深层的情感张力。`
-        : `已收到你的问题：“${text}”。基于本书的上下文脉络，我的解答是：这反映了核心的主题思想。`,
-    })
-  }, 800)
+  try {
+    if (!props.bookId) {
+      throw new Error('未指定 bookId，无法发送消息')
+    }
+    const res = await sendChatMessage(props.bookId, text)
+    // 后端返回包装层：res.data.data 应包含 userMessage 与 assistantMessage
+    const payload = res?.data?.data || res?.data
+    if (payload) {
+      if (payload.userMessage) {
+        messages.value.push({ role: 'user', content: payload.userMessage.content })
+      }
+      if (payload.assistantMessage) {
+        messages.value.push({ role: 'assistant', content: payload.assistantMessage.content })
+      }
+    } else {
+      // 回退：如果后端没有标准包装，直接显示返回内容
+      const textResp = res?.data?.message || JSON.stringify(res?.data) || '（无返回）'
+      messages.value.push({ role: 'assistant', content: String(textResp) })
+    }
+  } catch (e: any) {
+    console.error('发送消息失败', e)
+    messages.value.push({ role: 'assistant', content: '发送失败：' + (e?.response?.data?.message || e?.message || '') })
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleKeydown = (event: KeyboardEvent) => {
