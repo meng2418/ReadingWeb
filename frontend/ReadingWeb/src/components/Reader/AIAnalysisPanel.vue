@@ -104,9 +104,6 @@ const sendMessage = async () => {
     // 后端返回包装层：res.data.data 应包含 userMessage 与 assistantMessage
     const payload = res?.data?.data || res?.data
     if (payload) {
-      if (payload.userMessage) {
-        messages.value.push({ role: 'user', content: payload.userMessage.content })
-      }
       if (payload.assistantMessage) {
         messages.value.push({ role: 'assistant', content: payload.assistantMessage.content })
       }
