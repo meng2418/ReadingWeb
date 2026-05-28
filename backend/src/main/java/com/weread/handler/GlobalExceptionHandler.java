@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -53,6 +54,16 @@ public class GlobalExceptionHandler {
         if (requestPath != null && requestPath.equals("/user/notes")) {
             return true;
         }
+
+        // /user 下接口统一返回标准 JSON 错误体
+        if (requestPath != null && requestPath.startsWith("/user/")) {
+            return true;
+        }
+
+        // /chat 下接口统一返回标准 JSON 错误体
+        if (requestPath != null && requestPath.startsWith("/chat/")) {
+            return true;
+        }
         
         // /book-reviews 接口返回 JSON 格式（包含错误信息）
         if (requestPath != null && requestPath.startsWith("/book-reviews")) {
@@ -88,6 +99,14 @@ public class GlobalExceptionHandler {
         
         // 根据接口设计，400 状态码时根据路径返回不同格式
         if (status == HttpStatus.BAD_REQUEST) {
+            if (shouldReturnJson && requestPath != null
+                    && (requestPath.startsWith("/user/") || requestPath.startsWith("/chat/"))) {
+                java.util.Map<String, Object> body = new java.util.HashMap<>();
+                body.put("code", status.value());
+                body.put("message", e.getReason() != null ? e.getReason() : "请求处理失败");
+                body.put("data", null);
+                return ResponseEntity.status(status).body(body);
+            }
             if (shouldReturnJson) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new java.util.HashMap<>());
@@ -118,6 +137,28 @@ public class GlobalExceptionHandler {
         
         // 其他状态码返回空 body
         return ResponseEntity.status(status).build();
+    }
+
+    private java.util.Map<String, Object> standardErrorBody(int code, String message) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("code", code);
+        body.put("message", message);
+        body.put("data", null);
+        return body;
+    }
+
+    /**
+     * Handles validation exceptions (e.g., failed @NotNull, @NotEmpty checks).
+     * Returns 400 with different formats based on the request path.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<?> handleTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        String requestPath = getCurrentRequestPath();
+        if (requestPath != null && (requestPath.startsWith("/user/") || requestPath.startsWith("/chat/"))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(standardErrorBody(400, "请求参数格式错误"));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new java.util.HashMap<>());
     }
 
     /**
@@ -178,6 +219,15 @@ public class GlobalExceptionHandler {
         }
 
         boolean shouldReturnJson = shouldReturnJsonError();
+        if (shouldReturnJson && requestPath != null
+                && (requestPath.startsWith("/user/") || requestPath.startsWith("/chat/"))) {
+            java.util.Map<String, Object> body = new java.util.HashMap<>();
+            body.put("code", 400);
+            body.put("message", e.getMessage() != null ? e.getMessage() : "请求处理失败");
+            body.put("data", null);
+            log.error("请求失败 path={}", requestPath, e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+        }
         if (shouldReturnJson) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new java.util.HashMap<>());

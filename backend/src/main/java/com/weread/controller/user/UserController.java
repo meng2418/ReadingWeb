@@ -6,6 +6,7 @@ import com.weread.dto.note.BookNoteDTO;
 import com.weread.dto.note.UserNotesResponseDTO;
 import com.weread.vo.user.FollowListVO;
 import com.weread.vo.user.HighlightVO;
+import com.weread.vo.user.UserProfileOtherVO;
 import com.weread.vo.user.UserProfileVO;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +15,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 
 import com.weread.dto.user.UpdateProfileDTO;
+import com.weread.dto.user.UpdateUserPrivacySettingsDTO;
+import com.weread.service.user.UserPrivacySettingsService;
+import com.weread.service.user.UserProfileService;
 import com.weread.service.user.UserService;
+import com.weread.vo.user.UserPrivacyVisibilityVO;
 import com.weread.service.book.BookReviewService;
 import com.weread.service.note.NoteService;
 
@@ -31,12 +36,18 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserProfileService userProfileService;
+    private final UserPrivacySettingsService privacySettingsService;
     private final BookReviewService bookReviewService;
     private final NoteService noteService;
     
     // ... (构造函数注入) ...
-    public UserController(UserService userService, BookReviewService bookReviewService, NoteService noteService) {
+    public UserController(UserService userService, UserProfileService userProfileService,
+            UserPrivacySettingsService privacySettingsService,
+            BookReviewService bookReviewService, NoteService noteService) {
         this.userService = userService;
+        this.userProfileService = userProfileService;
+        this.privacySettingsService = privacySettingsService;
         this.bookReviewService = bookReviewService;
         this.noteService = noteService;
     }
@@ -109,6 +120,50 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
     
+    @Operation(summary = "获取他人主页")
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<Map<String, Object>> getUserProfile(
+            @PathVariable Integer userId,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer limit,
+            @AuthenticationPrincipal Integer currentUserId) {
+
+        UserProfileOtherVO vo = userProfileService.getUserProfile(userId, currentUserId, page, limit);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", vo);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "获取隐私设置")
+    @GetMapping("/privacy-settings")
+    public ResponseEntity<Map<String, Object>> getPrivacySettings(
+            @AuthenticationPrincipal Integer userId) {
+        UserPrivacyVisibilityVO vo = privacySettingsService.getVisibility(userId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", vo);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "更新隐私设置")
+    @PutMapping("/privacy-settings")
+    public ResponseEntity<Map<String, Object>> updatePrivacySettings(
+            @RequestBody UpdateUserPrivacySettingsDTO dto,
+            @AuthenticationPrincipal Integer userId) {
+        UserPrivacyVisibilityVO vo = privacySettingsService.updateVisibility(userId, dto);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", vo);
+        return ResponseEntity.ok(response);
+    }
+
     @Operation(summary = "编辑个人信息")
     @PutMapping("/profile")
     public ResponseEntity<Map<String, Object>> updateUserProfile(

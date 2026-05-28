@@ -1,22 +1,21 @@
 package com.weread.repository.chat;
 
+import com.weread.entity.chat.ChatMessageEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.weread.entity.chat.ChatConversationEntity;
-import com.weread.entity.chat.ChatMessageEntity;
 import java.util.List;
 
 @Repository
-public interface ChatMessageRepository
-                extends JpaRepository<ChatMessageEntity, Long> {
+public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, Long> {
 
-        List<ChatMessageEntity> findByConversationConversationIdOrderByCreatedAtDesc(
-                        Long conversationId);
+    List<ChatMessageEntity> findByConversationIdOrderBySendTimeAsc(Long conversationId);
 
-        List<ChatMessageEntity> findByConversationOrderByCreatedAtAsc(ChatConversationEntity conv);
+    List<ChatMessageEntity> findByConversationIdOrderByIdDesc(Long conversationId, Pageable pageable);
 
-        // 查找某会话最后一条消息
-        ChatMessageEntity findTopByConversationOrderByCreatedAtDesc(
-                        ChatConversationEntity conversation);
+    List<ChatMessageEntity> findByConversationIdAndIdLessThanOrderByIdDesc(
+            Long conversationId, Long cursor, Pageable pageable);
+
+    ChatMessageEntity findTopByConversationIdOrderByIdDesc(Long conversationId);
 }
