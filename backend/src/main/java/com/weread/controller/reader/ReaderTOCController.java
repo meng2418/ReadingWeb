@@ -73,6 +73,26 @@ public class ReaderTOCController {
     }
 
     /**
+     * 更新阅读进度
+     * 接口路径：POST /reader/books/{bookId}/progress
+     */
+    @PostMapping("/books/{bookId}/progress")
+    @Operation(summary = "更新阅读进度", description = "更新当前用户对指定书籍的阅读进度，可传入当前阅读章节ID")
+    public Result<Map<String, Object>> updateReadingProgress(
+            @PathVariable String bookId,
+            @RequestParam(required = false) Integer chapterId,
+            @AuthenticationPrincipal Integer userId) {
+        if (userId == null) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "未认证");
+        }
+
+        Integer bookIdInt = parseInteger(bookId, "bookId");
+        readingProgressService.updateReadingProgress(bookIdInt, chapterId, userId);
+        return Result.success(Map.of());
+    }
+
+    /**
      * 获取全书笔记列表
      * 接口路径：GET /reader/{bookId}/notes
      */
