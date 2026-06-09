@@ -55,6 +55,9 @@ public class AiChatServiceImpl implements AiChatService {
     @Value("${app.ai.chat.completions-path:/v1/chat/completions}")
     private String chatCompletionsPath;
 
+    @Value("${app.ai.mock-enabled:true}")
+    private boolean mockEnabled;
+
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Override
@@ -64,12 +67,12 @@ public class AiChatServiceImpl implements AiChatService {
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new IllegalArgumentException("book not found"));
 
-        PageRequest pageable = PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "messageId"));
+        PageRequest pageable = PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "id"));
         Page<AiChatMessageEntity> page;
         if (cursor == null) {
             page = messageRepository.findByUserIdAndBookId(userId, bookId, pageable);
         } else {
-            page = messageRepository.findByUserIdAndBookIdAndMessageIdLessThan(userId, bookId, cursor, pageable);
+            page = messageRepository.findByUserIdAndBookIdAndIdLessThan(userId, bookId, cursor.longValue(), pageable);
         }
 
         List<AiChatMessageEntity> list = page.getContent();
@@ -78,7 +81,7 @@ public class AiChatServiceImpl implements AiChatService {
             list = list.subList(0, pageSize);
         }
 
-        Integer nextCursor = hasMore && !list.isEmpty() ? list.get(list.size() - 1).getMessageId() : null;
+        Integer nextCursor = hasMore && !list.isEmpty() ? list.get(list.size() - 1).getId().intValue() : null;
 
         List<AiChatMessageVO> messages = new ArrayList<>();
         for (int i = list.size() - 1; i >= 0; i--) {
@@ -125,7 +128,7 @@ public class AiChatServiceImpl implements AiChatService {
 
     private AiChatMessageVO toVO(AiChatMessageEntity e) {
         return AiChatMessageVO.builder()
-                .messageId(e.getMessageId())
+                .messageId(e.getId() != null ? e.getId().intValue() : null)
                 .role(e.getRole())
                 .content(e.getContent())
                 .createdAt(e.getCreatedAt() == null ? null : TIME_FMT.format(e.getCreatedAt()))
@@ -133,6 +136,11 @@ public class AiChatServiceImpl implements AiChatService {
     }
 
     private String callCloudChat(Integer userId, BookEntity book, String latestUserMessage) {
+        if (shouldUseMock()) {
+            log.warn("Using mock AI reply (api-key missing/placeholder or mock-enabled=true)");
+            return buildMockAssistantReply(book, latestUserMessage);
+        }
+
         if (!"openai-compatible".equalsIgnoreCase(provider)) {
             throw new IllegalStateException("Unsupported ai provider: " + provider);
         }
@@ -150,7 +158,7 @@ public class AiChatServiceImpl implements AiChatService {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt + "\nCurrent book: " + book.getTitle()));
 
-        PageRequest pageable = PageRequest.of(0, Math.max(contextLimit, 1), Sort.by(Sort.Direction.DESC, "messageId"));
+        PageRequest pageable = PageRequest.of(0, Math.max(contextLimit, 1), Sort.by(Sort.Direction.DESC, "id"));
         List<AiChatMessageEntity> recent = new ArrayList<>(
                 messageRepository.findByUserIdAndBookId(userId, book.getBookId(), pageable).getContent()
         );
@@ -204,6 +212,10 @@ public class AiChatServiceImpl implements AiChatService {
             throw new IllegalStateException("unexpected cloud LLM response format");
         } catch (HttpStatusCodeException e) {
             log.error("Cloud LLM HTTP call failed. status={}, response={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            if (shouldFallbackToMock(e)) {
+                log.warn("Falling back to mock AI reply after HTTP {}", e.getStatusCode());
+                return buildMockAssistantReply(book, latestUserMessage);
+            }
             throw new IllegalStateException("Cloud LLM call failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("Cloud LLM call failed. message={}", e.getMessage(), e);
@@ -213,5 +225,34 @@ public class AiChatServiceImpl implements AiChatService {
             }
             throw new IllegalStateException("Cloud LLM call failed: " + message);
         }
+    }
+
+    private boolean shouldUseMock() {
+        return mockEnabled || isPlaceholderApiKey(apiKey);
+    }
+
+    private boolean shouldFallbackToMock(HttpStatusCodeException e) {
+        if (!mockEnabled) {
+            return false;
+        }
+        int status = e.getStatusCode().value();
+        return status == 401 || status == 403;
+    }
+
+    private boolean isPlaceholderApiKey(String key) {
+        if (key == null || key.isBlank()) {
+            return true;
+        }
+        String normalized = key.trim();
+        return "APP_AI_API_KEY".equalsIgnoreCase(normalized)
+                || "your-api-key".equalsIgnoreCase(normalized)
+                || normalized.startsWith("YOUR_");
+    }
+
+    private String buildMockAssistantReply(BookEntity book, String latestUserMessage) {
+        String title = book.getTitle() != null ? book.getTitle() : "这本书";
+        return "关于《" + title + "》，针对你的问题「" + latestUserMessage + "」："
+                + "当前为本地 mock 回复（未配置有效 AI API Key）。"
+                + "本书主要围绕其核心主题展开叙述，建议结合目录与已读章节进一步理解。";
     }
 }

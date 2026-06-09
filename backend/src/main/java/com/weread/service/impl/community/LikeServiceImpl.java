@@ -25,6 +25,7 @@ import com.weread.repository.community.LikeRepository;
 import com.weread.repository.community.PostRepository;
 import com.weread.repository.user.UserRepository;
 import com.weread.service.community.LikeService;
+import com.weread.service.community.MessageService;
 
 
 @Service
@@ -34,15 +35,18 @@ public class LikeServiceImpl implements LikeService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final MessageService messageService;
 
     public LikeServiceImpl(LikeRepository likeRepository, 
                           PostRepository postRepository,
                           UserRepository userRepository,
-                          CommentRepository commentRepository) {
+                          CommentRepository commentRepository,
+                          MessageService messageService) {
         this.likeRepository = likeRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentRepository = commentRepository;
+        this.messageService = messageService;
     }
 
     @Override
@@ -64,8 +68,10 @@ public class LikeServiceImpl implements LikeService {
             LikeEntity like = new LikeEntity();
             like.setPostId(postId);
             like.setUserId(userId);
-            likeRepository.save(like);
+            like.setTargetType("post");
+            LikeEntity savedLike = likeRepository.save(like);
             post.setLikesCount(post.getLikesCount() + 1);
+            messageService.notifyPostLike(savedLike, post);
         }
         
         postRepository.save(post);
@@ -95,8 +101,10 @@ public class LikeServiceImpl implements LikeService {
             LikeEntity like = new LikeEntity();
             like.setCommentId(commentId);
             like.setUserId(userId);
-            likeRepository.save(like);
+            like.setTargetType("comment");
+            LikeEntity savedLike = likeRepository.save(like);
             comment.setLikesCount(comment.getLikesCount() + 1);
+            messageService.notifyCommentLike(savedLike, comment);
         }
         
         commentRepository.save(comment);

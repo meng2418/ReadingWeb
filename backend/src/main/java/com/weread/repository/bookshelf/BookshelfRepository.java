@@ -7,6 +7,9 @@ import org.springframework.data.repository.query.Param;
 
 import com.weread.entity.bookshelf.BookshelfEntity;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +24,10 @@ public interface BookshelfRepository extends JpaRepository<BookshelfEntity, Inte
 
         // 2. Query all bookshelf items for a specific user
         List<BookshelfEntity> findByUserId(Integer userId);
+
+        long countByUserId(Integer userId);
+
+        Page<BookshelfEntity> findByUserId(Integer userId, Pageable pageable);
 
         // 3. Query bookshelf items filtered by status (unread/reading/finished)
         List<BookshelfEntity> findByUserIdAndStatus(Integer userId, String status);

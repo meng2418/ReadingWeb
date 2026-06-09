@@ -9,6 +9,7 @@ import com.weread.repository.community.PostRepository;
 import com.weread.repository.user.UserRepository;
 import com.weread.service.community.CommentService;
 import com.weread.service.community.LikeService;
+import com.weread.service.community.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -30,6 +31,7 @@ public class CommentServiceimpl implements CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final LikeService likeService;
+    private final MessageService messageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -98,6 +100,8 @@ public class CommentServiceimpl implements CommentService {
             });
         }
         
+        messageService.notifyPostComment(savedComment, post);
+
         // 转换为DTO
         CommentDTO commentDTO = convertToCommentDTO(savedComment, userId);
         
@@ -125,6 +129,9 @@ public class CommentServiceimpl implements CommentService {
         // 更新父评论的回复数
         parentComment.setReplyCount(parentComment.getReplyCount() + 1);
         commentRepository.save(parentComment);
+
+        postRepository.findById(parentComment.getPostId()).ifPresent(post ->
+                messageService.notifyPostComment(savedReply, post));
         
         // 转换为DTO
         CommentDTO replyDTO = convertToCommentDTO(savedReply, userId);

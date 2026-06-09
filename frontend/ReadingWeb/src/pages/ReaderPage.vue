@@ -100,6 +100,7 @@
       :isOpen="aiPanelOpen"
       @close="aiPanelOpen = false"
       :selectedText="aiSelectedText"
+      :book-id="Number(bookId)"
       :isDarkMode="isDarkMode"
     />
   </div>

@@ -11,16 +11,16 @@ export default defineConfig({
     vue({
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => tag === 'emoji-picker-element'
-        }
-      }
+          isCustomElement: (tag) => tag === 'emoji-picker-element',
+        },
+      },
     }),
     vueJsx(),
     vueDevTools(),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
@@ -29,20 +29,13 @@ export default defineConfig({
     proxy: {
       // 这里的 '/api' 要跟你 src/utils/request.ts 里的 baseURL 对应
       '/api': {
-        // 🔴 关键点：告诉前端，请求要转发给谁
-        // 如果后端在自己电脑跑，就是 localhost:8080
+        // 代理到后端（本地后端通常运行在 8080）
         target: 'http://localhost:8080',
-
-        // 允许跨域
         changeOrigin: true,
-
-        // 路径重写（非常重要！）
-        // 解释：前端发 /api/auth/login -> 后端收到 /auth/login
-        // 如果后端接口本身就有 /api 前缀，就把下面这行 rewrite 注释掉
-        //rewrite: (path) => path.replace(/^\/api/, '')
-        //target: 'https://m1.apifoxmock.com',
-        rewrite: (path) => path.replace(/^\/api/, '/m1/7605134-7343879-default')
-      }
-    }
-  }
+        // 前端请求 /api/...，转发给后端时去掉 /api 前缀
+        // 即 /api/auth/login -> /auth/login
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })

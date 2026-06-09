@@ -1,1 +1,5 @@
 node_modules
+backend/src/main/resources/application-local.yml
+
+# 本地数据库导出，不纳入版本库（原 Git LFS 大文件）
+db/wechatreading_db_*.sql

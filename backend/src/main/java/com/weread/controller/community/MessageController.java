@@ -3,9 +3,11 @@ package com.weread.controller.community;
 import com.weread.common.ApiResponse;
 import com.weread.service.community.MessageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
 
@@ -15,6 +17,14 @@ import java.util.Map;
 public class MessageController {
 
     private final MessageService messageService;
+
+    /**
+     * GET /messages/stream - SSE 实时通知（评论、点赞）
+     */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamNotifications(@AuthenticationPrincipal Integer userId) {
+        return messageService.subscribeNotifications(userId);
+    }
 
     /**
      * GET /messages/my-posts/comments - 获取我的帖子的评论瀑布流

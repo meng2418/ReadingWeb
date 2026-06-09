@@ -8,6 +8,7 @@ import com.weread.repository.community.CommentRepository;
 import com.weread.repository.community.LikeRepository;
 import com.weread.repository.community.PostRepository;
 import com.weread.repository.user.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weread.service.community.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +17,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,10 +35,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
     
+    private static final long SSE_TIMEOUT_MS = 30L * 60 * 1000;
+
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
+
+    private final ConcurrentHashMap<Integer, CopyOnWriteArrayList<SseEmitter>> notificationEmitters =
+            new ConcurrentHashMap<>();
 
     @Override
 @Transactional(readOnly = true)
@@ -307,6 +318,134 @@ private Map<String, Object> buildEmptyResult() {
         }
         
         return map;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> buildCommentNotification(Integer commentId) {
+        if (commentId == null) {
+            return Collections.emptyMap();
+        }
+        return commentRepository.findById(commentId)
+                .map(this::convertCommentToMap)
+                .orElse(Collections.emptyMap());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> buildLikeNotification(Integer likeId) {
+        if (likeId == null) {
+            return Collections.emptyMap();
+        }
+        return likeRepository.findById(likeId.longValue())
+                .map(this::convertLikeToMap)
+                .orElse(Collections.emptyMap());
+    }
+
+    @Override
+    public SseEmitter subscribeNotifications(Integer userId) {
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        notificationEmitters.computeIfAbsent(userId, key -> new CopyOnWriteArrayList<>()).add(emitter);
+        emitter.onCompletion(() -> removeNotificationEmitter(userId, emitter));
+        emitter.onTimeout(() -> removeNotificationEmitter(userId, emitter));
+        emitter.onError(ex -> removeNotificationEmitter(userId, emitter));
+        try {
+            emitter.send(SseEmitter.event().name("connected").data("ok"));
+        } catch (IOException ex) {
+            removeNotificationEmitter(userId, emitter);
+        }
+        return emitter;
+    }
+
+    @Override
+    public void notifyPostComment(CommentEntity comment, PostEntity post) {
+        if (comment == null || post == null || post.getAuthorId() == null) {
+            return;
+        }
+        if (post.getAuthorId().equals(comment.getUserId())) {
+            return;
+        }
+        String actorName = resolveNotificationUsername(comment.getUserId());
+        Map<String, Object> event = new HashMap<>();
+        event.put("type", "comment");
+        event.put("title", "\u65b0\u8bc4\u8bba");
+        event.put("message", actorName + " \u8bc4\u8bba\u4e86\u4f60\u7684\u5e16\u5b50");
+        event.put("data", buildCommentNotification(comment.getCommentId()));
+        publishNotification(post.getAuthorId(), event);
+    }
+
+    @Override
+    public void notifyPostLike(LikeEntity like, PostEntity post) {
+        if (like == null || post == null || post.getAuthorId() == null) {
+            return;
+        }
+        if (post.getAuthorId().equals(like.getUserId())) {
+            return;
+        }
+        String actorName = resolveNotificationUsername(like.getUserId());
+        Map<String, Object> event = new HashMap<>();
+        event.put("type", "like");
+        event.put("title", "\u65b0\u70b9\u8d5e");
+        event.put("message", actorName + " \u8d5e\u4e86\u4f60\u7684\u5e16\u5b50");
+        event.put("data", buildLikeNotification(like.getLikeId()));
+        publishNotification(post.getAuthorId(), event);
+    }
+
+    @Override
+    public void notifyCommentLike(LikeEntity like, CommentEntity comment) {
+        if (like == null || comment == null || comment.getUserId() == null) {
+            return;
+        }
+        if (comment.getUserId().equals(like.getUserId())) {
+            return;
+        }
+        String actorName = resolveNotificationUsername(like.getUserId());
+        Map<String, Object> event = new HashMap<>();
+        event.put("type", "like");
+        event.put("title", "\u65b0\u70b9\u8d5e");
+        event.put("message", actorName + " \u8d5e\u4e86\u4f60\u7684\u8bc4\u8bba");
+        event.put("data", buildLikeNotification(like.getLikeId()));
+        publishNotification(comment.getUserId(), event);
+    }
+
+    private String resolveNotificationUsername(Integer userId) {
+        return userRepository.findById(userId)
+                .map(UserEntity::getUsername)
+                .orElse("\u6709\u4eba");
+    }
+
+    private void publishNotification(Integer userId, Map<String, Object> event) {
+        List<SseEmitter> connections = notificationEmitters.get(userId);
+        if (connections == null || connections.isEmpty()) {
+            return;
+        }
+        try {
+            String payload = objectMapper.writeValueAsString(event);
+            for (SseEmitter emitter : connections) {
+                try {
+                    emitter.send(SseEmitter.event().name("notification").data(payload));
+                } catch (IOException ex) {
+                    removeNotificationEmitter(userId, emitter);
+                }
+            }
+        } catch (IOException ex) {
+            log.warn("Failed to serialize notification event: {}", ex.getMessage());
+        }
+    }
+
+    private void removeNotificationEmitter(Integer userId, SseEmitter emitter) {
+        List<SseEmitter> connections = notificationEmitters.get(userId);
+        if (connections != null) {
+            connections.remove(emitter);
+            if (connections.isEmpty()) {
+                notificationEmitters.remove(userId);
+            }
+        }
+        try {
+            emitter.complete();
+        } catch (Exception ignored) {
+            // ignore
+        }
     }
     
 }
