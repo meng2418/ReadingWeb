@@ -24,6 +24,15 @@ import { Smile } from 'lucide-vue-next'
 import 'emoji-picker-element'
 import { searchBooks } from '@/api/publish'
 import { getGuessBooks } from '@/api/home'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  getConversationMessages,
+  sendMessage as sendMessageApi,
+  withdrawMessage as withdrawMessageApi,
+  getConversations as getConversationsApi,
+  type NormalizedMessage,
+  type ChatBookInfo,
+} from '@/api/chat'
 
 export interface SimpleBook {
   id: number
@@ -125,7 +134,6 @@ const loadPosts = async (type: 'square' | 'following' = 'square') => {
   try {
     const postsData = await fetchCommunityPosts(type)
     posts.value = postsData
-    syncConversationsFromPosts(postsData)
   } catch (error) {
     console.error(`加载${type === 'square' ? '广场' : '关注'}帖子失败:`, error)
   }
@@ -158,7 +166,7 @@ onMounted(async () => {
   }
 
   // 首屏仅加载广场和热门话题，不强制加载话题列表，节省资源
-  await Promise.all([loadPosts('square'), loadHotTopics()])
+  await Promise.all([loadPosts('square'), loadHotTopics(), loadConversations()])
 
   // 绑定滚动监听器
   setupObserver()
@@ -186,29 +194,23 @@ type Conversation = {
 
 type ChatMessage = {
   id: string
+  messageId: number
   conversationId: string
   from: 'self' | 'other'
-  content: string
-  time: string
-}
-
-type PrivateMessageRequest = {
-  receiverId: number
-  content: string
   messageType: string
-  bookInfo: {
-    authorName: string
-    bookId: number
-    bookTitle: string
-    cover: string
-    description: string
-  }
+  content: string
+  book?: ChatBookInfo
+  isWithdrawn: boolean
+  time: string
 }
 
 const conversations = ref<Conversation[]>([])
 const activeConversationId = ref<string | null>(null)
 const draftMessage = ref('')
 const messagesByConversation = ref<Record<string, ChatMessage[]>>({})
+const chatHistoryRef = ref<HTMLElement | null>(null)
+const loadingMessages = ref(false)
+const sending = ref(false)
 
 // 私信增强功能状态
 const showEmojiPicker = ref(false)
@@ -287,38 +289,87 @@ const formatTimeShort = (timeStr: string) => {
   return date.toLocaleDateString('zh-CN')
 }
 
-const toPreviewText = (post: Post) => {
-  const raw = (post.title && post.title.trim().length > 0 ? post.title : post.content) || ''
-  const text = raw.replace(/\s+/g, ' ').trim()
-  return text.length > 20 ? `${text.slice(0, 20)}...` : text
+const formatMessageTime = (timeStr: string) => {
+  if (!timeStr) return ''
+  const date = new Date(timeStr)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 }
 
-const syncConversationsFromPosts = (postsData: Post[]) => {
-  const map = new Map<string, Conversation>()
-  const lastTimeById = new Map<string, number>()
-  for (const post of postsData) {
-    if (!post.authorId) continue
-    if (currentUserId.value && post.authorId === currentUserId.value) continue
-    const id = String(post.authorId)
-    const existingTime = lastTimeById.get(id) ?? -1
-    const candidateTime = new Date(post.postTime).getTime()
-    if (!Number.isFinite(candidateTime)) continue
-    const candidate: Conversation = {
-      id,
-      userId: post.authorId,
-      username: post.username,
-      avatar: post.avatar,
-      lastMessage: toPreviewText(post),
-      lastTime: formatTimeShort(post.postTime),
-    }
-    if (!map.has(id) || candidateTime > existingTime) {
-      map.set(id, candidate)
-      lastTimeById.set(id, candidateTime)
+const toChatMessage = (m: NormalizedMessage, conversationId: string): ChatMessage => ({
+  id: m.messageId ? String(m.messageId) : `${conversationId}-${m.createdAt}`,
+  messageId: m.messageId,
+  conversationId,
+  from: m.from,
+  messageType: m.messageType,
+  content: m.content,
+  book: m.book,
+  isWithdrawn: m.isWithdrawn,
+  time: formatMessageTime(m.createdAt),
+})
+
+const previewText = (m: ChatMessage) => {
+  if (m.isWithdrawn) return '消息已撤回'
+  if (m.messageType === 'book') return m.book ? `[分享书籍]《${m.book.bookTitle}》` : '[分享书籍]'
+  if (m.messageType === 'image') return '[图片]'
+  return m.content
+}
+
+const updateConversationPreview = (id: string, m: ChatMessage) => {
+  const idx = conversations.value.findIndex((c) => c.id === id)
+  const conv = conversations.value[idx]
+  if (conv) {
+    conversations.value[idx] = {
+      ...conv,
+      lastMessage: previewText(m),
+      lastTime: '刚刚',
     }
   }
-  conversations.value = Array.from(map.values())
-  if (!activeConversationId.value && conversations.value[0]) {
-    activeConversationId.value = conversations.value[0].id
+}
+
+const scrollChatToBottom = () => {
+  nextTick(() => {
+    const el = chatHistoryRef.value
+    if (el) el.scrollTop = el.scrollHeight
+  })
+}
+
+// 加载真实会话列表（合并保留本地临时会话，如刚从主页「私信」进入但尚未发消息的对象）
+const loadConversations = async () => {
+  try {
+    const list = await getConversationsApi()
+    const fetched: Conversation[] = list.map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      username: c.username,
+      avatar: c.avatar,
+      lastMessage: c.lastMessage,
+      lastTime: formatTimeShort(c.lastTime),
+    }))
+    const fetchedIds = new Set(fetched.map((c) => c.id))
+    const preserved = conversations.value.filter((c) => !fetchedIds.has(c.id))
+    conversations.value = [...preserved, ...fetched]
+  } catch (error) {
+    console.error('加载会话列表失败:', error)
+  }
+}
+
+// 加载与某用户的真实聊天记录（接口①）
+const loadConversationMessages = async (userId: number) => {
+  const id = String(userId)
+  loadingMessages.value = true
+  try {
+    const { messages } = await getConversationMessages(userId, currentUserId.value)
+    messagesByConversation.value = {
+      ...messagesByConversation.value,
+      [id]: messages.map((m) => toChatMessage(m, id)),
+    }
+    scrollChatToBottom()
+  } catch (error: any) {
+    console.error('加载聊天记录失败:', error)
+    ElMessage.error(error?.response?.data?.message || '加载聊天记录失败')
+  } finally {
+    loadingMessages.value = false
   }
 }
 
@@ -338,6 +389,8 @@ const selectConversation = (id: string) => {
   showEmojiPicker.value = false
   showBookPanel.value = false
   selectedBooks.value = []
+  const conv = conversations.value.find((c) => c.id === id)
+  if (conv) loadConversationMessages(conv.userId)
 }
 
 const canSend = computed(() => {
@@ -347,57 +400,107 @@ const canSend = computed(() => {
   )
 })
 
-const sendMessage = () => {
-  if (!canSend.value || !activeConversationId.value) return
+const sendMessage = async () => {
+  if (!canSend.value || !activeConversationId.value || sending.value) return
   const id = activeConversationId.value
-  let content = draftMessage.value.trim()
-
-  // 如果有分享书籍，将其作为特殊消息内容处理（或追加到内容中）
-  if (selectedBooks.value.length > 0) {
-    const booksText = selectedBooks.value.map((b) => `《${b.title}》`).join(' ')
-    content = content ? `${content}\n分享书籍：${booksText}` : `分享书籍：${booksText}`
+  const conv = conversations.value.find((c) => c.id === id)
+  const receiverId = conv?.userId ?? Number(id)
+  if (!Number.isFinite(receiverId) || receiverId <= 0) {
+    ElMessage.error('无效的会话对象')
+    return
   }
 
-  const requestPayload: PrivateMessageRequest = {
-    receiverId: Number(id),
-    content,
-    messageType: selectedBooks.value.length > 0 ? 'BOOK_SHARE' : 'TEXT',
-    bookInfo:
-      selectedBooks.value.length > 0
-        ? {
-            authorName: selectedBooks.value[0].author || '',
-            bookId: selectedBooks.value[0].id,
-            bookTitle: selectedBooks.value[0].title,
+  const text = draftMessage.value.trim()
+  const books = [...selectedBooks.value]
+  sending.value = true
+  try {
+    const sent: ChatMessage[] = []
+
+    // 1) 文本消息（接口②）
+    if (text) {
+      const msg = await sendMessageApi(
+        { receiverId, messageType: 'text', content: text },
+        currentUserId.value,
+      )
+      sent.push(toChatMessage(msg, id))
+    }
+
+    // 2) 每本分享书籍各发一条 book 消息（接口②）
+    for (const b of books) {
+      const msg = await sendMessageApi(
+        {
+          receiverId,
+          messageType: 'book',
+          content: '',
+          bookInfo: {
+            bookId: b.id,
+            bookTitle: b.title,
             cover: '',
-            description: '',
-          }
-        : {
-            authorName: '',
-            bookId: 0,
-            bookTitle: '',
-            cover: '',
+            authorName: b.author || '',
             description: '',
           },
-  }
-  console.log('私信请求参数:', requestPayload)
+        },
+        currentUserId.value,
+      )
+      sent.push(toChatMessage(msg, id))
+    }
 
-  const now = new Date()
-  const msg: ChatMessage = {
-    id: `${id}-${now.getTime()}`,
-    conversationId: id,
-    from: 'self',
-    content,
-    time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    if (sent.length) {
+      const existing = messagesByConversation.value[id] || []
+      messagesByConversation.value = {
+        ...messagesByConversation.value,
+        [id]: [...existing, ...sent],
+      }
+      const last = sent[sent.length - 1]
+      if (last) updateConversationPreview(id, last)
+      scrollChatToBottom()
+    }
+
+    draftMessage.value = ''
+    selectedBooks.value = []
+    showEmojiPicker.value = false
+    showBookPanel.value = false
+  } catch (error: any) {
+    console.error('发送消息失败:', error)
+    ElMessage.error(error?.response?.data?.message || '发送失败，请稍后重试')
+  } finally {
+    sending.value = false
   }
-  const existing = messagesByConversation.value[id] || []
-  messagesByConversation.value = {
-    ...messagesByConversation.value,
-    [id]: [...existing, msg],
+}
+
+// 撤回消息（接口③）：仅能撤回自己发的、未撤回的消息，后端限制 2 分钟内
+const handleWithdraw = async (m: ChatMessage) => {
+  if (m.from !== 'self' || m.isWithdrawn || !m.messageId) return
+  try {
+    await ElMessageBox.confirm('确定撤回这条消息吗？', '撤回消息', {
+      confirmButtonText: '撤回',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return // 用户取消
   }
-  draftMessage.value = ''
-  selectedBooks.value = []
-  showEmojiPicker.value = false
-  showBookPanel.value = false
+  try {
+    await withdrawMessageApi(m.messageId)
+    const id = m.conversationId
+    const list = messagesByConversation.value[id] || []
+    messagesByConversation.value = {
+      ...messagesByConversation.value,
+      [id]: list.map((x) =>
+        x.messageId === m.messageId
+          ? { ...x, isWithdrawn: true, content: '消息已撤回', messageType: 'text', book: undefined }
+          : x,
+      ),
+    }
+    const active = list.find((x) => x.messageId === m.messageId)
+    if (active && id === activeConversationId.value) {
+      updateConversationPreview(id, { ...active, isWithdrawn: true })
+    }
+    ElMessage.success('已撤回')
+  } catch (error: any) {
+    console.error('撤回失败:', error)
+    ElMessage.error(error?.response?.data?.message || '撤回失败')
+  }
 }
 
 const handleAvatarError = (event: Event) => {
@@ -432,6 +535,7 @@ const openConversationFromRoute = () => {
     ]
   }
   activeConversationId.value = id
+  loadConversationMessages(receiverId)
 
   const nextQuery = { ...route.query }
   delete nextQuery.tab
@@ -471,9 +575,12 @@ const changeTab = async (tab: 'square' | 'following' | 'topics' | 'mine' | 'mess
   }
 
   if (tab === 'messages') {
+    await loadConversations()
     if (!activeConversationId.value && conversations.value[0]) {
       activeConversationId.value = conversations.value[0].id
     }
+    const active = conversations.value.find((c) => c.id === activeConversationId.value)
+    if (active) await loadConversationMessages(active.userId)
   }
 }
 
@@ -598,17 +705,49 @@ const handleShare = (postId: number): void => {
             <div v-if="!activeConversation" class="chat-empty">选择一个联系人开始聊天</div>
             <div v-else class="chat-body">
               <div class="chat-header">{{ activeConversation.username }}</div>
-              <div class="chat-history">
+              <div ref="chatHistoryRef" class="chat-history">
+                <div v-if="loadingMessages" class="empty">加载中...</div>
                 <div
                   v-for="m in activeMessages"
                   :key="m.id"
                   class="chat-row"
                   :class="{ self: m.from === 'self' }"
                 >
-                  <div class="chat-bubble">{{ m.content }}</div>
+                  <div class="chat-bubble-wrapper">
+                    <!-- 撤回态 -->
+                    <div v-if="m.isWithdrawn" class="chat-bubble withdrawn">消息已撤回</div>
+                    <!-- 书籍消息 -->
+                    <div v-else-if="m.messageType === 'book' && m.book" class="chat-bubble book-bubble">
+                      <img
+                        v-if="m.book?.cover"
+                        class="book-cover"
+                        :src="m.book.cover"
+                        :alt="m.book?.bookTitle"
+                      />
+                      <div v-else class="book-cover book-cover-placeholder">书</div>
+                      <div class="book-meta">
+                        <div class="book-title">《{{ m.book?.bookTitle }}》</div>
+                        <div class="book-author">{{ m.book?.authorName }}</div>
+                      </div>
+                    </div>
+                    <!-- 文本消息 -->
+                    <div v-else class="chat-bubble">{{ m.content }}</div>
+
+                    <!-- 撤回按钮：仅自己发、未撤回 -->
+                    <button
+                      v-if="m.from === 'self' && !m.isWithdrawn"
+                      class="withdraw-btn"
+                      title="撤回"
+                      @click="handleWithdraw(m)"
+                    >
+                      撤回
+                    </button>
+                  </div>
                   <div class="chat-time">{{ m.time }}</div>
                 </div>
-                <div v-if="activeMessages.length === 0" class="empty">暂无消息</div>
+                <div v-if="!loadingMessages && activeMessages.length === 0" class="empty">
+                  暂无消息
+                </div>
               </div>
               <div class="chat-composer">
                 <!-- 私信增强面板区 -->
@@ -682,7 +821,9 @@ const handleShare = (postId: number): void => {
                     placeholder="输入消息..."
                     @keyup.enter.ctrl="sendMessage"
                   ></textarea>
-                  <button class="chat-send" :disabled="!canSend" @click="sendMessage">发送</button>
+                  <button class="chat-send" :disabled="!canSend || sending" @click="sendMessage">
+                    {{ sending ? '发送中...' : '发送' }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -998,6 +1139,97 @@ const handleShare = (postId: number): void => {
 
 .chat-row.self .chat-bubble {
   background-color: rgba(0, 124, 39, 0.12);
+}
+
+.chat-bubble-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.chat-row.self .chat-bubble-wrapper {
+  flex-direction: row-reverse;
+}
+
+.withdraw-btn {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chat-row:hover .withdraw-btn {
+  opacity: 1;
+}
+
+.withdraw-btn:hover {
+  color: #ef4444;
+  background-color: #f3f4f6;
+}
+
+.chat-bubble.withdrawn {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.book-bubble {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.book-cover {
+  width: 42px;
+  height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #e5e7eb;
+}
+
+.book-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 16px;
+}
+
+.book-meta {
+  min-width: 0;
+}
+
+.book-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-author {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chat-time {
