@@ -1,5 +1,7 @@
 package com.weread.service.impl.reader;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weread.entity.book.BookEntity;
 import com.weread.entity.reader.AiChatMessageEntity;
 import com.weread.repository.book.BookRepository;
@@ -21,7 +23,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -30,6 +40,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AiChatServiceImpl implements AiChatService {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final AiChatMessageRepository messageRepository;
     private final BookRepository bookRepository;
     private final RestTemplate restTemplate;
@@ -55,10 +66,8 @@ public class AiChatServiceImpl implements AiChatService {
     @Value("${app.ai.chat.completions-path:/v1/chat/completions}")
     private String chatCompletionsPath;
 
-    @Value("${app.ai.mock-enabled:true}")
-    private boolean mockEnabled;
-
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final long SSE_TIMEOUT_MS = 300_000L;
 
     @Override
     public AiChatHistoryVO getHistory(Integer userId, Integer bookId, Integer limit, Integer cursor) {
@@ -67,12 +76,12 @@ public class AiChatServiceImpl implements AiChatService {
         BookEntity book = bookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new IllegalArgumentException("book not found"));
 
-        PageRequest pageable = PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "id"));
+        PageRequest pageable = PageRequest.of(0, pageSize + 1, Sort.by(Sort.Direction.DESC, "messageId"));
         Page<AiChatMessageEntity> page;
         if (cursor == null) {
             page = messageRepository.findByUserIdAndBookId(userId, bookId, pageable);
         } else {
-            page = messageRepository.findByUserIdAndBookIdAndIdLessThan(userId, bookId, cursor.longValue(), pageable);
+            page = messageRepository.findByUserIdAndBookIdAndMessageIdLessThan(userId, bookId, cursor, pageable);
         }
 
         List<AiChatMessageEntity> list = page.getContent();
@@ -81,7 +90,9 @@ public class AiChatServiceImpl implements AiChatService {
             list = list.subList(0, pageSize);
         }
 
-        Integer nextCursor = hasMore && !list.isEmpty() ? list.get(list.size() - 1).getId().intValue() : null;
+        Integer nextCursor = hasMore && !list.isEmpty()
+                ? list.get(list.size() - 1).getMessageId()
+                : null;
 
         List<AiChatMessageVO> messages = new ArrayList<>();
         for (int i = list.size() - 1; i >= 0; i--) {
@@ -126,21 +137,143 @@ public class AiChatServiceImpl implements AiChatService {
                 .build();
     }
 
-    private AiChatMessageVO toVO(AiChatMessageEntity e) {
-        return AiChatMessageVO.builder()
-                .messageId(e.getId() != null ? e.getId().intValue() : null)
-                .role(e.getRole())
-                .content(e.getContent())
-                .createdAt(e.getCreatedAt() == null ? null : TIME_FMT.format(e.getCreatedAt()))
-                .build();
-    }
-
-    private String callCloudChat(Integer userId, BookEntity book, String latestUserMessage) {
-        if (shouldUseMock()) {
-            log.warn("Using mock AI reply (api-key missing/placeholder or mock-enabled=true)");
-            return buildMockAssistantReply(book, latestUserMessage);
+    @Override
+    public SseEmitter streamMessage(Integer userId, Integer bookId, String message) {
+        if (message == null || message.isBlank()) {
+            SseEmitter emitter = new SseEmitter(0L);
+            sendSseError(emitter, "message is required");
+            return emitter;
         }
 
+        BookEntity book;
+        try {
+            book = bookRepository.findByBookId(bookId)
+                    .orElseThrow(() -> new IllegalArgumentException("book not found"));
+        } catch (IllegalArgumentException e) {
+            SseEmitter emitter = new SseEmitter(0L);
+            sendSseError(emitter, e.getMessage());
+            return emitter;
+        }
+
+        AiChatMessageEntity userMsg = new AiChatMessageEntity();
+        userMsg.setUserId(userId);
+        userMsg.setBookId(bookId);
+        userMsg.setRole("user");
+        userMsg.setContent(message.trim());
+        userMsg = messageRepository.save(userMsg);
+
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        final AiChatMessageEntity savedUserMsg = userMsg;
+        final BookEntity resolvedBook = book;
+        final String trimmedMessage = message.trim();
+
+        new Thread(() -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("meta")
+                        .data("{\"userMessageId\":" + savedUserMsg.getMessageId() + "}"));
+
+                List<Map<String, String>> chatMessages = buildChatMessages(userId, resolvedBook, trimmedMessage);
+                validateCloudConfig();
+                String url = baseUrl.replaceAll("/$", "") + chatCompletionsPath;
+
+                String fullText = streamOpenAiChat(url, chatMessages, emitter);
+
+                AiChatMessageEntity assistantMsg = new AiChatMessageEntity();
+                assistantMsg.setUserId(userId);
+                assistantMsg.setBookId(bookId);
+                assistantMsg.setRole("assistant");
+                assistantMsg.setContent(fullText.isBlank() ? "(empty response)" : fullText);
+                assistantMsg = messageRepository.save(assistantMsg);
+
+                emitter.send(SseEmitter.event()
+                        .name("done")
+                        .data("{\"messageId\":" + assistantMsg.getMessageId()
+                                + ",\"content\":" + jsonString(assistantMsg.getContent()) + "}"));
+                emitter.complete();
+            } catch (Exception e) {
+                log.error("Stream AI chat failed: {}", e.getMessage(), e);
+                sendSseError(emitter, "Cloud LLM call failed: " + e.getMessage());
+            }
+        }).start();
+
+        emitter.onTimeout(() -> sendSseError(emitter, "Request timeout"));
+        return emitter;
+    }
+
+    private String streamOpenAiChat(String url, List<Map<String, String>> chatMessages, SseEmitter emitter)
+            throws Exception {
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", model);
+        body.put("messages", chatMessages);
+        body.put("temperature", 0.7);
+        body.put("stream", true);
+
+        HttpURLConnection conn = openJsonPost(url, body, apiKey);
+        StringBuilder full = new StringBuilder();
+        try (InputStream in = conn.getInputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank() || !line.startsWith("data:")) continue;
+                String payload = line.substring(5).trim();
+                if ("[DONE]".equals(payload)) break;
+                JsonNode node = MAPPER.readTree(payload);
+                JsonNode delta = node.path("choices").path(0).path("delta");
+                if (delta.has("content") && !delta.get("content").isNull()) {
+                    String chunk = delta.get("content").asText();
+                    if (!chunk.isEmpty()) {
+                        full.append(chunk);
+                        emitter.send(SseEmitter.event().name("chunk").data(chunk));
+                    }
+                }
+            }
+        } finally {
+            conn.disconnect();
+        }
+        return full.toString().trim();
+    }
+
+    private HttpURLConnection openJsonPost(String url, Map<String, Object> body, String bearerToken) throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout((int) SSE_TIMEOUT_MS);
+        conn.setReadTimeout((int) SSE_TIMEOUT_MS);
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setRequestProperty("Accept", "text/event-stream, application/json");
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            conn.setRequestProperty("Authorization", "Bearer " + bearerToken);
+        }
+        byte[] payload = MAPPER.writeValueAsBytes(body);
+        conn.setFixedLengthStreamingMode(payload.length);
+        try (OutputStream out = conn.getOutputStream()) {
+            out.write(payload);
+        }
+        if (conn.getResponseCode() >= 400) {
+            throw new IllegalStateException("LLM HTTP " + conn.getResponseCode());
+        }
+        return conn;
+    }
+
+    private void sendSseError(SseEmitter emitter, String message) {
+        try {
+            emitter.send(SseEmitter.event().name("error").data(message));
+            emitter.complete();
+        } catch (Exception e) {
+            emitter.completeWithError(e);
+        }
+    }
+
+    private String jsonString(String value) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(value);
+        } catch (Exception e) {
+            return "\"" + value.replace("\"", "\\\"") + "\"";
+        }
+    }
+
+    private void validateCloudConfig() {
         if (!"openai-compatible".equalsIgnoreCase(provider)) {
             throw new IllegalStateException("Unsupported ai provider: " + provider);
         }
@@ -150,15 +283,13 @@ public class AiChatServiceImpl implements AiChatService {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException("LLM api key is not configured: set app.ai.api-key");
         }
-        String effectiveApiKey = apiKey;
+    }
 
-        String url = baseUrl.replaceAll("/$", "") + chatCompletionsPath;
-        log.info("Calling AI provider={}, model={}, url={}", provider, model, url);
-
+    private List<Map<String, String>> buildChatMessages(Integer userId, BookEntity book, String latestUserMessage) {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt + "\nCurrent book: " + book.getTitle()));
 
-        PageRequest pageable = PageRequest.of(0, Math.max(contextLimit, 1), Sort.by(Sort.Direction.DESC, "id"));
+        PageRequest pageable = PageRequest.of(0, Math.max(contextLimit, 1), Sort.by(Sort.Direction.DESC, "messageId"));
         List<AiChatMessageEntity> recent = new ArrayList<>(
                 messageRepository.findByUserIdAndBookId(userId, book.getBookId(), pageable).getContent()
         );
@@ -174,10 +305,29 @@ public class AiChatServiceImpl implements AiChatService {
                 || !Objects.equals(messages.get(messages.size() - 1).get("content"), latestUserMessage)) {
             messages.add(Map.of("role", "user", "content", latestUserMessage));
         }
+        return messages;
+    }
+
+    private AiChatMessageVO toVO(AiChatMessageEntity e) {
+        return AiChatMessageVO.builder()
+                .messageId(e.getMessageId())
+                .role(e.getRole())
+                .content(e.getContent())
+                .createdAt(e.getCreatedAt() == null ? null : TIME_FMT.format(e.getCreatedAt()))
+                .build();
+    }
+
+    private String callCloudChat(Integer userId, BookEntity book, String latestUserMessage) {
+        validateCloudConfig();
+
+        String url = baseUrl.replaceAll("/$", "") + chatCompletionsPath;
+        log.info("Calling AI provider={}, model={}, url={}", provider, model, url);
+
+        List<Map<String, String>> messages = buildChatMessages(userId, book, latestUserMessage);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(effectiveApiKey);
+        headers.setBearerAuth(apiKey);
 
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
@@ -212,10 +362,6 @@ public class AiChatServiceImpl implements AiChatService {
             throw new IllegalStateException("unexpected cloud LLM response format");
         } catch (HttpStatusCodeException e) {
             log.error("Cloud LLM HTTP call failed. status={}, response={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
-            if (shouldFallbackToMock(e)) {
-                log.warn("Falling back to mock AI reply after HTTP {}", e.getStatusCode());
-                return buildMockAssistantReply(book, latestUserMessage);
-            }
             throw new IllegalStateException("Cloud LLM call failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("Cloud LLM call failed. message={}", e.getMessage(), e);
@@ -225,34 +371,5 @@ public class AiChatServiceImpl implements AiChatService {
             }
             throw new IllegalStateException("Cloud LLM call failed: " + message);
         }
-    }
-
-    private boolean shouldUseMock() {
-        return mockEnabled || isPlaceholderApiKey(apiKey);
-    }
-
-    private boolean shouldFallbackToMock(HttpStatusCodeException e) {
-        if (!mockEnabled) {
-            return false;
-        }
-        int status = e.getStatusCode().value();
-        return status == 401 || status == 403;
-    }
-
-    private boolean isPlaceholderApiKey(String key) {
-        if (key == null || key.isBlank()) {
-            return true;
-        }
-        String normalized = key.trim();
-        return "APP_AI_API_KEY".equalsIgnoreCase(normalized)
-                || "your-api-key".equalsIgnoreCase(normalized)
-                || normalized.startsWith("YOUR_");
-    }
-
-    private String buildMockAssistantReply(BookEntity book, String latestUserMessage) {
-        String title = book.getTitle() != null ? book.getTitle() : "这本书";
-        return "关于《" + title + "》，针对你的问题「" + latestUserMessage + "」："
-                + "当前为本地 mock 回复（未配置有效 AI API Key）。"
-                + "本书主要围绕其核心主题展开叙述，建议结合目录与已读章节进一步理解。";
     }
 }

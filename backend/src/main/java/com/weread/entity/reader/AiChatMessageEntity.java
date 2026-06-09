@@ -12,10 +12,9 @@ public class AiChatMessageEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+    @Column(name = "message_id")
+    private Integer messageId;
 
-    /** 兼容旧表 session_id 列，按 user+book 生成会话标识 */
     @Column(name = "session_id", nullable = false)
     private Long sessionId;
 

@@ -35,6 +35,15 @@ export default defineConfig({
         // 前端请求 /api/...，转发给后端时去掉 /api 前缀
         // 即 /api/auth/login -> /auth/login
         rewrite: (path) => path.replace(/^\/api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            const contentType = proxyRes.headers['content-type']
+            if (contentType && String(contentType).includes('text/event-stream')) {
+              proxyRes.headers['cache-control'] = 'no-cache'
+              proxyRes.headers['x-accel-buffering'] = 'no'
+            }
+          })
+        },
       },
     },
   },

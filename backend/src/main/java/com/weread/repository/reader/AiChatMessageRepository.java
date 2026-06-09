@@ -7,14 +7,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AiChatMessageRepository extends JpaRepository<AiChatMessageEntity, Long> {
+public interface AiChatMessageRepository extends JpaRepository<AiChatMessageEntity, Integer> {
 
     Page<AiChatMessageEntity> findByUserIdAndBookId(Integer userId, Integer bookId, Pageable pageable);
 
-    Page<AiChatMessageEntity> findByUserIdAndBookIdAndIdLessThan(
+    Page<AiChatMessageEntity> findByUserIdAndBookIdAndMessageIdLessThan(
             Integer userId,
             Integer bookId,
-            Long id,
+            Integer messageId,
             Pageable pageable
     );
 }

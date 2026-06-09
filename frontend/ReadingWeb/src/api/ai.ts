@@ -1,9 +1,21 @@
 // src/api/ai.ts
 import request from '@/utils/request'
+import { fetchSsePost } from '@/utils/sse-client'
 
 export interface ChatHistoryParams {
   limit?: number
   cursor?: number
+}
+
+export interface ChatStreamCallbacks {
+  onMeta?: (userMessageId: number) => void
+  onChunk: (chunk: string) => void
+  onDone?: (payload: { messageId: number; content: string }) => void
+  onError?: (message: string) => void
+}
+
+export interface ChatStreamOptions {
+  signal?: AbortSignal
 }
 
 export function getChatHistory(bookId: number, params?: ChatHistoryParams) {
@@ -14,7 +26,64 @@ export function sendChatMessage(bookId: number, message: string) {
   return request.post(`/ai/chat/session/${bookId}/message`, { message })
 }
 
-export function interpretSelectedText(selectedText: string, bookTitle?: string, chapterTitle?: string, followUp?: string) {
+/**
+ * 流式发送 AI 对话消息
+ */
+export async function sendChatMessageStream(
+  bookId: number,
+  message: string,
+  callbacks: ChatStreamCallbacks,
+  options: ChatStreamOptions = {},
+): Promise<void> {
+  const { onMeta, onChunk, onDone, onError } = callbacks
+  let fullText = ''
+
+  try {
+    await fetchSsePost({
+      url: `/api/ai/chat/session/${bookId}/message/stream`,
+      body: { message },
+      signal: options.signal,
+      onEvent: (event, data) => {
+        if (event === 'meta') {
+          try {
+            const parsed = JSON.parse(data) as { userMessageId?: number }
+            if (parsed.userMessageId != null) {
+              onMeta?.(parsed.userMessageId)
+            }
+          } catch {
+            // ignore malformed meta
+          }
+        } else if (event === 'chunk') {
+          fullText += data
+          onChunk(data)
+        } else if (event === 'done') {
+          try {
+            const parsed = JSON.parse(data) as { messageId: number; content: string }
+            onDone?.(parsed)
+          } catch {
+            onDone?.({ messageId: 0, content: data || fullText })
+          }
+        } else if (event === 'error') {
+          onError?.(data)
+        }
+      },
+    })
+    if (!fullText) {
+      onDone?.({ messageId: 0, content: '' })
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'AI 对话请求失败'
+    onError?.(msg)
+    throw err
+  }
+}
+
+export function interpretSelectedText(
+  selectedText: string,
+  bookTitle?: string,
+  chapterTitle?: string,
+  followUp?: string,
+) {
   return request.post('/reader/ai/interpret', {
     selectedText,
     bookTitle,
@@ -26,8 +95,6 @@ export function interpretSelectedText(selectedText: string, bookTitle?: string, 
 // 简单检测后端 AI 是否已配置（返回布尔）
 export async function isAiConfigured() {
   try {
-    // 尝试请求一个短的接口：取书籍会话（limit=1），如果返回 401/403/5xx则认为不可用
-    // 注意：需要传入 bookId，这里用 1 做探测（后端应对不存在的 book 报 400/404），所以以 catch 为准
     await request.get('/ai/chat/session/1', { params: { limit: 1 } })
     return true
   } catch (e) {
@@ -38,6 +105,7 @@ export async function isAiConfigured() {
 export default {
   getChatHistory,
   sendChatMessage,
+  sendChatMessageStream,
   interpretSelectedText,
   isAiConfigured,
 }

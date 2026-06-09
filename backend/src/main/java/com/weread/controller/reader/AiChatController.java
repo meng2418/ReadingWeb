@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/ai/chat")
@@ -54,6 +56,17 @@ public class AiChatController {
         result.setMessage("success");
         result.setData(data);
         return ResponseEntity.status(201).body(result);
+    }
+
+    @PostMapping(value = "/session/{bookId}/message/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "流式发送消息", description = "SSE 流式返回 AI 回复，event: meta/chunk/done/error")
+    public SseEmitter streamMessage(
+            @PathVariable Integer bookId,
+            @Valid @RequestBody AiChatSendMessageRequestDTO body,
+            @AuthenticationPrincipal Integer userId
+    ) {
+        Integer uid = (userId != null) ? userId : getCurrentUserId();
+        return aiChatService.streamMessage(uid, bookId, body.getMessage().trim());
     }
 
     private Integer getCurrentUserId() {

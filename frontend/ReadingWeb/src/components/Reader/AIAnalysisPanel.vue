@@ -1,20 +1,22 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { Sparkles, X, Bot, Send } from 'lucide-vue-next'
+import { interpretTextStream } from '@/api/reader/ai-interpret'
+import { sendChatMessageStream } from '@/api/ai'
 
 interface ChatMessage {
   role: 'assistant' | 'user'
   content: string
+  streaming?: boolean
 }
-
-import { onMounted } from 'vue'
-import { getChatHistory, interpretSelectedText, sendChatMessage, isAiConfigured } from '@/api/ai'
 
 const props = defineProps<{
   isOpen: boolean
   selectedText: string
-  bookId?: number
   isDarkMode: boolean
+  bookId?: number | string
+  bookTitle?: string
+  chapterTitle?: string
 }>()
 
 const emit = defineEmits<{
@@ -22,10 +24,12 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
+const streaming = ref(false)
 const inputValue = ref('')
 const messages = ref<ChatMessage[]>([])
+const chatContainerRef = ref<HTMLElement | null>(null)
+const abortController = ref<AbortController | null>(null)
 
-// 计算选中文本：如果没有选中则返回空，用于判断是否渲染展示框
 const selectedTextPreview = computed(() => {
   return props.selectedText
     ? props.selectedText.length > 80
@@ -34,89 +38,176 @@ const selectedTextPreview = computed(() => {
     : ''
 })
 
-const startAnalysis = async () => {
-  loading.value = true
-  messages.value = []
+const scrollToBottom = async () => {
+  await nextTick()
+  const el = chatContainerRef.value
+  if (el) {
+    el.scrollTop = el.scrollHeight
+  }
+}
 
-  const configured = await isAiConfigured()
-  if (!configured) {
-    loading.value = false
-    messages.value = [
-      { role: 'assistant', content: 'AI 服务尚未配置或无法访问，稍后重试或联系管理员。' },
-    ]
+const stopStreaming = () => {
+  abortController.value?.abort()
+  abortController.value = null
+}
+
+const appendAssistantMessage = () => {
+  messages.value.push({ role: 'assistant', content: '', streaming: true })
+  return messages.value.length - 1
+}
+
+const updateAssistantContent = (index: number, chunk: string) => {
+  const msg = messages.value[index]
+  if (msg) {
+    msg.content += chunk
+  }
+}
+
+const finishAssistantMessage = (index: number) => {
+  const msg = messages.value[index]
+  if (msg) {
+    msg.streaming = false
+    if (!msg.content.trim()) {
+      msg.content = '（未生成内容）'
+    }
+  }
+}
+
+const handleStreamError = (index: number, message: string) => {
+  const msg = messages.value[index]
+  if (msg) {
+    msg.streaming = false
+    msg.content = message || 'AI 请求失败，请稍后重试'
+  }
+}
+
+const runInterpretStream = async (followUp?: string) => {
+  if (!props.selectedText?.trim()) return
+
+  const assistantIndex = appendAssistantMessage()
+  streaming.value = true
+  loading.value = false
+  await scrollToBottom()
+
+  abortController.value = new AbortController()
+
+  try {
+    await interpretTextStream(
+      props.selectedText,
+      {
+        onChunk: (chunk) => {
+          updateAssistantContent(assistantIndex, chunk)
+          scrollToBottom()
+        },
+        onDone: () => {
+          finishAssistantMessage(assistantIndex)
+        },
+        onError: (message) => {
+          handleStreamError(assistantIndex, message)
+        },
+      },
+      {
+        bookTitle: props.bookTitle,
+        chapterTitle: props.chapterTitle,
+        followUp,
+        signal: abortController.value.signal,
+      },
+    )
+  } catch {
+    // onError 已处理
+  } finally {
+    streaming.value = false
+    abortController.value = null
+    await scrollToBottom()
+  }
+}
+
+const runChatStream = async (message: string) => {
+  const bookId = Number(props.bookId)
+  if (!bookId) {
+    messages.value.push({
+      role: 'assistant',
+      content: '无法获取书籍信息，请刷新页面后重试。',
+    })
     return
   }
 
+  const assistantIndex = appendAssistantMessage()
+  streaming.value = true
+  await scrollToBottom()
+
+  abortController.value = new AbortController()
+
   try {
-    if (props.selectedText && props.selectedText.trim()) {
-      // 调用后端端侧/云解读接口
-      const res = await interpretSelectedText(props.selectedText, undefined, undefined, undefined)
-      const text = res?.data?.data?.text || res?.data?.text || res?.data || '（未生成内容）'
-      messages.value = [{ role: 'assistant', content: String(text) }]
-    } else if (props.bookId) {
-      // 加载历史对话
-      const res = await getChatHistory(props.bookId, { limit: 50 })
-      const data = res?.data?.data || res?.data
-      const msgs: ChatMessage[] = []
-      if (data && Array.isArray(data.messages)) {
-        for (const m of data.messages) {
-          msgs.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })
-        }
-      }
-      if (msgs.length === 0) {
-        msgs.push({ role: 'assistant', content: '还没有对话，试着提一个问题开始吧。' })
-      }
-      messages.value = msgs
-    } else {
-      messages.value = [
-        { role: 'assistant', content: '请选择书籍或选中文本以开始与 AI 对话。' },
-      ]
-    }
-  } catch (e: any) {
-    console.error('AI 调用失败', e)
-    messages.value = [{ role: 'assistant', content: 'AI 服务调用失败：' + (e?.message || e?.response?.statusText || '') }]
+    await sendChatMessageStream(
+      bookId,
+      message,
+      {
+        onChunk: (chunk) => {
+          updateAssistantContent(assistantIndex, chunk)
+          scrollToBottom()
+        },
+        onDone: () => {
+          finishAssistantMessage(assistantIndex)
+        },
+        onError: (errMsg) => {
+          handleStreamError(assistantIndex, errMsg)
+        },
+      },
+      { signal: abortController.value.signal },
+    )
+  } catch {
+    // onError 已处理
   } finally {
+    streaming.value = false
+    abortController.value = null
+    await scrollToBottom()
+  }
+}
+
+const startAnalysis = async () => {
+  stopStreaming()
+  messages.value = []
+  inputValue.value = ''
+
+  if (props.selectedText?.trim()) {
+    loading.value = true
+    await runInterpretStream()
     loading.value = false
+  } else {
+    messages.value = [
+      {
+        role: 'assistant',
+        content:
+          '你好！我是你的 AI 阅读助手。你可以就当前阅读的内容向我提问，也可以在书中划线选中某段文字让我帮你进行详细分析。',
+      },
+    ]
   }
 }
 
 watch(
-  () => [props.isOpen, props.selectedText],
+  () => [props.isOpen, props.selectedText] as const,
   ([isOpen]) => {
     if (isOpen) {
       startAnalysis()
+    } else {
+      stopStreaming()
     }
   },
 )
 
 const sendMessage = async () => {
   const text = inputValue.value.trim()
-  if (!text || loading.value) return
+  if (!text || loading.value || streaming.value) return
+
   messages.value.push({ role: 'user', content: text })
   inputValue.value = ''
-  loading.value = true
+  await scrollToBottom()
 
-  try {
-    if (!props.bookId) {
-      throw new Error('未指定 bookId，无法发送消息')
-    }
-    const res = await sendChatMessage(props.bookId, text)
-    // 后端返回包装层：res.data.data 应包含 userMessage 与 assistantMessage
-    const payload = res?.data?.data || res?.data
-    if (payload) {
-      if (payload.assistantMessage) {
-        messages.value.push({ role: 'assistant', content: payload.assistantMessage.content })
-      }
-    } else {
-      // 回退：如果后端没有标准包装，直接显示返回内容
-      const textResp = res?.data?.message || JSON.stringify(res?.data) || '（无返回）'
-      messages.value.push({ role: 'assistant', content: String(textResp) })
-    }
-  } catch (e: any) {
-    console.error('发送消息失败', e)
-    messages.value.push({ role: 'assistant', content: '发送失败：' + (e?.response?.data?.message || e?.message || '') })
-  } finally {
-    loading.value = false
+  if (props.selectedText?.trim()) {
+    await runInterpretStream(text)
+  } else {
+    await runChatStream(text)
   }
 }
 
@@ -126,11 +217,16 @@ const handleKeydown = (event: KeyboardEvent) => {
     sendMessage()
   }
 }
+
+const handleClose = () => {
+  stopStreaming()
+  emit('close')
+}
 </script>
 
 <template>
   <div v-if="isOpen">
-    <div class="backdrop" @click="$emit('close')"></div>
+    <div class="backdrop" @click="handleClose"></div>
 
     <div class="ai-panel" :class="{ 'dark-mode': isDarkMode }">
       <div class="panel-header">
@@ -138,24 +234,23 @@ const handleKeydown = (event: KeyboardEvent) => {
           <Sparkles :size="18" class="sparkle-icon" />
           AI 助手
         </div>
-        <button @click="$emit('close')" class="close-btn">
+        <button @click="handleClose" class="close-btn">
           <X :size="18" />
         </button>
       </div>
 
-      <!-- 如果没有选中文本，则不显示这一块，保持极简 -->
       <div v-if="selectedTextPreview" class="panel-meta">
         <div class="meta-label">选中文本</div>
         <div class="meta-content">{{ selectedTextPreview }}</div>
       </div>
 
       <div class="panel-body">
-        <div v-if="loading" class="loading-state">
+        <div v-if="loading && messages.length === 0" class="loading-state">
           <div class="spinner"></div>
-          <p class="loading-text">正在思考中...</p>
+          <p class="loading-text">正在连接 AI...</p>
         </div>
 
-        <div v-else class="chat-container">
+        <div v-else class="chat-container" ref="chatContainerRef">
           <div class="message-list">
             <div
               v-for="(message, index) in messages"
@@ -176,7 +271,9 @@ const handleKeydown = (event: KeyboardEvent) => {
                   message.role === 'user' ? 'user-bubble' : 'assistant-bubble',
                 ]"
               >
-                <p>{{ message.content }}</p>
+                <p>
+                  {{ message.content }}<span v-if="message.streaming" class="cursor-blink">▍</span>
+                </p>
               </div>
             </div>
           </div>
@@ -186,13 +283,17 @@ const handleKeydown = (event: KeyboardEvent) => {
       <div class="panel-footer">
         <textarea
           v-model="inputValue"
-          :placeholder="loading ? '正在加载中...' : '输入你的问题...'"
-          :disabled="loading"
+          :placeholder="loading || streaming ? 'AI 正在回复中...' : '输入你的问题...'"
+          :disabled="loading || streaming"
           class="chat-input"
           rows="1"
           @keydown="handleKeydown"
         />
-        <button class="send-btn" @click="sendMessage" :disabled="loading || !inputValue.trim()">
+        <button
+          class="send-btn"
+          @click="sendMessage"
+          :disabled="loading || streaming || !inputValue.trim()"
+        >
           <Send :size="16" />
         </button>
       </div>
@@ -298,7 +399,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   color: inherit;
   background: #f8fafc;
   border-radius: 6px;
-  padding: 0.65rem 0.8rem; /* 同步收紧选中文本框的内间距 */
+  padding: 0.65rem 0.8rem;
   border: 1px solid #e2e8f0;
 }
 
@@ -410,17 +511,26 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 .message-bubble {
   max-width: 90%;
-  padding: 0.5rem 0.75rem; /* 大幅缩小气泡内部 padding */
+  padding: 0.5rem 0.75rem;
   border-radius: 6px;
   font-size: 0.9rem;
-  line-height: 1.5; /* 稍微收紧行高，显得更专业 */
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-/* 清除 <p> 标签的默认 margin，这是导致气泡空隙过大的元凶 */
 .message-bubble p {
   margin: 0;
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 .assistant-bubble {
@@ -465,7 +575,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   resize: none;
   border-radius: 6px;
   border: 1px solid #d1d5db;
-  padding: 0.5rem 0.75rem; /* 与气泡内部间距保持统一的视觉呼吸感 */
+  padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
   color: inherit;
   background: #ffffff;
@@ -490,7 +600,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 .send-btn {
   width: 2.4rem;
-  height: 2.4rem; /* 配合输入框稍微调小按钮 */
+  height: 2.4rem;
   border-radius: 6px;
   border: none;
   background-color: #111827;

@@ -100,8 +100,10 @@
       :isOpen="aiPanelOpen"
       @close="aiPanelOpen = false"
       :selectedText="aiSelectedText"
-      :book-id="Number(bookId)"
       :isDarkMode="isDarkMode"
+      :bookId="bookId"
+      :bookTitle="bookTitle"
+      :chapterTitle="displayedPageData.chapter"
     />
   </div>
 </template>

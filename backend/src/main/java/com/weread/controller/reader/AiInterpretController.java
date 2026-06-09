@@ -7,11 +7,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
 
@@ -36,5 +38,21 @@ public class AiInterpretController {
         }
         String text = aiInterpretService.interpret(dto);
         return ResponseEntity.ok(Result.success(Map.of("text", text)));
+    }
+
+    @PostMapping(value = "/interpret/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "流式解读选中文本", description = "SSE 流式返回 AI 解读，event: chunk/done/error")
+    public SseEmitter interpretStream(@RequestBody AiInterpretRequestDTO dto) {
+        if (dto.getSelectedText() == null || dto.getSelectedText().isBlank()) {
+            SseEmitter emitter = new SseEmitter(0L);
+            try {
+                emitter.send(SseEmitter.event().name("error").data("selectedText is required"));
+                emitter.complete();
+            } catch (Exception ignored) {
+                emitter.completeWithError(new IllegalArgumentException("selectedText is required"));
+            }
+            return emitter;
+        }
+        return aiInterpretService.streamInterpret(dto);
     }
 }
