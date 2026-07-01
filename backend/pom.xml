@@ -21,7 +21,8 @@
             <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
             <maven.compiler.source>17</maven.compiler.source>
             <maven.compiler.target>17</maven.compiler.target>
-        <lombok.version>1.18.24</lombok.version>
+        <!-- 不再固定 Lombok 版本，继承 Spring Boot 3.5.7 管理的版本（兼容新版 JDK，
+             修复语言服务器中 "Could not initialize class lombok.javac.Javac" 报错） -->
         <java.version>17</java.version>
     </properties>
 

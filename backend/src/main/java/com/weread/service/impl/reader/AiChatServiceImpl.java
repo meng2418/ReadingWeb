@@ -57,6 +57,10 @@ public class AiChatServiceImpl implements AiChatService {
     @Value("${app.ai.model:qwen-plus}")
     private String model;
 
+    /** 未配置有效 API Key 时是否返回本地模拟回复（本地/契约测试） */
+    @Value("${app.ai.mock-enabled:true}")
+    private boolean mockEnabled;
+
     @Value("${app.ai.chat.system-prompt:You are a reading assistant. Answer questions about the current book. If uncertain, say so and provide a reasonable guess.}")
     private String systemPrompt;
 
@@ -173,11 +177,16 @@ public class AiChatServiceImpl implements AiChatService {
                         .name("meta")
                         .data("{\"userMessageId\":" + savedUserMsg.getMessageId() + "}"));
 
-                List<Map<String, String>> chatMessages = buildChatMessages(userId, resolvedBook, trimmedMessage);
-                validateCloudConfig();
-                String url = baseUrl.replaceAll("/$", "") + chatCompletionsPath;
-
-                String fullText = streamOpenAiChat(url, chatMessages, emitter);
+                String fullText;
+                if (shouldUseMock()) {
+                    log.info("AI mock mode enabled (no API key configured); streaming mock reply");
+                    fullText = streamMockReply(resolvedBook, trimmedMessage, emitter);
+                } else {
+                    List<Map<String, String>> chatMessages = buildChatMessages(userId, resolvedBook, trimmedMessage);
+                    validateCloudConfig();
+                    String url = baseUrl.replaceAll("/$", "") + chatCompletionsPath;
+                    fullText = streamOpenAiChat(url, chatMessages, emitter);
+                }
 
                 AiChatMessageEntity assistantMsg = new AiChatMessageEntity();
                 assistantMsg.setUserId(userId);
@@ -224,7 +233,7 @@ public class AiChatServiceImpl implements AiChatService {
                     String chunk = delta.get("content").asText();
                     if (!chunk.isEmpty()) {
                         full.append(chunk);
-                        emitter.send(SseEmitter.event().name("chunk").data(chunk));
+                        emitter.send(SseEmitter.event().name("chunk").data(jsonString(chunk)));
                     }
                 }
             }
@@ -285,6 +294,44 @@ public class AiChatServiceImpl implements AiChatService {
         }
     }
 
+    /**
+     * 当开启 mock 且云端配置不完整（缺少 api-key 或 base-url）时，使用本地模拟回复，
+     * 以便在未接入真实大模型的情况下进行前后端联调与契约测试。
+     */
+    private boolean shouldUseMock() {
+        if (!mockEnabled) {
+            return false;
+        }
+        return apiKey == null || apiKey.isBlank()
+                || baseUrl == null || baseUrl.isBlank();
+    }
+
+    /** 生成单行（无换行）的模拟回复，避免影响 SSE 的分块显示。 */
+    private String buildMockReply(BookEntity book, String userMessage) {
+        String title = (book != null && book.getTitle() != null && !book.getTitle().isBlank())
+                ? book.getTitle() : "这本书";
+        return "【本地模拟回复】关于《" + title + "》，你的问题是「" + userMessage + "」。"
+                + "当前后端尚未配置有效的 AI API Key（app.ai.api-key 为空），因此返回本地模拟内容，用于前后端联调与契约测试。"
+                + "配置真实的 API Key（或设置环境变量 APP_AI_API_KEY）后即可获得基于大模型的真实回答。";
+    }
+
+    /** 将模拟回复按小块通过 SSE 逐块推送，模拟流式输出效果，返回完整文本。 */
+    private String streamMockReply(BookEntity book, String userMessage, SseEmitter emitter) throws Exception {
+        String text = buildMockReply(book, userMessage);
+        int step = 12;
+        for (int i = 0; i < text.length(); i += step) {
+            String chunk = text.substring(i, Math.min(text.length(), i + step));
+            emitter.send(SseEmitter.event().name("chunk").data(jsonString(chunk)));
+            try {
+                Thread.sleep(30L);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return text;
+    }
+
     private List<Map<String, String>> buildChatMessages(Integer userId, BookEntity book, String latestUserMessage) {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt + "\nCurrent book: " + book.getTitle()));
@@ -318,6 +365,10 @@ public class AiChatServiceImpl implements AiChatService {
     }
 
     private String callCloudChat(Integer userId, BookEntity book, String latestUserMessage) {
+        if (shouldUseMock()) {
+            log.info("AI mock mode enabled (no API key configured); returning mock reply");
+            return buildMockReply(book, latestUserMessage);
+        }
         validateCloudConfig();
 
         String url = baseUrl.replaceAll("/$", "") + chatCompletionsPath;

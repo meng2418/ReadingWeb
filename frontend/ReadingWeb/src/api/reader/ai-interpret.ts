@@ -43,10 +43,24 @@ export async function interpretTextStream(
       signal: options.signal,
       onEvent: (event, data) => {
         if (event === 'chunk') {
-          fullText += data
-          onChunk(data)
+          let text = data
+          try {
+            text = JSON.parse(data) as string
+          } catch {
+            // 兼容非 JSON 编码的旧格式
+          }
+          fullText += text
+          onChunk(text)
         } else if (event === 'done') {
-          onDone?.(data || fullText)
+          let finalText = fullText
+          if (data) {
+            try {
+              finalText = JSON.parse(data) as string
+            } catch {
+              finalText = data || fullText
+            }
+          }
+          onDone?.(finalText)
         } else if (event === 'error') {
           onError?.(data)
         }

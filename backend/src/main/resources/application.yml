@@ -8,10 +8,10 @@ spring:
   config:
     import: optional:classpath:application-local.yml
   datasource:
-    url: jdbc:mysql://localhost:3306/wechatreading_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
+    url: jdbc:mysql://localhost:3306/wechatreading_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 299792
+    password: something1314,.
     hikari:
       connection-timeout: 30000
       maximum-pool-size: 10
@@ -21,7 +21,7 @@ spring:
       pool-name: HikariCP
       auto-commit: true
       connection-test-query: SELECT 1
-  
+
   # -------------------------------------
   # JPA / Hibernate 配置
   # -------------------------------------
@@ -35,13 +35,13 @@ spring:
       hibernate.id.disable_sequences: true
       # 连接池相关配置
       hibernate.connection.provider_disables_autocommit: false
-      
+
     hibernate:
       # ddl-auto 保持不变
-      ddl-auto: update 
+      ddl-auto: update
     show-sql: true
     open-in-view: false
-  
+
   # -------------------------------------
   # Redis 配置 (从前一个配置中保留)
   # -------------------------------------
@@ -49,7 +49,6 @@ spring:
     redis:
       host: localhost
       port: 6379
-
 
 # =========================================
 # 自定义属性配置
@@ -89,7 +88,7 @@ payment:
     api-secret: 32位API密钥字符串 # API密钥 V2版本 (V3使用证书和私钥)
     create-order-url: https://api.mch.weixin.qq.com/pay/unifiedorder # 微信支付 V2 统一下单接口
     query-order-url: https://api.mch.weixin.qq.com/pay/orderquery
-    
+
   alipay:
     app-id: 20140723000xxxxxxx # 支付宝应用ID
     gateway-url: https://openapi.alipay.com/gateway.do # 支付宝网关地址

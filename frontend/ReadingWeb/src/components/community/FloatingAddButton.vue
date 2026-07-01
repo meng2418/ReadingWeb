@@ -56,7 +56,7 @@
 
         <!-- Emoji -->
         <div v-if="showEmojiPicker" class="select-emoji" @click.self="showEmojiPicker = false">
-          <emoji-picker-element @emoji-click="handleEmojiClick" />
+          <emoji-picker @emoji-click="handleEmojiClick" />
         </div>
 
         <!-- 话题选择 -->

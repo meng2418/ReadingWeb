@@ -2,7 +2,7 @@
 import { ref, watch, computed, nextTick } from 'vue'
 import { Sparkles, X, Bot, Send } from 'lucide-vue-next'
 import { interpretTextStream } from '@/api/reader/ai-interpret'
-import { sendChatMessageStream } from '@/api/ai'
+import { getChatHistory, sendChatMessageStream } from '@/api/ai'
 
 interface ChatMessage {
   role: 'assistant' | 'user'
@@ -165,6 +165,34 @@ const runChatStream = async (message: string) => {
   }
 }
 
+const GREETING_CONTENT =
+  '你好！我是你的 AI 阅读助手。你可以就当前阅读的内容向我提问，也可以在书中划线选中某段文字让我帮你进行详细分析。'
+
+const makeGreeting = (): ChatMessage => ({ role: 'assistant', content: GREETING_CONTENT })
+
+const loadHistory = async () => {
+  const bookId = Number(props.bookId)
+  if (!bookId) {
+    messages.value = [makeGreeting()]
+    return
+  }
+
+  loading.value = true
+  try {
+    const res = await getChatHistory(bookId, { limit: 50 })
+    const history = (res?.data?.data?.messages ?? [])
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map<ChatMessage>((m) => ({ role: m.role as ChatMessage['role'], content: m.content }))
+    messages.value = history.length ? history : [makeGreeting()]
+  } catch {
+    // 历史加载失败不阻塞对话，回退到欢迎语
+    messages.value = [makeGreeting()]
+  } finally {
+    loading.value = false
+    await scrollToBottom()
+  }
+}
+
 const startAnalysis = async () => {
   stopStreaming()
   messages.value = []
@@ -175,13 +203,7 @@ const startAnalysis = async () => {
     await runInterpretStream()
     loading.value = false
   } else {
-    messages.value = [
-      {
-        role: 'assistant',
-        content:
-          '你好！我是你的 AI 阅读助手。你可以就当前阅读的内容向我提问，也可以在书中划线选中某段文字让我帮你进行详细分析。',
-      },
-    ]
+    await loadHistory()
   }
 }
 

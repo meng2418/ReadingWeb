@@ -14,7 +14,7 @@ public class ChatConversationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "conversation_id")
     private Long id;
 
     @Column(name = "user1_id", nullable = false)

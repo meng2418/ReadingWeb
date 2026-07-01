@@ -12,7 +12,7 @@ public class ChatMessageEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "message_id")
     private Long id;
 
     @Column(name = "conversation_id", nullable = false)

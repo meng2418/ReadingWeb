@@ -209,6 +209,7 @@ const activeConversationId = ref<string | null>(null)
 const draftMessage = ref('')
 const messagesByConversation = ref<Record<string, ChatMessage[]>>({})
 const chatHistoryRef = ref<HTMLElement | null>(null)
+const chatInputRef = ref<HTMLTextAreaElement | null>(null)
 const loadingMessages = ref(false)
 const sending = ref(false)
 
@@ -333,6 +334,17 @@ const scrollChatToBottom = () => {
     if (el) el.scrollTop = el.scrollHeight
   })
 }
+
+// 输入框高度自适应：随内容增高，达到上限(120px)后才出现滚动条，符合网页聊天框习惯
+const autoResizeInput = () => {
+  const el = chatInputRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+}
+
+// 文本变化（输入、插入表情、发送后清空）后同步调整高度
+watch(draftMessage, () => nextTick(autoResizeInput))
 
 // 加载真实会话列表（合并保留本地临时会话，如刚从主页「私信」进入但尚未发消息的对象）
 const loadConversations = async () => {
@@ -815,10 +827,12 @@ const handleShare = (postId: number): void => {
 
                 <div class="chat-input-wrapper">
                   <textarea
+                    ref="chatInputRef"
                     v-model="draftMessage"
                     class="chat-input"
                     rows="1"
                     placeholder="输入消息..."
+                    @input="autoResizeInput"
                     @keyup.enter.ctrl="sendMessage"
                   ></textarea>
                   <button class="chat-send" :disabled="!canSend || sending" @click="sendMessage">
@@ -909,7 +923,7 @@ const handleShare = (postId: number): void => {
 
     <!-- 全局 Emoji 选择器 (私信使用) -->
     <div v-if="showEmojiPicker" class="chat-emoji-panel" @click.self="showEmojiPicker = false">
-      <emoji-picker-element @emoji-click="handleEmojiClick"></emoji-picker-element>
+      <emoji-picker @emoji-click="handleEmojiClick"></emoji-picker>
     </div>
   </div>
 </template>
@@ -1079,7 +1093,7 @@ const handleShare = (postId: number): void => {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   overflow: hidden;
-  min-height: 520px;
+  height: 620px;
   display: flex;
 }
 
@@ -1108,6 +1122,7 @@ const handleShare = (postId: number): void => {
 
 .chat-history {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 16px;
   background-color: #ffffff;
@@ -1272,7 +1287,7 @@ const handleShare = (postId: number): void => {
   background: rgba(0, 0, 0, 0.4);
 }
 
-.chat-emoji-panel emoji-picker-element {
+.chat-emoji-panel emoji-picker {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -1382,9 +1397,11 @@ const handleShare = (postId: number): void => {
 
 .chat-input {
   width: 100%;
-  height: 40px;
+  min-height: 40px;
+  max-height: 120px;
   line-height: 20px;
   resize: none;
+  overflow-y: auto;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 10px 12px;

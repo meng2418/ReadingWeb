@@ -175,7 +175,7 @@ public class AiInterpretServiceImpl implements AiInterpretService {
                     String chunk = node.get("response").asText();
                     if (!chunk.isEmpty()) {
                         full.append(chunk);
-                        emitter.send(SseEmitter.event().name("chunk").data(chunk));
+                        emitter.send(SseEmitter.event().name("chunk").data(toJson(chunk)));
                     }
                 }
                 if (node.path("done").asBoolean(false)) break;
@@ -213,7 +213,7 @@ public class AiInterpretServiceImpl implements AiInterpretService {
                     String chunk = delta.get("content").asText();
                     if (!chunk.isEmpty()) {
                         full.append(chunk);
-                        emitter.send(SseEmitter.event().name("chunk").data(chunk));
+                        emitter.send(SseEmitter.event().name("chunk").data(toJson(chunk)));
                     }
                 }
             }
@@ -247,10 +247,23 @@ public class AiInterpretServiceImpl implements AiInterpretService {
 
     private void sendSseDone(SseEmitter emitter, String fullText) {
         try {
-            emitter.send(SseEmitter.event().name("done").data(fullText));
+            emitter.send(SseEmitter.event().name("done").data(toJson(fullText)));
             emitter.complete();
         } catch (Exception e) {
             emitter.completeWithError(e);
+        }
+    }
+
+    /** 将文本编码为 JSON 字符串字面量，确保 SSE data 单行无换行，避免分块/分帧错乱。 */
+    private String toJson(String value) {
+        try {
+            return MAPPER.writeValueAsString(value);
+        } catch (Exception e) {
+            return "\"" + value
+                    .replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r") + "\"";
         }
     }
 

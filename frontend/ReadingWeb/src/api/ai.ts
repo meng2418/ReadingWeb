@@ -7,6 +7,26 @@ export interface ChatHistoryParams {
   cursor?: number
 }
 
+export interface ChatHistoryMessage {
+  messageId: number
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  createdAt: string
+}
+
+export interface ChatHistoryData {
+  bookTitle: string
+  messages: ChatHistoryMessage[]
+  hasMore: boolean
+  nextCursor: number | null
+}
+
+interface ApiResult<T> {
+  code: number
+  message: string
+  data: T
+}
+
 export interface ChatStreamCallbacks {
   onMeta?: (userMessageId: number) => void
   onChunk: (chunk: string) => void
@@ -19,7 +39,7 @@ export interface ChatStreamOptions {
 }
 
 export function getChatHistory(bookId: number, params?: ChatHistoryParams) {
-  return request.get(`/ai/chat/session/${bookId}`, { params })
+  return request.get<ApiResult<ChatHistoryData>>(`/ai/chat/session/${bookId}`, { params })
 }
 
 export function sendChatMessage(bookId: number, message: string) {
@@ -54,8 +74,14 @@ export async function sendChatMessageStream(
             // ignore malformed meta
           }
         } else if (event === 'chunk') {
-          fullText += data
-          onChunk(data)
+          let text = data
+          try {
+            text = JSON.parse(data) as string
+          } catch {
+            // 兼容非 JSON 编码的旧格式
+          }
+          fullText += text
+          onChunk(text)
         } else if (event === 'done') {
           try {
             const parsed = JSON.parse(data) as { messageId: number; content: string }
