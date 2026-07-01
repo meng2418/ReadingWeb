@@ -30,6 +30,30 @@ const messages = ref<ChatMessage[]>([])
 const chatContainerRef = ref<HTMLElement | null>(null)
 const abortController = ref<AbortController | null>(null)
 
+// Watchdog timer id to avoid stuck streaming state
+let streamWatchdog: number | null = null
+const WATCHDOG_TIMEOUT_MS = 60_000 // 60s
+
+const resetWatchdog = () => {
+  if (streamWatchdog) {
+    clearTimeout(streamWatchdog)
+  }
+  streamWatchdog = window.setTimeout(() => {
+    // If stream hangs, stop it and clear flags to restore UI
+    abortController.value?.abort()
+    abortController.value = null
+    streaming.value = false
+    streamWatchdog = null
+  }, WATCHDOG_TIMEOUT_MS)
+}
+
+const clearWatchdog = () => {
+  if (streamWatchdog) {
+    clearTimeout(streamWatchdog)
+    streamWatchdog = null
+  }
+}
+
 const selectedTextPreview = computed(() => {
   return props.selectedText
     ? props.selectedText.length > 80
@@ -91,19 +115,31 @@ const runInterpretStream = async (followUp?: string) => {
 
   abortController.value = new AbortController()
 
+  // start watchdog to recover from hanging streams
+  resetWatchdog()
+
   try {
     await interpretTextStream(
       props.selectedText,
       {
         onChunk: (chunk) => {
           updateAssistantContent(assistantIndex, chunk)
+          // reset watchdog on activity
+          resetWatchdog()
           scrollToBottom()
         },
         onDone: () => {
           finishAssistantMessage(assistantIndex)
+          clearWatchdog()
+          // ensure streaming is cleared immediately when done
+          streaming.value = false
+          abortController.value = null
         },
         onError: (message) => {
           handleStreamError(assistantIndex, message)
+          clearWatchdog()
+          streaming.value = false
+          abortController.value = null
         },
       },
       {
@@ -116,6 +152,8 @@ const runInterpretStream = async (followUp?: string) => {
   } catch {
     // onError 已处理
   } finally {
+    // final cleanup (no-op if already cleared in callbacks)
+    clearWatchdog()
     streaming.value = false
     abortController.value = null
     await scrollToBottom()
@@ -138,6 +176,9 @@ const runChatStream = async (message: string) => {
 
   abortController.value = new AbortController()
 
+  // start watchdog to recover from hanging streams
+  resetWatchdog()
+
   try {
     await sendChatMessageStream(
       bookId,
@@ -145,13 +186,21 @@ const runChatStream = async (message: string) => {
       {
         onChunk: (chunk) => {
           updateAssistantContent(assistantIndex, chunk)
+          // reset watchdog on activity
+          resetWatchdog()
           scrollToBottom()
         },
         onDone: () => {
           finishAssistantMessage(assistantIndex)
+          clearWatchdog()
+          streaming.value = false
+          abortController.value = null
         },
         onError: (errMsg) => {
           handleStreamError(assistantIndex, errMsg)
+          clearWatchdog()
+          streaming.value = false
+          abortController.value = null
         },
       },
       { signal: abortController.value.signal },
@@ -159,6 +208,7 @@ const runChatStream = async (message: string) => {
   } catch {
     // onError 已处理
   } finally {
+    clearWatchdog()
     streaming.value = false
     abortController.value = null
     await scrollToBottom()

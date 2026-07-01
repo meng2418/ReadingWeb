@@ -18,6 +18,9 @@ export interface NormalizedMessage {
   messageId: number
   conversationId: number | null
   senderId: number
+  receiverId: number
+  senderName?: string
+  senderAvatar?: string
   messageType: string // 'text' | 'book' | 'image'
   content: string
   book?: ChatBookInfo
@@ -79,6 +82,9 @@ export const normalizeMessage = (raw: any, currentUserId: number | null): Normal
     messageId: Number(raw?.messageId ?? raw?.id ?? 0),
     conversationId,
     senderId,
+    receiverId: Number(raw?.receiverId ?? raw?.receiver?.userId ?? raw?.receiver?.id ?? 0),
+    senderName: String(raw?.senderName ?? raw?.sender?.username ?? ''),
+    senderAvatar: String(raw?.senderAvatar ?? raw?.sender?.avatar ?? ''),
     messageType: String(raw?.messageType ?? 'text'),
     content: String(raw?.content ?? ''),
     book: normalizeBook(raw),

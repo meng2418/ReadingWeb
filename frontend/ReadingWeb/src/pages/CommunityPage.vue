@@ -30,9 +30,17 @@ import {
   sendMessage as sendMessageApi,
   withdrawMessage as withdrawMessageApi,
   getConversations as getConversationsApi,
+  normalizeMessage,
   type NormalizedMessage,
   type ChatBookInfo,
 } from '@/api/chat'
+import {
+  addChatWebSocketListener,
+  closeChatWebSocket,
+  connectChatWebSocket,
+  sendChatWsSendMessage,
+  type ChatWsMessage,
+} from '@/utils/chat-ws'
 
 export interface SimpleBook {
   id: number
@@ -50,6 +58,9 @@ const currentUser = reactive({
   fansCount: 0,
   postCount: 0,
 })
+
+const wsConnected = ref(false)
+const wsListenerCleanup = ref<(() => void) | null>(null)
 
 const currentUserId = computed(() => currentUser.userId)
 const route = useRoute()
@@ -171,10 +182,16 @@ onMounted(async () => {
   // 绑定滚动监听器
   setupObserver()
   openConversationFromRoute()
+  connectWs()
 })
 
 onUnmounted(() => {
   if (observer) observer.disconnect()
+  if (wsListenerCleanup.value) {
+    wsListenerCleanup.value()
+    wsListenerCleanup.value = null
+  }
+  closeChatWebSocket()
 })
 
 const posts = ref<Post[]>([])
@@ -297,23 +314,89 @@ const formatMessageTime = (timeStr: string) => {
   return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 }
 
-const toChatMessage = (m: NormalizedMessage, conversationId: string): ChatMessage => ({
-  id: m.messageId ? String(m.messageId) : `${conversationId}-${m.createdAt}`,
-  messageId: m.messageId,
-  conversationId,
-  from: m.from,
-  messageType: m.messageType,
-  content: m.content,
-  book: m.book,
-  isWithdrawn: m.isWithdrawn,
-  time: formatMessageTime(m.createdAt),
-})
+const toChatMessage = (m: NormalizedMessage, conversationId: string): ChatMessage => {
+  const createdAt = m.createdAt ?? (m as any).sendTime ?? ''
+  return {
+    id: m.messageId ? String(m.messageId) : `${conversationId}-${createdAt}`,
+    messageId: m.messageId,
+    conversationId,
+    from: m.from,
+    messageType: m.messageType,
+    content: m.content,
+    book: m.book,
+    isWithdrawn: m.isWithdrawn,
+    time: formatMessageTime(createdAt),
+  }
+}
 
 const previewText = (m: ChatMessage) => {
   if (m.isWithdrawn) return '消息已撤回'
   if (m.messageType === 'book') return m.book ? `[分享书籍]《${m.book.bookTitle}》` : '[分享书籍]'
   if (m.messageType === 'image') return '[图片]'
   return m.content
+}
+
+const handleWsMessageEvent = (event: ChatWsMessage) => {
+  if (event.type !== 'message') return
+  const payload = event.payload
+  if (!payload || !payload.message) return
+
+  const message = payload.message as any
+  const normalized = normalizeMessage(message, currentUserId.value)
+  const otherUserId =
+    normalized.senderId === currentUserId.value ? normalized.receiverId : normalized.senderId
+  const conversationId = String(otherUserId)
+  const chatMessage = toChatMessage(normalized, conversationId)
+
+  const existingMessages = messagesByConversation.value[conversationId] || []
+  messagesByConversation.value = {
+    ...messagesByConversation.value,
+    [conversationId]: [...existingMessages, chatMessage],
+  }
+
+  const conversationIndex = conversations.value.findIndex((c) => c.id === conversationId)
+  const preview = previewText(chatMessage)
+  const activeConv = activeConversation.value
+  const userName =
+    normalized.senderId === currentUserId.value
+      ? (activeConv?.username ?? `用户${otherUserId}`)
+      : normalized.senderName || `用户${otherUserId}`
+  const avatar =
+    normalized.senderId === currentUserId.value
+      ? (activeConv?.avatar ?? '')
+      : (normalized.senderAvatar ?? '')
+
+  if (conversationIndex >= 0) {
+    const existing = conversations.value[conversationIndex]
+    conversations.value[conversationIndex] = {
+      ...existing,
+      lastMessage: preview,
+      lastTime: '刚刚',
+    }
+  } else {
+    conversations.value = [
+      {
+        id: conversationId,
+        userId: otherUserId,
+        username: userName,
+        avatar,
+        lastMessage: preview,
+        lastTime: '刚刚',
+      },
+      ...conversations.value,
+    ]
+  }
+}
+
+const connectWs = async () => {
+  try {
+    wsListenerCleanup.value = addChatWebSocketListener(handleWsMessageEvent)
+    await connectChatWebSocket()
+    wsConnected.value = true
+  } catch (error) {
+    wsConnected.value = false
+    console.warn('WebSocket 私信连接失败:', error)
+  }
 }
 
 const updateConversationPreview = (id: string, m: ChatMessage) => {
@@ -426,21 +509,16 @@ const sendMessage = async () => {
   const books = [...selectedBooks.value]
   sending.value = true
   try {
-    const sent: ChatMessage[] = []
-
-    // 1) 文本消息（接口②）
-    if (text) {
-      const msg = await sendMessageApi(
-        { receiverId, messageType: 'text', content: text },
-        currentUserId.value,
-      )
-      sent.push(toChatMessage(msg, id))
-    }
-
-    // 2) 每本分享书籍各发一条 book 消息（接口②）
-    for (const b of books) {
-      const msg = await sendMessageApi(
-        {
+    if (wsConnected.value) {
+      if (text) {
+        await sendChatWsSendMessage({
+          receiverId,
+          messageType: 'text',
+          content: text,
+        })
+      }
+      for (const b of books) {
+        await sendChatWsSendMessage({
           receiverId,
           messageType: 'book',
           content: '',
@@ -451,21 +529,50 @@ const sendMessage = async () => {
             authorName: b.author || '',
             description: '',
           },
-        },
-        currentUserId.value,
-      )
-      sent.push(toChatMessage(msg, id))
-    }
-
-    if (sent.length) {
-      const existing = messagesByConversation.value[id] || []
-      messagesByConversation.value = {
-        ...messagesByConversation.value,
-        [id]: [...existing, ...sent],
+        })
       }
-      const last = sent[sent.length - 1]
-      if (last) updateConversationPreview(id, last)
-      scrollChatToBottom()
+    } else {
+      const sent: ChatMessage[] = []
+
+      // 1) 文本消息（接口②）
+      if (text) {
+        const msg = await sendMessageApi(
+          { receiverId, messageType: 'text', content: text },
+          currentUserId.value,
+        )
+        sent.push(toChatMessage(msg, id))
+      }
+
+      // 2) 每本分享书籍各发一条 book 消息（接口②）
+      for (const b of books) {
+        const msg = await sendMessageApi(
+          {
+            receiverId,
+            messageType: 'book',
+            content: '',
+            bookInfo: {
+              bookId: b.id,
+              bookTitle: b.title,
+              cover: '',
+              authorName: b.author || '',
+              description: '',
+            },
+          },
+          currentUserId.value,
+        )
+        sent.push(toChatMessage(msg, id))
+      }
+
+      if (sent.length) {
+        const existing = messagesByConversation.value[id] || []
+        messagesByConversation.value = {
+          ...messagesByConversation.value,
+          [id]: [...existing, ...sent],
+        }
+        const last = sent[sent.length - 1]
+        if (last) updateConversationPreview(id, last)
+        scrollChatToBottom()
+      }
     }
 
     draftMessage.value = ''
@@ -729,7 +836,10 @@ const handleShare = (postId: number): void => {
                     <!-- 撤回态 -->
                     <div v-if="m.isWithdrawn" class="chat-bubble withdrawn">消息已撤回</div>
                     <!-- 书籍消息 -->
-                    <div v-else-if="m.messageType === 'book' && m.book" class="chat-bubble book-bubble">
+                    <div
+                      v-else-if="m.messageType === 'book' && m.book"
+                      class="chat-bubble book-bubble"
+                    >
                       <img
                         v-if="m.book?.cover"
                         class="book-cover"

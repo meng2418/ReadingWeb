@@ -92,6 +92,7 @@ public class SecurityConfig {
 
                 // 登录相关
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/ws/**").permitAll()
 
                 // 静态资源（图片等）不需要认证
                 .requestMatchers("/static/**").permitAll()
